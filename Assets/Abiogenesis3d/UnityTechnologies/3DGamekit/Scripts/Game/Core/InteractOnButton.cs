@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.InputSystem;
 
 
 namespace Gamekit3D
@@ -9,7 +10,7 @@ namespace Gamekit3D
     public class InteractOnButton : InteractOnTrigger
     {
 
-        public string buttonName = "X";
+        public Key button = Key.X;
         public UnityEvent OnButtonPress;
 
         bool canExecuteButtons = false;
@@ -26,11 +27,19 @@ namespace Gamekit3D
 
         void Update()
         {
-            if (canExecuteButtons && Input.GetButtonDown(buttonName))
+            if (!canExecuteButtons)
+                return;
+
+            var keyboard = Keyboard.current;
+            if (keyboard == null)
+                return;
+
+            var keyControl = keyboard[button];
+            if (keyControl != null && keyControl.wasPressedThisFrame)
             {
                 OnButtonPress.Invoke();
             }
         }
 
-    } 
+    }
 }

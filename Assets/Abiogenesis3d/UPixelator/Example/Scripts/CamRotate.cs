@@ -1,4 +1,7 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.Controls;
+using UnityEngine.InputSystem.LowLevel;
 
 namespace Abiogenesis3d.UPixelator_Demo
 {
@@ -13,7 +16,7 @@ public class CamRotate : MonoBehaviour
     Vector2 startRotateMousePosition;
     bool isRotating;
 
-    public KeyCode rotateKey = KeyCode.Mouse1;
+    public MouseButton rotateMouseButton = MouseButton.Right;
 
     Camera cam;
 
@@ -39,16 +42,16 @@ public class CamRotate : MonoBehaviour
     {
         if (!Application.isPlaying) isRotating = true;
 
-        if (Input.GetKeyDown(rotateKey))
+        if (IsRotateButtonPressedThisFrame())
         {
-            startRotateMousePosition = Input.mousePosition;
+            startRotateMousePosition = GetMousePosition();
         }
-        else if (Input.GetKey(rotateKey))
+        else if (IsRotateButtonPressed())
         {
-            if (Vector2.Distance(startRotateMousePosition, Input.mousePosition) > dragRotateBuffer)
+            if (Vector2.Distance(startRotateMousePosition, GetMousePosition()) > dragRotateBuffer)
                 isRotating = true;
         }
-        else if (Input.GetKeyUp(rotateKey))
+        else if (IsRotateButtonReleasedThisFrame())
         {
             isRotating = false;
         }
@@ -60,8 +63,9 @@ public class CamRotate : MonoBehaviour
     {
         float dt = Time.deltaTime;
 
-        eulerAngles.y += Input.GetAxis("Mouse X") * rotationSpeed * dt;
-        eulerAngles.x -= Input.GetAxis("Mouse Y") * rotationSpeed * dt;
+        Vector2 delta = GetMouseDelta();
+        eulerAngles.y += delta.x * rotationSpeed * dt;
+        eulerAngles.x -= delta.y * rotationSpeed * dt;
 
 #if UNITY_EDITOR
         if (!Application.isPlaying && cam) eulerAngles = cam.transform.eulerAngles;
@@ -74,6 +78,50 @@ public class CamRotate : MonoBehaviour
     public static float ClampAngle(float angle, float min, float max)
     {
         return Mathf.Clamp(angle % 360, min, max);
+    }
+
+    Vector2 GetMousePosition()
+    {
+        var mouse = Mouse.current;
+        return mouse != null ? mouse.position.ReadValue() : Vector2.zero;
+    }
+
+    Vector2 GetMouseDelta()
+    {
+        var mouse = Mouse.current;
+        return mouse != null ? mouse.delta.ReadValue() : Vector2.zero;
+    }
+
+    bool IsRotateButtonPressed()
+    {
+        return GetRotateButtonControl()?.isPressed ?? false;
+    }
+
+    bool IsRotateButtonPressedThisFrame()
+    {
+        return GetRotateButtonControl()?.wasPressedThisFrame ?? false;
+    }
+
+    bool IsRotateButtonReleasedThisFrame()
+    {
+        return GetRotateButtonControl()?.wasReleasedThisFrame ?? false;
+    }
+
+    ButtonControl GetRotateButtonControl()
+    {
+        var mouse = Mouse.current;
+        if (mouse == null)
+            return null;
+
+        return rotateMouseButton switch
+        {
+            MouseButton.Left => mouse.leftButton,
+            MouseButton.Right => mouse.rightButton,
+            MouseButton.Middle => mouse.middleButton,
+            MouseButton.Forward => mouse.forwardButton,
+            MouseButton.Back => mouse.backButton,
+            _ => null
+        };
     }
 }
 }

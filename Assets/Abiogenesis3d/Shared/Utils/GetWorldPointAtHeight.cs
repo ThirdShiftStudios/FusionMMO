@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace Abiogenesis3d
 {
@@ -19,7 +20,7 @@ namespace Abiogenesis3d
         public static Vector3 GetWorldMousePosition(Camera cam, float height, Vector3 defaultValue = default)
         {
             // TODO: extract mousePosition handling: FreezeCursorOnRightMouse.mousePosition
-            return GetWorldPointAtHeight(cam, Input.mousePosition, height, defaultValue);
+            return GetWorldPointAtHeight(cam, GetMousePosition(), height, defaultValue);
         }
 
         public static Vector3 VectorToCamSpace(Camera cam, Vector3 input)
@@ -28,6 +29,16 @@ namespace Abiogenesis3d
             Vector3 camForward = Vector3.ProjectOnPlane(cam.transform.forward, Vector3.up).normalized;
 
             return input.z * camForward + input.x * camRight;
+        }
+
+        static Vector3 GetMousePosition()
+        {
+            var mouse = Mouse.current;
+            if (mouse == null)
+                return Vector3.zero;
+
+            var position = mouse.position.ReadValue();
+            return new Vector3(position.x, position.y, 0f);
         }
 
     }

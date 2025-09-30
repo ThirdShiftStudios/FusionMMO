@@ -1,11 +1,12 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.InputSystem;
 
 namespace Abiogenesis3d
 {
     public class MouseDragUI : MonoBehaviour, IDragHandler, IBeginDragHandler
     {
-        KeyCode dragKey = KeyCode.Mouse0;
+        const int DragMouseButton = 0;
         Vector2 lastMousePosition;
         RectTransform rectTransform;
 
@@ -16,14 +17,14 @@ namespace Abiogenesis3d
 
         public void OnBeginDrag(PointerEventData eventData)
         {
-            if (!Input.GetKey(dragKey)) return;
+            if (!IsDragButtonPressed()) return;
 
             lastMousePosition = eventData.position;
         }
 
         public void OnDrag(PointerEventData eventData)
         {
-            if (!Input.GetKey(dragKey)) return;
+            if (!IsDragButtonPressed()) return;
 
             Vector2 currentMousePosition = eventData.position;
 
@@ -34,6 +35,20 @@ namespace Abiogenesis3d
 
             rectTransform.position += (Vector3)diff;
             lastMousePosition = currentMousePosition;
+        }
+        static bool IsDragButtonPressed()
+        {
+            var mouse = Mouse.current;
+            if (mouse == null)
+                return false;
+
+            return DragMouseButton switch
+            {
+                0 => mouse.leftButton.isPressed,
+                1 => mouse.rightButton.isPressed,
+                2 => mouse.middleButton.isPressed,
+                _ => false
+            };
         }
     }
 }

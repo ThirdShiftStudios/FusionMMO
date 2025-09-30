@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine.EventSystems;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace Abiogenesis3d
 {
@@ -157,7 +158,8 @@ namespace Abiogenesis3d
         bool IsPointerOverUIObject()
         {
             PointerEventData eventData = new PointerEventData(EventSystem.current);
-            eventData.position = new Vector2(Input.mousePosition.x, Input.mousePosition.y);
+            Vector3 mousePosition = GetMousePosition();
+            eventData.position = new Vector2(mousePosition.x, mousePosition.y);
 
             List<RaycastResult> results = new List<RaycastResult>();
             EventSystem.current.RaycastAll(eventData, results);
@@ -191,7 +193,7 @@ namespace Abiogenesis3d
             {
                 if (IsCamInfoDisabled(camInfo)) continue;
 
-                var ray = camInfo.cam.ScreenPointToRay(Input.mousePosition);
+                var ray = camInfo.cam.ScreenPointToRay(GetMousePosition());
                 var raycastDistance = camInfo.raycastDistance != 0 ? camInfo.raycastDistance : camInfo.cam.farClipPlane;
                 var didHit = Physics.Raycast(ray, out raycastHit, raycastDistance, camInfo.cam.cullingMask);
 
@@ -214,15 +216,15 @@ namespace Abiogenesis3d
                 // clicks
                 for (var i = 0; i < 3; i++)
                 {
-                    if (Input.GetMouseButtonDown(i))
+                    if (GetMouseButtonDown(i))
                     {
                         lastMouseDownColliderGO = raycastHit.collider.gameObject;
                         raycastHit.collider.SendMessage("OnMouseDown", msgOpts);
 
                         lastDragGO = lastMouseDownColliderGO;
-                        lastDragMousePosition = Input.mousePosition;
+                        lastDragMousePosition = GetMousePosition();
                     }
-                    else if (Input.GetMouseButtonUp(i))
+                    else if (GetMouseButtonUp(i))
                     {
                         if (lastMouseDownColliderGO == raycastHit.collider.gameObject)
                             raycastHit.collider.SendMessage("OnMouseUpAsButton", msgOpts);
@@ -238,13 +240,53 @@ namespace Abiogenesis3d
             // drag
             if (lastDragGO)
             {
-                var mouseDelta = Input.mousePosition - lastDragMousePosition;
+                var mouseDelta = GetMousePosition() - lastDragMousePosition;
                 if (mouseDelta != Vector3.zero)
                 {
                     lastDragGO.SendMessage("OnMouseDrag", mouseDelta, msgOpts);
-                    lastDragMousePosition = Input.mousePosition;
+                    lastDragMousePosition = GetMousePosition();
                 }
             }
+        }
+
+        static Vector3 GetMousePosition()
+        {
+            var mouse = Mouse.current;
+            if (mouse == null)
+                return Vector3.zero;
+
+            Vector2 position = mouse.position.ReadValue();
+            return new Vector3(position.x, position.y, 0f);
+        }
+
+        static bool GetMouseButtonDown(int button)
+        {
+            var mouse = Mouse.current;
+            if (mouse == null)
+                return false;
+
+            return button switch
+            {
+                0 => mouse.leftButton.wasPressedThisFrame,
+                1 => mouse.rightButton.wasPressedThisFrame,
+                2 => mouse.middleButton.wasPressedThisFrame,
+                _ => false
+            };
+        }
+
+        static bool GetMouseButtonUp(int button)
+        {
+            var mouse = Mouse.current;
+            if (mouse == null)
+                return false;
+
+            return button switch
+            {
+                0 => mouse.leftButton.wasReleasedThisFrame,
+                1 => mouse.rightButton.wasReleasedThisFrame,
+                2 => mouse.middleButton.wasReleasedThisFrame,
+                _ => false
+            };
         }
     }
 }

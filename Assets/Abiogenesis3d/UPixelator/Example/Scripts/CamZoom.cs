@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace Abiogenesis3d.UPixelator_Demo
 {
@@ -24,7 +25,8 @@ public class CamZoom : MonoBehaviour
     {
         float dt = Time.deltaTime;
 
-        float scrollDelta = Input.GetAxis("Mouse ScrollWheel");
+        var mouse = Mouse.current;
+        float scrollDelta = mouse != null ? mouse.scroll.ReadValue().y / 120f : 0f;
         if (scrollDelta != 0) rawDistance -= scrollDelta * sensitivity;
         rawDistance = Mathf.Clamp(rawDistance, distanceMin, distanceMax);
 
