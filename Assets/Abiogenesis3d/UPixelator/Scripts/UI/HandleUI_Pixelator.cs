@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.InputSystem;
 
 namespace Abiogenesis3d.UPixelator_Demo
 {
@@ -16,7 +17,7 @@ namespace Abiogenesis3d.UPixelator_Demo
         public GameObject uPixelatorNoteSnapDisabled;
         public GameObject uPixelatorNoteStabilizeDisabled;
 
-        public KeyCode toggleUPixelatorKey = KeyCode.Z;
+        public Key toggleUPixelatorKey = Key.Z;
         void Start()
         {
             uPixelator = FindObjectOfType<UPixelator>(true);
@@ -33,7 +34,13 @@ namespace Abiogenesis3d.UPixelator_Demo
 
         void Update()
         {
-            if (Input.GetKeyDown(toggleUPixelatorKey)) uPixelatorEnabled.isOn = !uPixelatorEnabled.isOn;
+            var keyboard = Keyboard.current;
+            if (keyboard == null)
+                return;
+
+            var keyControl = keyboard[toggleUPixelatorKey];
+            if (keyControl != null && keyControl.wasPressedThisFrame)
+                uPixelatorEnabled.isOn = !uPixelatorEnabled.isOn;
         }
 
         void DoUpdate()

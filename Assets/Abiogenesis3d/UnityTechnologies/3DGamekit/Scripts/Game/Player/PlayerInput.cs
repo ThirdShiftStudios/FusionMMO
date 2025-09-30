@@ -2,6 +2,7 @@
 using System;
 using System.Collections;
 using Gamekit3D;
+using UnityEngine.InputSystem;
 
 namespace Gamekit3D
 {
@@ -77,11 +78,11 @@ public class PlayerInput : MonoBehaviour
 
     void Update()
     {
-        m_Movement.Set(Input.GetAxis("Horizontal"), Input.GetAxis("Vertical"));
-        m_Camera.Set(Input.GetAxis("Mouse X"), Input.GetAxis("Mouse Y"));
-        m_Jump = Input.GetButton("Jump");
+        m_Movement = ReadMovementInput();
+        m_Camera = ReadCameraInput();
+        m_Jump = ReadJumpInput();
 
-        if (Input.GetButtonDown("Fire1"))
+        if (ReadAttackTriggered())
         {
             if (m_AttackWaitCoroutine != null)
                 StopCoroutine(m_AttackWaitCoroutine);
@@ -89,7 +90,7 @@ public class PlayerInput : MonoBehaviour
             m_AttackWaitCoroutine = StartCoroutine(AttackWait());
         }
 
-        // m_Pause = Input.GetButtonDown ("Pause");
+        // m_Pause = Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame;
     }
 
     IEnumerator AttackWait()
@@ -114,6 +115,54 @@ public class PlayerInput : MonoBehaviour
     public void GainControl()
     {
         m_ExternalInputBlocked = false;
+    }
+
+    static Vector2 ReadMovementInput()
+    {
+        var keyboard = Keyboard.current;
+        if (keyboard == null)
+            return Vector2.zero;
+
+        Vector2 movement = Vector2.zero;
+
+        if (keyboard.wKey.isPressed || keyboard.upArrowKey.isPressed)
+            movement.y += 1f;
+        if (keyboard.sKey.isPressed || keyboard.downArrowKey.isPressed)
+            movement.y -= 1f;
+        if (keyboard.dKey.isPressed || keyboard.rightArrowKey.isPressed)
+            movement.x += 1f;
+        if (keyboard.aKey.isPressed || keyboard.leftArrowKey.isPressed)
+            movement.x -= 1f;
+
+        return Vector2.ClampMagnitude(movement, 1f);
+    }
+
+    static Vector2 ReadCameraInput()
+    {
+        var mouse = Mouse.current;
+        return mouse != null ? mouse.delta.ReadValue() : Vector2.zero;
+    }
+
+    static bool ReadJumpInput()
+    {
+        var keyboard = Keyboard.current;
+        if (keyboard == null)
+            return false;
+
+        return keyboard.spaceKey.isPressed;
+    }
+
+    static bool ReadAttackTriggered()
+    {
+        var mouse = Mouse.current;
+        if (mouse != null && mouse.leftButton.wasPressedThisFrame)
+            return true;
+
+        var keyboard = Keyboard.current;
+        if (keyboard != null && keyboard.leftCtrlKey.wasPressedThisFrame)
+            return true;
+
+        return false;
     }
 }
 }

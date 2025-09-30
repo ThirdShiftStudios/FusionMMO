@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace Gamekit3D
 {
@@ -17,7 +18,15 @@ namespace Gamekit3D
 
         void Update ()
         {
-            transform.position = new Vector3 ((initialPosition.x + (spriteOffset * Input.mousePosition.x)), (initialPosition.y + (spriteOffset * Input.mousePosition.y)), initialPosition.z);
+            var mouse = Mouse.current;
+            if (mouse == null)
+                return;
+
+            Vector2 mousePosition = mouse.position.ReadValue();
+            transform.position = new Vector3(
+                initialPosition.x + spriteOffset * mousePosition.x,
+                initialPosition.y + spriteOffset * mousePosition.y,
+                initialPosition.z);
         }
     }
 }
