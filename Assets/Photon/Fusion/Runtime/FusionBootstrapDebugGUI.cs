@@ -1,6 +1,7 @@
 namespace Fusion {
   using System;
   using UnityEngine;
+  using UnityEngine.InputSystem;
   using System.Collections.Generic;
 
   /// <summary>
@@ -97,11 +98,16 @@ namespace Fusion {
       }
 
       if (EnableHotkeys) {
-        if (Input.GetKeyDown(KeyCode.I)) {
+        var keyboard = Keyboard.current;
+        if (keyboard == null) {
+          return;
+        }
+
+        if (keyboard.iKey.wasPressedThisFrame) {
           _networkDebugStart.StartSinglePlayer();
         }
 
-        if (Input.GetKeyDown(KeyCode.H)) {
+        if (keyboard.hKey.wasPressedThisFrame) {
           if (_isMultiplePeerMode) {
             StartHostWithClients(_networkDebugStart);
           } else {
@@ -109,7 +115,7 @@ namespace Fusion {
           }
         }
 
-        if (Input.GetKeyDown(KeyCode.S)) {
+        if (keyboard.sKey.wasPressedThisFrame) {
           if (_isMultiplePeerMode) {
             StartServerWithClients(_networkDebugStart);
           } else {
@@ -117,7 +123,7 @@ namespace Fusion {
           }
         }
 
-        if (Input.GetKeyDown(KeyCode.C)) {
+        if (keyboard.cKey.wasPressedThisFrame) {
           if (_isMultiplePeerMode) {
             StartMultipleClients(nds);
           } else {
@@ -125,7 +131,7 @@ namespace Fusion {
           }
         }
 
-        if (Input.GetKeyDown(KeyCode.A)) {
+        if (keyboard.aKey.wasPressedThisFrame) {
           if (_isMultiplePeerMode) {
             StartMultipleAutoClients(nds);
           } else {
@@ -133,7 +139,7 @@ namespace Fusion {
           }
         }
 
-        if (Input.GetKeyDown(KeyCode.P)) {
+        if (keyboard.pKey.wasPressedThisFrame) {
           if (_isMultiplePeerMode) {
             StartMultipleSharedClients(nds);
           } else {
