@@ -28,11 +28,9 @@ namespace TPSBR
 			}
 
 			_renderInput.Jump          |= gamepad.leftTrigger.isPressed;
-			_renderInput.Thrust        |= gamepad.leftTrigger.isPressed;
 			_renderInput.Attack        |= gamepad.rightTrigger.isPressed;
 			_renderInput.Interact      |= gamepad.aButton.isPressed;
 			_renderInput.Reload        |= gamepad.xButton.isPressed;
-			_renderInput.ToggleJetpack |= gamepad.bButton.isPressed;
 			_renderInput.ToggleSide    |= gamepad.yButton.isPressed;
 		}
 	}

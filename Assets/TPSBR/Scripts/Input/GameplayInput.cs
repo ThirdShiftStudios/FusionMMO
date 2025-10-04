@@ -12,8 +12,6 @@ namespace TPSBR
 		Reload        = 6,
 		Interact      = 7,
 		ToggleSide    = 8,
-		ToggleJetpack = 9,
-		Thrust        = 10,
 	}
 
 	public struct GameplayInput : INetworkInput
@@ -35,8 +33,6 @@ namespace TPSBR
 		public bool Reload        { get { return Actions.IsSet(EGameplayInputAction.Reload);        } set { Actions.Set(EGameplayInputAction.Reload,        value); } }
 		public bool Interact      { get { return Actions.IsSet(EGameplayInputAction.Interact);      } set { Actions.Set(EGameplayInputAction.Interact,      value); } }
 		public bool ToggleSide    { get { return Actions.IsSet(EGameplayInputAction.ToggleSide);    } set { Actions.Set(EGameplayInputAction.ToggleSide,    value); } }
-		public bool ToggleJetpack { get { return Actions.IsSet(EGameplayInputAction.ToggleJetpack); } set { Actions.Set(EGameplayInputAction.ToggleJetpack, value); } }
-		public bool Thrust        { get { return Actions.IsSet(EGameplayInputAction.Thrust);        } set { Actions.Set(EGameplayInputAction.Thrust,        value); } }
 	}
 
 	public static class GameplayInputActionExtensions

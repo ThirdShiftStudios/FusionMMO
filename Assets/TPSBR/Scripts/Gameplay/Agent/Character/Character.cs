@@ -16,7 +16,6 @@ namespace TPSBR
 		public Transform CameraTransformHead;
 		public Transform DefaultCameraTransform;
 		public Transform AimCameraTransform;
-		public Transform JetpackCameraTransform;
 
 		public Transform FireTransformRoot;
 		public Transform FireTransform;
@@ -211,7 +210,7 @@ namespace TPSBR
 			_characterController.ManualRenderUpdate();
 			_animationController.ManualRenderUpdate();
 
-			SetCameraState(_agent.Jetpack.IsActive == true ? ECameraState.Jetpack: (_characterController.Data.Aim == true ? ECameraState.Aim : ECameraState.Default), _agent.LeftSide);
+			SetCameraState((_characterController.Data.Aim == true ? ECameraState.Aim : ECameraState.Default), _agent.LeftSide);
 
 			RefreshCameraHeadPosition();
 			RefreshFiringPosition();
@@ -337,9 +336,6 @@ namespace TPSBR
 				case ECameraState.Aim:
 					cameraTransform = _thirdPersonView.AimCameraTransform;
 					break;
-				case ECameraState.Jetpack:
-					cameraTransform = _thirdPersonView.JetpackCameraTransform;
-					break;
 			}
 
 			if (cameraTransform == null)
@@ -426,7 +422,6 @@ namespace TPSBR
 			None,
 			Default,
 			Aim,
-			Jetpack,
 		}
 	}
 }

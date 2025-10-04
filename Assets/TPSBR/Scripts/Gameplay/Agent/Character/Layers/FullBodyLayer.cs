@@ -14,7 +14,6 @@ namespace TPSBR
 		public FallState    Fall    => _fall;
 		public LandState    Land    => _land;
 		public DeadState    Dead    => _dead;
-		public JetpackState Jetpack => _jetpack;
 
 		// PRIVATE MEMBERS
 
@@ -26,8 +25,6 @@ namespace TPSBR
 		private LandState    _land;
 		[SerializeField]
 		private DeadState    _dead;
-		[SerializeField]
-		private JetpackState _jetpack;
 
 		private KCC _kcc;
 

@@ -18,7 +18,6 @@ namespace TPSBR
 
 		private KCC                    _kcc;
 		private Weapons                _weapons;
-		private Jetpack                _jetpack;
 		private AnimationMixerPlayable _mixer;
 		private int                    _inputs;
 
@@ -57,7 +56,6 @@ namespace TPSBR
 		{
 			_kcc     = Controller.GetComponentNoAlloc<KCC>();
 			_weapons = Controller.GetComponentNoAlloc<Weapons>();
-			_jetpack = Controller.GetComponentNoAlloc<Jetpack>();
 		}
 
 		protected override void OnDespawned()
@@ -127,9 +125,6 @@ namespace TPSBR
 
 		private int GetSetID()
 		{
-			if (_jetpack.IsActive == true)
-				return -1;
-
 			int currentWeaponSlot = _weapons.CurrentWeaponSlot;
 			if (currentWeaponSlot > 2)
 			{

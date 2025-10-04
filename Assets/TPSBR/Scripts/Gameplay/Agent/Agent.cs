@@ -18,7 +18,6 @@ namespace TPSBR
 		public Weapons           Weapons      => _weapons;
 		public Health            Health       => _health;
 		public AgentSenses       Senses       => _senses;
-		public Jetpack           Jetpack      => _jetpack;
 		public AgentVFX          Effects      => _agentVFX;
 		public AgentInterestView InterestView => _interestView;
 
@@ -51,7 +50,6 @@ namespace TPSBR
 		private AgentFootsteps      _footsteps;
 		private Character           _character;
 		private Weapons             _weapons;
-		private Jetpack             _jetpack;
 		private AgentSenses         _senses;
 		private Health              _health;
 		private AgentVFX            _agentVFX;
@@ -71,7 +69,6 @@ namespace TPSBR
 			_visualRoot.SetActive(true);
 
 			_character.OnSpawned(this);
-			_jetpack.OnSpawned(this);
 			_health.OnSpawned(this);
 			_agentVFX.OnSpawned(this);
 
@@ -109,7 +106,6 @@ namespace TPSBR
 		public override void Despawned(NetworkRunner runner, bool hasState)
 		{
 			if (_weapons  != null) { _weapons.OnDespawned();  }
-			if (_jetpack  != null) { _jetpack.OnDespawned();  }
 			if (_health   != null) { _health.OnDespawned();   }
 			if (_agentVFX != null) { _agentVFX.OnDespawned(); }
 		}
@@ -121,7 +117,6 @@ namespace TPSBR
 			ProcessFixedInput();
 
 			_weapons.OnFixedUpdate();
-			_jetpack.OnFixedUpdate();
 			_character.OnFixedUpdate();
 
 			Profiler.EndSample();
@@ -223,7 +218,6 @@ namespace TPSBR
 			_health       = GetComponent<Health>();
 			_agentVFX     = GetComponent<AgentVFX>();
 			_senses       = GetComponent<AgentSenses>();
-			_jetpack      = GetComponent<Jetpack>();
 			_interestView = GetComponent<AgentInterestView>();
 		}
 
@@ -280,23 +274,6 @@ namespace TPSBR
 				_character.AnimationController.SwitchWeapons();
 			}
 
-			if (_agentInput.WasActivated(EGameplayInputAction.ToggleJetpack, input) == true)
-			{
-				if (_jetpack.IsActive == true)
-				{
-					_jetpack.Deactivate();
-				}
-				else if (_character.AnimationController.CanSwitchWeapons(true) == true)
-				{
-					_jetpack.Activate();
-				}
-			}
-
-			if (_jetpack.IsActive == true)
-			{
-				_jetpack.FullThrust = input.Thrust;
-			}
-
 			_agentInput.SetFixedInput(input, false);
 		}
 
@@ -315,7 +292,6 @@ namespace TPSBR
 
 				input.LookRotationDelta = accumulatedInput.LookRotationDelta;
 				input.Aim               = accumulatedInput.Aim;
-				input.Thrust            = accumulatedInput.Thrust;
 			}
 
 			if (input.Aim == true)

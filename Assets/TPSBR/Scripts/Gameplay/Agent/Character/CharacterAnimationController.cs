@@ -21,7 +21,6 @@ namespace TPSBR
 		private KCC             _kcc;
 		private Agent           _agent;
 		private Weapons         _weapons;
-		private Jetpack         _jetpack;
 
 		private LocomotionLayer _locomotion;
 		private FullBodyLayer   _fullBody;
@@ -42,8 +41,6 @@ namespace TPSBR
 					return false;
 				if (_fullBody.Dead.IsActive(true) == true)
 					return false;
-				if (_fullBody.Jetpack.IsActive(true) == true)
-					return false;
 			}
 
 			return true;
@@ -54,8 +51,6 @@ namespace TPSBR
 			if (_fullBody.IsActive() == true)
 			{
 				if (_fullBody.Dead.IsActive() == true)
-					return false;
-				if (_fullBody.Jetpack.IsActive() == true)
 					return false;
 			}
 
@@ -178,20 +173,7 @@ namespace TPSBR
 
 		protected override void OnFixedUpdate()
 		{
-			if (_jetpack.IsActive == true && _fullBody.Jetpack.IsActive() == false)
-			{
-				_upperBody.Reload.Deactivate(0.2f);
-
-				_weapons.DisarmCurrentWeapon();
-
-				_fullBody.Jetpack.Activate(0.1f);
-			}
-			else if (_jetpack.IsActive == false && _fullBody.Jetpack.IsActive() == true)
-			{
-				_fullBody.Jetpack.Deactivate(0.1f);
-
-				SwitchWeapons(); // Equip pending weapon
-			}
+			
 		}
 
 		protected override void OnEvaluate()
@@ -208,7 +190,6 @@ namespace TPSBR
 			_kcc        = this.GetComponentNoAlloc<KCC>();
 			_agent      = this.GetComponentNoAlloc<Agent>();
 			_weapons    = this.GetComponentNoAlloc<Weapons>();
-			_jetpack    = this.GetComponentNoAlloc<Jetpack>();
 
 			_locomotion = FindLayer<LocomotionLayer>();
 			_fullBody   = FindLayer<FullBodyLayer>();
@@ -284,7 +265,7 @@ namespace TPSBR
 
 		private bool CanSnapHand()
 		{
-			if (_fullBody.Dead.IsActive() == true || _fullBody.Jetpack.IsActive() == true)
+			if (_fullBody.Dead.IsActive() == true)
 				return false;
 
 			if (_upperBody.HasActiveState() == true)

@@ -23,8 +23,6 @@ namespace TPSBR.UI
 		[SerializeField]
 		private UIGameplayEvents _events;
 		[SerializeField]
-		private UIShrinkingArea _shrinkingArea;
-		[SerializeField]
 		private UIKillFeed _killFeed;
 		[SerializeField]
 		private UIBehaviour _spectatingGroup;
@@ -33,13 +31,7 @@ namespace TPSBR.UI
 		[SerializeField]
 		private UIHitDamageIndicator _hitDamage;
 		[SerializeField]
-		private UIJetpack _jetpack;
-		[SerializeField]
 		private UIButton _menuButton;
-
-		[Header("Gameplay Modes")]
-		[SerializeField]
-		private UIBattleRoyale _battleRoyale;
 
 		[Header("Events Setup")]
 		[SerializeField]
@@ -75,8 +67,7 @@ namespace TPSBR.UI
 			{
 				Context.Announcer.Announce += OnAnnounce;
 			}
-
-			_battleRoyale.SetActive(Context.GameplayMode is BattleRoyaleGameplayMode);
+			
 
 			if ((Application.isMobilePlatform == false || Application.isEditor == true) && Context.Settings.SimulateMobileInput == false)
 			{
@@ -138,17 +129,6 @@ namespace TPSBR.UI
 				}
 			}
 
-			var shrinkingArea = Context.GameplayMode.ShrinkingArea;
-			if (shrinkingArea != null && shrinkingArea.IsActive == true && shrinkingArea.IsPaused == false)
-			{
-				_shrinkingArea.SetActive(true);
-				_shrinkingArea.UpdateArea(Context.Runner, shrinkingArea);
-			}
-			else
-			{
-				_shrinkingArea.SetActive(false);
-			}
-
 			if (_localAgent == null)
 				return;
 
@@ -157,7 +137,6 @@ namespace TPSBR.UI
 			_weapons.UpdateWeapons(_localAgent.Weapons, _localAgent.AgentInput);
 			_crosshair.UpdateCrosshair(_localAgent);
 			_interactions.UpdateInteractions(Context, _localAgent);
-			_jetpack.UpdateJetpack(_localAgent.Jetpack);
 		}
 
 		// PRIVATE MEMBERS
@@ -278,7 +257,6 @@ namespace TPSBR.UI
 			_interactions.SetActive(true);
 			_effects.SetActive(true);
 			_spectatingGroup.SetActive(isLocalPlayer == false);
-			_jetpack.SetActive(true);
 			_weapons.SetActive(true);
 
 			_player.SetData(Context, player);
@@ -301,7 +279,6 @@ namespace TPSBR.UI
 			_interactions.SetActive(false);
 			_effects.SetActive(false);
 			_spectatingGroup.SetActive(false);
-			_jetpack.SetActive(false);
 
 			if (_localAgent != null)
 			{

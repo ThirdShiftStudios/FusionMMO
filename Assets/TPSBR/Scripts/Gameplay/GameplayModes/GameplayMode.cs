@@ -62,7 +62,6 @@ namespace TPSBR
 		public EState                State         { get; private set; }
 
 		public List<SpawnPoint>      SpawnPoints   => _allSpawnPoints;
-		public ShrinkingArea         ShrinkingArea => _shrinkingArea;
 
 		public Action<PlayerRef>     OnPlayerJoinedGame;
 		public Action<string>        OnPlayerLeftGame;
@@ -75,8 +74,6 @@ namespace TPSBR
 		protected int _startTick { get; set; }
 		[Networked, HideInInspector]
 		protected TickTimer _endTimer { get; private set; }
-		[Networked, HideInInspector]
-		protected ShrinkingArea _shrinkingArea { get; set; }
 
 		// PRIVATE MEMBERS
 
@@ -110,17 +107,6 @@ namespace TPSBR
 				_endTimer = TickTimer.CreateFromSeconds(Runner, TimeLimit);
 			}
 
-			if (_useShrinkingArea == true && HasStateAuthority == true)
-			{
-				_shrinkingArea = Runner.SimulationUnityScene.GetComponent<ShrinkingArea>();
-				if (_shrinkingArea != null && HasStateAuthority == true)
-				{
-					_shrinkingArea.Activate();
-
-					_shrinkingArea.ShrinkingAnnounced += OnShrinkingAreaAnnounced;
-				}
-			}
-
 			Runner.SimulationUnityScene.GetComponents(_allSpawnPoints);
 
 			for (int i = 0; i < _allSpawnPoints.Count; i++)
@@ -129,11 +115,6 @@ namespace TPSBR
 				{
 					_availableSpawnPoints.Add(_allSpawnPoints[i]);
 				}
-			}
-
-			if (_shrinkingArea != null && HasStateAuthority == true)
-			{
-				OnShrinkingAreaAnnounced(_shrinkingArea.Center, _shrinkingArea.Radius);
 			}
 
 			State = EState.Active;
@@ -369,10 +350,7 @@ namespace TPSBR
 
 		public override void Despawned(NetworkRunner runner, bool hasState)
 		{
-			if (_shrinkingArea != null)
-			{
-				_shrinkingArea.ShrinkingAnnounced -= OnShrinkingAreaAnnounced;
-			}
+			
 		}
 
 		public override void FixedUpdateNetwork()
@@ -558,27 +536,7 @@ namespace TPSBR
 
 			ListPool.Return(allStatistics);
 		}
-
-		private void OnShrinkingAreaAnnounced(Vector3 center, float radius)
-		{
-			_availableSpawnPoints.Clear();
-
-			var radiusSqr = radius * radius;
-
-			foreach (var spawnPoint in _allSpawnPoints)
-			{
-				if (spawnPoint.SpawnEnabled == false)
-					continue;
-
-				var direction = spawnPoint.transform.position - center;
-				direction.y   = 0f;
-
-				if (direction.sqrMagnitude <= radiusSqr)
-				{
-					_availableSpawnPoints.Add(spawnPoint);
-				}
-			}
-		}
+		
 
 		private IEnumerator StopGameCoroutine()
 		{

@@ -39,10 +39,6 @@ namespace TPSBR
 		[SerializeField]
 		private int _maxItemBoxes = 0;
 
-		[Space]
-		[SerializeField]
-		private ShrinkingArea _shrinkingArea;
-
 		[Networked]
 		private int _levelGeneratorSeed { get; set; }
 
@@ -404,18 +400,6 @@ namespace TPSBR
 			_levelGenerator.Generate(seed, _levelSize, _areaCount);
 
 			Context.Map.OverrideParameters(_levelGenerator.Center, _levelGenerator.Dimensions);
-
-			_shrinkingArea.OverrideParameters(_levelGenerator.Center, _levelGenerator.Dimensions.x * 0.5f, _levelGenerator.Dimensions.x * 0.5f, 50f);
-
-			int areaOffset = Random.Range(0, _areaCount);
-			for (int i = 0; i < _areaCount; i++)
-			{
-				int areaID = (i + areaOffset) % _areaCount;
-
-				Vector2 shrinkEnd = _levelGenerator.Areas[areaID].Center * _levelGenerator.BlockSize;
-				if (_shrinkingArea.SetEndCenter(shrinkEnd, i == _areaCount - 1) == true)
-					break;
-			}
 
 			Debug.Log($"Level generated, center: {_levelGenerator.Center}, dimensions: {_levelGenerator.Dimensions}");
 

@@ -37,7 +37,7 @@ namespace TPSBR
 		/// This makes fixed and render-predicted movement much more consistent (less prediction correction) at the cost of slight delay.
 		/// </summary>
 		[NonSerialized]
-		public EGameplayInputAction[] DeferredInputActions = new EGameplayInputAction[] { EGameplayInputAction.Attack, EGameplayInputAction.Jump, EGameplayInputAction.ToggleJetpack };
+		public EGameplayInputAction[] DeferredInputActions = new EGameplayInputAction[] { EGameplayInputAction.Attack, EGameplayInputAction.Jump};
 
 		/// <summary>
 		/// These actions trigger sending interpolation data required for render-accurate lag compensation queries.
