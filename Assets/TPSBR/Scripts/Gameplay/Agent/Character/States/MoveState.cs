@@ -53,7 +53,7 @@ namespace TPSBR
 
 			Vector3 blendPosition = _kcc.transform.InverseTransformDirection(direction).XZ0().normalized * magnitude;
 
-			if (_agent != null && _agent.Runner != null && _agent.LeftSide == true)
+			if (_agent != null && _agent.Runner != null)
 			{
 				blendPosition.x = -blendPosition.x;
 			}

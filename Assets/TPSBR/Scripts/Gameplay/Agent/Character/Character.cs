@@ -91,8 +91,6 @@ namespace TPSBR
 
 		private ECameraState                 _previousCameraState;
 		private ECameraState                 _currentCameraState;
-		private bool                         _previousLeftSide;
-		private bool                         _currentLeftSide;
 		private TransformSampler             _fireTransformSampler   = new TransformSampler();
 		private TransformSampler             _cameraTransformSampler = new TransformSampler();
 
@@ -105,7 +103,7 @@ namespace TPSBR
 
 		public TransformData GetCameraTransform(bool resolveRenderHistory)
 		{
-			TransformData transformData = GetCameraTransform(_currentCameraState, _agent.LeftSide);
+			TransformData transformData = GetCameraTransform(_currentCameraState);
 
 			if (resolveRenderHistory == true && CharacterController.IsProxy == false && _cameraTransformSampler.ResolveRenderPositionAndRotation(_characterController, _agent.AgentInput.FixedInput.LocalAlpha, out Vector3 cameraPosition, out Quaternion cameraRotation) == true)
 			{
@@ -130,12 +128,6 @@ namespace TPSBR
 			{
 				_thirdPersonView.FireTransform.GetPositionAndRotation(out firePosition, out fireRotation);
 				localFirePosition = transform.InverseTransformPoint(firePosition);
-
-				if (_agent.LeftSide == true)
-				{
-					localFirePosition.x = -localFirePosition.x;
-					firePosition = transform.TransformPoint(localFirePosition);
-				}
 			}
 
 			return new TransformData(firePosition, localFirePosition, fireRotation);
@@ -152,7 +144,7 @@ namespace TPSBR
 			_previousCameraState = ECameraState.Default;
 			_currentCameraState = ECameraState.Default;
 
-			_cameraDistance = GetCameraTransform(ECameraState.Default, false).LocalPosition.magnitude;
+			_cameraDistance = GetCameraTransform(ECameraState.Default).LocalPosition.magnitude;
 
 			_fireTransformSampler.Clear();
 			_cameraTransformSampler.Clear();
@@ -210,7 +202,7 @@ namespace TPSBR
 			_characterController.ManualRenderUpdate();
 			_animationController.ManualRenderUpdate();
 
-			SetCameraState((_characterController.Data.Aim == true ? ECameraState.Aim : ECameraState.Default), _agent.LeftSide);
+			SetCameraState(_characterController.Data.Aim == true ? ECameraState.Aim : ECameraState.Default);
 
 			RefreshCameraHeadPosition();
 			RefreshFiringPosition();
@@ -236,21 +228,20 @@ namespace TPSBR
 			_targetFOV = _characterController.Data.Aim == true ? aimFOV : _defaultFOV;
 			_camera.Camera.fieldOfView = Mathf.Lerp(_camera.Camera.fieldOfView, _targetFOV, _fovChangeSpeed * Time.deltaTime);
 
-			if (_previousCameraState != _currentCameraState || _previousLeftSide != _currentLeftSide)
+			if (_previousCameraState != _currentCameraState)
 			{
 				_cameraChangeTime += Time.deltaTime;
 
 				if (_cameraChangeTime >= _cameraChangeDuration)
 				{
 					_previousCameraState = _currentCameraState;
-					_previousLeftSide = _currentLeftSide;
 				}
 			}
 
-			if (_previousCameraState != _currentCameraState || _previousLeftSide != _currentLeftSide)
+			if (_previousCameraState != _currentCameraState)
 			{
-				var previousCameraTransform = GetCameraTransform(_previousCameraState, _previousLeftSide);
-				var currentCameraTransform = GetCameraTransform(_currentCameraState, _currentLeftSide);
+				var previousCameraTransform = GetCameraTransform(_previousCameraState);
+				var currentCameraTransform = GetCameraTransform(_currentCameraState);
 
 				float progress = _cameraChangeTime / _cameraChangeDuration;
 
@@ -278,7 +269,7 @@ namespace TPSBR
 			}
 			else
 			{
-				var cameraTransform = GetCameraTransform(_currentCameraState, _currentLeftSide);
+				var cameraTransform = GetCameraTransform(_currentCameraState);
 
 				float maxCameraDistance = cameraTransform.LocalPosition.magnitude;
 				_cameraDistance = Mathf.Clamp(_cameraDistance + maxCameraDistance * 8.0f * Time.deltaTime, 0.0f, maxCameraDistance);
@@ -324,7 +315,7 @@ namespace TPSBR
 
 		// PRIVATE METHODS
 
-		private TransformData GetCameraTransform(ECameraState cameraState, bool leftSide)
+		private TransformData GetCameraTransform(ECameraState cameraState)
 		{
 			Transform cameraTransform = null;
 
@@ -342,9 +333,6 @@ namespace TPSBR
 				return default;
 
 			var transformData = new TransformData(cameraTransform.position, cameraTransform.position - cameraTransform.parent.position, cameraTransform.rotation);
-
-			if (leftSide == false)
-				return transformData;
 
 			transformData.Position = transform.TransformPoint(MultiplyVector(transform.InverseTransformPoint(transformData.Position), -1.0f, 1.0f, 1.0f));
 			transformData.LocalPosition = transformData.Position - transform.TransformPoint(MultiplyVector(transform.InverseTransformPoint(cameraTransform.parent.position), -1.0f, 1.0f, 1.0f));
@@ -378,7 +366,7 @@ namespace TPSBR
 
 		private void RefreshCameraHeadPosition()
 		{
-			_thirdPersonView.RootBone.localScale = new Vector3(_agent.LeftSide == true ? -1.0f : 1.0f, 1.0f, 1.0f);
+			_thirdPersonView.RootBone.localScale = new Vector3(1.0f, 1.0f, 1.0f);
 
 			Vector3 currentHeadOffset    = _thirdPersonView.HeadTransform.position - transform.position;
 			Vector3 headOffsetDifference = currentHeadOffset - _defaultHeadOffset;
@@ -394,17 +382,15 @@ namespace TPSBR
 			_thirdPersonView.FireTransformRoot.localPosition = _defaultFireTransformPosition;
 		}
 
-		private void SetCameraState(ECameraState state, bool leftSide)
+		private void SetCameraState(ECameraState state)
 		{
-			if (state == _currentCameraState && leftSide == _currentLeftSide)
+			if (state == _currentCameraState)
 				return;
 
 			_previousCameraState = _currentCameraState;
-			_previousLeftSide = _currentLeftSide;
 			_currentCameraState = state;
-			_currentLeftSide = leftSide;
 			_cameraChangeTime = 0f;
-			_cameraDistance = Mathf.Max(_cameraDistance, GetCameraTransform(_currentCameraState, _currentLeftSide).LocalPosition.magnitude);
+			_cameraDistance = Mathf.Max(_cameraDistance, GetCameraTransform(_currentCameraState).LocalPosition.magnitude);
 		}
 
 		private static Vector3 MultiplyVector(Vector3 vector, float x, float y, float z)

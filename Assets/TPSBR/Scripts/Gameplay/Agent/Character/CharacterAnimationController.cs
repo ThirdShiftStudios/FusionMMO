@@ -104,26 +104,8 @@ namespace TPSBR
 			_upperBody.Grenade.ProcessThrow(start, hold);
 		}
 
-		public bool StartReload()
-		{
-			if (_upperBody.Grenade.IsActive() == true)
-				return _upperBody.Grenade.ProcessReload();
-
-			if (_fullBody.Dead.IsActive() == true)
-				return false;
-			if (_upperBody.Reload.IsActive() == true)
-				return true;
-			if (_upperBody.HasActiveState() == true)
-				return false;
-
-			_upperBody.Reload.Activate(0.2f);
-			return true;
-		}
-
 		public void SwitchWeapons()
 		{
-			_upperBody.Reload.Deactivate(0.2f);
-
 			if (_weapons.PendingWeapon is ThrowableWeapon)
 			{
 				_upperBody.Grenade.Equip();
@@ -233,13 +215,11 @@ namespace TPSBR
 			Transform leftHandTarget = _weapons.CurrentWeapon.LeftHandTarget;
 			if (leftHandTarget != null)
 			{
-				bool leftSide = _agent.LeftSide;
-
 				Vector3    leftHandLocalPosition       = _leftLowerArm.InverseTransformPoint(_leftHand.position);
 				Vector3    leftHandTargetLocalPosition = _leftLowerArm.InverseTransformPoint(leftHandTarget.position);
 				Quaternion leftLowerArmRotation        = Quaternion.FromToRotation(leftHandLocalPosition, leftHandTargetLocalPosition);
 
-				_leftLowerArm.rotation *= leftSide == true ? Quaternion.Inverse(leftLowerArmRotation) : leftLowerArmRotation;
+				_leftLowerArm.rotation *=  leftLowerArmRotation;
 
 				for (int i = 0; i < 2; ++i)
 				{
@@ -249,13 +229,13 @@ namespace TPSBR
 					Vector3    leftLowerArmTargetLocalPosition = _leftUpperArm.InverseTransformPoint(leftLowerArmTargetPosition);
 					Quaternion leftUpperArmRotation            = Quaternion.FromToRotation(leftLowerArmLocalPosition, leftLowerArmTargetLocalPosition);
 
-					_leftUpperArm.rotation *= leftSide == true ? Quaternion.Inverse(leftUpperArmRotation) : leftUpperArmRotation;
+					_leftUpperArm.rotation *= leftUpperArmRotation;
 
 					leftHandLocalPosition       = _leftLowerArm.InverseTransformPoint(_leftHand.position);
 					leftHandTargetLocalPosition = _leftLowerArm.InverseTransformPoint(leftHandTarget.position);
 					leftLowerArmRotation        = Quaternion.FromToRotation(leftHandLocalPosition, leftHandTargetLocalPosition);
 
-					_leftLowerArm.rotation *= leftSide == true ? Quaternion.Inverse(leftLowerArmRotation) : leftLowerArmRotation;
+					_leftLowerArm.rotation *= leftLowerArmRotation;
 				}
 
 				_leftHand.position = leftHandTarget.position;
@@ -270,8 +250,6 @@ namespace TPSBR
 
 			if (_upperBody.HasActiveState() == true)
 			{
-				if (_upperBody.Reload.IsFinished(0.85f) == true)
-					return true;
 				if (_upperBody.Equip.IsFinished(0.75f) == true)
 					return true;
 

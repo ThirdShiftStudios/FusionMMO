@@ -9,16 +9,11 @@ namespace TPSBR
 	{
 		// PRIVATE MEMBERS
 
-		[SerializeField]
-		private ClipState _holdState;
-		[SerializeField]
-		private ClipState _armState;
-		[SerializeField]
-		private ClipState _throwState;
-		[SerializeField]
-		private ClipState _reloadState;
-		[SerializeField]
-		private ClipState _equipState;
+		[SerializeField] private ClipState _holdState;
+		[SerializeField] private ClipState _armState;
+		[SerializeField] private ClipState _throwState;
+		[SerializeField] private ClipState _reloadState;
+		[SerializeField] private ClipState _equipState;
 
 		private Weapons _weapons;
 

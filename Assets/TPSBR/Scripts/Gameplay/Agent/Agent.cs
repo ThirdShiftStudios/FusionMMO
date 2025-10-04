@@ -21,9 +21,6 @@ namespace TPSBR
 		public AgentVFX          Effects      => _agentVFX;
 		public AgentInterestView InterestView => _interestView;
 
-		[Networked]
-		public NetworkBool LeftSide { get; private set; }
-
 		// PRIVATE MEMBERS
 
 		[SerializeField]
@@ -95,7 +92,6 @@ namespace TPSBR
 				gameplayInput.LookRotationDelta = new Vector2(UnityEngine.Random.value * 2.0f - 1.0f, UnityEngine.Random.value * 2.0f - 1.0f);
 				gameplayInput.Jump              = UnityEngine.Random.value > 0.99f;
 				gameplayInput.Attack            = UnityEngine.Random.value > 0.99f;
-				gameplayInput.Reload            = UnityEngine.Random.value > 0.99f;
 				gameplayInput.Interact          = UnityEngine.Random.value > 0.99f;
 				gameplayInput.Weapon            = (byte)(UnityEngine.Random.value > 0.99f ? (UnityEngine.Random.value > 0.25f ? 2 : 1) : 0);
 
@@ -197,11 +193,9 @@ namespace TPSBR
 			// This method execution is sorted by LocalAlpha property passed in input and preserves realtime order of input actions.
 
 			bool attackWasActivated   = _agentInput.WasActivated(EGameplayInputAction.Attack);
-			bool reloadWasActivated   = _agentInput.WasActivated(EGameplayInputAction.Reload);
 			bool interactWasActivated = _agentInput.WasActivated(EGameplayInputAction.Interact);
 
 			TryFire(attackWasActivated, _agentInput.FixedInput.Attack);
-			TryReload(reloadWasActivated == false);
 
 			_interactions.TryInteract(interactWasActivated, _agentInput.FixedInput.Interact);
 		}
@@ -234,21 +228,7 @@ namespace TPSBR
 			{
 				input = _agentInput.FixedInput;
 			}
-
-			if (input.Aim == true)
-			{
-				input.Aim &= CanAim(kccFixedData);
-			}
-
-			if (input.Aim == true)
-			{
-				if (_weapons.CurrentWeapon != null && _weapons.CurrentWeapon.HitType == EHitType.Sniper)
-				{
-					input.LookRotationDelta *= 0.3f;
-				}
-			}
-
-			kcc.SetAim(input.Aim);
+			
 
 			if (_agentInput.WasActivated(EGameplayInputAction.Jump, input) == true && _character.AnimationController.CanJump() == true)
 			{
@@ -259,11 +239,6 @@ namespace TPSBR
 			_weapons.SetRecoil(newRecoil);
 
 			kcc.SetInputDirection(input.MoveDirection.IsZero() == true ? Vector3.zero : kcc.FixedData.TransformRotation * input.MoveDirection.X0Y());
-
-			if (_agentInput.WasActivated(EGameplayInputAction.ToggleSide, input) == true)
-			{
-				LeftSide = !LeftSide;
-			}
 
 			if (input.Weapon > 0 && _character.AnimationController.CanSwitchWeapons(true) == true && _weapons.SwitchWeapon(input.Weapon - 1) == true)
 			{
@@ -291,27 +266,12 @@ namespace TPSBR
 				var accumulatedInput = _agentInput.AccumulatedInput;
 
 				input.LookRotationDelta = accumulatedInput.LookRotationDelta;
-				input.Aim               = accumulatedInput.Aim;
 			}
-
-			if (input.Aim == true)
-			{
-				input.Aim &= CanAim(kccFixedData);
-			}
-
-			if (input.Aim == true)
-			{
-				if (_weapons.CurrentWeapon != null && _weapons.CurrentWeapon.HitType == EHitType.Sniper)
-				{
-					input.LookRotationDelta *= 0.3f;
-				}
-			}
+			
 
 			SetLookRotation(kccFixedData, input.LookRotationDelta, _weapons.GetRecoil(), out Vector2 newRecoil);
 
 			kcc.SetInputDirection(input.MoveDirection.IsZero() == true ? Vector3.zero : kcc.RenderData.TransformRotation * input.MoveDirection.X0Y());
-
-			kcc.SetAim(input.Aim);
 
 			if (_agentInput.WasActivated(EGameplayInputAction.Jump, input) == true && _character.AnimationController.CanJump() == true)
 			{
@@ -349,17 +309,6 @@ namespace TPSBR
 						}
 					}
 				}
-			}
-		}
-
-		private void TryReload(bool autoReload)
-		{
-			if (_weapons.CanReloadWeapon(autoReload) == false)
-				return;
-
-			if (_character.AnimationController.StartReload() == true)
-			{
-				_weapons.Reload();
 			}
 		}
 
@@ -408,7 +357,6 @@ namespace TPSBR
 			lookRotationDelta.x = Mathf.Clamp(baseLookRotation.x + lookRotationDelta.x, -_topCameraAngleLimit, _bottomCameraAngleLimit) - baseLookRotation.x;
 
 			_character.CharacterController.SetLookRotation(baseLookRotation + recoil + lookRotationDelta);
-			_character.CharacterController.SetRecoil(recoil);
 
 			_character.AnimationController.Turn(lookRotationDelta.y);
 

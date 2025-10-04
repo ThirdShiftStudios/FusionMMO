@@ -7,11 +7,8 @@ namespace TPSBR
 	public enum EGameplayInputAction
 	{
 		Jump          = 1,
-		Aim           = 2,
-		Attack        = 3,
-		Reload        = 6,
-		Interact      = 7,
-		ToggleSide    = 8,
+		Attack        = 2,
+		Interact      = 3,
 	}
 
 	public struct GameplayInput : INetworkInput
@@ -28,11 +25,8 @@ namespace TPSBR
 		public int            InterpolationToTick;   // This value is used for render-accurate lag compensated casts.
 
 		public bool Jump          { get { return Actions.IsSet(EGameplayInputAction.Jump);          } set { Actions.Set(EGameplayInputAction.Jump,          value); } }
-		public bool Aim           { get { return Actions.IsSet(EGameplayInputAction.Aim);           } set { Actions.Set(EGameplayInputAction.Aim,           value); } }
 		public bool Attack        { get { return Actions.IsSet(EGameplayInputAction.Attack);        } set { Actions.Set(EGameplayInputAction.Attack,        value); } }
-		public bool Reload        { get { return Actions.IsSet(EGameplayInputAction.Reload);        } set { Actions.Set(EGameplayInputAction.Reload,        value); } }
 		public bool Interact      { get { return Actions.IsSet(EGameplayInputAction.Interact);      } set { Actions.Set(EGameplayInputAction.Interact,      value); } }
-		public bool ToggleSide    { get { return Actions.IsSet(EGameplayInputAction.ToggleSide);    } set { Actions.Set(EGameplayInputAction.ToggleSide,    value); } }
 	}
 
 	public static class GameplayInputActionExtensions

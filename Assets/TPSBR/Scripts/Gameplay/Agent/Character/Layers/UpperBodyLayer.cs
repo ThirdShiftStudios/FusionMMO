@@ -6,16 +6,11 @@ namespace TPSBR
 	public sealed class UpperBodyLayer : AnimationLayer
 	{
 		// PUBLIC MEMBERS
-
-		public ReloadState  Reload  => _reload;
 		public EquipState   Equip   => _equip;
 		public UnequipState Unequip => _unequip;
 		public GrenadeState Grenade => _grenade;
 
 		// PRIVATE MEMBERS
-
-		[SerializeField]
-		private ReloadState  _reload;
 		[SerializeField]
 		private EquipState   _equip;
 		[SerializeField]
@@ -34,11 +29,6 @@ namespace TPSBR
 
 		protected override void OnFixedUpdate()
 		{
-			if (_reload.IsFinished(1.0f) == true)
-			{
-				_reload.Deactivate(0.2f);
-			}
-
 			float disarmTime = _unequip.DisarmTime;
 			float switchTime = _unequip.SwitchTime;
 			if (_weapons.PendingWeaponSlot > 0 && switchTime < disarmTime)
