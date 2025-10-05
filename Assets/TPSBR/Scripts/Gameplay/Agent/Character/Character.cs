@@ -334,8 +334,8 @@ namespace TPSBR
 
 			var transformData = new TransformData(cameraTransform.position, cameraTransform.position - cameraTransform.parent.position, cameraTransform.rotation);
 
-			transformData.Position = transform.TransformPoint(MultiplyVector(transform.InverseTransformPoint(transformData.Position), -1.0f, 1.0f, 1.0f));
-			transformData.LocalPosition = transformData.Position - transform.TransformPoint(MultiplyVector(transform.InverseTransformPoint(cameraTransform.parent.position), -1.0f, 1.0f, 1.0f));
+			transformData.Position = transform.TransformPoint(MultiplyVector(transform.InverseTransformPoint(transformData.Position), 1.0f, 1.0f, 1.0f));
+			transformData.LocalPosition = transformData.Position - transform.TransformPoint(MultiplyVector(transform.InverseTransformPoint(cameraTransform.parent.position), 1.0f, 1.0f, 1.0f));
 
 			return transformData;
 		}
