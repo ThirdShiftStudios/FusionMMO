@@ -611,7 +611,7 @@ namespace TPSBR
 		private byte GetWeaponInput(Keyboard keyboard)
 		{
 			if (keyboard.qKey.wasPressedThisFrame == true)
-				return (byte)(_agent.Weapons.PreviousWeaponSlot + 1); // Fast switch
+				return (byte)(_agent.Inventory.PreviousWeaponSlot + 1); // Fast switch
 
 			int weaponSlot = -1;
 
@@ -635,10 +635,10 @@ namespace TPSBR
 			// Grenades (grenades are under slot 5, 6, 7 - but we cycle them with 4 numped key)
 			if (weaponSlot == 3)
 			{
-				int currentWeaponSlot = _agent.Weapons.CurrentWeaponSlot;
+				int currentWeaponSlot = _agent.Inventory.CurrentWeaponSlot;
 				int grenadesStart = IsCyclingGrenades == true && currentWeaponSlot < 7 ? Mathf.Max(currentWeaponSlot, 4) : 4;
 
-				int grenadeToSwitch = _agent.Weapons.GetNextWeaponSlot(grenadesStart, 4);
+				int grenadeToSwitch = _agent.Inventory.GetNextWeaponSlot(grenadesStart, 4);
 
 				_grenadesCyclingStartTime = Time.time;
 

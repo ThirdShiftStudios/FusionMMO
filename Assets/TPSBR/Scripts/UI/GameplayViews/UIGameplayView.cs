@@ -134,7 +134,7 @@ namespace TPSBR.UI
 
 			_health.UpdateHealth(_localAgent.Health);
 			_effects.UpdateEffects(_localAgent);
-			_weapons.UpdateWeapons(_localAgent.Weapons, _localAgent.AgentInput);
+			_weapons.UpdateWeapons(_localAgent.Inventory, _localAgent.AgentInput);
 			_crosshair.UpdateCrosshair(_localAgent);
 			_interactions.UpdateInteractions(Context, _localAgent);
 		}

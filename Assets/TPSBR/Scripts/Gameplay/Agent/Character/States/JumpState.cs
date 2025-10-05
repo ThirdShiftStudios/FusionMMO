@@ -6,7 +6,7 @@ namespace TPSBR
 	{
 		// PRIVATE MEMBERS
 
-		private Weapons _weapons;
+		private Inventory _inventory;
 
 		// AnimationState INTERFACE
 
@@ -14,7 +14,7 @@ namespace TPSBR
 		{
 			base.OnInitialize();
 
-			_weapons = Controller.GetComponentNoAlloc<Weapons>();
+			_inventory = Controller.GetComponentNoAlloc<Inventory>();
 		}
 	}
 }

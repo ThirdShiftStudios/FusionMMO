@@ -7,16 +7,16 @@ namespace TPSBR
 	{
 		// PRIVATE MEMBERS
 
-		private Weapons _weapons;
+		private Inventory _inventory;
 
 		// MultiClipState INTERFACE
 
 		protected override int GetClipID()
 		{
-			if (_weapons.CurrentWeaponSlot > 2)
+			if (_inventory.CurrentWeaponSlot > 2)
 				return 1; // For grenades we use pistol set
 
-			return Mathf.Max(0, _weapons.CurrentWeaponSlot);
+			return Mathf.Max(0, _inventory.CurrentWeaponSlot);
 		}
 
 		// AnimationState INTERFACE
@@ -25,7 +25,7 @@ namespace TPSBR
 		{
 			base.OnInitialize();
 
-			_weapons = Controller.GetComponentNoAlloc<Weapons>();
+			_inventory = Controller.GetComponentNoAlloc<Inventory>();
 		}
 	}
 }

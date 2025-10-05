@@ -26,7 +26,7 @@ namespace TPSBR
 
 		private KCC     _kcc;
 		private Agent   _agent;
-		private Weapons _weapons;
+		private Inventory _inventory;
 		private Vector3 _fixedDirection;
 		private float   _fixedMagnitude;
 		private Vector3 _interpolatedDirection;
@@ -69,7 +69,7 @@ namespace TPSBR
 
 		public override int GetSetID()
 		{
-			int currentWeaponSlot = _weapons.CurrentWeaponSlot;
+			int currentWeaponSlot = _inventory.CurrentWeaponSlot;
 			if (currentWeaponSlot > 2)
 			{
 				currentWeaponSlot = 1; // For grenades we use pistol set
@@ -89,7 +89,7 @@ namespace TPSBR
 
 			_kcc     = Controller.GetComponentNoAlloc<KCC>();
 			_agent   = Controller.GetComponentNoAlloc<Agent>();
-			_weapons = Controller.GetComponentNoAlloc<Weapons>();
+			_inventory = Controller.GetComponentNoAlloc<Inventory>();
 		}
 
 		protected override void OnSpawned()
@@ -263,7 +263,7 @@ namespace TPSBR
 
 		private float GetMultiplier()
 		{
-			switch (_weapons.CurrentWeaponSlot)
+			switch (_inventory.CurrentWeaponSlot)
 			{
 				case 0: { return 1.0f;  }
 				case 1: { return 0.95f; }

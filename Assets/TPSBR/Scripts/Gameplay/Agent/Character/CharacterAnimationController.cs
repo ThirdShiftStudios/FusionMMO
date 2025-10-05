@@ -20,7 +20,7 @@ namespace TPSBR
 
 		private KCC             _kcc;
 		private Agent           _agent;
-		private Weapons         _weapons;
+		private Inventory         _inventory;
 
 		private LocomotionLayer _locomotion;
 		private FullBodyLayer   _fullBody;
@@ -142,7 +142,7 @@ namespace TPSBR
 
 			_kcc        = this.GetComponentNoAlloc<KCC>();
 			_agent      = this.GetComponentNoAlloc<Agent>();
-			_weapons    = this.GetComponentNoAlloc<Weapons>();
+			_inventory    = this.GetComponentNoAlloc<Inventory>();
 
 			_locomotion = FindLayer<LocomotionLayer>();
 			_fullBody   = FindLayer<FullBodyLayer>();
@@ -160,13 +160,13 @@ namespace TPSBR
 		{
 			if (ApplicationSettings.IsBatchServer == true)
 				return;
-			if (_weapons.CurrentWeapon == null || CanSnapHand() == false)
+			if (_inventory.CurrentWeapon == null || CanSnapHand() == false)
 				return;
 
-			Transform weaponHandle = _weapons.CurrentWeaponHandle;
+			Transform weaponHandle = _inventory.CurrentWeaponHandle;
 			if (HasInputAuthority == true || _agent.IsObserved == true)
 			{
-				weaponHandle.localRotation = _weapons.CurrentWeaponBaseRotation;
+				weaponHandle.localRotation = _inventory.CurrentWeaponBaseRotation;
 
 				Quaternion handleRotation = weaponHandle.rotation;
 				Quaternion targetRotation = Quaternion.LookRotation(_agent.Context.Camera.transform.position + _agent.Context.Camera.transform.forward * 100.0f - weaponHandle.position);
@@ -183,7 +183,7 @@ namespace TPSBR
 				weaponHandle.rotation = Quaternion.LookRotation(_kcc.FixedData.LookDirection);
 			}
 
-			Transform leftHandTarget = _weapons.CurrentWeapon.LeftHandTarget;
+			Transform leftHandTarget = _inventory.CurrentWeapon.LeftHandTarget;
 			if (leftHandTarget != null)
 			{
 				Vector3    leftHandLocalPosition       = _leftLowerArm.InverseTransformPoint(_leftHand.position);

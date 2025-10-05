@@ -17,7 +17,7 @@ namespace TPSBR
 		private LookSet[] _sets;
 
 		private KCC                    _kcc;
-		private Weapons                _weapons;
+		private Inventory                _inventory;
 		private AnimationMixerPlayable _mixer;
 		private int                    _inputs;
 
@@ -55,7 +55,7 @@ namespace TPSBR
 		protected override void OnInitialize()
 		{
 			_kcc     = Controller.GetComponentNoAlloc<KCC>();
-			_weapons = Controller.GetComponentNoAlloc<Weapons>();
+			_inventory = Controller.GetComponentNoAlloc<Inventory>();
 		}
 
 		protected override void OnDespawned()
@@ -125,7 +125,7 @@ namespace TPSBR
 
 		private int GetSetID()
 		{
-			int currentWeaponSlot = _weapons.CurrentWeaponSlot;
+			int currentWeaponSlot = _inventory.CurrentWeaponSlot;
 			if (currentWeaponSlot > 2)
 			{
 				currentWeaponSlot = 1; // For grenades we use pistol set

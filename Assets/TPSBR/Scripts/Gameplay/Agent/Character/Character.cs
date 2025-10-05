@@ -220,9 +220,9 @@ namespace TPSBR
 				return;
 
 			float aimFOV = _aimFOV;
-			if (_agent.Weapons.CurrentWeapon != null && _agent.Weapons.CurrentWeapon.AimFOV > 1.0f)
+			if (_agent.Inventory.CurrentWeapon != null && _agent.Inventory.CurrentWeapon.AimFOV > 1.0f)
 			{
-				aimFOV = _agent.Weapons.CurrentWeapon.AimFOV;
+				aimFOV = _agent.Inventory.CurrentWeapon.AimFOV;
 			}
 
 			_targetFOV = _characterController.Data.Aim == true ? aimFOV : _defaultFOV;

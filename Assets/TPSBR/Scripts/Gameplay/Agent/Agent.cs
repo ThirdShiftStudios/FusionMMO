@@ -15,7 +15,7 @@ namespace TPSBR
 		public AgentInput        AgentInput   => _agentInput;
 		public Interactions      Interactions => _interactions;
 		public Character         Character    => _character;
-		public Weapons           Weapons      => _weapons;
+		public Inventory           Inventory      => _inventory;
 		public Health            Health       => _health;
 		public AgentSenses       Senses       => _senses;
 		public AgentVFX          Effects      => _agentVFX;
@@ -46,7 +46,7 @@ namespace TPSBR
 		private Interactions        _interactions;
 		private AgentFootsteps      _footsteps;
 		private Character           _character;
-		private Weapons             _weapons;
+		private Inventory             _inventory;
 		private AgentSenses         _senses;
 		private Health              _health;
 		private AgentVFX            _agentVFX;
@@ -101,7 +101,7 @@ namespace TPSBR
 
 		public override void Despawned(NetworkRunner runner, bool hasState)
 		{
-			if (_weapons  != null) { _weapons.OnDespawned();  }
+			if (_inventory  != null) { _inventory.OnDespawned();  }
 			if (_health   != null) { _health.OnDespawned();   }
 			if (_agentVFX != null) { _agentVFX.OnDespawned(); }
 		}
@@ -112,7 +112,7 @@ namespace TPSBR
 
 			ProcessFixedInput();
 
-			_weapons.OnFixedUpdate();
+			_inventory.OnFixedUpdate();
 			_character.OnFixedUpdate();
 
 			Profiler.EndSample();
@@ -208,7 +208,7 @@ namespace TPSBR
 			_interactions = GetComponent<Interactions>();
 			_footsteps    = GetComponent<AgentFootsteps>();
 			_character    = GetComponent<Character>();
-			_weapons      = GetComponent<Weapons>();
+			_inventory      = GetComponent<Inventory>();
 			_health       = GetComponent<Health>();
 			_agentVFX     = GetComponent<AgentVFX>();
 			_senses       = GetComponent<AgentSenses>();
@@ -235,8 +235,7 @@ namespace TPSBR
 				kcc.Jump(Vector3.up * _jumpPower);
 			}
 
-			SetLookRotation(kccFixedData, input.LookRotationDelta, _weapons.GetRecoil(), out Vector2 newRecoil);
-			_weapons.SetRecoil(newRecoil);
+			SetLookRotation(kccFixedData, input.LookRotationDelta, _inventory.GetRecoil(), out Vector2 newRecoil);
 
 			kcc.SetInputDirection(input.MoveDirection.IsZero() == true ? Vector3.zero : kcc.FixedData.TransformRotation * input.MoveDirection.X0Y());
 
@@ -260,7 +259,7 @@ namespace TPSBR
 			}
 			
 
-			SetLookRotation(kccFixedData, input.LookRotationDelta, _weapons.GetRecoil(), out Vector2 newRecoil);
+			SetLookRotation(kccFixedData, input.LookRotationDelta, _inventory.GetRecoil(), out Vector2 newRecoil);
 
 			kcc.SetInputDirection(input.MoveDirection.IsZero() == true ? Vector3.zero : kcc.RenderData.TransformRotation * input.MoveDirection.X0Y());
 
@@ -272,8 +271,8 @@ namespace TPSBR
 
 		private void TryFire(bool attack, bool hold)
 		{
-			var currentWeapon = _weapons.CurrentWeapon;
-			if (currentWeapon is ThrowableWeapon && currentWeapon.WeaponSlot == _weapons.CurrentWeaponSlot)
+			var currentWeapon = _inventory.CurrentWeapon;
+			if (currentWeapon is ThrowableWeapon && currentWeapon.WeaponSlot == _inventory.CurrentWeaponSlot)
 			{
 				// Fire is handled form the grenade animation state itself
 				_character.AnimationController.ProcessThrow(attack, hold);
@@ -282,12 +281,12 @@ namespace TPSBR
 
 			if (hold == false)
 				return;
-			if (_weapons.CanFireWeapon(attack) == false)
+			if (_inventory.CanFireWeapon(attack) == false)
 				return;
 
 			if (_character.AnimationController.StartFire() == true)
 			{
-				if (_weapons.Fire() == true)
+				if (_inventory.Fire() == true)
 				{
 					_health.ResetRegenDelay();
 
@@ -308,7 +307,7 @@ namespace TPSBR
 			if (kccData.IsGrounded == false)
 				return false;
 
-			return _weapons.CanAim();
+			return _inventory.CanAim();
 		}
 
 		private void SetLookRotation(KCCData kccData, Vector2 lookRotationDelta, Vector2 recoil, out Vector2 newRecoil)

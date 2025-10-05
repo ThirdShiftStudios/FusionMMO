@@ -12,13 +12,13 @@ namespace TPSBR
 		[SerializeField]
 		private GrenadeState _grenade;
 
-		private Weapons      _weapons;
+		private Inventory      _inventory;
 
 		// AnimationLayer INTERFACE
 
 		protected override void OnInitialize()
 		{
-			_weapons = Controller.GetComponentNoAlloc<Weapons>();
+			_inventory = Controller.GetComponentNoAlloc<Inventory>();
 		}
 
 		protected override void OnFixedUpdate()

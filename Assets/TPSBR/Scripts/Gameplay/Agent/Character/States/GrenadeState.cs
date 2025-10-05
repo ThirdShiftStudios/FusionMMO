@@ -15,7 +15,7 @@ namespace TPSBR
 		[SerializeField] private ClipState _reloadState;
 		[SerializeField] private ClipState _equipState;
 
-		private Weapons _weapons;
+		private Inventory _inventory;
 
 		// PUBLIC METHODS
 
@@ -30,7 +30,7 @@ namespace TPSBR
 				if (time > 0.45f)
 				{
 					// Fire half way in throw
-					_weapons.Fire();
+					_inventory.Fire();
 				}
 
 				if (time < 0.95f)
@@ -43,13 +43,13 @@ namespace TPSBR
 			if (activeState == _reloadState && _reloadState.IsFinished(0.8f) == false)
 				return; // Wait for reload to finish
 
-			if (activeState == _armState && hold == false && _weapons.CanFireWeapon(start) == true)
+			if (activeState == _armState && hold == false && _inventory.CanFireWeapon(start) == true)
 			{
 				_throwState.Activate(0.15f);
 			}
-			else if ((activeState == _holdState || activeState == _reloadState) && (start == true || hold == true) && _weapons.CanFireWeapon(start) == true)
+			else if ((activeState == _holdState || activeState == _reloadState) && (start == true || hold == true) && _inventory.CanFireWeapon(start) == true)
 			{
-				(_weapons.CurrentWeapon as ThrowableWeapon).ArmProjectile();
+				(_inventory.CurrentWeapon as ThrowableWeapon).ArmProjectile();
 				_armState.Activate(0.25f);
 			}
 			else if (activeState != _holdState && start == false && hold == false)
@@ -85,7 +85,7 @@ namespace TPSBR
 
 		protected override void OnInitialize()
 		{
-			_weapons = GetComponentInParent<Weapons>();
+			_inventory = GetComponentInParent<Inventory>();
 		}
 
 		protected override void OnFixedUpdate()
@@ -94,7 +94,7 @@ namespace TPSBR
 
 			if (activeState == _equipState && _equipState.AnimationTime > 0.5f)
 			{
-				_weapons.ArmCurrentWeapon();
+				_inventory.ArmCurrentWeapon();
 			}
 
 			if (activeState == _throwState && _throwState.AnimationTime > 0.95f)
@@ -102,7 +102,7 @@ namespace TPSBR
 				_holdState.Activate(0.25f);
 			}
 
-			if (_weapons.CurrentWeapon is ThrowableWeapon == false)
+			if (_inventory.CurrentWeapon is ThrowableWeapon == false)
 			{
 				Deactivate(0.2f);
 			}

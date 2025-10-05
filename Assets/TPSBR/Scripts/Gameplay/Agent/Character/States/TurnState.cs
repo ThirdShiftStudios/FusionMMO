@@ -40,7 +40,7 @@ namespace TPSBR
 
 		private KCC                    _kcc;
 		private Agent                  _agent;
-		private Weapons                _weapons;
+		private Inventory                _inventory;
 		private AnimationMixerPlayable _mixer;
 
 		// PUBLIC METHODS
@@ -81,7 +81,7 @@ namespace TPSBR
 
 			_kcc     = Controller.GetComponentNoAlloc<KCC>();
 			_agent   = Controller.GetComponentNoAlloc<Agent>();
-			_weapons = Controller.GetComponentNoAlloc<Weapons>();
+			_inventory = Controller.GetComponentNoAlloc<Inventory>();
 		}
 
 		protected override void OnDespawned()
@@ -175,7 +175,7 @@ namespace TPSBR
 
 		private int GetClipID()
 		{
-			int currentWeaponSlot = _weapons.CurrentWeaponSlot;
+			int currentWeaponSlot = _inventory.CurrentWeaponSlot;
 			if (currentWeaponSlot > 2)
 			{
 				currentWeaponSlot = 1; // For grenades we use pistol set

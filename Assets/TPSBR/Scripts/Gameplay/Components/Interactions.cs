@@ -32,7 +32,7 @@
 		private float     _itemDropTime;
 
 		private Health       _health;
-		private Weapons      _weapons;
+		private Inventory      _inventory;
 		private Character    _character;
 		private RaycastHit[] _interactionHits = new RaycastHit[10];
 
@@ -47,7 +47,7 @@
 			}
 			
 
-			if (_weapons.CurrentWeapon != null && _weapons.CurrentWeapon.IsBusy() == true)
+			if (_inventory.CurrentWeapon != null && _inventory.CurrentWeapon.IsBusy() == true)
 			{
 				DropItemTimer = default;
 				return;
@@ -60,7 +60,7 @@
 
 			if (InteractionTarget == null)
 			{
-				if (DropItemTimer.IsRunning == false && _weapons.CurrentWeaponSlot > 0 && interact == true)
+				if (DropItemTimer.IsRunning == false && _inventory.CurrentWeaponSlot > 0 && interact == true)
 				{
 					DropItemTimer = TickTimer.CreateFromSeconds(Runner, _itemDropTime);
 				}
@@ -68,7 +68,7 @@
 				if (DropItemTimer.Expired(Runner) == true)
 				{
 					DropItemTimer = default;
-					_weapons.DropCurrentWeapon();
+					_inventory.DropCurrentWeapon();
 				}
 
 				return;
@@ -79,11 +79,11 @@
 
 			if (InteractionTarget is DynamicPickup dynamicPickup && dynamicPickup.Provider is Weapon pickupWeapon)
 			{
-				_weapons.Pickup(dynamicPickup, pickupWeapon);
+				_inventory.Pickup(dynamicPickup, pickupWeapon);
 			}
 			else if (InteractionTarget is WeaponPickup weaponPickup)
 			{
-				_weapons.Pickup(weaponPickup);
+				_inventory.Pickup(weaponPickup);
 			}
 			else if (InteractionTarget is ItemBox itemBox)
 			{
@@ -108,7 +108,7 @@
 			var targetPoint = cameraTransform.Position + cameraDirection * 500f;
 
 			if (Runner.LagCompensation.Raycast(cameraTransform.Position, cameraDirection, 500f, Object.InputAuthority,
-				out LagCompensatedHit hit, _weapons.HitMask, HitOptions.IncludePhysX | HitOptions.SubtickAccuracy | HitOptions.IgnoreInputAuthority) == true)
+				out LagCompensatedHit hit, _inventory.HitMask, HitOptions.IncludePhysX | HitOptions.SubtickAccuracy | HitOptions.IgnoreInputAuthority) == true)
 			{
 				var firingDirection = (hit.Point - fireTransform.Position).normalized;
 
@@ -121,7 +121,7 @@
 
 			if (checkReachability == true)
 			{
-				IsUndesiredTargetPoint = _weapons.CurrentWeapon != null && _weapons.CurrentWeapon.CanFireToPosition(fireTransform.Position, ref targetPoint, _weapons.HitMask) == false;
+				IsUndesiredTargetPoint = _inventory.CurrentWeapon != null && _inventory.CurrentWeapon.CanFireToPosition(fireTransform.Position, ref targetPoint, _inventory.HitMask) == false;
 			}
 
 			return targetPoint;
@@ -158,7 +158,7 @@
 		private void Awake()
 		{
 			_health    = GetComponent<Health>();
-			_weapons   = GetComponent<Weapons>();
+			_inventory   = GetComponent<Inventory>();
 			_character = GetComponent<Character>();
 		}
 

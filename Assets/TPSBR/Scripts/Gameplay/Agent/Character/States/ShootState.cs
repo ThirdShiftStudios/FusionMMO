@@ -13,13 +13,13 @@ namespace TPSBR
 		private float _animationPower = 1.0f;
 
 		private KCC     _kcc;
-		private Weapons _weapons;
+		private Inventory _inventory;
 
 		// MultiClipState INTERFACE
 
 		protected override int GetClipID()
 		{
-			int currentWeaponSlot = _weapons.CurrentWeaponSlot;
+			int currentWeaponSlot = _inventory.CurrentWeaponSlot;
 			if (currentWeaponSlot > 2)
 			{
 				currentWeaponSlot = 1; // For grenades we use pistol set
@@ -38,7 +38,7 @@ namespace TPSBR
 			base.OnInitialize();
 
 			_kcc     = Controller.GetComponentNoAlloc<KCC>();
-			_weapons = Controller.GetComponentNoAlloc<Weapons>();
+			_inventory = Controller.GetComponentNoAlloc<Inventory>();
 		}
 
 		protected override void OnFixedUpdate()

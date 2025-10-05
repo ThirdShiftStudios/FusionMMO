@@ -17,7 +17,7 @@ namespace TPSBR
 
 		protected override bool Consume(GameObject instigator, out string result)
 		{
-			if (instigator.TryGetComponent(out Weapons weapons) == false)
+			if (instigator.TryGetComponent(out Inventory weapons) == false)
 			{
 				result = "Not applicable";
 				return false;

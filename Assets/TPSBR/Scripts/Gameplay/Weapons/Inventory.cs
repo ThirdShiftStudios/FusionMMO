@@ -13,7 +13,7 @@ namespace TPSBR
 		public Quaternion BaseRotation;
 	}
 
-	public sealed class Weapons : NetworkBehaviour, IBeforeTick
+	public sealed class Inventory : NetworkBehaviour, IBeforeTick
 	{
 		// PUBLIC MEMBERS
 		public Weapon     CurrentWeapon             { get; private set; }
@@ -293,29 +293,6 @@ namespace TPSBR
 			var firearmWeapon = CurrentWeapon as FirearmWeapon;
 			var recoil = firearmWeapon != null ? firearmWeapon.Recoil : Vector2.zero;
 			return new Vector2(-recoil.y, recoil.x); // Convert to axis angles
-		}
-
-		public void SetRecoil(Vector2 axisRecoil)
-		{
-			var firearmWeapon = CurrentWeapon as FirearmWeapon;
-
-			if (firearmWeapon == null)
-				return;
-
-			firearmWeapon.Recoil = new Vector2(axisRecoil.y, -axisRecoil.x);
-		}
-
-		public bool SwitchWeapon(int weaponSlot)
-		{
-			if (weaponSlot == _currentWeaponSlot)
-				return false;
-
-			var weapon = _weapons[weaponSlot];
-			if (weapon == null || (weapon.ValidOnlyWithAmmo == true && weapon.HasAmmo() == false))
-				return false;
-
-			SetCurrentWeapon(weaponSlot);
-			return true;
 		}
 
 		public bool HasWeapon(int slot, bool checkAmmo = false)

@@ -61,11 +61,11 @@ namespace TPSBR.UI
 
 		// PUBLIC METHODS
 
-		public void UpdateWeapons(Weapons weapons, AgentInput agentInput)
+		public void UpdateWeapons(Inventory inventory, AgentInput agentInput)
 		{
-			UpdateThumbnails(weapons, agentInput);
+			UpdateThumbnails(inventory, agentInput);
 
-			var currentWeapon = weapons.CurrentWeapon as FirearmWeapon;
+			var currentWeapon = inventory.CurrentWeapon as FirearmWeapon;
 			if (currentWeapon == null)
 			{
 				_weaponGroup.SetVisibility(false);
@@ -120,15 +120,15 @@ namespace TPSBR.UI
 
 		// PRIVATE METHODS
 
-		private void UpdateThumbnails(Weapons weapons, AgentInput agentInput)
+		private void UpdateThumbnails(Inventory inventory, AgentInput agentInput)
 		{
-			_secondaryThumbnail.SetActive(weapons.HasWeapon(1));
-			_primaryThumbnail.SetActive(weapons.HasWeapon(2));
+			_secondaryThumbnail.SetActive(inventory.HasWeapon(1));
+			_primaryThumbnail.SetActive(inventory.HasWeapon(2));
 
-			UpdateWeaponThumbnail(weapons, _secondaryThumbnail, _secondaryThumbnailIcon, 1, ref _lastSecondaryID);
-			UpdateWeaponThumbnail(weapons, _primaryThumbnail, _primaryThumbnailIcon, 2, ref _lastPrimaryID);
+			UpdateWeaponThumbnail(inventory, _secondaryThumbnail, _secondaryThumbnailIcon, 1, ref _lastSecondaryID);
+			UpdateWeaponThumbnail(inventory, _primaryThumbnail, _primaryThumbnailIcon, 2, ref _lastPrimaryID);
 
-			int currentWeaponSlot = weapons.CurrentWeaponSlot;
+			int currentWeaponSlot = inventory.CurrentWeaponSlot;
 
 			_unarmedThumbnail.alpha   = currentWeaponSlot == 0 ? 1f : _thumbnailInactiveAlpha;
 			_secondaryThumbnail.alpha = currentWeaponSlot == 1 ? 1f : _thumbnailInactiveAlpha;
@@ -144,7 +144,7 @@ namespace TPSBR.UI
 			for (int i = 0; i < _grenades.Length; i++)
 			{
 				int grenadeSlot = grenadeStartSlot + i;
-				bool hasGrenade = weapons.HasWeapon(grenadeSlot, true);
+				bool hasGrenade = inventory.HasWeapon(grenadeSlot, true);
 
 				if (hasGrenade == false)
 				{
@@ -163,9 +163,9 @@ namespace TPSBR.UI
 			_grenadesThumbnail.SetActive(hasAnyGrenade);
 		}
 
-		private void UpdateWeaponThumbnail(Weapons weapons, CanvasGroup thumbnail, Image weaponIcon, int weaponSlot, ref NetworkId lastWeaponID)
+		private void UpdateWeaponThumbnail(Inventory inventory, CanvasGroup thumbnail, Image weaponIcon, int weaponSlot, ref NetworkId lastWeaponID)
 		{
-			var weapon = weapons.GetWeapon(weaponSlot);
+			var weapon = inventory.GetWeapon(weaponSlot);
 
 			if (weapon == null || weapon.Object == null)
 			{

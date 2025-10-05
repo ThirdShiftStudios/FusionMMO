@@ -71,7 +71,7 @@ namespace TPSBR.UI
 
 		public void UpdateCrosshair(Agent agent)
 		{
-			var weapon = agent.Weapons.CurrentWeapon;
+			var weapon = agent.Inventory.CurrentWeapon;
 			float size = _defaultSize;
 
 			bool weaponValid = weapon != null && weapon.Object.IsValid;
