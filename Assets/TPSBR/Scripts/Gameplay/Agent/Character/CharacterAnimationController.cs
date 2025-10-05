@@ -163,6 +163,8 @@ namespace TPSBR
 			if (_inventory.CurrentWeapon == null || CanSnapHand() == false)
 				return;
 
+			return;
+			
 			Transform weaponHandle = _inventory.CurrentWeaponHandle;
 			if (HasInputAuthority == true || _agent.IsObserved == true)
 			{
