@@ -635,14 +635,14 @@ namespace TPSBR
 			// Grenades (grenades are under slot 5, 6, 7 - but we cycle them with 4 numped key)
 			if (weaponSlot == 3)
 			{
-				int pendingWeapon = _agent.Weapons.PendingWeaponSlot;
-				int grenadesStart = IsCyclingGrenades == true && pendingWeapon < 7 ? Mathf.Max(pendingWeapon, 4) : 4;
+				int currentWeaponSlot = _agent.Weapons.CurrentWeaponSlot;
+				int grenadesStart = IsCyclingGrenades == true && currentWeaponSlot < 7 ? Mathf.Max(currentWeaponSlot, 4) : 4;
 
 				int grenadeToSwitch = _agent.Weapons.GetNextWeaponSlot(grenadesStart, 4);
 
 				_grenadesCyclingStartTime = Time.time;
 
-				if (grenadeToSwitch > 0 && grenadeToSwitch != pendingWeapon)
+				if (grenadeToSwitch > 0 && grenadeToSwitch != currentWeaponSlot)
 				{
 					return (byte)(grenadeToSwitch + 1);
 				}

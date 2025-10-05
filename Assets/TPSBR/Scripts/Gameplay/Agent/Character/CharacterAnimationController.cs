@@ -58,8 +58,6 @@ namespace TPSBR
 			{
 				if (_upperBody.Grenade.IsActive() == true && _upperBody.Grenade.CanSwitchWeapon() == false)
 					return false;
-				if (force == false && (_upperBody.Equip.IsActive() == true || _upperBody.Unequip.IsActive() == true))
-					return false;
 			}
 
 			return true;
@@ -104,28 +102,6 @@ namespace TPSBR
 			_upperBody.Grenade.ProcessThrow(start, hold);
 		}
 
-		public void SwitchWeapons()
-		{
-			if (_weapons.PendingWeapon is ThrowableWeapon)
-			{
-				_upperBody.Grenade.Equip();
-				return;
-			}
-
-			if (_weapons.PendingWeaponSlot > 0)
-			{
-				_weapons.DisarmCurrentWeapon();
-
-				_upperBody.Equip.SetAnimationTime(0.0f);
-				_upperBody.Equip.Activate(0.2f);
-			}
-			else
-			{
-				_upperBody.Unequip.SetAnimationTime(0.0f);
-				_upperBody.Unequip.Activate(0.2f);
-			}
-		}
-
 		public void Turn(float angle)
 		{
 			_lowerBody.Turn.Refresh(angle);
@@ -146,11 +122,6 @@ namespace TPSBR
 			}
 
 			_locomotion.Move.Activate(0.0f);
-
-			if (_weapons.IsSwitchingWeapon() == true)
-			{
-				SwitchWeapons();
-			}
 		}
 
 		protected override void OnFixedUpdate()
@@ -250,9 +221,6 @@ namespace TPSBR
 
 			if (_upperBody.HasActiveState() == true)
 			{
-				if (_upperBody.Equip.IsFinished(0.75f) == true)
-					return true;
-
 				return false;
 			}
 

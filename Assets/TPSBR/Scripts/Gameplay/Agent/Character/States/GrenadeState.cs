@@ -94,7 +94,7 @@ namespace TPSBR
 
 			if (activeState == _equipState && _equipState.AnimationTime > 0.5f)
 			{
-				_weapons.ArmPendingWeapon();
+				_weapons.ArmCurrentWeapon();
 			}
 
 			if (activeState == _throwState && _throwState.AnimationTime > 0.95f)
@@ -102,7 +102,7 @@ namespace TPSBR
 				_holdState.Activate(0.25f);
 			}
 
-			if (_weapons.PendingWeapon is ThrowableWeapon == false)
+			if (_weapons.CurrentWeapon is ThrowableWeapon == false)
 			{
 				Deactivate(0.2f);
 			}

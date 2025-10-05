@@ -240,15 +240,6 @@ namespace TPSBR
 
 			kcc.SetInputDirection(input.MoveDirection.IsZero() == true ? Vector3.zero : kcc.FixedData.TransformRotation * input.MoveDirection.X0Y());
 
-			if (input.Weapon > 0 && _character.AnimationController.CanSwitchWeapons(true) == true && _weapons.SwitchWeapon(input.Weapon - 1) == true)
-			{
-				_character.AnimationController.SwitchWeapons();
-			}
-			else if (input.Weapon <= 0 && _weapons.PendingWeaponSlot != _weapons.CurrentWeaponSlot && _character.AnimationController.CanSwitchWeapons(false) == true)
-			{
-				_character.AnimationController.SwitchWeapons();
-			}
-
 			_agentInput.SetFixedInput(input, false);
 		}
 
@@ -282,7 +273,7 @@ namespace TPSBR
 		private void TryFire(bool attack, bool hold)
 		{
 			var currentWeapon = _weapons.CurrentWeapon;
-			if (currentWeapon is ThrowableWeapon && currentWeapon.WeaponSlot == _weapons.PendingWeaponSlot)
+			if (currentWeapon is ThrowableWeapon && currentWeapon.WeaponSlot == _weapons.CurrentWeaponSlot)
 			{
 				// Fire is handled form the grenade animation state itself
 				_character.AnimationController.ProcessThrow(attack, hold);

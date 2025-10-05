@@ -128,12 +128,12 @@ namespace TPSBR.UI
 			UpdateWeaponThumbnail(weapons, _secondaryThumbnail, _secondaryThumbnailIcon, 1, ref _lastSecondaryID);
 			UpdateWeaponThumbnail(weapons, _primaryThumbnail, _primaryThumbnailIcon, 2, ref _lastPrimaryID);
 
-			int pendingWeaponSlot = weapons.PendingWeaponSlot;
+			int currentWeaponSlot = weapons.CurrentWeaponSlot;
 
-			_unarmedThumbnail.alpha   = pendingWeaponSlot == 0 ? 1f : _thumbnailInactiveAlpha;
-			_secondaryThumbnail.alpha = pendingWeaponSlot == 1 ? 1f : _thumbnailInactiveAlpha;
-			_primaryThumbnail.alpha   = pendingWeaponSlot == 2 ? 1f : _thumbnailInactiveAlpha;
-			_grenadesThumbnail.alpha  = pendingWeaponSlot >  3 ? 1f : _thumbnailInactiveAlpha;
+			_unarmedThumbnail.alpha   = currentWeaponSlot == 0 ? 1f : _thumbnailInactiveAlpha;
+			_secondaryThumbnail.alpha = currentWeaponSlot == 1 ? 1f : _thumbnailInactiveAlpha;
+			_primaryThumbnail.alpha   = currentWeaponSlot == 2 ? 1f : _thumbnailInactiveAlpha;
+			_grenadesThumbnail.alpha  = currentWeaponSlot >  3 ? 1f : _thumbnailInactiveAlpha;
 
 			_grenadeChangingGroup.SetVisibility(agentInput.IsCyclingGrenades);
 
@@ -155,7 +155,7 @@ namespace TPSBR.UI
 				var grenadeImage = _grenades[i];
 
 				grenadeImage.SetActive(true);
-				grenadeImage.color = pendingWeaponSlot == grenadeSlot ? activeGrenadeColor : _grenadeInactiveColor;
+				grenadeImage.color = currentWeaponSlot == grenadeSlot ? activeGrenadeColor : _grenadeInactiveColor;
 
 				hasAnyGrenade |= hasGrenade;
 			}

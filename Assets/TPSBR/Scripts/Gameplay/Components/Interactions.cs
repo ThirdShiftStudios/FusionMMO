@@ -45,12 +45,7 @@
 				DropItemTimer = default;
 				return;
 			}
-
-			if (_weapons.IsSwitchingWeapon() == true)
-			{
-				DropItemTimer = default;
-				return;
-			}
+			
 
 			if (_weapons.CurrentWeapon != null && _weapons.CurrentWeapon.IsBusy() == true)
 			{

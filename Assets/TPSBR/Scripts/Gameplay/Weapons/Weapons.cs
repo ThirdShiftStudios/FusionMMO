@@ -16,15 +16,12 @@ namespace TPSBR
 	public sealed class Weapons : NetworkBehaviour, IBeforeTick
 	{
 		// PUBLIC MEMBERS
-
-		public Weapon     PendingWeapon             { get; private set; }
 		public Weapon     CurrentWeapon             { get; private set; }
 		public Transform  CurrentWeaponHandle       { get; private set; }
 		public Quaternion CurrentWeaponBaseRotation { get; private set; }
 
 		public LayerMask  HitMask            => _hitMask;
 		public int        CurrentWeaponSlot  => _currentWeaponSlot;
-		public int        PendingWeaponSlot  => _pendingWeaponSlot;
 		public int        PreviousWeaponSlot => _previousWeaponSlot;
 
 		// PRIVATE MEMBERS
@@ -46,8 +43,7 @@ namespace TPSBR
 		private NetworkArray<Weapon> _weapons { get; }
 		[Networked]
 		private byte _currentWeaponSlot { get; set; }
-		[Networked]
-		private byte _pendingWeaponSlot { get; set; }
+
 		[Networked]
 		private byte _previousWeaponSlot { get; set; }
 
@@ -86,20 +82,17 @@ namespace TPSBR
 			}
 		}
 
-		public void SetPendingWeapon(int slot)
+		public void SetCurrentWeapon(int slot)
 		{
-			if (_pendingWeaponSlot == slot)
+			if (_currentWeaponSlot == slot)
 				return;
 
-			_pendingWeaponSlot = (byte)slot;
-			PendingWeapon = _weapons[_pendingWeaponSlot];
+			_currentWeaponSlot = (byte)slot;
+			CurrentWeapon = _weapons[_currentWeaponSlot];
 		}
 
-		public void ArmPendingWeapon()
+		public void ArmCurrentWeapon()
 		{
-			if (_currentWeaponSlot == _pendingWeaponSlot)
-				return;
-
 			if (CurrentWeapon != null)
 			{
 				CurrentWeapon.DisarmWeapon();
@@ -109,8 +102,6 @@ namespace TPSBR
 			{
 				_previousWeaponSlot = _currentWeaponSlot;
 			}
-
-			_currentWeaponSlot = _pendingWeaponSlot;
 
 			CurrentWeapon             = _weapons[_currentWeaponSlot];
 			CurrentWeaponHandle       = _slots[_currentWeaponSlot].Active;
@@ -190,7 +181,6 @@ namespace TPSBR
 			}
 
 			_currentWeaponSlot  = 0;
-			_pendingWeaponSlot  = 0;
 			_previousWeaponSlot = 0;
 
 			byte bestWeaponSlot = 0;
@@ -213,8 +203,8 @@ namespace TPSBR
 
 			_previousWeaponSlot = bestWeaponSlot;
 
-			SetPendingWeapon(bestWeaponSlot);
-			ArmPendingWeapon();
+			SetCurrentWeapon(bestWeaponSlot);
+			ArmCurrentWeapon();
 			RefreshWeapons();
 		}
 
@@ -244,10 +234,8 @@ namespace TPSBR
 			}
 
 			_currentWeaponSlot  = 0;
-			_pendingWeaponSlot  = 0;
 			_previousWeaponSlot = 0;
-
-			PendingWeapon             = default;
+			
 			CurrentWeapon             = default;
 			CurrentWeaponHandle       = default;
 			CurrentWeaponBaseRotation = default;
@@ -274,7 +262,7 @@ namespace TPSBR
 				}
 
 				DisarmCurrentWeapon();
-				SetPendingWeapon(bestWeaponSlot);
+				SetCurrentWeapon(bestWeaponSlot);
 
 				_previousWeaponSlot = bestWeaponSlot;
 			}
@@ -285,24 +273,19 @@ namespace TPSBR
 			RefreshWeapons();
 		}
 
-		public bool IsSwitchingWeapon()
-		{
-			return _pendingWeaponSlot != _currentWeaponSlot;
-		}
-
 		public bool CanFireWeapon(bool keyDown)
 		{
-			return IsSwitchingWeapon() == false && CurrentWeapon != null && CurrentWeapon.CanFire(keyDown) == true;
+			return CurrentWeapon != null && CurrentWeapon.CanFire(keyDown) == true;
 		}
 
 		public bool CanReloadWeapon(bool autoReload)
 		{
-			return IsSwitchingWeapon() == false && CurrentWeapon != null && CurrentWeapon.CanReload(autoReload) == true;
+			return CurrentWeapon != null && CurrentWeapon.CanReload(autoReload) == true;
 		}
 
 		public bool CanAim()
 		{
-			return IsSwitchingWeapon() == false && CurrentWeapon != null && CurrentWeapon.CanAim() == true;
+			return CurrentWeapon != null && CurrentWeapon.CanAim() == true;
 		}
 
 		public Vector2 GetRecoil()
@@ -324,14 +307,14 @@ namespace TPSBR
 
 		public bool SwitchWeapon(int weaponSlot)
 		{
-			if (weaponSlot == _pendingWeaponSlot)
+			if (weaponSlot == _currentWeaponSlot)
 				return false;
 
 			var weapon = _weapons[weaponSlot];
 			if (weapon == null || (weapon.ValidOnlyWithAmmo == true && weapon.HasAmmo() == false))
 				return false;
 
-			SetPendingWeapon(weaponSlot);
+			SetCurrentWeapon(weaponSlot);
 			return true;
 		}
 
@@ -446,7 +429,7 @@ namespace TPSBR
 
 		private void RefreshWeapons()
 		{
-			PendingWeapon = _weapons[_pendingWeaponSlot];
+			CurrentWeapon = _weapons[_currentWeaponSlot];
 
 			Vector2 lastRecoil = Vector2.zero;
 
@@ -534,8 +517,8 @@ namespace TPSBR
 					bestWeaponSlot = FindBestWeaponSlot(_currentWeaponSlot);
 				}
 
-				SetPendingWeapon(bestWeaponSlot);
-				ArmPendingWeapon();
+				SetCurrentWeapon(bestWeaponSlot);
+				ArmCurrentWeapon();
 
 				_previousWeaponSlot = bestWeaponSlot;
 			}
@@ -571,8 +554,8 @@ namespace TPSBR
 
 			if (weapon.WeaponSlot >= _currentWeaponSlot && weapon.WeaponSlot < 5)
 			{
-				SetPendingWeapon(weapon.WeaponSlot);
-				ArmPendingWeapon();
+				SetCurrentWeapon(weapon.WeaponSlot);
+				ArmCurrentWeapon();
 			}
 		}
 

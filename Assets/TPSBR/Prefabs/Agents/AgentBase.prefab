@@ -516,60 +516,6 @@ MonoBehaviour:
     Repeat: 0
     RepeatPlayCount: 0
     RepeatDelay: 0
---- !u!1 &488074453774269132
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 6671276966742712109}
-  - component: {fileID: 140741781098653455}
-  m_Layer: 8
-  m_Name: Equip
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &6671276966742712109
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 488074453774269132}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 3082183168571873835}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &140741781098653455
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 488074453774269132}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c676be6ac7aa00a459e202ccdbb2de3b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _nodes:
-  - Clip: {fileID: 7400000, guid: c99d7148f04b3c045baef46891a3d89e, type: 2}
-    Speed: 1
-    IsLooping: 0
-  - Clip: {fileID: 7400000, guid: 5b78071d579a918409346ecaf47e0343, type: 2}
-    Speed: 2
-    IsLooping: 0
-  - Clip: {fileID: 7400000, guid: cf2045dbc2dbcfe44a57c5a4cce8af63, type: 2}
-    Speed: 2
-    IsLooping: 0
 --- !u!1 &573142198732538457
 GameObject:
   m_ObjectHideFlags: 0
@@ -1225,62 +1171,6 @@ MonoBehaviour:
     Clip: {fileID: 7400000, guid: 27fcf0d14babb8b4fb05658855dd43e5, type: 2}
     Speed: 1.5
     IsLooping: 0
---- !u!1 &1047146547510675575
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 679003061965331218}
-  - component: {fileID: 4228433936786073681}
-  m_Layer: 8
-  m_Name: Unequip
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &679003061965331218
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1047146547510675575}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 3082183168571873835}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &4228433936786073681
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1047146547510675575}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ed40fd2db1deb52479c22030044aaef1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _nodes:
-  - Clip: {fileID: 7400000, guid: c99d7148f04b3c045baef46891a3d89e, type: 2}
-    Speed: 1
-    IsLooping: 0
-  - Clip: {fileID: 7400000, guid: 6acdf2532e1da16489be1ec7f198106f, type: 2}
-    Speed: 2
-    IsLooping: 0
-  - Clip: {fileID: 7400000, guid: 388b12af3f27b394e950a4157d4ba46e, type: 2}
-    Speed: 2
-    IsLooping: 0
-  _disarmTime: 0.6
-  _switchTime: 0.2
 --- !u!1 &1104695181799581466
 GameObject:
   m_ObjectHideFlags: 0
@@ -5843,8 +5733,6 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 6671276966742712109}
-  - {fileID: 679003061965331218}
   - {fileID: 1868829475339044833}
   m_Father: {fileID: 6007643176418695006}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -5863,8 +5751,8 @@ MonoBehaviour:
   _avatarMask: {fileID: 101100000, guid: 196c2a4d35623c44d901ca411b9557df, type: 2}
   _isAdditive: 0
   _initialWeight: 1
-  _equip: {fileID: 140741781098653455}
-  _unequip: {fileID: 4228433936786073681}
+  _equip: {fileID: 0}
+  _unequip: {fileID: 0}
   _grenade: {fileID: 2292543206026137998}
 --- !u!1 &9038809488851223399
 GameObject:
