@@ -10,12 +10,9 @@ namespace TPSBR.UI
 
 		// PRIVATE MEMBERS
 
-		[SerializeField]
-		private UIButton _leaveButton;
-		[SerializeField]
-		private UIButton _settingsButton;
-		[SerializeField]
-		private UIButton _cancelButton;
+		[SerializeField] private UIButton _leaveButton;
+		[SerializeField] private UIButton _settingsButton;
+		[SerializeField] private UIButton _cancelButton;
 
 		private bool _menuVisible;
 

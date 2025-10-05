@@ -1,0 +1,79 @@
+using UnityEngine;
+
+namespace TPSBR.UI
+{
+    public class UITeamPlayerPanels : UIBehaviour
+    {
+        private UIHealth[] _uiHealth;
+
+        private UITeamPlayerPanel[] _teamPlayerPanels;
+        private bool _initialized;
+
+        public void UpdateTeamPlayerPanels(SceneContext context, Agent observedAgent)
+        {
+            if (_initialized == false)
+            {
+                Initialize();
+            }
+
+            var allPlayers = context.NetworkGame.ActivePlayers;
+            int totalOtherPlayers = allPlayers.Count - 1;
+            for (int i = 0; i < _teamPlayerPanels.Length; i++)
+            {
+                _teamPlayerPanels[i].GameObject.SetActive(false);
+            }
+            if (totalOtherPlayers <= 0)
+            {
+                return;
+            }
+            int playerCounter = 0;
+
+            for (int i = 0; i < allPlayers.Count; i++)
+            {
+                if(allPlayers[i].Object == false)continue;
+                if(allPlayers[i].IsInitialized == false)continue;
+                
+                if(allPlayers[i].ActiveAgent == false) continue;
+                if(allPlayers[i].ActiveAgent.Object == false) continue;
+                if(allPlayers[i].ActiveAgent.Health == false) continue;
+                if(allPlayers[i].ActiveAgent == observedAgent) continue;
+
+                
+                _teamPlayerPanels[playerCounter].GameObject.SetActive(true);
+                _teamPlayerPanels[playerCounter].Health.UpdateHealth(allPlayers[i].ActiveAgent.Health);
+                _teamPlayerPanels[playerCounter].Player.SetData(context, allPlayers[i]);
+            }
+        }
+
+        private void Initialize()
+        {
+            _uiHealth = GetComponentsInChildren<UIHealth>();
+            
+            _teamPlayerPanels = new UITeamPlayerPanel[_uiHealth.Length];
+
+            for (int i = 0; i < _uiHealth.Length; i++)
+            {
+                _teamPlayerPanels[i] = new UITeamPlayerPanel(_uiHealth[i].gameObject);
+            }
+            _initialized = true;
+        }
+
+        private class UITeamPlayerPanel
+        {
+            public GameObject GameObject => _gameObject;
+            public UIHealth Health => _health;
+            public UIPlayer Player => _player;
+            
+            private GameObject _gameObject;
+            private UIHealth  _health;
+            private UIPlayer  _player;
+
+            public UITeamPlayerPanel(GameObject gameObject)
+            {
+                _gameObject = gameObject;
+                _health = gameObject.GetComponent<UIHealth>();
+                _player = gameObject.GetComponent<UIPlayer>();
+            }
+        }
+    }
+}

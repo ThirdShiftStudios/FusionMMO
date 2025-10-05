@@ -47,6 +47,9 @@ namespace TPSBR.UI
 		[SerializeField]
 		private AudioSetup _interactionFailedSound;
 
+		[SerializeField]
+		private UITeamPlayerPanels _teamPlayerPanels;
+		
 		private Agent              _localAgent;
 		private NetworkBehaviourId _localAgentId;
 
@@ -137,6 +140,7 @@ namespace TPSBR.UI
 			_weapons.UpdateWeapons(_localAgent.Inventory, _localAgent.AgentInput);
 			_crosshair.UpdateCrosshair(_localAgent);
 			_interactions.UpdateInteractions(Context, _localAgent);
+			_teamPlayerPanels.UpdateTeamPlayerPanels(Context, _localAgent);
 		}
 
 		// PRIVATE MEMBERS

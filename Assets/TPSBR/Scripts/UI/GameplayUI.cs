@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace TPSBR.UI
 {
@@ -11,9 +12,11 @@ namespace TPSBR.UI
 		private float _gameOverScreenDelay = 3f;
 		
 		private UIDeathView _deathView;
-
+		private UIGameplayInventory _inventoryView;
+		
 		private bool _gameOverShown;
 		private Coroutine _gameOverCoroutine;
+		
 
 		// PUBLIC METHODS
 
@@ -42,6 +45,7 @@ namespace TPSBR.UI
 			base.OnInitializeInternal();
 
 			_deathView = Get<UIDeathView>();
+			_inventoryView = Get<UIGameplayInventory>();
 		}
 
 		protected override void OnActivate()
@@ -86,6 +90,13 @@ namespace TPSBR.UI
 				_deathView.Open();
 			}
 
+			bool toggleInventory = Keyboard.current.iKey.wasPressedThisFrame;
+			if (toggleInventory)
+			{
+				_inventoryView.Show(!_inventoryView.MenuVisible);
+			}
+			
+			
 			if (Context.GameplayMode.State == GameplayMode.EState.Finished && _gameOverCoroutine == null)
 			{
 				_gameOverCoroutine = StartCoroutine(ShowGameOver_Coroutine(_gameOverScreenDelay));
@@ -115,7 +126,8 @@ namespace TPSBR.UI
 			Close<UIScoreboardView>();
 			Close<UIGameplayMenu>();
 			Close<UIAnnouncementsView>();
-
+			Close<UIGameplayInventory>();
+			
 			Open<UIGameOverView>();
 
 			_gameOverCoroutine = null;
