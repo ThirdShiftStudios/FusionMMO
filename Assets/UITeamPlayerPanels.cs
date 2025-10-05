@@ -42,6 +42,7 @@ namespace TPSBR.UI
                 _teamPlayerPanels[playerCounter].GameObject.SetActive(true);
                 _teamPlayerPanels[playerCounter].Health.UpdateHealth(allPlayers[i].ActiveAgent.Health);
                 _teamPlayerPanels[playerCounter].Player.SetData(context, allPlayers[i]);
+                playerCounter++;
             }
         }
 
