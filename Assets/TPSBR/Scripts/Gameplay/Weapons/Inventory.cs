@@ -90,7 +90,7 @@ namespace TPSBR
 		public LayerMask  HitMask            => _hitMask;
 		public int        CurrentWeaponSlot  => _currentWeaponSlot;
 		public int        PreviousWeaponSlot => _previousWeaponSlot;
-
+		public const int INVENTORY_SIZE = 10;
 		// PRIVATE MEMBERS
 
 		[SerializeField]
@@ -108,7 +108,7 @@ namespace TPSBR
 
                 [Networked, Capacity(8)]
                 private NetworkArray<Weapon> _hotbar { get; }
-                [Networked, Capacity(10)]
+                [Networked, Capacity(INVENTORY_SIZE)]
                 private NetworkArray<InventorySlot> _items { get; }
 		[Networked]
 		private byte _currentWeaponSlot { get; set; }
@@ -544,7 +544,7 @@ namespace TPSBR
                 _character = GetComponent<Character>();
                 _interactions = GetComponent<Interactions>();
                 _fireAudioEffects = _fireAudioEffectsRoot.GetComponentsInChildren<AudioEffect>();
-                _localItems = new InventorySlot[_items.Length];
+                _localItems = new InventorySlot[INVENTORY_SIZE];
 
 			foreach (WeaponSlot slot in _slots)
 			{
