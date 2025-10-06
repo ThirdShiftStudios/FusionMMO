@@ -290,8 +290,8 @@ namespace TSS.Tools
         var guids = AssetDatabase.FindAssets($"t:{type.Name}");
         var assets = guids
             .Select(g => AssetDatabase.GUIDToAssetPath(g))
-            .Select(p => AssetDatabase.LoadAssetAtPath(p, type) as DataDefinition)
-            .Where(a => a != null)
+            .Select(p => AssetDatabase.LoadAssetAtPath<DataDefinition>(p))
+            .Where(a => a != null && a.GetType() == type)
             .OrderBy(a => a.Name, StringComparer.OrdinalIgnoreCase)
             .ToList();
 
