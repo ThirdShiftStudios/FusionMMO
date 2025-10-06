@@ -10,8 +10,12 @@ namespace TPSBR.UI
 
         public bool MenuVisible => _menuVisible;
         // PRIVATE MEMBERS
+        [SerializeField] private UIButton _cancelButton;
+        [SerializeField] private UIInventoryGrid _inventoryGrid;
 
         private bool _menuVisible;
+        private Agent _boundAgent;
+        private Inventory _boundInventory;
 
         // PUBLIC METHODS
 
@@ -41,12 +45,28 @@ namespace TPSBR.UI
         {
             base.OnInitialize();
             
-            //_cancelButton.onClick.AddListener(OnCancelButton);
+            if (_inventoryGrid == null)
+            {
+                _inventoryGrid = GetComponentInChildren<UIInventoryGrid>(true);
+            }
+
+            if (_cancelButton != null)
+            {
+                _cancelButton.onClick.AddListener(OnCancelButton);
+            }
         }
 
         protected override void OnDeinitialize()
         {
-            //_cancelButton.onClick.RemoveListener(OnCancelButton);
+            if (_inventoryGrid != null)
+            {
+                _inventoryGrid.Bind(null);
+            }
+
+            if (_cancelButton != null)
+            {
+                _cancelButton.onClick.RemoveListener(OnCancelButton);
+            }
 
             base.OnDeinitialize();
         }
@@ -58,6 +78,15 @@ namespace TPSBR.UI
             Animation.SampleStart();
             _menuVisible = false;
             CanvasGroup.interactable = false;
+
+            RefreshInventoryBinding();
+        }
+
+        protected override void OnTick()
+        {
+            base.OnTick();
+
+            RefreshInventoryBinding();
         }
 
         protected override void OnCloseButton()
@@ -108,6 +137,28 @@ namespace TPSBR.UI
         private void OnCancelButton()
         {
             OnCloseButton();
+        }
+
+        private void RefreshInventoryBinding()
+        {
+            if (Context == null)
+            {
+                if (_boundAgent != null)
+                {
+                    _boundAgent = null;
+                    _boundInventory = null;
+                    _inventoryGrid?.Bind(null);
+                }
+                return;
+            }
+
+            var agent = Context.ObservedAgent;
+            if (_boundAgent == agent)
+                return;
+
+            _boundAgent = agent;
+            _boundInventory = agent != null ? agent.Inventory : null;
+            _inventoryGrid?.Bind(_boundInventory);
         }
     }
 }
