@@ -189,48 +189,123 @@ namespace TSS.Tools
         return root;
     }
 
-    private static IEnumerable<Type> GetConcreteDefinitionTypes()
+    private static IEnumerable<Type> GetAllDefinitionTypes()
     {
         return TypeCache.GetTypesDerivedFrom<DataDefinition>()
-            .Where(t => !t.IsAbstract && !t.IsGenericType && typeof(ScriptableObject).IsAssignableFrom(t))
-            .OrderBy(t => t.Name);
+            .Where(t => !t.IsGenericType && typeof(ScriptableObject).IsAssignableFrom(t));
+    }
+
+    private static IEnumerable<Type> OrderTypes(IEnumerable<Type> types)
+    {
+        return types.OrderBy(t => t.Name, StringComparer.OrdinalIgnoreCase);
+    }
+
+    private static Type GetParentDefinitionType(Type type)
+    {
+        var baseType = type.BaseType;
+
+        while (baseType != null)
+        {
+            if (baseType == typeof(DataDefinition))
+                return null;
+
+            if (typeof(DataDefinition).IsAssignableFrom(baseType) && typeof(ScriptableObject).IsAssignableFrom(baseType))
+                return baseType;
+
+            baseType = baseType.BaseType;
+        }
+
+        return null;
     }
 
     private void PopulateDataDefinitions(DashboardItem parent)
     {
-        foreach (var type in GetConcreteDefinitionTypes())
+        var allTypes = GetAllDefinitionTypes().ToList();
+
+        var childLookup = new Dictionary<Type, List<Type>>();
+        var rootTypes = new List<Type>();
+
+        foreach (var type in allTypes)
         {
-            // Stable unique id for type node using our generator
-            var groupId = NewId();
-            var group = new DashboardItem(groupId, parent.depth + 1, type.Name, EditorGUIUtility.FindTexture("d_ScriptableObject Icon"))
+            var parentType = GetParentDefinitionType(type);
+            if (parentType == null)
             {
-                payload = type
-            };
-            parent.AddChild(group);
-
-            var guids = AssetDatabase.FindAssets($"t:{type.Name}");
-            var assets = guids
-                .Select(g => AssetDatabase.GUIDToAssetPath(g))
-                .Select(p => AssetDatabase.LoadAssetAtPath(p, type) as DataDefinition)
-                .Where(a => a != null)
-                .OrderBy(a => a.Name, StringComparer.OrdinalIgnoreCase)
-                .ToList();
-
-            foreach (var asset in assets)
-            {
-                var icon = asset.Icon != null ? asset.Icon : AssetPreview.GetMiniThumbnail(asset);
-                var label = string.IsNullOrEmpty(asset.Name) ? asset.name : asset.Name;
-
-                // Never use GetInstanceID for TreeView ids; allocate our own
-                var item = new DashboardItem(NewId(), group.depth + 1, label, icon)
-                {
-                    payload = asset
-                };
-                group.AddChild(item);
+                rootTypes.Add(type);
             }
+            else
+            {
+                if (!childLookup.TryGetValue(parentType, out var list))
+                {
+                    list = new List<Type>();
+                    childLookup[parentType] = list;
+                }
 
-            // Optional: auto-expand types to show their assets
-            SetExpanded(groupId, true);
+                list.Add(type);
+            }
+        }
+
+        foreach (var type in childLookup.Keys.ToList())
+        {
+            childLookup[type] = OrderTypes(childLookup[type]).ToList();
+        }
+
+        foreach (var rootType in OrderTypes(rootTypes))
+        {
+            var node = CreateTypeNode(rootType, parent.depth + 1);
+            AddAssetsForType(node, rootType);
+            parent.AddChild(node);
+            PopulateChildTypes(node, rootType, childLookup);
+            SetExpanded(node.id, true);
+        }
+    }
+
+    private void PopulateChildTypes(DashboardItem parentNode, Type parentType, Dictionary<Type, List<Type>> childLookup)
+    {
+        if (!childLookup.TryGetValue(parentType, out var children))
+            return;
+
+        foreach (var childType in children)
+        {
+            var childNode = CreateTypeNode(childType, parentNode.depth + 1);
+            AddAssetsForType(childNode, childType);
+            parentNode.AddChild(childNode);
+            PopulateChildTypes(childNode, childType, childLookup);
+            SetExpanded(childNode.id, true);
+        }
+    }
+
+    private DashboardItem CreateTypeNode(Type type, int depth)
+    {
+        return new DashboardItem(NewId(), depth, type.Name, EditorGUIUtility.FindTexture("d_ScriptableObject Icon"))
+        {
+            payload = type
+        };
+    }
+
+    private void AddAssetsForType(DashboardItem parentNode, Type type)
+    {
+        if (type.IsAbstract)
+            return;
+
+        var guids = AssetDatabase.FindAssets($"t:{type.Name}");
+        var assets = guids
+            .Select(g => AssetDatabase.GUIDToAssetPath(g))
+            .Select(p => AssetDatabase.LoadAssetAtPath(p, type) as DataDefinition)
+            .Where(a => a != null)
+            .OrderBy(a => a.Name, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        foreach (var asset in assets)
+        {
+            var icon = asset.Icon != null ? asset.Icon : AssetPreview.GetMiniThumbnail(asset);
+            var label = string.IsNullOrEmpty(asset.Name) ? asset.name : asset.Name;
+
+            var item = new DashboardItem(NewId(), parentNode.depth + 1, label, icon)
+            {
+                payload = asset
+            };
+
+            parentNode.AddChild(item);
         }
     }
 
