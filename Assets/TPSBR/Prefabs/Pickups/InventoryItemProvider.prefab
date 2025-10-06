@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 2413579204384756285}
   - component: {fileID: 213456789012345678}
   - component: {fileID: 483920102938475611}
-  - component: {fileID: 594820192837465122}
+  - component: {fileID: 5821164388687506460}
   m_Layer: 0
   m_Name: InventoryItemProvider
   m_TagString: Untagged
@@ -44,9 +44,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: -1552182283, guid: e725a070cec140c4caffb81624c8c787, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
-  SortKey: 0
+  m_Name: 
+  m_EditorClassIdentifier: 
+  SortKey: 1593502628
   ObjectInterest: 0
   Flags: 264449
   NestedObjects: []
@@ -63,14 +63,20 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b6eca988f2cb4717a6da4851e5eae5b9, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   _interpolationTarget: {fileID: 0}
-  _collider: {fileID: 594820192837465122}
+  _collider: {fileID: 5821164388687506460}
   _despawnTime: 60
   _visualOffset: {x: 0, y: 0, z: 0}
---- !u!135 &594820192837465122
-SphereCollider:
+  _ItemDefinitionId: 0
+  _Quantity: 0
+  _ConfigurationHash:
+    _length: 0
+    _data:
+      Data: 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+--- !u!65 &5821164388687506460
+BoxCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -84,9 +90,9 @@ SphereCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 1
+  m_IsTrigger: 0
   m_ProvidesContacts: 0
   m_Enabled: 1
-  serializedVersion: 2
-  m_Radius: 0.35
+  serializedVersion: 3
+  m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
