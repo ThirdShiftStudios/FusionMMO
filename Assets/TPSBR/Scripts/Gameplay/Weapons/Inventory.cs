@@ -13,6 +13,15 @@ namespace TPSBR
 		public Quaternion BaseRotation;
 	}
 
+	public struct InventoryItem : INetworkStruct
+	{
+		// Unique ID of the item in the DataDefinition database
+		private int DataDefinitionId;
+		// Quantity will never go above 256
+		private byte Quantity; 
+		// this will be used to store information about the item such as stats, skin, etc. each item will be processed differently
+		private NetworkString<_32> ConfigurationHash; 
+	}
 	public sealed class Inventory : NetworkBehaviour, IBeforeTick
 	{
 		// PUBLIC MEMBERS
@@ -40,7 +49,9 @@ namespace TPSBR
 		private Transform    _fireAudioEffectsRoot;
 
 		[Networked, Capacity(8)]
-		private NetworkArray<Weapon> _weapons { get; }
+		private NetworkArray<Weapon> _hotbar { get; }
+		[Networked, Capacity(10)]
+		private NetworkArray<InventoryItem> _items { get; }
 		[Networked]
 		private byte _currentWeaponSlot { get; set; }
 
@@ -72,7 +83,7 @@ namespace TPSBR
 
 			_currentWeaponSlot = 0;
 
-			CurrentWeapon             = _weapons[_currentWeaponSlot];
+			CurrentWeapon             = _hotbar[_currentWeaponSlot];
 			CurrentWeaponHandle       = _slots[_currentWeaponSlot].Active;
 			CurrentWeaponBaseRotation = _slots[_currentWeaponSlot].BaseRotation;
 
@@ -88,7 +99,7 @@ namespace TPSBR
 				return;
 
 			_currentWeaponSlot = (byte)slot;
-			CurrentWeapon = _weapons[_currentWeaponSlot];
+			CurrentWeapon = _hotbar[_currentWeaponSlot];
 		}
 
 		public void ArmCurrentWeapon()
@@ -103,7 +114,7 @@ namespace TPSBR
 				_previousWeaponSlot = _currentWeaponSlot;
 			}
 
-			CurrentWeapon             = _weapons[_currentWeaponSlot];
+			CurrentWeapon             = _hotbar[_currentWeaponSlot];
 			CurrentWeaponHandle       = _slots[_currentWeaponSlot].Active;
 			CurrentWeaponBaseRotation = _slots[_currentWeaponSlot].BaseRotation;
 
@@ -123,7 +134,7 @@ namespace TPSBR
 			if (HasStateAuthority == false)
 				return;
 
-			var ownedWeapon = _weapons[pickupWeapon.WeaponSlot];
+			var ownedWeapon = _hotbar[pickupWeapon.WeaponSlot];
 			if (ownedWeapon != null && ownedWeapon.WeaponID == pickupWeapon.WeaponID)
 			{
 				// We already have this weapon, try add at least the ammo
@@ -151,7 +162,7 @@ namespace TPSBR
 			if (weaponPickup.Consumed == true || weaponPickup.IsDisabled == true)
 				return;
 
-			var ownedWeapon = _weapons[weaponPickup.WeaponPrefab.WeaponSlot];
+			var ownedWeapon = _hotbar[weaponPickup.WeaponPrefab.WeaponSlot];
 			if (ownedWeapon != null && ownedWeapon.WeaponID == weaponPickup.WeaponPrefab.WeaponID)
 			{
 				// We already have this weapon, try add at least the ammo
@@ -211,14 +222,14 @@ namespace TPSBR
 		public void OnDespawned()
 		{
 			// Cleanup weapons
-			for (int i = 0; i < _weapons.Length; i++)
+			for (int i = 0; i < _hotbar.Length; i++)
 			{
-				Weapon weapon = _weapons[i];
+				Weapon weapon = _hotbar[i];
 				if (weapon != null)
 				{
 					weapon.Deinitialize(Object);
 					Runner.Despawn(weapon.Object);
-					_weapons.Set(i, null);
+					_hotbar.Set(i, null);
 					_localWeapons[i] = null;
 				}
 			}
@@ -297,21 +308,21 @@ namespace TPSBR
 
 		public bool HasWeapon(int slot, bool checkAmmo = false)
 		{
-			if (slot < 0 || slot >= _weapons.Length)
+			if (slot < 0 || slot >= _hotbar.Length)
 				return false;
 
-			var weapon = _weapons[slot];
+			var weapon = _hotbar[slot];
 			return weapon != null && (checkAmmo == false || (weapon.Object != null && weapon.HasAmmo() == true));
 		}
 
 		public Weapon GetWeapon(int slot)
 		{
-			return _weapons[slot];
+			return _hotbar[slot];
 		}
 
 		public int GetNextWeaponSlot(int fromSlot, int minSlot = 0, bool checkAmmo = true)
 		{
-			int weaponCount = _weapons.Length;
+			int weaponCount = _hotbar.Length;
 
 			for (int i = 0; i < weaponCount; i++)
 			{
@@ -320,7 +331,7 @@ namespace TPSBR
 				if (slot < minSlot)
 					continue;
 
-				var weapon = _weapons[slot];
+				var weapon = _hotbar[slot];
 
 				if (weapon == null)
 					continue;
@@ -358,13 +369,13 @@ namespace TPSBR
 
 		public bool AddAmmo(int weaponSlot, int amount, out string result)
 		{
-			if (weaponSlot < 0 || weaponSlot >= _weapons.Length)
+			if (weaponSlot < 0 || weaponSlot >= _hotbar.Length)
 			{
 				result = string.Empty;
 				return false;
 			}
 
-			var weapon = _weapons[weaponSlot];
+			var weapon = _hotbar[weaponSlot];
 			if (weapon == null)
 			{
 				result = "No weapon with this type of ammo";
@@ -408,14 +419,14 @@ namespace TPSBR
 		{
 			// keep previous reference BEFORE reading the networked value
 			var previousWeapon = CurrentWeapon;
-			var nextWeapon     = _weapons[_currentWeaponSlot];
+			var nextWeapon     = _hotbar[_currentWeaponSlot];
 
 			Vector2 lastRecoil = Vector2.zero;
 
 			// Initialize and keep last recoil from armed weapons
-			for (int i = 0; i < _weapons.Length; i++)
+			for (int i = 0; i < _hotbar.Length; i++)
 			{
-				var weapon = _weapons[i];
+				var weapon = _hotbar[i];
 				if (weapon == null)
 					continue;
 
@@ -472,7 +483,7 @@ namespace TPSBR
 
 		private void DropAllWeapons()
 		{
-			for (int i = 1; i < _weapons.Length; i++)
+			for (int i = 1; i < _hotbar.Length; i++)
 			{
 				DropWeapon(i);
 			}
@@ -480,7 +491,7 @@ namespace TPSBR
 
 		private void DropWeapon(int weaponSlot)
 		{
-			var weapon = _weapons[weaponSlot];
+			var weapon = _hotbar[weaponSlot];
 			if (weapon == null)
 				return;
 
@@ -523,7 +534,7 @@ namespace TPSBR
 			void BeforePickupSpawned(NetworkRunner runner, NetworkObject obj)
 			{
 				var dynamicPickup = obj.GetComponent<DynamicPickup>();
-				dynamicPickup.AssignObject(_weapons[weaponSlot].Object.Id);
+				dynamicPickup.AssignObject(_hotbar[weaponSlot].Object.Id);
 			}
 		}
 
@@ -558,13 +569,13 @@ namespace TPSBR
 
 			Runner.SetPlayerAlwaysInterested(Object.InputAuthority, weapon.Object, true);
 
-			_weapons.Set(weapon.WeaponSlot, weapon);
+			_hotbar.Set(weapon.WeaponSlot, weapon);
 			_localWeapons[weapon.WeaponSlot] = weapon;
 		}
 
 		private void RemoveWeapon(int slot)
 		{
-			var weapon = _weapons[slot];
+			var weapon = _hotbar[slot];
 			if (weapon == null)
 				return;
 
@@ -576,7 +587,7 @@ namespace TPSBR
 
 			Runner.SetPlayerAlwaysInterested(Object.InputAuthority, weapon.Object, false);
 
-			_weapons.Set(slot, null);
+			_hotbar.Set(slot, null);
 			_localWeapons[slot] = null;
 		}
 
@@ -584,9 +595,9 @@ namespace TPSBR
 		{
 			byte bestWeaponSlot = 0;
 
-			for (int i = 0; i < _weapons.Length; i++)
+			for (int i = 0; i < _hotbar.Length; i++)
 			{
-				Weapon weapon = _weapons[i];
+				Weapon weapon = _hotbar[i];
 				if (weapon != null)
 				{
 					if (weapon.WeaponSlot == ignoreSlot)

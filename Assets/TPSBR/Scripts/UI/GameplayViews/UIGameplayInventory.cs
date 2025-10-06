@@ -10,9 +10,6 @@ namespace TPSBR.UI
 
         public bool MenuVisible => _menuVisible;
         // PRIVATE MEMBERS
-
-        [SerializeField] private UIButton _leaveButton;
-        [SerializeField] private UIButton _settingsButton;
         [SerializeField] private UIButton _cancelButton;
 
         private bool _menuVisible;
@@ -44,16 +41,12 @@ namespace TPSBR.UI
         protected override void OnInitialize()
         {
             base.OnInitialize();
-
-            _leaveButton.onClick.AddListener(OnLeaveButton);
-            _settingsButton.onClick.AddListener(OnSettingsButton);
+            
             _cancelButton.onClick.AddListener(OnCancelButton);
         }
 
         protected override void OnDeinitialize()
         {
-            _leaveButton.onClick.RemoveListener(OnLeaveButton);
-            _settingsButton.onClick.RemoveListener(OnSettingsButton);
             _cancelButton.onClick.RemoveListener(OnCancelButton);
 
             base.OnDeinitialize();
