@@ -1,4 +1,5 @@
 using Fusion;
+using Unity.Template.CompetitiveActionMultiplayer;
 using UnityEngine;
 
 namespace TPSBR
@@ -7,7 +8,7 @@ namespace TPSBR
 	{
 		// PUBLIC MEMBERS
 
-		public string        WeaponID           => _weaponID;
+		public int        WeaponID           => _weaponDefinition.ID;
 		public int           WeaponSlot         => _weaponSlot;
 		public Transform     LeftHandTarget     => _leftHandTarget;
 		public DynamicPickup PickupPrefab       => _pickupPrefab;
@@ -24,8 +25,8 @@ namespace TPSBR
 
 		// PRIVATE MEMBERS
 
-		[SerializeField]
-		private string _weaponID;
+		[SerializeField] private WeaponDefinition _weaponDefinition;
+		
 		[SerializeField]
 		private int _weaponSlot;
 		[SerializeField]
