@@ -77,11 +77,15 @@
 			if (interact == false)
 				return;
 
-			if (InteractionTarget is DynamicPickup dynamicPickup && dynamicPickup.Provider is Weapon pickupWeapon)
-			{
-				_inventory.Pickup(dynamicPickup, pickupWeapon);
-			}
-			else if (InteractionTarget is WeaponPickup weaponPickup)
+                        if (InteractionTarget is DynamicPickup dynamicPickup && dynamicPickup.Provider is Weapon pickupWeapon)
+                        {
+                                _inventory.Pickup(dynamicPickup, pickupWeapon);
+                        }
+                        else if (InteractionTarget is DynamicPickup dynamicItem && dynamicItem.Provider is InventoryItemPickupProvider itemProvider)
+                        {
+                                _inventory.Pickup(dynamicItem, itemProvider);
+                        }
+                        else if (InteractionTarget is WeaponPickup weaponPickup)
 			{
 				_inventory.Pickup(weaponPickup);
 			}

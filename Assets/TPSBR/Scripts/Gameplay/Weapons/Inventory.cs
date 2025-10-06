@@ -1,8 +1,9 @@
 namespace TPSBR
 {
 	using System;
-	using UnityEngine;
-	using Fusion;
+        using UnityEngine;
+        using Fusion;
+        using TSS.Data;
 
 	[Serializable]
 	public sealed class WeaponSlot
@@ -13,15 +14,72 @@ namespace TPSBR
 		public Quaternion BaseRotation;
 	}
 
-	public struct InventoryItem : INetworkStruct
-	{
-		// Unique ID of the item in the DataDefinition database
-		private int DataDefinitionId;
-		// Quantity will never go above 256
-		private byte Quantity; 
-		// this will be used to store information about the item such as stats, skin, etc. each item will be processed differently
-		private NetworkString<_32> ConfigurationHash; 
-	}
+        public struct InventorySlot : INetworkStruct, IEquatable<InventorySlot>
+        {
+                public InventorySlot(int itemDefinitionId, byte quantity, NetworkString<_32> configurationHash)
+                {
+                        ItemDefinitionId = itemDefinitionId;
+                        Quantity = quantity;
+                        ConfigurationHash = configurationHash;
+                }
+
+                public int ItemDefinitionId { get; private set; }
+                public byte Quantity { get; private set; }
+                public NetworkString<_32> ConfigurationHash { get; private set; }
+
+                public bool IsEmpty => Quantity == 0;
+
+                public void Clear()
+                {
+                        ItemDefinitionId = 0;
+                        Quantity = 0;
+                        ConfigurationHash = default;
+                }
+
+                public void Add(byte amount)
+                {
+                        int newQuantity = Quantity + amount;
+                        Quantity = (byte)Mathf.Clamp(newQuantity, 0, byte.MaxValue);
+                }
+
+                public void Remove(byte amount)
+                {
+                        int newQuantity = Quantity - amount;
+                        Quantity = (byte)Mathf.Clamp(newQuantity, 0, byte.MaxValue);
+
+                        if (Quantity == 0)
+                        {
+                                ItemDefinitionId = 0;
+                                ConfigurationHash = default;
+                        }
+                }
+
+                public bool Equals(InventorySlot other)
+                {
+                        return ItemDefinitionId == other.ItemDefinitionId && Quantity == other.Quantity && ConfigurationHash == other.ConfigurationHash;
+                }
+
+                public override bool Equals(object obj)
+                {
+                        return obj is InventorySlot other && Equals(other);
+                }
+
+                public override int GetHashCode()
+                {
+                        unchecked
+                        {
+                                int hashCode = ItemDefinitionId;
+                                hashCode = (hashCode * 397) ^ Quantity.GetHashCode();
+                                hashCode = (hashCode * 397) ^ ConfigurationHash.GetHashCode();
+                                return hashCode;
+                        }
+                }
+
+                public ItemDefinition GetDefinition()
+                {
+                        return Quantity == 0 ? null : ItemDefinition.Get(ItemDefinitionId);
+                }
+        }
 	public sealed class Inventory : NetworkBehaviour, IBeforeTick
 	{
 		// PUBLIC MEMBERS
@@ -48,10 +106,10 @@ namespace TPSBR
 		[SerializeField]
 		private Transform    _fireAudioEffectsRoot;
 
-		[Networked, Capacity(8)]
-		private NetworkArray<Weapon> _hotbar { get; }
-		[Networked, Capacity(10)]
-		private NetworkArray<InventoryItem> _items { get; }
+                [Networked, Capacity(8)]
+                private NetworkArray<Weapon> _hotbar { get; }
+                [Networked, Capacity(10)]
+                private NetworkArray<InventorySlot> _items { get; }
 		[Networked]
 		private byte _currentWeaponSlot { get; set; }
 
@@ -61,12 +119,57 @@ namespace TPSBR
 		private Health        _health;
 		private Character     _character;
 		private Interactions  _interactions;
-		private AudioEffect[] _fireAudioEffects;
-		private Weapon[]      _localWeapons = new Weapon[8];
+                private AudioEffect[]   _fireAudioEffects;
+                private Weapon[]        _localWeapons = new Weapon[8];
+                private InventorySlot[] _localItems;
 
-		// PUBLIC METHODS
+                public event Action<int, InventorySlot> ItemSlotChanged;
 
-		public void DisarmCurrentWeapon()
+                // PUBLIC METHODS
+
+                public int InventorySize => _items.Length;
+
+                public InventorySlot GetItemSlot(int index)
+                {
+                        if (index < 0 || index >= _items.Length)
+                                return default;
+
+                        return _items[index];
+                }
+
+                public byte AddItem(ItemDefinition definition, byte quantity, NetworkString<_32> configurationHash = default)
+                {
+                        if (definition == null || quantity == 0)
+                                return quantity;
+
+                        if (HasStateAuthority == false)
+                                return quantity;
+
+                        return AddItemInternal(definition, quantity, configurationHash);
+                }
+
+                public void RequestMoveItem(int fromIndex, int toIndex)
+                {
+                        if (fromIndex == toIndex)
+                                return;
+
+                        if (fromIndex < 0 || fromIndex >= _items.Length)
+                                return;
+
+                        if (toIndex < 0 || toIndex >= _items.Length)
+                                return;
+
+                        if (HasStateAuthority == true)
+                        {
+                                MoveItem((byte)fromIndex, (byte)toIndex);
+                        }
+                        else
+                        {
+                                RPC_RequestMoveItem((byte)fromIndex, (byte)toIndex);
+                        }
+                }
+
+                public void DisarmCurrentWeapon()
 		{
 			if (_currentWeaponSlot == 0)
 				return;
@@ -129,10 +232,10 @@ namespace TPSBR
 			DropWeapon(_currentWeaponSlot);
 		}
 
-		public void Pickup(DynamicPickup dynamicPickup, Weapon pickupWeapon)
-		{
-			if (HasStateAuthority == false)
-				return;
+                public void Pickup(DynamicPickup dynamicPickup, Weapon pickupWeapon)
+                {
+                        if (HasStateAuthority == false)
+                                return;
 
 			var ownedWeapon = _hotbar[pickupWeapon.WeaponSlot];
 			if (ownedWeapon != null && ownedWeapon.WeaponID == pickupWeapon.WeaponID)
@@ -150,9 +253,36 @@ namespace TPSBR
 			else
 			{
 				dynamicPickup.UnassignObject();
-				PickupWeapon(pickupWeapon);
-			}
-		}
+                                PickupWeapon(pickupWeapon);
+                        }
+                }
+
+                public void Pickup(DynamicPickup dynamicPickup, InventoryItemPickupProvider provider)
+                {
+                        if (HasStateAuthority == false || provider == null)
+                                return;
+
+                        var definition = provider.Definition;
+                        if (definition == null)
+                                return;
+
+                        byte quantity = provider.Quantity;
+                        if (quantity == 0)
+                                return;
+
+                        byte remainder = AddItemInternal(definition, quantity, provider.ConfigurationHash);
+
+                        if (remainder == quantity)
+                                return;
+
+                        provider.SetQuantity(remainder);
+
+                        if (remainder == 0)
+                        {
+                                dynamicPickup.UnassignObject();
+                                Runner.Despawn(provider.Object);
+                        }
+                }
 
 		public void Pickup(WeaponPickup weaponPickup)
 		{
@@ -183,13 +313,14 @@ namespace TPSBR
 			}
 		}
 
-		public override void Spawned()
-		{
-			if (HasStateAuthority == false)
-			{
-				RefreshWeapons();
-				return;
-			}
+                public override void Spawned()
+                {
+                        if (HasStateAuthority == false)
+                        {
+                                RefreshWeapons();
+                                RefreshItems();
+                                return;
+                        }
 
 			_currentWeaponSlot  = 0;
 			_previousWeaponSlot = 0;
@@ -214,10 +345,11 @@ namespace TPSBR
 
 			_previousWeaponSlot = bestWeaponSlot;
 
-			SetCurrentWeapon(bestWeaponSlot);
-			ArmCurrentWeapon();
-			RefreshWeapons();
-		}
+                        SetCurrentWeapon(bestWeaponSlot);
+                        ArmCurrentWeapon();
+                        RefreshWeapons();
+                        RefreshItems();
+                }
 
 		public void OnDespawned()
 		{
@@ -244,13 +376,20 @@ namespace TPSBR
 				}
 			}
 
-			_currentWeaponSlot  = 0;
-			_previousWeaponSlot = 0;
-			
-			CurrentWeapon             = default;
-			CurrentWeaponHandle       = default;
-			CurrentWeaponBaseRotation = default;
-		}
+                        _currentWeaponSlot  = 0;
+                        _previousWeaponSlot = 0;
+
+                        CurrentWeapon             = default;
+                        CurrentWeaponHandle       = default;
+                        CurrentWeaponBaseRotation = default;
+
+                        if (_localItems != null)
+                        {
+                                Array.Clear(_localItems, 0, _localItems.Length);
+                        }
+
+                        ItemSlotChanged = null;
+                }
 
 		public void OnFixedUpdate()
 		{
@@ -279,10 +418,11 @@ namespace TPSBR
 			}
 		}
 
-		public override void Render()
-		{
-			RefreshWeapons();
-		}
+        public override void Render()
+        {
+                RefreshWeapons();
+                RefreshItems();
+        }
 
 		public bool CanFireWeapon(bool keyDown)
 		{
@@ -390,19 +530,21 @@ namespace TPSBR
 
 		// IBeforeTick INTERFACE
 
-		void IBeforeTick.BeforeTick()
-		{
-			RefreshWeapons();
-		}
+        void IBeforeTick.BeforeTick()
+        {
+                RefreshWeapons();
+                RefreshItems();
+        }
 
 		// MONOBEHAVIOUR
 
-		private void Awake()
-		{
-			_health = GetComponent<Health>();
-			_character = GetComponent<Character>();
-			_interactions = GetComponent<Interactions>();
-			_fireAudioEffects = _fireAudioEffectsRoot.GetComponentsInChildren<AudioEffect>();
+        private void Awake()
+        {
+                _health = GetComponent<Health>();
+                _character = GetComponent<Character>();
+                _interactions = GetComponent<Interactions>();
+                _fireAudioEffects = _fireAudioEffectsRoot.GetComponentsInChildren<AudioEffect>();
+                _localItems = new InventorySlot[_items.Length];
 
 			foreach (WeaponSlot slot in _slots)
 			{
@@ -415,7 +557,147 @@ namespace TPSBR
 
 		// PRIVATE METHODS
 
-		private void RefreshWeapons()
+        [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
+        private void RPC_RequestMoveItem(byte fromIndex, byte toIndex)
+        {
+                MoveItem(fromIndex, toIndex);
+        }
+
+        private byte AddItemInternal(ItemDefinition definition, byte quantity, NetworkString<_32> configurationHash)
+        {
+                ushort maxStack = ItemDefinition.GetMaxStack(definition.ID);
+                if (maxStack == 0)
+                {
+                        maxStack = 1;
+                }
+
+                int clampedMaxStack = Mathf.Clamp(maxStack, 1, byte.MaxValue);
+                byte maxStackByte = (byte)clampedMaxStack;
+
+                byte remaining = quantity;
+
+                for (int i = 0; i < _items.Length && remaining > 0; i++)
+                {
+                        var slot = _items[i];
+                        if (slot.IsEmpty == true)
+                                continue;
+
+                        if (slot.ItemDefinitionId != definition.ID)
+                                continue;
+
+                        if (slot.ConfigurationHash != configurationHash)
+                                continue;
+
+                        if (slot.Quantity >= maxStackByte)
+                                continue;
+
+                        byte space = (byte)Mathf.Min(maxStackByte - slot.Quantity, remaining);
+                        if (space == 0)
+                                continue;
+
+                        slot.Add(space);
+                        _items.Set(i, slot);
+                        remaining -= space;
+                }
+
+                for (int i = 0; i < _items.Length && remaining > 0; i++)
+                {
+                        var slot = _items[i];
+                        if (slot.IsEmpty == false)
+                                continue;
+
+                        byte addAmount = (byte)Mathf.Min(maxStackByte, remaining);
+                        slot = new InventorySlot(definition.ID, addAmount, configurationHash);
+                        _items.Set(i, slot);
+                        remaining -= addAmount;
+                }
+
+                if (remaining != quantity)
+                {
+                        RefreshItems();
+                }
+
+                return remaining;
+        }
+
+        private void MoveItem(byte fromIndex, byte toIndex)
+        {
+                if (fromIndex == toIndex)
+                        return;
+
+                var fromSlot = _items[fromIndex];
+                if (fromSlot.IsEmpty == true)
+                        return;
+
+                var toSlot = _items[toIndex];
+
+                if (toSlot.IsEmpty == true)
+                {
+                        _items.Set(toIndex, fromSlot);
+                        _items.Set(fromIndex, default);
+                        RefreshItems();
+                        return;
+                }
+
+                if (fromSlot.ItemDefinitionId == toSlot.ItemDefinitionId && fromSlot.ConfigurationHash == toSlot.ConfigurationHash)
+                {
+                        ushort maxStack = ItemDefinition.GetMaxStack(fromSlot.ItemDefinitionId);
+                        if (maxStack == 0)
+                        {
+                                maxStack = 1;
+                        }
+
+                        int clampedMaxStack = Mathf.Clamp(maxStack, 1, byte.MaxValue);
+                        if (toSlot.Quantity < clampedMaxStack)
+                        {
+                                byte space = (byte)Mathf.Min(clampedMaxStack - toSlot.Quantity, fromSlot.Quantity);
+                                if (space > 0)
+                                {
+                                        toSlot.Add(space);
+                                        fromSlot.Remove(space);
+
+                                        _items.Set(toIndex, toSlot);
+
+                                        if (fromSlot.IsEmpty == true)
+                                        {
+                                                _items.Set(fromIndex, default);
+                                        }
+                                        else
+                                        {
+                                                _items.Set(fromIndex, fromSlot);
+                                        }
+
+                                        RefreshItems();
+                                        return;
+                                }
+                        }
+                }
+
+                _items.Set(toIndex, fromSlot);
+                _items.Set(fromIndex, toSlot);
+                RefreshItems();
+        }
+
+        private void RefreshItems()
+        {
+                int length = _items.Length;
+                if (_localItems == null || _localItems.Length != length)
+                {
+                        _localItems = new InventorySlot[length];
+                }
+
+                for (int i = 0; i < length; i++)
+                {
+                        var slot = _items[i];
+                        if (_localItems[i].Equals(slot) == false)
+                        {
+                                _localItems[i] = slot;
+                                ItemSlotChanged?.Invoke(i, slot);
+                        }
+                }
+        }
+
+        private void RefreshWeapons()
 		{
 			// keep previous reference BEFORE reading the networked value
 			var previousWeapon = CurrentWeapon;
