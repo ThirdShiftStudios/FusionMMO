@@ -406,10 +406,13 @@ namespace TPSBR
 
 		private void RefreshWeapons()
 		{
-			CurrentWeapon = _weapons[_currentWeaponSlot];
+			// keep previous reference BEFORE reading the networked value
+			var previousWeapon = CurrentWeapon;
+			var nextWeapon     = _weapons[_currentWeaponSlot];
 
 			Vector2 lastRecoil = Vector2.zero;
 
+			// Initialize and keep last recoil from armed weapons
 			for (int i = 0; i < _weapons.Length; i++)
 			{
 				var weapon = _weapons[i];
@@ -423,30 +426,28 @@ namespace TPSBR
 					_localWeapons[weapon.WeaponSlot] = weapon;
 				}
 
-				if (weapon.IsArmed == true)
+				// Disarm non-current armed weapons
+				if (weapon.IsArmed == true && weapon.WeaponSlot != _currentWeaponSlot)
 				{
-					if (weapon.WeaponSlot != _currentWeaponSlot)
-					{
-						weapon.DisarmWeapon();
-					}
+					weapon.DisarmWeapon();
+				}
 
-					if (weapon is FirearmWeapon firearmWeapon)
-					{
-						lastRecoil = firearmWeapon.Recoil;
-					}
+				if (weapon.IsArmed == true && weapon is FirearmWeapon fw)
+				{
+					lastRecoil = fw.Recoil;
 				}
 			}
 
-			Weapon currentWeapon = _weapons[_currentWeaponSlot];
-			if (CurrentWeapon != currentWeapon)
+			// Only run swap logic when the slot changed (or weapon ref changed)
+			if (previousWeapon != nextWeapon)
 			{
-				if (currentWeapon == null)
+				// Disarm previously current weapon
+				if (previousWeapon != null && previousWeapon.IsArmed)
 				{
-					CurrentWeapon.Deinitialize(Object);
-					_localWeapons[_currentWeaponSlot] = default;
+					previousWeapon.DisarmWeapon();
 				}
 
-				CurrentWeapon             = currentWeapon;
+				CurrentWeapon             = nextWeapon;
 				CurrentWeaponHandle       = _slots[_currentWeaponSlot].Active;
 				CurrentWeaponBaseRotation = _slots[_currentWeaponSlot].BaseRotation;
 
@@ -454,15 +455,20 @@ namespace TPSBR
 				{
 					CurrentWeapon.ArmWeapon();
 
-					if (CurrentWeapon is FirearmWeapon firearmWeapon)
+					if (CurrentWeapon is FirearmWeapon newFw)
 					{
-						// Recoil transfers to new weapon
-						// (might be better to have recoil as an agent property instead of a weapon property)
-						firearmWeapon.Recoil = lastRecoil;
+						// transfer recoil
+						newFw.Recoil = lastRecoil;
 					}
+				}
+				else
+				{
+					// make sure local cache clears when weapon is gone
+					_localWeapons[_currentWeaponSlot] = default;
 				}
 			}
 		}
+
 
 		private void DropAllWeapons()
 		{
@@ -594,6 +600,14 @@ namespace TPSBR
 			}
 
 			return bestWeaponSlot;
+		}
+
+		public void SwitchWeapon(int inputWeapon)
+		{
+			if(_currentWeaponSlot == inputWeapon)
+				return;
+			SetCurrentWeapon(inputWeapon);
+			ArmCurrentWeapon();
 		}
 	}
 }
