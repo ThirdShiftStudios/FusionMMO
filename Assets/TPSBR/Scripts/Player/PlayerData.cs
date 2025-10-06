@@ -97,7 +97,13 @@ namespace TPSBR
 				return default;
 
 			var setup = Global.Settings.Agent.GetAgentSetup(_agentID);
-			return setup != null ? setup.AgentPrefab : default;
+			if (setup != null)
+			{
+				return setup.AgentPrefab;
+			}
+
+			UnityEngine.Debug.LogWarning("AGENT SETUP NOT FOUND : Returnig random setup");
+			return Global.Settings.Agent.GetRandomAgentSetup().AgentPrefab;
 		}
 	}
 }
