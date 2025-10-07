@@ -770,7 +770,8 @@ namespace TPSBR
                 if (inventorySlot.IsEmpty == true)
                         return;
 
-                if (_weaponDefinitionsBySlot.TryGetValue(inventoryIndex, out var definition) == false || definition == null)
+                var definition = inventorySlot.GetDefinition() as WeaponDefinition;
+                if (definition == null)
                         return;
 
                 var weaponPrefab = EnsureWeaponPrefabRegistered(definition);
