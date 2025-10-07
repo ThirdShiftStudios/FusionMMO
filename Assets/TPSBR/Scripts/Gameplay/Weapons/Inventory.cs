@@ -944,17 +944,35 @@ namespace TPSBR
             {
                 var weapon = _hotbar[i];
                 if (weapon == null)
-                    continue;
-
-                if (weapon.IsInitialized == false)
                 {
-                    weapon.Initialize(Object, _slots[weapon.WeaponSlot].Active, _slots[weapon.WeaponSlot].Inactive);
+                    if (i < _localWeapons.Length)
+                    {
+                        _localWeapons[i] = null;
+                    }
+
+                    continue;
+                }
+
+                bool slotChanged = weapon.WeaponSlot != i;
+                if (slotChanged == true)
+                {
+                    weapon.OverrideWeaponSlot(i);
+                }
+
+                WeaponSlot targetSlot = i < _slots.Length ? _slots[i] : null;
+                if (targetSlot != null && (weapon.IsInitialized == false || slotChanged == true))
+                {
+                    weapon.Initialize(Object, targetSlot.Active, targetSlot.Inactive);
                     weapon.AssignFireAudioEffects(_fireAudioEffectsRoot, _fireAudioEffects);
-                    _localWeapons[weapon.WeaponSlot] = weapon;
+                }
+
+                if (i < _localWeapons.Length)
+                {
+                    _localWeapons[i] = weapon;
                 }
 
                 // Disarm non-current armed weapons
-                if (weapon.IsArmed == true && weapon.WeaponSlot != _currentWeaponSlot)
+                if (weapon.IsArmed == true && i != _currentWeaponSlot)
                 {
                     weapon.DisarmWeapon();
                 }

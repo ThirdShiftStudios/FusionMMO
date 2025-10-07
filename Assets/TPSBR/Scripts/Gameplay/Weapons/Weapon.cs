@@ -75,7 +75,22 @@ namespace TPSBR
         public void Initialize(NetworkObject owner, Transform armedParent, Transform disarmedParent)
         {
             if (_isInitialized == true)
+            {
+                if (_owner != owner)
+                    return;
+
+                bool parentsChanged = _armedParent != armedParent || _disarmedParent != disarmedParent;
+
+                _armedParent = armedParent;
+                _disarmedParent = disarmedParent;
+
+                if (parentsChanged == true)
+                {
+                    RefreshParent();
+                }
+
                 return;
+            }
 
             _isInitialized = true;
             _owner = owner;
