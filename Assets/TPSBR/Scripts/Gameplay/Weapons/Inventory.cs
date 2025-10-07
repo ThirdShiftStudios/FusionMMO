@@ -15,6 +15,13 @@ namespace TPSBR
         [NonSerialized] public Quaternion BaseRotation;
     }
 
+    [Serializable]
+    public struct WeaponSizeSlot
+    {
+        public WeaponSize Size;
+        public int SlotIndex;
+    }
+
     public struct InventorySlot : INetworkStruct, IEquatable<InventorySlot>
     {
         public InventorySlot(int itemDefinitionId, byte quantity, NetworkString<_32> configurationHash)
@@ -93,10 +100,12 @@ namespace TPSBR
         public LayerMask HitMask => _hitMask;
         public int CurrentWeaponSlot => _currentWeaponSlot;
         public int PreviousWeaponSlot => _previousWeaponSlot;
+        public WeaponSize CurrentWeaponSize => CurrentWeapon != null ? CurrentWeapon.Size : WeaponSize.Unarmed;
         public const int INVENTORY_SIZE = 10;
         // PRIVATE MEMBERS
 
         [SerializeField] private WeaponSlot[] _slots;
+        [SerializeField] private WeaponSizeSlot[] _weaponSizeSlots;
         [SerializeField] private Weapon[] _initialWeapons;
         [SerializeField] private Vector3 _dropWeaponImpulse = new Vector3(5, 5f, 10f);
         [SerializeField] private LayerMask _hitMask;
@@ -117,6 +126,7 @@ namespace TPSBR
         private Weapon[] _lastHotbarWeapons;
         private InventorySlot[] _localItems;
         private Dictionary<int, WeaponDefinition> _weaponDefinitionsBySlot = new Dictionary<int, WeaponDefinition>();
+        private readonly Dictionary<WeaponSize, int> _weaponSizeToSlotIndex = new Dictionary<WeaponSize, int>();
 
         private static readonly Dictionary<int, Weapon> _weaponPrefabsByDefinitionId = new Dictionary<int, Weapon>();
 
@@ -254,7 +264,7 @@ namespace TPSBR
             if (HasStateAuthority == false || pickupWeapon == null)
                 return;
 
-            var ownedWeapon = _hotbar[pickupWeapon.WeaponSlot];
+            var ownedWeapon = FindWeaponById(pickupWeapon.WeaponID, out _);
 
             EnsureWeaponPrefabRegistered(pickupWeapon.Definition, pickupWeapon);
             if (ownedWeapon != null && ownedWeapon.WeaponID == pickupWeapon.WeaponID)
@@ -318,7 +328,7 @@ namespace TPSBR
             if (weaponPickup.Consumed == true || weaponPickup.IsDisabled == true)
                 return;
 
-            var ownedWeapon = _hotbar[weaponPickup.WeaponPrefab.WeaponSlot];
+            var ownedWeapon = FindWeaponById(weaponPickup.WeaponPrefab.WeaponID, out _);
             if (ownedWeapon != null && ownedWeapon.WeaponID == weaponPickup.WeaponPrefab.WeaponID)
             {
                 // We already have this weapon, try add at least the ammo
@@ -361,6 +371,7 @@ namespace TPSBR
             _previousWeaponSlot = 0;
 
             byte bestWeaponSlot = 0;
+            int bestPriority = -1;
 
             // Spawn initial weapons
             for (byte i = 0; i < _initialWeapons.Length; i++)
@@ -374,9 +385,12 @@ namespace TPSBR
                 var weapon = Runner.Spawn(weaponPrefab, inputAuthority: Object.InputAuthority);
                 AddWeapon(weapon);
 
-                if (weapon.WeaponSlot > bestWeaponSlot && weapon.WeaponSlot < 3)
+                int weaponSlot = ClampToValidSlot(GetSlotIndex(weapon.Size));
+                int priority = GetWeaponPriority(weapon.Size);
+                if (priority > bestPriority)
                 {
-                    bestWeaponSlot = (byte)weapon.WeaponSlot;
+                    bestPriority = priority;
+                    bestWeaponSlot = (byte)weaponSlot;
                 }
             }
 
@@ -502,6 +516,25 @@ namespace TPSBR
             return _hotbar[slot];
         }
 
+        public Weapon GetWeapon(WeaponSize size)
+        {
+            for (int i = 0; i < _hotbar.Length; i++)
+            {
+                var weapon = _hotbar[i];
+                if (weapon != null && weapon.Size == size)
+                {
+                    return weapon;
+                }
+            }
+
+            return null;
+        }
+
+        public int GetSlotForSize(WeaponSize size)
+        {
+            return ClampToValidSlot(GetSlotIndex(size));
+        }
+
         public int GetNextWeaponSlot(int fromSlot, int minSlot = 0, bool checkAmmo = true)
         {
             int weaponCount = _hotbar.Length;
@@ -549,15 +582,20 @@ namespace TPSBR
             return true;
         }
 
-        public bool AddAmmo(int weaponSlot, int amount, out string result)
+        public bool AddAmmo(WeaponSize weaponSize, int amount, out string result)
         {
-            if (weaponSlot < 0 || weaponSlot >= _hotbar.Length)
+            Weapon weapon = null;
+
+            for (int i = 0; i < _hotbar.Length; i++)
             {
-                result = string.Empty;
-                return false;
+                var candidate = _hotbar[i];
+                if (candidate != null && candidate.Size == weaponSize)
+                {
+                    weapon = candidate;
+                    break;
+                }
             }
 
-            var weapon = _hotbar[weaponSlot];
             if (weapon == null)
             {
                 result = "No weapon with this type of ammo";
@@ -589,6 +627,20 @@ namespace TPSBR
             _localItems = new InventorySlot[INVENTORY_SIZE];
             _lastHotbarWeapons = new Weapon[_localWeapons.Length];
             _weaponDefinitionsBySlot.Clear();
+            _weaponSizeToSlotIndex.Clear();
+
+            if (_weaponSizeSlots != null)
+            {
+                foreach (var sizeSlot in _weaponSizeSlots)
+                {
+                    if (sizeSlot.SlotIndex < 0)
+                    {
+                        continue;
+                    }
+
+                    _weaponSizeToSlotIndex[sizeSlot.Size] = sizeSlot.SlotIndex;
+                }
+            }
 
             foreach (WeaponSlot slot in _slots)
             {
@@ -600,6 +652,88 @@ namespace TPSBR
         }
 
         // PRIVATE METHODS
+
+        private int GetSlotIndex(WeaponSize size)
+        {
+            if (_slots == null || _slots.Length == 0)
+            {
+                return 0;
+            }
+
+            if (_weaponSizeToSlotIndex.TryGetValue(size, out int slotIndex) == false)
+            {
+                slotIndex = GetDefaultSlotIndex(size);
+            }
+
+            if (slotIndex < 0)
+            {
+                slotIndex = 0;
+            }
+
+            if (slotIndex >= _slots.Length)
+            {
+                slotIndex = Mathf.Clamp(_slots.Length - 1, 0, int.MaxValue);
+            }
+
+            return slotIndex;
+        }
+
+        private int ClampToValidSlot(int slotIndex)
+        {
+            int slotsLength = _slots != null ? _slots.Length : 0;
+            int maxSlot = Mathf.Min(slotsLength, _hotbar.Length) - 1;
+
+            if (maxSlot < 0)
+            {
+                return 0;
+            }
+
+            return Mathf.Clamp(slotIndex, 0, maxSlot);
+        }
+
+        private int FindWeaponSlotBySize(WeaponSize size)
+        {
+            for (int i = 0; i < _hotbar.Length; i++)
+            {
+                var weapon = _hotbar[i];
+                if (weapon != null && weapon.Size == size)
+                {
+                    return i;
+                }
+            }
+
+            return -1;
+        }
+
+        private Weapon FindWeaponById(int weaponId, out int slotIndex)
+        {
+            slotIndex = -1;
+
+            for (int i = 0; i < _hotbar.Length; i++)
+            {
+                var weapon = _hotbar[i];
+                if (weapon != null && weapon.WeaponID == weaponId)
+                {
+                    slotIndex = i;
+                    return weapon;
+                }
+            }
+
+            return null;
+        }
+
+        private static int GetDefaultSlotIndex(WeaponSize size)
+        {
+            return size switch
+            {
+                WeaponSize.Unarmed => 0,
+                WeaponSize.Light => 1,
+                WeaponSize.Staff => 1,
+                WeaponSize.Heavy => 2,
+                WeaponSize.Throwable => 5,
+                _ => 0,
+            };
+        }
 
         [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
         private void RPC_RequestMoveItem(byte fromIndex, byte toIndex)
@@ -784,7 +918,6 @@ namespace TPSBR
                 return;
             }
 
-            spawnedWeapon.OverrideWeaponSlot(slot);
             AddWeapon(spawnedWeapon, slot);
 
             if (_currentWeaponSlot == slot)
@@ -812,16 +945,6 @@ namespace TPSBR
 
             _hotbar.Set(fromSlot, toWeapon);
             _hotbar.Set(toSlot, fromWeapon);
-
-            if (fromWeapon != null)
-            {
-                fromWeapon.OverrideWeaponSlot(toSlot);
-            }
-
-            if (toWeapon != null)
-            {
-                toWeapon.OverrideWeaponSlot(fromSlot);
-            }
 
             if (_currentWeaponSlot == fromSlot)
             {
@@ -953,14 +1076,9 @@ namespace TPSBR
                     continue;
                 }
 
-                bool slotChanged = weapon.WeaponSlot != i;
-                if (slotChanged == true)
-                {
-                    weapon.OverrideWeaponSlot(i);
-                }
-
+                bool cacheChanged = i < _localWeapons.Length && _localWeapons[i] != weapon;
                 WeaponSlot targetSlot = i < _slots.Length ? _slots[i] : null;
-                if (targetSlot != null && (weapon.IsInitialized == false || slotChanged == true))
+                if (targetSlot != null && (weapon.IsInitialized == false || cacheChanged == true))
                 {
                     weapon.Initialize(Object, targetSlot.Active, targetSlot.Inactive);
                     weapon.AssignFireAudioEffects(_fireAudioEffectsRoot, _fireAudioEffects);
@@ -1155,19 +1273,34 @@ namespace TPSBR
         return prefabObject.GetComponent<Weapon>();
     }
 
-    private void PickupWeapon(Weapon weapon)
+    private int PickupWeapon(Weapon weapon, int? slotOverride = null)
     {
         if (weapon == null)
-            return;
+            return -1;
 
-        DropWeapon(weapon.WeaponSlot);
-        AddWeapon(weapon);
-
-        if (weapon.WeaponSlot >= _currentWeaponSlot && weapon.WeaponSlot < 5)
+        int targetSlot;
+        if (slotOverride.HasValue)
         {
-            SetCurrentWeapon(weapon.WeaponSlot);
+            targetSlot = slotOverride.Value;
+        }
+        else
+        {
+            int existingSlot = FindWeaponSlotBySize(weapon.Size);
+            targetSlot = existingSlot >= 0 ? existingSlot : GetSlotIndex(weapon.Size);
+        }
+
+        targetSlot = ClampToValidSlot(targetSlot);
+
+        DropWeapon(targetSlot);
+        AddWeapon(weapon, targetSlot);
+
+        if (targetSlot >= _currentWeaponSlot && targetSlot < 5)
+        {
+            SetCurrentWeapon(targetSlot);
             ArmCurrentWeapon();
         }
+
+        return targetSlot;
     }
 
     private bool TryAddWeaponToInventory(Weapon weapon)
@@ -1234,13 +1367,26 @@ namespace TPSBR
         if (weapon == null)
             return;
 
-        int targetSlot = slotOverride ?? weapon.WeaponSlot;
-        weapon.OverrideWeaponSlot(targetSlot);
+        if (_slots == null || _slots.Length == 0)
+            return;
+
+        int targetSlot;
+        if (slotOverride.HasValue)
+        {
+            targetSlot = slotOverride.Value;
+        }
+        else
+        {
+            int existingSlot = FindWeaponSlotBySize(weapon.Size);
+            targetSlot = existingSlot >= 0 ? existingSlot : GetSlotIndex(weapon.Size);
+        }
+        targetSlot = ClampToValidSlot(targetSlot);
 
         RemoveWeapon(targetSlot);
 
         weapon.Object.AssignInputAuthority(Object.InputAuthority);
-        weapon.Initialize(Object, _slots[targetSlot].Active, _slots[targetSlot].Inactive);
+        WeaponSlot slot = _slots[targetSlot];
+        weapon.Initialize(Object, slot.Active, slot.Inactive);
         weapon.AssignFireAudioEffects(_fireAudioEffectsRoot, _fireAudioEffects);
 
         var aoiProxy = weapon.GetComponent<NetworkAreaOfInterestProxy>();
@@ -1277,23 +1423,43 @@ namespace TPSBR
     private byte FindBestWeaponSlot(int ignoreSlot)
     {
         byte bestWeaponSlot = 0;
+        int bestPriority = -1;
 
         for (int i = 0; i < _hotbar.Length; i++)
         {
             Weapon weapon = _hotbar[i];
             if (weapon != null)
             {
-                if (weapon.WeaponSlot == ignoreSlot)
+                if (i == ignoreSlot)
                     continue;
 
-                if (weapon.WeaponSlot > bestWeaponSlot && weapon.WeaponSlot < 3)
+                int priority = GetWeaponPriority(weapon.Size);
+                if (priority > bestPriority)
                 {
-                    bestWeaponSlot = (byte)weapon.WeaponSlot;
+                    bestPriority = priority;
+                    bestWeaponSlot = (byte)i;
                 }
             }
         }
 
         return bestWeaponSlot;
+    }
+
+    private static int GetWeaponPriority(WeaponSize size)
+    {
+        switch (size)
+        {
+            case WeaponSize.Heavy:
+                return 3;
+            case WeaponSize.Staff:
+            case WeaponSize.Light:
+                return 2;
+            case WeaponSize.Throwable:
+                return 1;
+            case WeaponSize.Unarmed:
+            default:
+                return 0;
+        }
     }
 
     public void SwitchWeapon(int hotbarIndex)

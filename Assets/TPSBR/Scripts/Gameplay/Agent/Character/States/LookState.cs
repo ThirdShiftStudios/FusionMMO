@@ -123,19 +123,21 @@ namespace TPSBR
 			_mixer.SetInputWeight(clipIndex, 1.0f);
 		}
 
-		private int GetSetID()
-		{
-			int currentWeaponSlot = _inventory.CurrentWeaponSlot;
-			if (currentWeaponSlot > 2)
-			{
-				currentWeaponSlot = 1; // For grenades we use pistol set
-			}
+                private int GetSetID()
+                {
+                        WeaponSize currentSize = _inventory.CurrentWeaponSize;
+                        int stanceIndex = currentSize.ToStanceIndex();
 
-			if (currentWeaponSlot < 0)
-				return -1;
+                        if (_sets == null || _sets.Length == 0)
+                                return -1;
 
-			return currentWeaponSlot;
-		}
+                        if (stanceIndex >= _sets.Length)
+                        {
+                                stanceIndex = Mathf.Clamp(_sets.Length - 1, 0, int.MaxValue);
+                        }
+
+                        return stanceIndex;
+                }
 
 		[Serializable]
 		private sealed class LookSet

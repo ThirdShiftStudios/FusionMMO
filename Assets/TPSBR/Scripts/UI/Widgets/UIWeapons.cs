@@ -45,14 +45,17 @@ namespace TPSBR.UI
 		private float _thumbnailInactiveAlpha = 0.3f;
 		[SerializeField]
 		private Color _grenadeChangingColor = Color.yellow;
-		[SerializeField]
-		private Color _grenadeInactiveColor = Color.gray;
-		[SerializeField]
-		private Image[] _grenades;
+                [SerializeField]
+                private Color _grenadeInactiveColor = Color.gray;
+                [SerializeField]
+                private Image[] _grenades;
 
-		private int _lastMagazineAmmo;
-		private int _lastWeaponAmmo;
-		private int _lastWeaponSlot;
+                private static readonly WeaponSize[] SecondaryWeaponSizes = { WeaponSize.Staff, WeaponSize.Light };
+                private static readonly WeaponSize[] PrimaryWeaponSizes = { WeaponSize.Heavy };
+
+                private int _lastMagazineAmmo;
+                private int _lastWeaponAmmo;
+                private int _lastWeaponSlot;
 
 		private NetworkId _lastPrimaryID;
 		private NetworkId _lastSecondaryID;
@@ -100,16 +103,16 @@ namespace TPSBR.UI
 				_lastWeaponAmmo = currentWeapon.WeaponAmmo;
 			}
 
-			if (currentWeapon.GetInstanceID() != _lastWeaponSlot)
-			{
-				_weaponIcon.sprite = currentWeapon.Icon;
-				_weaponIconShadow.sprite = currentWeapon.Icon;
-				_weaponName.text = currentWeapon.DisplayName;
-				_weaponClass.text = GetClassText(currentWeapon.WeaponSlot);
+                        if (currentWeapon.GetInstanceID() != _lastWeaponSlot)
+                        {
+                                _weaponIcon.sprite = currentWeapon.Icon;
+                                _weaponIconShadow.sprite = currentWeapon.Icon;
+                                _weaponName.text = currentWeapon.DisplayName;
+                                _weaponClass.text = GetClassText(currentWeapon.Size);
 
-				_lastWeaponSlot = currentWeapon.GetInstanceID();
-			}
-		}
+                                _lastWeaponSlot = currentWeapon.GetInstanceID();
+                        }
+                }
 
 		// MONOBEHAVIOUR
 
@@ -120,24 +123,23 @@ namespace TPSBR.UI
 
 		// PRIVATE METHODS
 
-		private void UpdateThumbnails(Inventory inventory, AgentInput agentInput)
-		{
-			_secondaryThumbnail.SetActive(inventory.HasWeapon(1));
-			_primaryThumbnail.SetActive(inventory.HasWeapon(2));
+                private void UpdateThumbnails(Inventory inventory, AgentInput agentInput)
+                {
+                        UpdateWeaponThumbnail(inventory, _secondaryThumbnail, _secondaryThumbnailIcon, SecondaryWeaponSizes, ref _lastSecondaryID);
+                        UpdateWeaponThumbnail(inventory, _primaryThumbnail, _primaryThumbnailIcon, PrimaryWeaponSizes, ref _lastPrimaryID);
 
-			UpdateWeaponThumbnail(inventory, _secondaryThumbnail, _secondaryThumbnailIcon, 1, ref _lastSecondaryID);
-			UpdateWeaponThumbnail(inventory, _primaryThumbnail, _primaryThumbnailIcon, 2, ref _lastPrimaryID);
+                        WeaponSize currentWeaponSize = inventory.CurrentWeaponSize;
 
-			int currentWeaponSlot = inventory.CurrentWeaponSlot;
+                        _unarmedThumbnail.alpha   = currentWeaponSize == WeaponSize.Unarmed ? 1f : _thumbnailInactiveAlpha;
+                        bool isSecondary = currentWeaponSize == WeaponSize.Light || currentWeaponSize == WeaponSize.Staff;
+                        _secondaryThumbnail.alpha = isSecondary ? 1f : _thumbnailInactiveAlpha;
+                        _primaryThumbnail.alpha   = currentWeaponSize == WeaponSize.Heavy ? 1f : _thumbnailInactiveAlpha;
+                        _grenadesThumbnail.alpha  = currentWeaponSize == WeaponSize.Throwable ? 1f : _thumbnailInactiveAlpha;
 
-			_unarmedThumbnail.alpha   = currentWeaponSlot == 0 ? 1f : _thumbnailInactiveAlpha;
-			_secondaryThumbnail.alpha = currentWeaponSlot == 1 ? 1f : _thumbnailInactiveAlpha;
-			_primaryThumbnail.alpha   = currentWeaponSlot == 2 ? 1f : _thumbnailInactiveAlpha;
-			_grenadesThumbnail.alpha  = currentWeaponSlot >  3 ? 1f : _thumbnailInactiveAlpha;
+                        _grenadeChangingGroup.SetVisibility(agentInput.IsCyclingGrenades);
 
-			_grenadeChangingGroup.SetVisibility(agentInput.IsCyclingGrenades);
-
-			int grenadeStartSlot = 5;
+                        int currentWeaponSlot = inventory.CurrentWeaponSlot;
+                        int grenadeStartSlot = 5;
 			bool hasAnyGrenade = false;
 			var activeGrenadeColor = agentInput.IsCyclingGrenades == true ? _grenadeChangingColor : _grenadeColor;
 
@@ -163,36 +165,38 @@ namespace TPSBR.UI
 			_grenadesThumbnail.SetActive(hasAnyGrenade);
 		}
 
-		private void UpdateWeaponThumbnail(Inventory inventory, CanvasGroup thumbnail, Image weaponIcon, int weaponSlot, ref NetworkId lastWeaponID)
-		{
-			var weapon = inventory.GetWeapon(weaponSlot);
+                private void UpdateWeaponThumbnail(Inventory inventory, CanvasGroup thumbnail, Image weaponIcon, WeaponSize[] sizes, ref NetworkId lastWeaponID)
+                {
+                        Weapon weapon = null;
 
-			if (weapon == null || weapon.Object == null)
-			{
-				thumbnail.SetActive(false);
-				return;
-			}
+                        foreach (WeaponSize size in sizes)
+                        {
+                                var candidate = inventory.GetWeapon(size);
+                                if (candidate != null && candidate.Object != null)
+                                {
+                                        weapon = candidate;
+                                        break;
+                                }
+                        }
 
-			thumbnail.SetActive(true);
+                        if (weapon == null || weapon.Object == null)
+                        {
+                                thumbnail.SetActive(false);
+                                return;
+                        }
 
-			if (lastWeaponID == weapon.Object.Id)
-				return;
+                        thumbnail.SetActive(true);
 
-			weaponIcon.sprite = weapon.Icon;
-			lastWeaponID = weapon.Object.Id;
-		}
+                        if (lastWeaponID == weapon.Object.Id)
+                                return;
 
-		private string GetClassText(int weaponSlot)
-		{
-			switch (weaponSlot)
-			{
-				case 0: return "MELEE";
-				case 1: return "PISTOL";
-				case 2: return "PRIMARY";
-				case 3: return "SECONDARY";
-			}
+                        weaponIcon.sprite = weapon.Icon;
+                        lastWeaponID = weapon.Object.Id;
+                }
 
-			return "THROWABLE";
-		}
-	}
+                private string GetClassText(WeaponSize weaponSize)
+                {
+                        return weaponSize.ToDisplayClass();
+                }
+        }
 }

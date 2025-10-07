@@ -67,19 +67,13 @@ namespace TPSBR
 			return 1.0f;
 		}
 
-		public override int GetSetID()
-		{
-			int currentWeaponSlot = _inventory.CurrentWeaponSlot;
-			if (currentWeaponSlot > 2)
-			{
-				currentWeaponSlot = 1; // For grenades we use pistol set
-			}
+                public override int GetSetID()
+                {
+                        WeaponSize currentSize = _inventory.CurrentWeaponSize;
+                        int stanceIndex = currentSize.ToStanceIndex();
 
-			if (currentWeaponSlot < 0)
-				return 0;
-
-			return currentWeaponSlot;
-		}
+                        return Mathf.Max(0, stanceIndex);
+                }
 
 		// AnimationState INTERFACE
 
@@ -261,16 +255,18 @@ namespace TPSBR
 			return Mathf.Lerp(nodes[fromNodeIndex].Position.magnitude, nodes[toNodeIndex].Position.magnitude, alpha);
 		}
 
-		private float GetMultiplier()
-		{
-			switch (_inventory.CurrentWeaponSlot)
-			{
-				case 0: { return 1.0f;  }
-				case 1: { return 0.95f; }
-				case 2: { return 0.9f;  }
-			}
+                private float GetMultiplier()
+                {
+                        switch (_inventory.CurrentWeaponSize)
+                        {
+                                case WeaponSize.Unarmed:   return 1.0f;
+                                case WeaponSize.Light:     return 0.95f;
+                                case WeaponSize.Throwable: return 0.95f;
+                                case WeaponSize.Heavy:     return 0.9f;
+                                case WeaponSize.Staff:     return 0.92f;
+                        }
 
-			return 0.95f;
-		}
+                        return 0.95f;
+                }
 	}
 }

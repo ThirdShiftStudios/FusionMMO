@@ -280,15 +280,15 @@ namespace TPSBR
 			}
 		}
 
-		private void TryFire(bool attack, bool hold)
-		{
-			var currentWeapon = _inventory.CurrentWeapon;
-			if (currentWeapon is ThrowableWeapon && currentWeapon.WeaponSlot == _inventory.CurrentWeaponSlot)
-			{
-				// Fire is handled form the grenade animation state itself
-				_character.AnimationController.ProcessThrow(attack, hold);
-				return;
-			}
+                private void TryFire(bool attack, bool hold)
+                {
+                        var currentWeapon = _inventory.CurrentWeapon;
+                        if (currentWeapon is ThrowableWeapon && _inventory.CurrentWeaponSize == WeaponSize.Throwable)
+                        {
+                                // Fire is handled form the grenade animation state itself
+                                _character.AnimationController.ProcessThrow(attack, hold);
+                                return;
+                        }
 
 			if (hold == false)
 				return;

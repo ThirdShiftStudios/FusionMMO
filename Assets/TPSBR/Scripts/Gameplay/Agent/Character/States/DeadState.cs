@@ -11,13 +11,19 @@ namespace TPSBR
 
 		// MultiClipState INTERFACE
 
-		protected override int GetClipID()
-		{
-			if (_inventory.CurrentWeaponSlot > 2)
-				return 1; // For grenades we use pistol set
+                protected override int GetClipID()
+                {
+                        WeaponSize currentSize = _inventory.CurrentWeaponSize;
+                        int stanceIndex = currentSize.ToStanceIndex();
 
-			return Mathf.Max(0, _inventory.CurrentWeaponSlot);
-		}
+                        int clipCount = Nodes != null ? Nodes.Length : 0;
+                        if (clipCount > 0)
+                        {
+                                stanceIndex = Mathf.Clamp(stanceIndex, 0, clipCount - 1);
+                        }
+
+                        return Mathf.Max(0, stanceIndex);
+                }
 
 		// AnimationState INTERFACE
 

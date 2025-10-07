@@ -10,7 +10,6 @@ namespace TPSBR
 
         public int WeaponID => _weaponDefinition.ID;
         public WeaponDefinition Definition => _weaponDefinition;
-        public int WeaponSlot => _weaponSlot;
         public Transform LeftHandTarget => _leftHandTarget;
         public DynamicPickup PickupPrefab => _pickupPrefab;
         public EHitType HitType => _hitType;
@@ -23,12 +22,12 @@ namespace TPSBR
         public bool IsArmed => _isArmed;
         public NetworkObject Owner => _owner;
         public Character Character => _character;
+        public WeaponSize Size => _weaponSize;
 
         // PRIVATE MEMBERS
 
         [SerializeField] private WeaponDefinition _weaponDefinition;
-
-        [SerializeField] private int _weaponSlot;
+        [SerializeField] private WeaponSize _weaponSize = WeaponSize.Unarmed;
         [SerializeField] private bool _validOnlyWithAmmo;
         [SerializeField] private Transform _leftHandTarget;
         [SerializeField] private EHitType _hitType;
@@ -155,11 +154,6 @@ namespace TPSBR
         public virtual bool CanFireToPosition(Vector3 firePosition, ref Vector3 targetPosition, LayerMask hitMask)
         {
             return true;
-        }
-
-        public void OverrideWeaponSlot(int slot)
-        {
-            _weaponSlot = slot;
         }
 
         // NetworkBehaviour INTERFACE

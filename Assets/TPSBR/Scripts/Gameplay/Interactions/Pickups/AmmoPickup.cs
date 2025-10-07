@@ -6,8 +6,8 @@ namespace TPSBR
 	{
 		// PRIVATE MEMBERS
 
-		[SerializeField]
-		private int _weaponSlot = 1;
+                [SerializeField]
+                private WeaponSize _weaponSize = WeaponSize.Light;
 		[SerializeField]
 		private int _amount = 50;
 
@@ -21,7 +21,7 @@ namespace TPSBR
 				return false;
 			}
 
-			return weapons.AddAmmo(_weaponSlot, _amount, out result);
-		}
-	}
+                        return weapons.AddAmmo(_weaponSize, _amount, out result);
+                }
+        }
 }

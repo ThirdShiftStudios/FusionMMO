@@ -173,19 +173,16 @@ namespace TPSBR
 
 		// PRIVATE METHODS
 
-		private int GetClipID()
-		{
-			int currentWeaponSlot = _inventory.CurrentWeaponSlot;
-			if (currentWeaponSlot > 2)
-			{
-				currentWeaponSlot = 1; // For grenades we use pistol set
-			}
+                private int GetClipID()
+                {
+                        WeaponSize currentSize = _inventory.CurrentWeaponSize;
+                        int stanceIndex = currentSize.ToStanceIndex();
 
-			if (currentWeaponSlot < 0)
-				return 0;
+                        int setCount = _nodes != null && _nodes.Length > 0 ? Mathf.Max(1, _nodes.Length / 3) : 1;
+                        stanceIndex = Mathf.Clamp(stanceIndex, 0, setCount - 1);
 
-			return currentWeaponSlot * 3;
-		}
+                        return stanceIndex * 3;
+                }
 
 		private void InterpolateAnimationTime(AnimationInterpolationInfo interpolationInfo)
 		{
