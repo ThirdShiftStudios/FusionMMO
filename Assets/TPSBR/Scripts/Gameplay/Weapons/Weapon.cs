@@ -8,7 +8,8 @@ namespace TPSBR
 	{
 		// PUBLIC MEMBERS
 
-		public int        WeaponID           => _weaponDefinition.ID;
+                public int        WeaponID           => _weaponDefinition.ID;
+                public WeaponDefinition Definition   => _weaponDefinition;
 		public int           WeaponSlot         => _weaponSlot;
 		public Transform     LeftHandTarget     => _leftHandTarget;
 		public DynamicPickup PickupPrefab       => _pickupPrefab;
@@ -80,7 +81,7 @@ namespace TPSBR
 			OnIsArmedChanged();
 		}
 
-		public void Initialize(NetworkObject owner, Transform armedParent, Transform disarmedParent)
+                public void Initialize(NetworkObject owner, Transform armedParent, Transform disarmedParent)
 		{
 			if (_isInitialized == true)
 				return;
@@ -127,7 +128,12 @@ namespace TPSBR
 
 		public virtual bool AddAmmo(int ammo) { return false; }
 
-		public virtual bool CanFireToPosition(Vector3 firePosition, ref Vector3 targetPosition, LayerMask hitMask) { return true; }
+                public virtual bool CanFireToPosition(Vector3 firePosition, ref Vector3 targetPosition, LayerMask hitMask) { return true; }
+
+                public void OverrideWeaponSlot(int slot)
+                {
+                        _weaponSlot = slot;
+                }
 
 		// NetworkBehaviour INTERFACE
 

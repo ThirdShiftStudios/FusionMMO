@@ -1116,8 +1116,12 @@ namespace TPSBR
                         if (networkObject == null)
                                 return null;
 
-                        var prefabId = networkObject.PrefabId;
-                        if (prefabId.Equals(default(NetworkPrefabId)) == true)
+                        var networkTypeId = networkObject.NetworkTypeId;
+                        if (networkTypeId.IsValid == false)
+                                return null;
+
+                        var prefabId = networkTypeId.AsPrefabId;
+                        if (prefabId.IsValid == false)
                                 return null;
 
                         var prefabTable = Runner != null ? Runner.Config?.PrefabTable : null;
