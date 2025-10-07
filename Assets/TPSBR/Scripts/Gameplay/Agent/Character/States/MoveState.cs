@@ -4,10 +4,14 @@ namespace TPSBR
 	using Fusion.Addons.KCC;
 	using Fusion.Addons.AnimationController;
 
+	public enum AnimationCategory
+	{
+		None = 0,
+		UseFirstSet = 1,
+	}
 	public sealed class MoveState : MultiBlendTreeState
 	{
 		// PUBLIC MEMBERS
-
 		public Vector3 FixedDirection        => _fixedDirection;
 		public float   FixedMagnitude        => _fixedMagnitude;
 		public Vector3 InterpolatedDirection => _interpolatedDirection;
@@ -31,6 +35,7 @@ namespace TPSBR
 		private float   _fixedMagnitude;
 		private Vector3 _interpolatedDirection;
 		private float   _interpolatedMagnitude;
+		private AnimationCategory _animationCategory;
 
 		// PUBLIC METHODS
 
@@ -67,13 +72,17 @@ namespace TPSBR
 			return 1.0f;
 		}
 
-                public override int GetSetID()
-                {
-                        WeaponSize currentSize = _inventory.CurrentWeaponSize;
-                        int stanceIndex = currentSize.ToStanceIndex();
+        public override int GetSetID()
+        {
+	        if (_animationCategory == AnimationCategory.UseFirstSet)
+	        {
+		        return 0;
+	        }
+            WeaponSize currentSize = _inventory.CurrentWeaponSize;
+            int stanceIndex = currentSize.ToStanceIndex();
 
-                        return Mathf.Max(0, stanceIndex);
-                }
+            return Mathf.Max(0, stanceIndex);
+        }
 
 		// AnimationState INTERFACE
 
@@ -255,18 +264,21 @@ namespace TPSBR
 			return Mathf.Lerp(nodes[fromNodeIndex].Position.magnitude, nodes[toNodeIndex].Position.magnitude, alpha);
 		}
 
-                private float GetMultiplier()
+        private float GetMultiplier()
+        {
+                switch (_inventory.CurrentWeaponSize)
                 {
-                        switch (_inventory.CurrentWeaponSize)
-                        {
-                                case WeaponSize.Unarmed:   return 1.0f;
-                                case WeaponSize.Light:     return 0.95f;
-                                case WeaponSize.Throwable: return 0.95f;
-                                case WeaponSize.Heavy:     return 0.9f;
-                                case WeaponSize.Staff:     return 0.92f;
-                        }
-
-                        return 0.95f;
+                        case WeaponSize.Unarmed:   return 1.0f;
+                        case WeaponSize.Throwable: return 0.95f;
+                        case WeaponSize.Staff:     return 0.92f;
                 }
+
+                return 0.95f;
+        }
+
+        public void SetAnimationCategory(AnimationCategory category)
+        {
+	        _animationCategory = category;
+        }
 	}
 }

@@ -7,7 +7,7 @@ namespace TPSBR
 		// PRIVATE MEMBERS
 
                 [SerializeField]
-                private WeaponSize _weaponSize = WeaponSize.Light;
+                private WeaponSize _weaponSize = WeaponSize.Staff;
 		[SerializeField]
 		private int _amount = 50;
 

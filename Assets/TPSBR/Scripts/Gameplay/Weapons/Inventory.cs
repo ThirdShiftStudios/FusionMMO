@@ -727,9 +727,7 @@ namespace TPSBR
             return size switch
             {
                 WeaponSize.Unarmed => 0,
-                WeaponSize.Light => 1,
                 WeaponSize.Staff => 1,
-                WeaponSize.Heavy => 2,
                 WeaponSize.Throwable => 5,
                 _ => 0,
             };
@@ -1449,10 +1447,7 @@ namespace TPSBR
     {
         switch (size)
         {
-            case WeaponSize.Heavy:
-                return 3;
             case WeaponSize.Staff:
-            case WeaponSize.Light:
                 return 2;
             case WeaponSize.Throwable:
                 return 1;

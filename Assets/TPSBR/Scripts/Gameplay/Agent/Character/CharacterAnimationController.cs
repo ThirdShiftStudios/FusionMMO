@@ -120,8 +120,6 @@ namespace TPSBR
 			{
 				Animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
 			}
-
-			_locomotion.Move.Activate(0.0f);
 		}
 
 		protected override void OnFixedUpdate()

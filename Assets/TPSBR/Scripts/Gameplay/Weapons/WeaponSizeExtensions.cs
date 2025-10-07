@@ -7,10 +7,8 @@ namespace TPSBR
             return size switch
             {
                 WeaponSize.Unarmed => 0,
-                WeaponSize.Light => 1,
-                WeaponSize.Throwable => 1,
-                WeaponSize.Heavy => 2,
-                WeaponSize.Staff => 3,
+                WeaponSize.Staff => 1,
+                WeaponSize.Throwable => 5,
                 _ => 0,
             };
         }
@@ -20,8 +18,6 @@ namespace TPSBR
             return size switch
             {
                 WeaponSize.Unarmed => "UNARMED",
-                WeaponSize.Light => "SIDEARM",
-                WeaponSize.Heavy => "PRIMARY",
                 WeaponSize.Staff => "STAFF",
                 WeaponSize.Throwable => "THROWABLE",
                 _ => "UNARMED",
