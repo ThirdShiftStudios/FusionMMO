@@ -9,6 +9,33 @@ namespace Unity.Template.CompetitiveActionMultiplayer
         [SerializeField]
         private Weapon _weaponPrefab;
 
-        public Weapon WeaponPrefab => _weaponPrefab;
+        public Weapon WeaponPrefab
+        {
+            get
+            {
+                if (_weaponPrefab == null && NetworkPrefab != null)
+                {
+                    if (NetworkPrefab.TryGetComponent(out Weapon networkWeapon) == true)
+                    {
+                        _weaponPrefab = networkWeapon;
+                    }
+                }
+
+                return _weaponPrefab;
+            }
+        }
+
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            if (_weaponPrefab == null && NetworkPrefab != null)
+            {
+                if (NetworkPrefab.TryGetComponent(out Weapon networkWeapon) == true)
+                {
+                    _weaponPrefab = networkWeapon;
+                }
+            }
+        }
+#endif
     }
 }

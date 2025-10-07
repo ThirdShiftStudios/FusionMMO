@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System;
+using Fusion;
 using Unity.Burst;
 using Unity.Collections;
 using UnityEngine;
@@ -14,6 +15,7 @@ namespace TSS.Data
         [FormerlySerializedAs("icon")]
         [SerializeField] private Texture2D _iconTexture;
         [SerializeField] private Sprite _iconSprite;
+        [SerializeField] private NetworkObject _networkPrefab;
         [SerializeField] private ushort maxStack = 100;
 
         [NonSerialized]
@@ -31,6 +33,7 @@ namespace TSS.Data
         public override Texture2D Icon => _iconSprite != null ? _iconSprite.texture : _iconTexture;
         public ushort MaxStack => maxStack;
         public Sprite IconSprite => _iconSprite != null ? _iconSprite : GetOrCreateSprite();
+        public NetworkObject NetworkPrefab => _networkPrefab;
 
         public static ushort GetMaxStack(int id)
         {
