@@ -7,7 +7,7 @@ namespace TPSBR.UI
 {
     public class UIItemSlot : UIWidget, IBeginDragHandler, IDragHandler, IEndDragHandler, IDropHandler
     {
-        private UIInventoryGrid _owner;
+        private IUIItemSlotOwner _owner;
         private UIButton _button;
         private CanvasGroup _canvasGroup;
         private Image _iconImage;
@@ -37,7 +37,7 @@ namespace TPSBR.UI
             base.OnDeinitialize();
         }
 
-        internal void InitializeSlot(UIInventoryGrid owner, int index)
+        internal void InitializeSlot(IUIItemSlotOwner owner, int index)
         {
             _owner = owner;
             Index = index;
@@ -127,6 +127,8 @@ namespace TPSBR.UI
 
             _owner.HandleSlotDrop(sourceSlot, this);
         }
+
+        internal IUIItemSlotOwner Owner => _owner;
 
         private void EnsureCanvasGroup()
         {

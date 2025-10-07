@@ -4,7 +4,7 @@ using UnityEngine.UI;
 
 namespace TPSBR.UI
 {
-        public class UIInventoryGrid : UIWidget
+        public class UIInventoryGrid : UIWidget, IUIItemSlotOwner
         {
                 [SerializeField]
                 private RectTransform _dragLayer;
@@ -67,7 +67,7 @@ namespace TPSBR.UI
                         _dragSource = null;
                 }
 
-                internal void BeginSlotDrag(UIItemSlot slot, PointerEventData eventData)
+                void IUIItemSlotOwner.BeginSlotDrag(UIItemSlot slot, PointerEventData eventData)
                 {
                         if (slot == null || _inventory == null)
                                 return;
@@ -79,7 +79,7 @@ namespace TPSBR.UI
                         UpdateDragPosition(eventData);
                 }
 
-                internal void UpdateSlotDrag(PointerEventData eventData)
+                void IUIItemSlotOwner.UpdateSlotDrag(PointerEventData eventData)
                 {
                         if (_dragSource == null)
                                 return;
@@ -87,7 +87,7 @@ namespace TPSBR.UI
                         UpdateDragPosition(eventData);
                 }
 
-                internal void EndSlotDrag(UIItemSlot slot, PointerEventData eventData)
+                void IUIItemSlotOwner.EndSlotDrag(UIItemSlot slot, PointerEventData eventData)
                 {
                         if (_dragSource != slot)
                                 return;
@@ -96,7 +96,7 @@ namespace TPSBR.UI
                         SetDragVisible(false);
                 }
 
-                internal void HandleSlotDrop(UIItemSlot source, UIItemSlot target)
+                void IUIItemSlotOwner.HandleSlotDrop(UIItemSlot source, UIItemSlot target)
                 {
                         if (_inventory == null)
                                 return;

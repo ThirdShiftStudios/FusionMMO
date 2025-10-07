@@ -619,37 +619,12 @@ namespace TPSBR
 			if (keyboard.digit2Key.wasPressedThisFrame == true) { weaponSlot = 1; }
 			if (keyboard.digit3Key.wasPressedThisFrame == true) { weaponSlot = 2; }
 			if (keyboard.digit4Key.wasPressedThisFrame == true) { weaponSlot = 3; }
-			if (keyboard.digit5Key.wasPressedThisFrame == true) { weaponSlot = 4; }
-
-			if (weaponSlot < 0 && keyboard.gKey.wasPressedThisFrame == true)
-			{
-				weaponSlot = 3; // Cycle grenades
-			}
-
-			if (weaponSlot < 0)
-				return 0;
-
-			if (weaponSlot <= 2)
-				return (byte)(weaponSlot + 1); // Standard weapon switch
-
-			// Grenades (grenades are under slot 5, 6, 7 - but we cycle them with 4 numped key)
-			if (weaponSlot == 3)
-			{
-				int currentWeaponSlot = _agent.Inventory.CurrentWeaponSlot;
-				int grenadesStart = IsCyclingGrenades == true && currentWeaponSlot < 7 ? Mathf.Max(currentWeaponSlot, 4) : 4;
-
-				int grenadeToSwitch = _agent.Inventory.GetNextWeaponSlot(grenadesStart, 4);
-
-				_grenadesCyclingStartTime = Time.time;
-
-				if (grenadeToSwitch > 0 && grenadeToSwitch != currentWeaponSlot)
-				{
-					return (byte)(grenadeToSwitch + 1);
-				}
-			}
-
-			return 0;
-		}
+			
+				if (weaponSlot < 0)
+					return 0;
+			
+			return (byte)(weaponSlot + 1);
+                }
 
 		private void SetDefaults()
 		{

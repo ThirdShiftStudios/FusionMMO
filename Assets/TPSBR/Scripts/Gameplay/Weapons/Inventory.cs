@@ -1,9 +1,11 @@
 namespace TPSBR
 {
-	using System;
+        using System;
+        using System.Collections.Generic;
         using UnityEngine;
         using Fusion;
         using TSS.Data;
+        using Unity.Template.CompetitiveActionMultiplayer;
 
 	[Serializable]
 	public sealed class WeaponSlot
@@ -119,11 +121,16 @@ namespace TPSBR
 		private Health        _health;
 		private Character     _character;
 		private Interactions  _interactions;
-                private AudioEffect[]   _fireAudioEffects;
-                private Weapon[]        _localWeapons = new Weapon[8];
-                private InventorySlot[] _localItems;
+                private AudioEffect[]          _fireAudioEffects;
+                private Weapon[]               _localWeapons = new Weapon[8];
+                private Weapon[]               _lastHotbarWeapons;
+                private InventorySlot[]        _localItems;
+                private Dictionary<int, WeaponDefinition> _weaponDefinitionsBySlot = new Dictionary<int, WeaponDefinition>();
+
+                private static readonly Dictionary<int, Weapon> _weaponPrefabsByDefinitionId = new Dictionary<int, Weapon>();
 
                 public event Action<int, InventorySlot> ItemSlotChanged;
+                public event Action<int, Weapon> HotbarSlotChanged;
 
                 // PUBLIC METHODS
 
@@ -166,6 +173,33 @@ namespace TPSBR
                         else
                         {
                                 RPC_RequestMoveItem((byte)fromIndex, (byte)toIndex);
+                        }
+                }
+
+                public void RequestAssignHotbar(int inventoryIndex, int hotbarIndex)
+                {
+                        if (HasStateAuthority == true)
+                        {
+                                AssignHotbar(inventoryIndex, hotbarIndex);
+                        }
+                        else
+                        {
+                                RPC_RequestAssignHotbar((byte)inventoryIndex, (byte)hotbarIndex);
+                        }
+                }
+
+                public void RequestSwapHotbar(int fromIndex, int toIndex)
+                {
+                        if (fromIndex == toIndex)
+                                return;
+
+                        if (HasStateAuthority == true)
+                        {
+                                SwapHotbar(fromIndex, toIndex);
+                        }
+                        else
+                        {
+                                RPC_RequestSwapHotbar((byte)fromIndex, (byte)toIndex);
                         }
                 }
 
@@ -234,27 +268,35 @@ namespace TPSBR
 
                 public void Pickup(DynamicPickup dynamicPickup, Weapon pickupWeapon)
                 {
-                        if (HasStateAuthority == false)
+                        if (HasStateAuthority == false || pickupWeapon == null)
                                 return;
 
-			var ownedWeapon = _hotbar[pickupWeapon.WeaponSlot];
-			if (ownedWeapon != null && ownedWeapon.WeaponID == pickupWeapon.WeaponID)
-			{
-				// We already have this weapon, try add at least the ammo
-				var firearmWeapon = pickupWeapon as FirearmWeapon;
-				bool consumed = firearmWeapon != null && ownedWeapon.AddAmmo(firearmWeapon.TotalAmmo);
+                        var ownedWeapon = _hotbar[pickupWeapon.WeaponSlot];
 
-				if (consumed == true)
-				{
-					dynamicPickup.UnassignObject();
-					Runner.Despawn(pickupWeapon.Object);
-				}
-			}
-			else
-			{
-				dynamicPickup.UnassignObject();
-                                PickupWeapon(pickupWeapon);
+                        EnsureWeaponPrefabRegistered(pickupWeapon.Definition, pickupWeapon);
+                        if (ownedWeapon != null && ownedWeapon.WeaponID == pickupWeapon.WeaponID)
+                        {
+                                // We already have this weapon, try add at least the ammo
+                                var firearmWeapon = pickupWeapon as FirearmWeapon;
+                                bool consumed = firearmWeapon != null && ownedWeapon.AddAmmo(firearmWeapon.TotalAmmo);
+
+                                if (consumed == true)
+                                {
+                                        dynamicPickup.UnassignObject();
+                                        Runner.Despawn(pickupWeapon.Object);
+                                }
+                                return;
                         }
+
+                        if (TryAddWeaponToInventory(pickupWeapon) == true)
+                        {
+                                dynamicPickup.UnassignObject();
+                                Runner.Despawn(pickupWeapon.Object);
+                                return;
+                        }
+
+                        dynamicPickup.UnassignObject();
+                        PickupWeapon(pickupWeapon);
                 }
 
                 public void Pickup(DynamicPickup dynamicPickup, InventoryItemPickupProvider provider)
@@ -304,14 +346,19 @@ namespace TPSBR
 					weaponPickup.TryConsume(gameObject, out string weaponPickupResult);
 				}
 			}
-			else
-			{
-				weaponPickup.TryConsume(gameObject, out string weaponPickupResult2);
+                        else
+                        {
+                                weaponPickup.TryConsume(gameObject, out string weaponPickupResult2);
 
-				var weapon = Runner.Spawn(weaponPickup.WeaponPrefab, inputAuthority: Object.InputAuthority);
-				PickupWeapon(weapon);
-			}
-		}
+                                EnsureWeaponPrefabRegistered(weaponPickup.WeaponPrefab != null ? weaponPickup.WeaponPrefab.Definition : null, weaponPickup.WeaponPrefab);
+
+                                if (TryAddWeaponDefinitionToInventory(weaponPickup.WeaponPrefab != null ? weaponPickup.WeaponPrefab.Definition : null) == true)
+                                        return;
+
+                                var weapon = Runner.Spawn(weaponPickup.WeaponPrefab, inputAuthority: Object.InputAuthority);
+                                PickupWeapon(weapon);
+                        }
+                }
 
                 public override void Spawned()
                 {
@@ -330,11 +377,13 @@ namespace TPSBR
 			// Spawn initial weapons
 			for (byte i = 0; i < _initialWeapons.Length; i++)
 			{
-				var weaponPrefab = _initialWeapons[i];
-				if (weaponPrefab == null)
-					continue;
+                                var weaponPrefab = _initialWeapons[i];
+                                if (weaponPrefab == null)
+                                        continue;
 
-				var weapon = Runner.Spawn(weaponPrefab, inputAuthority: Object.InputAuthority);
+                                EnsureWeaponPrefabRegistered(weaponPrefab.Definition, weaponPrefab);
+
+                                var weapon = Runner.Spawn(weaponPrefab, inputAuthority: Object.InputAuthority);
 				AddWeapon(weapon);
 
 				if (weapon.WeaponSlot > bestWeaponSlot && weapon.WeaponSlot < 3)
@@ -388,7 +437,15 @@ namespace TPSBR
                                 Array.Clear(_localItems, 0, _localItems.Length);
                         }
 
+                        if (_lastHotbarWeapons != null)
+                        {
+                                Array.Clear(_lastHotbarWeapons, 0, _lastHotbarWeapons.Length);
+                        }
+
+                        _weaponDefinitionsBySlot.Clear();
+
                         ItemSlotChanged = null;
+                        HotbarSlotChanged = null;
                 }
 
 		public void OnFixedUpdate()
@@ -538,18 +595,20 @@ namespace TPSBR
 
 		// MONOBEHAVIOUR
 
-        private void Awake()
-        {
-                _health = GetComponent<Health>();
-                _character = GetComponent<Character>();
-                _interactions = GetComponent<Interactions>();
-                _fireAudioEffects = _fireAudioEffectsRoot.GetComponentsInChildren<AudioEffect>();
-                _localItems = new InventorySlot[INVENTORY_SIZE];
+                private void Awake()
+                {
+                        _health = GetComponent<Health>();
+                        _character = GetComponent<Character>();
+                        _interactions = GetComponent<Interactions>();
+                        _fireAudioEffects = _fireAudioEffectsRoot.GetComponentsInChildren<AudioEffect>();
+                        _localItems = new InventorySlot[INVENTORY_SIZE];
+                        _lastHotbarWeapons = new Weapon[_localWeapons.Length];
+                        _weaponDefinitionsBySlot.Clear();
 
-			foreach (WeaponSlot slot in _slots)
-			{
-				if (slot.Active != null)
-				{
+                        foreach (WeaponSlot slot in _slots)
+                        {
+                                if (slot.Active != null)
+                                {
 					slot.BaseRotation = slot.Active.localRotation;
 				}
 			}
@@ -561,6 +620,18 @@ namespace TPSBR
         private void RPC_RequestMoveItem(byte fromIndex, byte toIndex)
         {
                 MoveItem(fromIndex, toIndex);
+        }
+
+        [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
+        private void RPC_RequestAssignHotbar(byte inventoryIndex, byte hotbarIndex)
+        {
+                AssignHotbar(inventoryIndex, hotbarIndex);
+        }
+
+        [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
+        private void RPC_RequestSwapHotbar(byte fromIndex, byte toIndex)
+        {
+                SwapHotbar(fromIndex, toIndex);
         }
 
         private byte AddItemInternal(ItemDefinition definition, byte quantity, NetworkString<_32> configurationHash)
@@ -597,6 +668,7 @@ namespace TPSBR
 
                         slot.Add(space);
                         _items.Set(i, slot);
+                        UpdateWeaponDefinitionMapping(i, slot);
                         remaining -= space;
                 }
 
@@ -609,6 +681,7 @@ namespace TPSBR
                         byte addAmount = (byte)Mathf.Min(maxStackByte, remaining);
                         slot = new InventorySlot(definition.ID, addAmount, configurationHash);
                         _items.Set(i, slot);
+                        UpdateWeaponDefinitionMapping(i, slot);
                         remaining -= addAmount;
                 }
 
@@ -620,10 +693,10 @@ namespace TPSBR
                 return remaining;
         }
 
-        private void MoveItem(byte fromIndex, byte toIndex)
-        {
-                if (fromIndex == toIndex)
-                        return;
+                private void MoveItem(byte fromIndex, byte toIndex)
+                {
+                        if (fromIndex == toIndex)
+                                return;
 
                 var fromSlot = _items[fromIndex];
                 if (fromSlot.IsEmpty == true)
@@ -657,14 +730,17 @@ namespace TPSBR
                                         fromSlot.Remove(space);
 
                                         _items.Set(toIndex, toSlot);
+                                        UpdateWeaponDefinitionMapping(toIndex, toSlot);
 
                                         if (fromSlot.IsEmpty == true)
                                         {
                                                 _items.Set(fromIndex, default);
+                                                UpdateWeaponDefinitionMapping(fromIndex, default);
                                         }
                                         else
                                         {
                                                 _items.Set(fromIndex, fromSlot);
+                                                UpdateWeaponDefinitionMapping(fromIndex, fromSlot);
                                         }
 
                                         RefreshItems();
@@ -674,8 +750,176 @@ namespace TPSBR
                 }
 
                 _items.Set(toIndex, fromSlot);
+                UpdateWeaponDefinitionMapping(toIndex, fromSlot);
+
                 _items.Set(fromIndex, toSlot);
+                UpdateWeaponDefinitionMapping(fromIndex, toSlot);
                 RefreshItems();
+        }
+
+        private void AssignHotbar(int inventoryIndex, int hotbarIndex)
+        {
+                if (inventoryIndex < 0 || inventoryIndex >= _items.Length)
+                        return;
+
+                int slot = hotbarIndex + 1;
+                if (slot <= 0 || slot >= _hotbar.Length)
+                        return;
+
+                var inventorySlot = _items[inventoryIndex];
+                if (inventorySlot.IsEmpty == true)
+                        return;
+
+                if (_weaponDefinitionsBySlot.TryGetValue(inventoryIndex, out var definition) == false || definition == null)
+                        return;
+
+                var weaponPrefab = EnsureWeaponPrefabRegistered(definition);
+                if (weaponPrefab == null)
+                        return;
+
+                if (RemoveInventoryItemInternal(inventoryIndex, 1) == false)
+                        return;
+
+                var existingWeapon = _hotbar[slot];
+                if (existingWeapon != null)
+                {
+                        if (TryStoreWeapon(existingWeapon, slot) == false)
+                        {
+                                RestoreInventoryItem(inventoryIndex, definition);
+                                return;
+                        }
+                }
+
+                var spawnedWeapon = Runner.Spawn(weaponPrefab, inputAuthority: Object.InputAuthority);
+                if (spawnedWeapon == null)
+                {
+                        RestoreInventoryItem(inventoryIndex, definition);
+                        return;
+                }
+
+                spawnedWeapon.OverrideWeaponSlot(slot);
+                AddWeapon(spawnedWeapon, slot);
+
+                if (_currentWeaponSlot == slot)
+                {
+                        ArmCurrentWeapon();
+                }
+        }
+
+        private void SwapHotbar(int fromIndex, int toIndex)
+        {
+                int fromSlot = fromIndex + 1;
+                int toSlot   = toIndex + 1;
+
+                if (fromSlot <= 0 || fromSlot >= _hotbar.Length)
+                        return;
+
+                if (toSlot <= 0 || toSlot >= _hotbar.Length)
+                        return;
+
+                if (fromSlot == toSlot)
+                        return;
+
+                var fromWeapon = _hotbar[fromSlot];
+                var toWeapon   = _hotbar[toSlot];
+
+                _hotbar.Set(fromSlot, toWeapon);
+                _hotbar.Set(toSlot, fromWeapon);
+
+                if (fromWeapon != null)
+                {
+                        fromWeapon.OverrideWeaponSlot(toSlot);
+                }
+
+                if (toWeapon != null)
+                {
+                        toWeapon.OverrideWeaponSlot(fromSlot);
+                }
+
+                if (_currentWeaponSlot == fromSlot)
+                {
+                        _currentWeaponSlot = (byte)toSlot;
+                }
+                else if (_currentWeaponSlot == toSlot)
+                {
+                        _currentWeaponSlot = (byte)fromSlot;
+                }
+
+                if (_previousWeaponSlot == fromSlot)
+                {
+                        _previousWeaponSlot = (byte)toSlot;
+                }
+                else if (_previousWeaponSlot == toSlot)
+                {
+                        _previousWeaponSlot = (byte)fromSlot;
+                }
+
+                RefreshWeapons();
+        }
+
+        private bool RemoveInventoryItemInternal(int index, byte quantity)
+        {
+                if (index < 0 || index >= _items.Length)
+                        return false;
+
+                var slot = _items[index];
+                if (slot.IsEmpty == true)
+                        return false;
+
+                if (slot.Quantity <= quantity)
+                {
+                        _items.Set(index, default);
+                        UpdateWeaponDefinitionMapping(index, default);
+                }
+                else
+                {
+                        slot.Remove(quantity);
+                        _items.Set(index, slot);
+                        UpdateWeaponDefinitionMapping(index, slot);
+                }
+
+                RefreshItems();
+                return true;
+        }
+
+        private void RestoreInventoryItem(int index, WeaponDefinition definition)
+        {
+                if (index < 0 || index >= _items.Length || definition == null)
+                        return;
+
+                var slot = new InventorySlot(definition.ID, 1, default);
+                _items.Set(index, slot);
+                UpdateWeaponDefinitionMapping(index, slot);
+                RefreshItems();
+        }
+
+                private bool TryStoreWeapon(Weapon weapon, int sourceSlot)
+                {
+                        if (weapon == null)
+                                return true;
+
+                        var definition = weapon.Definition;
+                        if (definition == null)
+                                return false;
+
+                        EnsureWeaponPrefabRegistered(definition, weapon);
+
+                        int emptySlot = FindEmptyInventorySlot();
+                        if (emptySlot < 0)
+                                return false;
+
+                var slot = new InventorySlot(definition.ID, 1, default);
+                _items.Set(emptySlot, slot);
+                UpdateWeaponDefinitionMapping(emptySlot, slot);
+                RefreshItems();
+
+                RemoveWeapon(sourceSlot);
+                if (weapon.Object != null)
+                {
+                        Runner.Despawn(weapon.Object);
+                }
+
+                return true;
         }
 
         private void RefreshItems()
@@ -758,24 +1002,39 @@ namespace TPSBR
 				{
 					// make sure local cache clears when weapon is gone
 					_localWeapons[_currentWeaponSlot] = default;
-				}
-			}
-		}
+                        }
+                }
+
+                if (_lastHotbarWeapons == null || _lastHotbarWeapons.Length != _hotbar.Length)
+                {
+                        _lastHotbarWeapons = new Weapon[_hotbar.Length];
+                }
+
+                for (int i = 0; i < _hotbar.Length; i++)
+                {
+                        var slotWeapon = _hotbar[i];
+                        if (_lastHotbarWeapons[i] != slotWeapon)
+                        {
+                                _lastHotbarWeapons[i] = slotWeapon;
+                                HotbarSlotChanged?.Invoke(i, slotWeapon);
+                        }
+                }
+        }
 
 
-		private void DropAllWeapons()
-		{
+                private void DropAllWeapons()
+                {
 			for (int i = 1; i < _hotbar.Length; i++)
 			{
 				DropWeapon(i);
 			}
 		}
 
-		private void DropWeapon(int weaponSlot)
-		{
-			var weapon = _hotbar[weaponSlot];
-			if (weapon == null)
-				return;
+                private void DropWeapon(int weaponSlot)
+                {
+                        var weapon = _hotbar[weaponSlot];
+                        if (weapon == null)
+                                return;
 
 			if (weapon.PickupPrefab == null)
 			{
@@ -817,43 +1076,157 @@ namespace TPSBR
 			{
 				var dynamicPickup = obj.GetComponent<DynamicPickup>();
 				dynamicPickup.AssignObject(_hotbar[weaponSlot].Object.Id);
-			}
-		}
+                        }
+                }
 
-		private void PickupWeapon(Weapon weapon)
-		{
-			if (weapon == null)
-				return;
+                private Weapon EnsureWeaponPrefabRegistered(WeaponDefinition definition, Weapon weaponInstance = null)
+                {
+                        if (definition == null)
+                                return null;
 
-			DropWeapon(weapon.WeaponSlot);
-			AddWeapon(weapon);
+                        if (_weaponPrefabsByDefinitionId.TryGetValue(definition.ID, out var cachedPrefab) == true && cachedPrefab != null)
+                                return cachedPrefab;
 
-			if (weapon.WeaponSlot >= _currentWeaponSlot && weapon.WeaponSlot < 5)
-			{
-				SetCurrentWeapon(weapon.WeaponSlot);
-				ArmCurrentWeapon();
-			}
-		}
+                        var definitionPrefab = definition.WeaponPrefab;
+                        if (definitionPrefab != null)
+                        {
+                                _weaponPrefabsByDefinitionId[definition.ID] = definitionPrefab;
+                                return definitionPrefab;
+                        }
 
-		private void AddWeapon(Weapon weapon)
-		{
-			if (weapon == null)
-				return;
+                        if (weaponInstance != null)
+                        {
+                                var resolvedPrefab = ResolveWeaponPrefabFromInstance(weaponInstance);
+                                if (resolvedPrefab != null)
+                                {
+                                        _weaponPrefabsByDefinitionId[definition.ID] = resolvedPrefab;
+                                        return resolvedPrefab;
+                                }
+                        }
 
-			RemoveWeapon(weapon.WeaponSlot);
+                        return null;
+                }
 
-			weapon.Object.AssignInputAuthority(Object.InputAuthority);
-			weapon.Initialize(Object, _slots[weapon.WeaponSlot].Active, _slots[weapon.WeaponSlot].Inactive);
-			weapon.AssignFireAudioEffects(_fireAudioEffectsRoot, _fireAudioEffects);
+                private Weapon ResolveWeaponPrefabFromInstance(Weapon weaponInstance)
+                {
+                        if (weaponInstance == null)
+                                return null;
 
-			var aoiProxy = weapon.GetComponent<NetworkAreaOfInterestProxy>();
-			aoiProxy.SetPositionSource(transform);
+                        var networkObject = weaponInstance.Object;
+                        if (networkObject == null)
+                                return null;
 
-			Runner.SetPlayerAlwaysInterested(Object.InputAuthority, weapon.Object, true);
+                        var prefabId = networkObject.PrefabId;
+                        if (prefabId.Equals(default(NetworkPrefabId)) == true)
+                                return null;
 
-			_hotbar.Set(weapon.WeaponSlot, weapon);
-			_localWeapons[weapon.WeaponSlot] = weapon;
-		}
+                        var prefabTable = Runner != null ? Runner.Config?.PrefabTable : null;
+                        if (prefabTable == null)
+                                return null;
+
+                        var prefabObject = prefabTable.Load(prefabId, true);
+                        if (prefabObject == null)
+                                return null;
+
+                        return prefabObject.GetComponent<Weapon>();
+                }
+
+                private void PickupWeapon(Weapon weapon)
+                {
+                        if (weapon == null)
+                                return;
+
+                        DropWeapon(weapon.WeaponSlot);
+                        AddWeapon(weapon);
+
+                        if (weapon.WeaponSlot >= _currentWeaponSlot && weapon.WeaponSlot < 5)
+                        {
+                                SetCurrentWeapon(weapon.WeaponSlot);
+                                ArmCurrentWeapon();
+                        }
+                }
+
+                private bool TryAddWeaponToInventory(Weapon weapon)
+                {
+                        if (weapon == null)
+                                return false;
+
+                        EnsureWeaponPrefabRegistered(weapon.Definition, weapon);
+
+                        return TryAddWeaponDefinitionToInventory(weapon.Definition);
+                }
+
+                private bool TryAddWeaponDefinitionToInventory(WeaponDefinition definition)
+                {
+                        if (definition == null)
+                                return false;
+
+                        EnsureWeaponPrefabRegistered(definition);
+
+                        int emptySlot = FindEmptyInventorySlot();
+                        if (emptySlot < 0)
+                                return false;
+
+                        var slot = new InventorySlot(definition.ID, 1, default);
+                        _items.Set(emptySlot, slot);
+                        UpdateWeaponDefinitionMapping(emptySlot, slot);
+                        RefreshItems();
+
+                        return true;
+                }
+
+                private int FindEmptyInventorySlot()
+                {
+                        for (int i = 0; i < _items.Length; i++)
+                        {
+                                if (_items[i].IsEmpty == true)
+                                        return i;
+                        }
+
+                        return -1;
+                }
+
+                private void UpdateWeaponDefinitionMapping(int index, InventorySlot slot)
+                {
+                        if (slot.IsEmpty == true)
+                        {
+                                _weaponDefinitionsBySlot.Remove(index);
+                                return;
+                        }
+
+                        var definition = slot.GetDefinition() as WeaponDefinition;
+                        if (definition != null)
+                        {
+                                _weaponDefinitionsBySlot[index] = definition;
+                        }
+                        else
+                        {
+                                _weaponDefinitionsBySlot.Remove(index);
+                        }
+                }
+
+                private void AddWeapon(Weapon weapon, int? slotOverride = null)
+                {
+                        if (weapon == null)
+                                return;
+
+                        int targetSlot = slotOverride ?? weapon.WeaponSlot;
+                        weapon.OverrideWeaponSlot(targetSlot);
+
+                        RemoveWeapon(targetSlot);
+
+                        weapon.Object.AssignInputAuthority(Object.InputAuthority);
+                        weapon.Initialize(Object, _slots[targetSlot].Active, _slots[targetSlot].Inactive);
+                        weapon.AssignFireAudioEffects(_fireAudioEffectsRoot, _fireAudioEffects);
+
+                        var aoiProxy = weapon.GetComponent<NetworkAreaOfInterestProxy>();
+                        aoiProxy.SetPositionSource(transform);
+
+                        Runner.SetPlayerAlwaysInterested(Object.InputAuthority, weapon.Object, true);
+
+                        _hotbar.Set(targetSlot, weapon);
+                        _localWeapons[targetSlot] = weapon;
+                }
 
 		private void RemoveWeapon(int slot)
 		{

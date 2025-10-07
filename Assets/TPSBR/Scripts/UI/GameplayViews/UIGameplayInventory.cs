@@ -12,6 +12,7 @@ namespace TPSBR.UI
         // PRIVATE MEMBERS
         [SerializeField] private UIButton _cancelButton;
         [SerializeField] private UIInventoryGrid _inventoryGrid;
+        [SerializeField] private UIHotbar _hotbar;
 
         private bool _menuVisible;
         private Agent _boundAgent;
@@ -50,6 +51,11 @@ namespace TPSBR.UI
                 _inventoryGrid = GetComponentInChildren<UIInventoryGrid>(true);
             }
 
+            if (_hotbar == null)
+            {
+                _hotbar = GetComponentInChildren<UIHotbar>(true);
+            }
+
             if (_cancelButton != null)
             {
                 _cancelButton.onClick.AddListener(OnCancelButton);
@@ -61,6 +67,11 @@ namespace TPSBR.UI
             if (_inventoryGrid != null)
             {
                 _inventoryGrid.Bind(null);
+            }
+
+            if (_hotbar != null)
+            {
+                _hotbar.Bind(null);
             }
 
             if (_cancelButton != null)
@@ -148,6 +159,7 @@ namespace TPSBR.UI
                     _boundAgent = null;
                     _boundInventory = null;
                     _inventoryGrid?.Bind(null);
+                    _hotbar?.Bind(null);
                 }
                 return;
             }
@@ -159,6 +171,7 @@ namespace TPSBR.UI
             _boundAgent = agent;
             _boundInventory = agent != null ? agent.Inventory : null;
             _inventoryGrid?.Bind(_boundInventory);
+            _hotbar?.Bind(_boundInventory);
         }
     }
 }
