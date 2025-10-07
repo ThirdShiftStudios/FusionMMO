@@ -4,223 +4,236 @@ using UnityEngine;
 
 namespace TPSBR
 {
-	public abstract class Weapon : ContextBehaviour, IDynamicPickupProvider
-	{
-		// PUBLIC MEMBERS
+    public abstract class Weapon : ContextBehaviour, IDynamicPickupProvider
+    {
+        // PUBLIC MEMBERS
 
-                public int        WeaponID           => _weaponDefinition.ID;
-                public WeaponDefinition Definition   => _weaponDefinition;
-		public int           WeaponSlot         => _weaponSlot;
-		public Transform     LeftHandTarget     => _leftHandTarget;
-		public DynamicPickup PickupPrefab       => _pickupPrefab;
-		public EHitType      HitType            => _hitType;
-		public float         AimFOV             => _aimFOV;
-		public string        DisplayName        => _displayName;
-		public string        NameShortcut       => _nameShortcut;
-		public Sprite        Icon               => _icon;
-		public bool          ValidOnlyWithAmmo  => _validOnlyWithAmmo;
-		public bool          IsInitialized      => _isInitialized;
-		public bool          IsArmed            => _isArmed;
-		public NetworkObject Owner              => _owner;
-		public Character     Character          => _character;
+        public int WeaponID => _weaponDefinition.ID;
+        public WeaponDefinition Definition => _weaponDefinition;
+        public int WeaponSlot => _weaponSlot;
+        public Transform LeftHandTarget => _leftHandTarget;
+        public DynamicPickup PickupPrefab => _pickupPrefab;
+        public EHitType HitType => _hitType;
+        public float AimFOV => _aimFOV;
+        public string DisplayName => _displayName;
+        public string NameShortcut => _nameShortcut;
+        public Sprite Icon => _weaponDefinition.IconSprite;
+        public bool ValidOnlyWithAmmo => _validOnlyWithAmmo;
+        public bool IsInitialized => _isInitialized;
+        public bool IsArmed => _isArmed;
+        public NetworkObject Owner => _owner;
+        public Character Character => _character;
 
-		// PRIVATE MEMBERS
+        // PRIVATE MEMBERS
 
-		[SerializeField] private WeaponDefinition _weaponDefinition;
-		
-		[SerializeField]
-		private int _weaponSlot;
-		[SerializeField]
-		private bool _validOnlyWithAmmo;
-		[SerializeField]
-		private Transform _leftHandTarget;
-		[SerializeField]
-		private EHitType _hitType;
-		[SerializeField]
-		private float _aimFOV;
+        [SerializeField] private WeaponDefinition _weaponDefinition;
 
-		[Header("Pickup")]
-		[SerializeField]
-		private string _displayName;
-		[SerializeField, Tooltip("Up to 4 letter name shown in thumbnail")]
-		private string _nameShortcut;
-		[SerializeField]
-		private Sprite _icon;
-		[SerializeField]
-		private Collider _pickupCollider;
-		[SerializeField]
-		private Transform _pickupInterpolationTarget;
-		[SerializeField]
-		private DynamicPickup _pickupPrefab;
+        [SerializeField] private int _weaponSlot;
+        [SerializeField] private bool _validOnlyWithAmmo;
+        [SerializeField] private Transform _leftHandTarget;
+        [SerializeField] private EHitType _hitType;
+        [SerializeField] private float _aimFOV;
 
-		private bool          _isInitialized;
-		private bool          _isArmed;
-		private NetworkObject _owner;
-		private Character     _character;
-		private Transform     _armedParent;
-		private Transform     _disarmedParent;
-		private AudioEffect[] _audioEffects;
+        [Header("Pickup")] [SerializeField] private string _displayName;
 
-		// PUBLIC METHODS
+        [SerializeField, Tooltip("Up to 4 letter name shown in thumbnail")]
+        private string _nameShortcut;
 
-		public void ArmWeapon()
-		{
-			if (_isArmed == true)
-				return;
+        [SerializeField] private Sprite _icon;
+        [SerializeField] private Collider _pickupCollider;
+        [SerializeField] private Transform _pickupInterpolationTarget;
+        [SerializeField] private DynamicPickup _pickupPrefab;
 
-			_isArmed = true;
-			OnIsArmedChanged();
-		}
+        private bool _isInitialized;
+        private bool _isArmed;
+        private NetworkObject _owner;
+        private Character _character;
+        private Transform _armedParent;
+        private Transform _disarmedParent;
+        private AudioEffect[] _audioEffects;
 
-		public void DisarmWeapon()
-		{
-			if (_isArmed == false)
-				return;
+        // PUBLIC METHODS
 
-			_isArmed = false;
-			OnIsArmedChanged();
-		}
+        public void ArmWeapon()
+        {
+            if (_isArmed == true)
+                return;
 
-                public void Initialize(NetworkObject owner, Transform armedParent, Transform disarmedParent)
-		{
-			if (_isInitialized == true)
-				return;
+            _isArmed = true;
+            OnIsArmedChanged();
+        }
 
-			_isInitialized  = true;
-			_owner          = owner;
-			_character      = owner.GetComponent<Character>();
-			_armedParent    = armedParent;
-			_disarmedParent = disarmedParent;
+        public void DisarmWeapon()
+        {
+            if (_isArmed == false)
+                return;
 
-			RefreshParent();
-		}
+            _isArmed = false;
+            OnIsArmedChanged();
+        }
 
-		public void Deinitialize(NetworkObject owner)
-		{
-			if (_owner != null && _owner != owner)
-				return;
+        public void Initialize(NetworkObject owner, Transform armedParent, Transform disarmedParent)
+        {
+            if (_isInitialized == true)
+                return;
 
-			_isInitialized  = default;
-			_owner          = default;
-			_character      = default;
-			_armedParent    = default;
-			_disarmedParent = default;
+            _isInitialized = true;
+            _owner = owner;
+            _character = owner.GetComponent<Character>();
+            _armedParent = armedParent;
+            _disarmedParent = disarmedParent;
 
-			AssignFireAudioEffects(null, null);
-		}
+            RefreshParent();
+        }
 
-		public virtual bool IsBusy() { return false; }
+        public void Deinitialize(NetworkObject owner)
+        {
+            if (_owner != null && _owner != owner)
+                return;
 
-		public abstract bool CanFire(bool keyDown);
-		public abstract void Fire(Vector3 firePosition, Vector3 targetPosition, LayerMask hitMask);
+            _isInitialized = default;
+            _owner = default;
+            _character = default;
+            _armedParent = default;
+            _disarmedParent = default;
 
-		public virtual bool CanReload(bool autoReload) { return false; }
-		public virtual void Reload() {}
+            AssignFireAudioEffects(null, null);
+        }
 
-		public virtual bool CanAim() { return false; }
+        public virtual bool IsBusy()
+        {
+            return false;
+        }
 
-		public virtual void AssignFireAudioEffects(Transform root, AudioEffect[] audioEffects)
-		{
-			_audioEffects = audioEffects;
-		}
+        public abstract bool CanFire(bool keyDown);
+        public abstract void Fire(Vector3 firePosition, Vector3 targetPosition, LayerMask hitMask);
 
-		public virtual bool HasAmmo() { return true; }
+        public virtual bool CanReload(bool autoReload)
+        {
+            return false;
+        }
 
-		public virtual bool AddAmmo(int ammo) { return false; }
+        public virtual void Reload()
+        {
+        }
 
-                public virtual bool CanFireToPosition(Vector3 firePosition, ref Vector3 targetPosition, LayerMask hitMask) { return true; }
+        public virtual bool CanAim()
+        {
+            return false;
+        }
 
-                public void OverrideWeaponSlot(int slot)
-                {
-                        _weaponSlot = slot;
-                }
+        public virtual void AssignFireAudioEffects(Transform root, AudioEffect[] audioEffects)
+        {
+            _audioEffects = audioEffects;
+        }
 
-		// NetworkBehaviour INTERFACE
+        public virtual bool HasAmmo()
+        {
+            return true;
+        }
 
-		public override void Spawned()
-		{
-			if (ApplicationSettings.IsStrippedBatch == true)
-			{
-				gameObject.SetActive(false);
-			}
-		}
+        public virtual bool AddAmmo(int ammo)
+        {
+            return false;
+        }
 
-		public override void Despawned(NetworkRunner runner, bool hasState)
-		{
-			if (hasState == true)
-			{
-				DisarmWeapon();
-			}
-			else
-			{
-				_isArmed = false;
-			}
+        public virtual bool CanFireToPosition(Vector3 firePosition, ref Vector3 targetPosition, LayerMask hitMask)
+        {
+            return true;
+        }
 
-			Deinitialize(_owner);
-		}
+        public void OverrideWeaponSlot(int slot)
+        {
+            _weaponSlot = slot;
+        }
 
-		// PROTECTED METHODS
+        // NetworkBehaviour INTERFACE
 
-		protected virtual void OnWeaponArmed()
-		{
-		}
+        public override void Spawned()
+        {
+            if (ApplicationSettings.IsStrippedBatch == true)
+            {
+                gameObject.SetActive(false);
+            }
+        }
 
-		protected virtual void OnWeaponDisarmed()
-		{
-		}
+        public override void Despawned(NetworkRunner runner, bool hasState)
+        {
+            if (hasState == true)
+            {
+                DisarmWeapon();
+            }
+            else
+            {
+                _isArmed = false;
+            }
 
-		protected bool PlaySound(AudioSetup setup)
-		{
-			if (_audioEffects.PlaySound(setup, EForceBehaviour.ForceAny) == false)
-			{
-				Debug.LogWarning($"No free audio effects on weapon {gameObject.name}. Add more audio effects in Player prefab.");
-				return false;
-			}
+            Deinitialize(_owner);
+        }
 
-			return true;
-		}
+        // PROTECTED METHODS
 
-		// IPickupProvider INTERFACE
+        protected virtual void OnWeaponArmed()
+        {
+        }
 
-		string    IDynamicPickupProvider.Name                => _displayName;
-		string    IDynamicPickupProvider.Description         => null;
-		Collider  IDynamicPickupProvider.Collider            => _pickupCollider;
-		Transform IDynamicPickupProvider.InterpolationTarget => _pickupInterpolationTarget;
-		float     IDynamicPickupProvider.DespawnTime         => 60f;
+        protected virtual void OnWeaponDisarmed()
+        {
+        }
 
-		void IDynamicPickupProvider.Assigned(DynamicPickup pickup)
-		{
-			Deinitialize(_owner);
-		}
+        protected bool PlaySound(AudioSetup setup)
+        {
+            if (_audioEffects.PlaySound(setup, EForceBehaviour.ForceAny) == false)
+            {
+                Debug.LogWarning(
+                    $"No free audio effects on weapon {gameObject.name}. Add more audio effects in Player prefab.");
+                return false;
+            }
 
-		void IDynamicPickupProvider.Unassigned(DynamicPickup pickup)
-		{
-		}
+            return true;
+        }
 
-		// NETWORK CALLBACKS
+        // IPickupProvider INTERFACE
 
-		private void OnIsArmedChanged()
-		{
-			RefreshParent();
+        string IDynamicPickupProvider.Name => _displayName;
+        string IDynamicPickupProvider.Description => null;
+        Collider IDynamicPickupProvider.Collider => _pickupCollider;
+        Transform IDynamicPickupProvider.InterpolationTarget => _pickupInterpolationTarget;
+        float IDynamicPickupProvider.DespawnTime => 60f;
 
-			if (IsArmed == true)
-			{
-				OnWeaponArmed();
-			}
-			else
-			{
-				OnWeaponDisarmed();
-			}
-		}
+        void IDynamicPickupProvider.Assigned(DynamicPickup pickup)
+        {
+            Deinitialize(_owner);
+        }
 
-		private void RefreshParent()
-		{
-			if (_isInitialized == false)
-				return;
+        void IDynamicPickupProvider.Unassigned(DynamicPickup pickup)
+        {
+        }
 
-			transform.SetParent(_isArmed == true ? _armedParent : _disarmedParent, false);
-			transform.localPosition = Vector3.zero;
-			transform.localRotation = Quaternion.identity;
-		}
-	}
+        // NETWORK CALLBACKS
+
+        private void OnIsArmedChanged()
+        {
+            RefreshParent();
+
+            if (IsArmed == true)
+            {
+                OnWeaponArmed();
+            }
+            else
+            {
+                OnWeaponDisarmed();
+            }
+        }
+
+        private void RefreshParent()
+        {
+            if (_isInitialized == false)
+                return;
+
+            transform.SetParent(_isArmed == true ? _armedParent : _disarmedParent, false);
+            transform.localPosition = Vector3.zero;
+            transform.localRotation = Quaternion.identity;
+        }
+    }
 }
