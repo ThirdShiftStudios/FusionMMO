@@ -1088,6 +1088,19 @@ namespace TPSBR
                         if (_weaponPrefabsByDefinitionId.TryGetValue(definition.ID, out var cachedPrefab) == true && cachedPrefab != null)
                                 return cachedPrefab;
 
+                        var networkPrefab = definition.NetworkPrefab;
+                        if (networkPrefab != null)
+                        {
+                                if (networkPrefab.TryGetComponent(out Weapon networkWeapon) == true)
+                                {
+                                        _weaponPrefabsByDefinitionId[definition.ID] = networkWeapon;
+                                        return networkWeapon;
+                                }
+
+                                Debug.LogWarning($"Network prefab assigned to definition '{definition.Name}' does not contai" +
+                                                 "n a Weapon component.");
+                        }
+
                         var definitionPrefab = definition.WeaponPrefab;
                         if (definitionPrefab != null)
                         {
