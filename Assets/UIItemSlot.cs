@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -7,6 +8,9 @@ namespace TPSBR.UI
 {
     public class UIItemSlot : UIWidget, IBeginDragHandler, IDragHandler, IEndDragHandler, IDropHandler
     {
+        private static readonly Dictionary<int, UIItemSlot> _lastDropTargets = new Dictionary<int, UIItemSlot>();
+        private static readonly List<RaycastResult> _raycastResults = new List<RaycastResult>();
+
         private IUIItemSlotOwner _owner;
         private UIButton _button;
         private CanvasGroup _canvasGroup;
@@ -114,6 +118,19 @@ namespace TPSBR.UI
             _canvasGroup.blocksRaycasts = true;
 
             _owner.EndSlotDrag(this, eventData);
+
+            if (eventData == null)
+                return;
+
+            if (TryConsumeDropTarget(eventData.pointerId))
+                return;
+
+            var targetSlot = FindDropTarget(eventData);
+            if (targetSlot == null || targetSlot == this)
+                return;
+
+            var targetOwner = targetSlot.Owner;
+            targetOwner?.HandleSlotDrop(this, targetSlot);
         }
 
         public void OnDrop(PointerEventData eventData)
@@ -125,6 +142,7 @@ namespace TPSBR.UI
             if (sourceSlot == null || sourceSlot == this)
                 return;
 
+            CacheDropTarget(eventData.pointerId, this);
             _owner.HandleSlotDrop(sourceSlot, this);
         }
 
@@ -184,6 +202,51 @@ namespace TPSBR.UI
             {
                 _quantityLabel.font = TMP_Settings.defaultFontAsset;
             }
+        }
+
+        private static void CacheDropTarget(int pointerId, UIItemSlot slot)
+        {
+            if (slot == null)
+                return;
+
+            _lastDropTargets[pointerId] = slot;
+        }
+
+        private static bool TryConsumeDropTarget(int pointerId)
+        {
+            if (_lastDropTargets.Remove(pointerId))
+                return true;
+
+            return false;
+        }
+
+        private static UIItemSlot FindDropTarget(PointerEventData eventData)
+        {
+            var raycastObject = eventData.pointerCurrentRaycast.gameObject;
+            if (raycastObject != null)
+            {
+                var directSlot = raycastObject.GetComponentInParent<UIItemSlot>();
+                if (directSlot != null)
+                    return directSlot;
+            }
+
+            if (EventSystem.current == null)
+                return null;
+
+            _raycastResults.Clear();
+            EventSystem.current.RaycastAll(eventData, _raycastResults);
+            for (int i = 0; i < _raycastResults.Count; i++)
+            {
+                var resultSlot = _raycastResults[i].gameObject.GetComponentInParent<UIItemSlot>();
+                if (resultSlot != null)
+                {
+                    _raycastResults.Clear();
+                    return resultSlot;
+                }
+            }
+
+            _raycastResults.Clear();
+            return null;
         }
     }
 }
