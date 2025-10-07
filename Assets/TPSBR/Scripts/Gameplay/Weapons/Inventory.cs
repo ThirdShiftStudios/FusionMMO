@@ -204,62 +204,54 @@ namespace TPSBR
                 }
 
                 public void DisarmCurrentWeapon()
-		{
-			if (_currentWeaponSlot == 0)
-				return;
+                {
+                        if (_currentWeaponSlot == 0)
+                                return;
 
-			if (CurrentWeapon != null)
-			{
-				CurrentWeapon.DisarmWeapon();
-			}
+                        if (_currentWeaponSlot > 0)
+                        {
+                                _previousWeaponSlot = _currentWeaponSlot;
+                        }
 
-			if (_currentWeaponSlot > 0)
-			{
-				_previousWeaponSlot = _currentWeaponSlot;
-			}
+                        _currentWeaponSlot = 0;
 
-			_currentWeaponSlot = 0;
+                        ArmCurrentWeapon();
+                }
 
-			CurrentWeapon             = _hotbar[_currentWeaponSlot];
-			CurrentWeaponHandle       = _slots[_currentWeaponSlot].Active;
-			CurrentWeaponBaseRotation = _slots[_currentWeaponSlot].BaseRotation;
+                public void SetCurrentWeapon(int slot)
+                {
+                        slot = Mathf.Clamp(slot, 0, _hotbar.Length - 1);
 
-			if (CurrentWeapon != null)
-			{
-				CurrentWeapon.ArmWeapon();
-			}
-		}
+                        if (_currentWeaponSlot == slot)
+                                return;
 
-		public void SetCurrentWeapon(int slot)
-		{
-			if (_currentWeaponSlot == slot)
-				return;
+                        if (_currentWeaponSlot > 0)
+                        {
+                                _previousWeaponSlot = _currentWeaponSlot;
+                        }
 
-			_currentWeaponSlot = (byte)slot;
-			CurrentWeapon = _hotbar[_currentWeaponSlot];
-		}
+                        _currentWeaponSlot = (byte)slot;
+                }
 
-		public void ArmCurrentWeapon()
-		{
-			if (CurrentWeapon != null)
-			{
-				CurrentWeapon.DisarmWeapon();
-			}
+                public void ArmCurrentWeapon()
+                {
+                        RefreshWeapons();
 
-			if (_currentWeaponSlot > 0)
-			{
-				_previousWeaponSlot = _currentWeaponSlot;
-			}
+                        if (_currentWeaponSlot < _slots.Length)
+                        {
+                                var currentSlot = _slots[_currentWeaponSlot];
+                                if (currentSlot != null)
+                                {
+                                        CurrentWeaponHandle       = currentSlot.Active;
+                                        CurrentWeaponBaseRotation = currentSlot.BaseRotation;
+                                }
+                        }
 
-			CurrentWeapon             = _hotbar[_currentWeaponSlot];
-			CurrentWeaponHandle       = _slots[_currentWeaponSlot].Active;
-			CurrentWeaponBaseRotation = _slots[_currentWeaponSlot].BaseRotation;
-
-			if (CurrentWeapon != null)
-			{
-				CurrentWeapon.ArmWeapon();
-			}
-		}
+                        if (CurrentWeapon != null && CurrentWeapon.IsArmed == false)
+                        {
+                                CurrentWeapon.ArmWeapon();
+                        }
+                }
 
 		public void DropCurrentWeapon()
 		{
@@ -392,7 +384,6 @@ namespace TPSBR
 				}
 			}
 
-			_previousWeaponSlot = bestWeaponSlot;
 
                         SetCurrentWeapon(bestWeaponSlot);
                         ArmCurrentWeapon();
@@ -471,7 +462,6 @@ namespace TPSBR
 				DisarmCurrentWeapon();
 				SetCurrentWeapon(bestWeaponSlot);
 
-				_previousWeaponSlot = bestWeaponSlot;
 			}
 		}
 
@@ -855,6 +845,9 @@ namespace TPSBR
                         _previousWeaponSlot = (byte)fromSlot;
                 }
 
+                NotifyHotbarSlotChanged(fromSlot);
+                NotifyHotbarSlotChanged(toSlot);
+
                 RefreshWeapons();
         }
 
@@ -999,36 +992,50 @@ namespace TPSBR
 						newFw.Recoil = lastRecoil;
 					}
 				}
-				else
-				{
-					// make sure local cache clears when weapon is gone
-					_localWeapons[_currentWeaponSlot] = default;
+                                else
+                                {
+                                        // make sure local cache clears when weapon is gone
+                                        _localWeapons[_currentWeaponSlot] = default;
+                                }
                         }
-                }
-
-                if (_lastHotbarWeapons == null || _lastHotbarWeapons.Length != _hotbar.Length)
-                {
-                        _lastHotbarWeapons = new Weapon[_hotbar.Length];
                 }
 
                 for (int i = 0; i < _hotbar.Length; i++)
                 {
-                        var slotWeapon = _hotbar[i];
-                        if (_lastHotbarWeapons[i] != slotWeapon)
-                        {
-                                _lastHotbarWeapons[i] = slotWeapon;
-                                HotbarSlotChanged?.Invoke(i, slotWeapon);
-                        }
+                        NotifyHotbarSlotChanged(i);
                 }
         }
+
+                private void EnsureHotbarCacheInitialized()
+                {
+                        if (_lastHotbarWeapons == null || _lastHotbarWeapons.Length != _hotbar.Length)
+                        {
+                                _lastHotbarWeapons = new Weapon[_hotbar.Length];
+                        }
+                }
+
+                private void NotifyHotbarSlotChanged(int slot)
+                {
+                        if (slot < 0 || slot >= _hotbar.Length)
+                                return;
+
+                        EnsureHotbarCacheInitialized();
+
+                        var slotWeapon = _hotbar[slot];
+                        if (_lastHotbarWeapons[slot] == slotWeapon)
+                                return;
+
+                        _lastHotbarWeapons[slot] = slotWeapon;
+                        HotbarSlotChanged?.Invoke(slot, slotWeapon);
+                }
 
 
                 private void DropAllWeapons()
                 {
-			for (int i = 1; i < _hotbar.Length; i++)
-			{
-				DropWeapon(i);
-			}
+                        for (int i = 1; i < _hotbar.Length; i++)
+                        {
+                                DropWeapon(i);
+                        }
 		}
 
                 private void DropWeapon(int weaponSlot)
@@ -1053,11 +1060,9 @@ namespace TPSBR
 					bestWeaponSlot = FindBestWeaponSlot(_currentWeaponSlot);
 				}
 
-				SetCurrentWeapon(bestWeaponSlot);
-				ArmCurrentWeapon();
-
-				_previousWeaponSlot = bestWeaponSlot;
-			}
+                                SetCurrentWeapon(bestWeaponSlot);
+                                ArmCurrentWeapon();
+                        }
 
 			var weaponTransform = weapon.transform;
 
@@ -1231,11 +1236,13 @@ namespace TPSBR
 
                         _hotbar.Set(targetSlot, weapon);
                         _localWeapons[targetSlot] = weapon;
+
+                        NotifyHotbarSlotChanged(targetSlot);
                 }
 
-		private void RemoveWeapon(int slot)
-		{
-			var weapon = _hotbar[slot];
+                private void RemoveWeapon(int slot)
+                {
+                        var weapon = _hotbar[slot];
 			if (weapon == null)
 				return;
 
@@ -1247,9 +1254,11 @@ namespace TPSBR
 
 			Runner.SetPlayerAlwaysInterested(Object.InputAuthority, weapon.Object, false);
 
-			_hotbar.Set(slot, null);
-			_localWeapons[slot] = null;
-		}
+                        _hotbar.Set(slot, null);
+                        _localWeapons[slot] = null;
+
+                        NotifyHotbarSlotChanged(slot);
+                }
 
 		private byte FindBestWeaponSlot(int ignoreSlot)
 		{
@@ -1273,12 +1282,18 @@ namespace TPSBR
 			return bestWeaponSlot;
 		}
 
-		public void SwitchWeapon(int inputWeapon)
-		{
-			if(_currentWeaponSlot == inputWeapon)
-				return;
-			SetCurrentWeapon(inputWeapon);
-			ArmCurrentWeapon();
-		}
+                public void SwitchWeapon(int hotbarIndex)
+                {
+                        int targetSlot = hotbarIndex + 1;
+
+                        if (targetSlot <= 0 || targetSlot >= _hotbar.Length)
+                                return;
+
+                        if (_currentWeaponSlot == targetSlot)
+                                return;
+
+                        SetCurrentWeapon(targetSlot);
+                        ArmCurrentWeapon();
+                }
 	}
 }

@@ -611,7 +611,13 @@ namespace TPSBR
 		private byte GetWeaponInput(Keyboard keyboard)
 		{
 			if (keyboard.qKey.wasPressedThisFrame == true)
-				return (byte)(_agent.Inventory.PreviousWeaponSlot + 1); // Fast switch
+			{
+				int previousSlot = _agent.Inventory.PreviousWeaponSlot;
+				if (previousSlot > 0)
+				{
+					return (byte)previousSlot; // Fast switch
+				}
+			}
 
 			int weaponSlot = -1;
 
@@ -619,12 +625,14 @@ namespace TPSBR
 			if (keyboard.digit2Key.wasPressedThisFrame == true) { weaponSlot = 1; }
 			if (keyboard.digit3Key.wasPressedThisFrame == true) { weaponSlot = 2; }
 			if (keyboard.digit4Key.wasPressedThisFrame == true) { weaponSlot = 3; }
-			
-				if (weaponSlot < 0)
-					return 0;
-			
+
+			if (weaponSlot < 0)
+			{
+				return 0;
+			}
+
 			return (byte)(weaponSlot + 1);
-                }
+		}
 
 		private void SetDefaults()
 		{
