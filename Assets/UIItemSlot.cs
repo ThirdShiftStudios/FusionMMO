@@ -10,6 +10,7 @@ namespace TPSBR.UI
     {
         private static readonly Dictionary<int, UIItemSlot> _lastDropTargets = new Dictionary<int, UIItemSlot>();
         private static readonly List<RaycastResult> _raycastResults = new List<RaycastResult>();
+        private static readonly List<UIItemSlot> _allSlots = new List<UIItemSlot>();
         private static UIItemSlot _activeDragSlot;
 
         private IUIItemSlotOwner _owner;
@@ -33,12 +34,19 @@ namespace TPSBR.UI
 
             _button = GetComponent<UIButton>();
             EnsureCanvasGroup();
+
+            if (_allSlots.Contains(this) == false)
+            {
+                _allSlots.Add(this);
+            }
         }
 
         protected override void OnDeinitialize()
         {
             _owner = null;
             Index = -1;
+
+            _allSlots.Remove(this);
             base.OnDeinitialize();
         }
 
@@ -260,6 +268,25 @@ namespace TPSBR.UI
             }
 
             _raycastResults.Clear();
+
+            if (_allSlots.Count > 0)
+            {
+                var camera = eventData.pressEventCamera != null ? eventData.pressEventCamera : eventData.enterEventCamera;
+                var screenPosition = eventData.position;
+
+                for (int i = 0; i < _allSlots.Count; i++)
+                {
+                    var slot = _allSlots[i];
+                    if (slot == null || slot.Owner == null)
+                        continue;
+
+                    if (RectTransformUtility.RectangleContainsScreenPoint(slot.SlotRectTransform, screenPosition, camera))
+                    {
+                        return slot;
+                    }
+                }
+            }
+
             return null;
         }
     }
