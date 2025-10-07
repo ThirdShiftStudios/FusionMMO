@@ -10,6 +10,7 @@ namespace TPSBR.UI
     {
         private static readonly Dictionary<int, UIItemSlot> _lastDropTargets = new Dictionary<int, UIItemSlot>();
         private static readonly List<RaycastResult> _raycastResults = new List<RaycastResult>();
+        private static UIItemSlot _activeDragSlot;
 
         private IUIItemSlotOwner _owner;
         private UIButton _button;
@@ -92,6 +93,7 @@ namespace TPSBR.UI
                 return;
 
             _isDragging = true;
+            _activeDragSlot = this;
             EnsureCanvasGroup();
             _canvasGroup.alpha = 0.35f;
             _canvasGroup.blocksRaycasts = false;
@@ -113,6 +115,10 @@ namespace TPSBR.UI
                 return;
 
             _isDragging = false;
+            if (_activeDragSlot == this)
+            {
+                _activeDragSlot = null;
+            }
             EnsureCanvasGroup();
             _canvasGroup.alpha = 1f;
             _canvasGroup.blocksRaycasts = true;
@@ -139,6 +145,10 @@ namespace TPSBR.UI
                 return;
 
             var sourceSlot = eventData.pointerDrag != null ? eventData.pointerDrag.GetComponent<UIItemSlot>() : null;
+            if (sourceSlot == null)
+            {
+                sourceSlot = _activeDragSlot;
+            }
             if (sourceSlot == null || sourceSlot == this)
                 return;
 
@@ -217,6 +227,10 @@ namespace TPSBR.UI
             if (_lastDropTargets.Remove(pointerId))
                 return true;
 
+            if (_activeDragSlot != null)
+            {
+                _activeDragSlot = null;
+            }
             return false;
         }
 
