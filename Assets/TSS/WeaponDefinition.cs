@@ -10,5 +10,6 @@ namespace Unity.Template.CompetitiveActionMultiplayer
         private Weapon _weaponPrefab;
 
         public Weapon WeaponPrefab => _weaponPrefab;
+        public override ushort MaxStack => 1;
     }
 }

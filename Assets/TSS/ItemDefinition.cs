@@ -29,7 +29,7 @@ namespace TSS.Data
 
         public override string Name => displayName;
         public override Texture2D Icon => _iconSprite != null ? _iconSprite.texture : _iconTexture;
-        public ushort MaxStack => maxStack;
+        public virtual ushort MaxStack => maxStack;
         public Sprite IconSprite => _iconSprite != null ? _iconSprite : GetOrCreateSprite();
 
         public static ushort GetMaxStack(int id)
