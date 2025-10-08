@@ -5,6 +5,7 @@ namespace TPSBR
 {
 	using Fusion.Addons.AnimationController;
 
+	
 	public class JumpState : ClipState
 	{
 		// PRIVATE MEMBERS
