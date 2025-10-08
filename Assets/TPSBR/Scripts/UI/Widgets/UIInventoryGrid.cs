@@ -174,11 +174,11 @@ namespace TPSBR.UI
                         if (_dragIcon == null)
                                 return;
 
-                        RectTransform canvasRect = SceneUI.Canvas.transform as RectTransform;
-                        if (canvasRect == null)
+                        RectTransform referenceRect = _dragIcon.parent as RectTransform;
+                        if (referenceRect == null)
                                 return;
 
-                        if (RectTransformUtility.ScreenPointToLocalPointInRectangle(canvasRect, eventData.position, SceneUI.Canvas.worldCamera, out Vector2 localPoint))
+                        if (RectTransformUtility.ScreenPointToLocalPointInRectangle(referenceRect, eventData.position, SceneUI.Canvas.worldCamera, out Vector2 localPoint))
                         {
                                 _dragIcon.localPosition = localPoint;
                         }
