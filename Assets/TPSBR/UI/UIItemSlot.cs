@@ -6,7 +6,7 @@ using UnityEngine.UI;
 
 namespace TPSBR.UI
 {
-    public class UIItemSlot : UIWidget, IBeginDragHandler, IDragHandler, IEndDragHandler, IDropHandler
+    public class UIItemSlot : UIWidget, IBeginDragHandler, IDragHandler, IEndDragHandler, IDropHandler, IPointerClickHandler
     {
         private static readonly Dictionary<int, UIItemSlot> _lastDropTargets = new Dictionary<int, UIItemSlot>();
         private static readonly List<RaycastResult> _raycastResults = new List<RaycastResult>();
@@ -14,6 +14,7 @@ namespace TPSBR.UI
         private static UIItemSlot _activeDragSlot;
 
         [SerializeField] private Image _backgroundImage;
+        [SerializeField] private Image _selectionBorderImage;
 
         private IUIItemSlotOwner _owner;
         private UIButton _button;
@@ -25,6 +26,8 @@ namespace TPSBR.UI
         private bool _isDragging;
         private Color _defaultBackgroundColor;
         private bool _defaultBackgroundColorCached;
+        private Color _defaultSelectionBorderColor;
+        private bool _defaultSelectionBorderColorCached;
 
         public int Index { get; private set; } = -1;
         public RectTransform SlotRectTransform => RectTransform;
@@ -40,6 +43,7 @@ namespace TPSBR.UI
             EnsureCanvasGroup();
 
             CacheDefaultBackgroundColor();
+            CacheDefaultSelectionBorderColor();
 
             if (_allSlots.Contains(this) == false)
             {
@@ -176,6 +180,17 @@ namespace TPSBR.UI
             _owner.HandleSlotDrop(sourceSlot, this);
         }
 
+        public void OnPointerClick(PointerEventData eventData)
+        {
+            if (_owner == null || eventData == null)
+                return;
+
+            if (eventData.button != PointerEventData.InputButton.Left)
+                return;
+
+            _owner.HandleSlotSelected(this);
+        }
+
         internal IUIItemSlotOwner Owner => _owner;
 
         internal void SetSelected(bool selected, Color selectedColor)
@@ -186,6 +201,16 @@ namespace TPSBR.UI
             CacheDefaultBackgroundColor();
 
             _backgroundImage.color = selected ? selectedColor : _defaultBackgroundColor;
+        }
+
+        internal void SetSelectionHighlight(bool selected, Color selectedColor)
+        {
+            if (_selectionBorderImage == null)
+                return;
+
+            CacheDefaultSelectionBorderColor();
+
+            _selectionBorderImage.color = selected ? selectedColor : _defaultSelectionBorderColor;
         }
 
         private void EnsureCanvasGroup()
@@ -207,6 +232,15 @@ namespace TPSBR.UI
 
             _defaultBackgroundColor = _backgroundImage.color;
             _defaultBackgroundColorCached = true;
+        }
+
+        private void CacheDefaultSelectionBorderColor()
+        {
+            if (_selectionBorderImage == null || _defaultSelectionBorderColorCached == true)
+                return;
+
+            _defaultSelectionBorderColor = _selectionBorderImage.color;
+            _defaultSelectionBorderColorCached = true;
         }
 
         private void EnsureIconImage()

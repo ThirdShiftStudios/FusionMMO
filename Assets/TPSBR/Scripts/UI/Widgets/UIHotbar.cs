@@ -1,3 +1,4 @@
+using System;
 using TPSBR;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -18,6 +19,11 @@ namespace TPSBR.UI
         private CanvasGroup _dragCanvasGroup;
         private Color _selectionColor = Color.white;
         private int _lastSelectedSlot = -1;
+        [SerializeField]
+        private Color _selectedSlotColor = Color.white;
+        internal event Action<Weapon> ItemSelected;
+
+        private int _selectedSlotIndex = -1;
 
         protected override void OnInitialize()
         {
@@ -31,6 +37,7 @@ namespace TPSBR.UI
             }
 
             UpdateSelection(true);
+            UpdateSelectionHighlight();
         }
 
         protected override void OnDeinitialize()
@@ -71,8 +78,10 @@ namespace TPSBR.UI
 
             SetDragVisible(false);
             _dragSource = null;
+            ClearSelection();
 
             UpdateSelection(true);
+            UpdateSelectionHighlight();
         }
 
         internal void SetSelectedColor(Color color)
@@ -82,6 +91,15 @@ namespace TPSBR.UI
 
             _selectionColor = color;
             UpdateSelection(true);
+        }
+
+        internal void SetSelectionHighlightColor(Color color)
+        {
+            if (_selectedSlotColor == color)
+                return;
+
+            _selectedSlotColor = color;
+            UpdateSelectionHighlight();
         }
 
         protected override void OnTick()
@@ -149,6 +167,53 @@ namespace TPSBR.UI
             _inventory.RequestDropHotbar(slot.Index);
         }
 
+        void IUIItemSlotOwner.HandleSlotSelected(UIItemSlot slot)
+        {
+            if (_inventory == null || slot == null)
+            {
+                ClearSelection();
+                return;
+            }
+
+            var weapon = _inventory.GetWeapon(slot.Index + 1);
+
+            if (weapon == null)
+            {
+                ClearSelection();
+                return;
+            }
+
+            if (_selectedSlotIndex == slot.Index)
+            {
+                NotifySelectionChanged(weapon);
+                return;
+            }
+
+            _selectedSlotIndex = slot.Index;
+            UpdateSelectionHighlight();
+            NotifySelectionChanged(weapon);
+        }
+
+        internal void ClearSelection(bool notify = true)
+        {
+            if (_selectedSlotIndex < 0)
+            {
+                if (notify == true)
+                {
+                    NotifySelectionChanged(null);
+                }
+                return;
+            }
+
+            _selectedSlotIndex = -1;
+            UpdateSelectionHighlight();
+
+            if (notify == true)
+            {
+                NotifySelectionChanged(null);
+            }
+        }
+
         private void OnHotbarSlotChanged(int index, Weapon weapon)
         {
             int slotIndex = index - 1;
@@ -169,10 +234,21 @@ namespace TPSBR.UI
             if (weapon == null)
             {
                 _slots[index].Clear();
+                if (_selectedSlotIndex == index)
+                {
+                    _selectedSlotIndex = -1;
+                    UpdateSelectionHighlight();
+                    NotifySelectionChanged(null);
+                }
                 return;
             }
 
             _slots[index].SetItem(weapon.Icon, 1);
+
+            if (_selectedSlotIndex == index)
+            {
+                NotifySelectionChanged(weapon);
+            }
         }
 
         private void UpdateSelection(bool forceUpdate = false)
@@ -201,6 +277,25 @@ namespace TPSBR.UI
                 bool isSelected = i == selectedSlot;
                 _slots[i].SetSelected(isSelected, _selectionColor);
             }
+
+            UpdateSelectionHighlight();
+        }
+
+        private void UpdateSelectionHighlight()
+        {
+            if (_slots == null)
+                return;
+
+            for (int i = 0; i < _slots.Length; i++)
+            {
+                bool isSelected = i == _selectedSlotIndex;
+                _slots[i].SetSelectionHighlight(isSelected, _selectedSlotColor);
+            }
+        }
+
+        private void NotifySelectionChanged(Weapon weapon)
+        {
+            ItemSelected?.Invoke(weapon);
         }
 
         private void EnsureDragVisual()
