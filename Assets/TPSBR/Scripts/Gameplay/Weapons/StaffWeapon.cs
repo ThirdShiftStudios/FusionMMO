@@ -50,13 +50,13 @@ namespace TPSBR
         {
             base.OnConfigurationHashApplied(configurationHash);
 
-            if (TryParseSeed(configurationHash, out int seed) == false)
+            if (TryGetStatsFromConfiguration(configurationHash, out float baseDamage, out float healthRegen, out float manaRegen, out string configuredItemName) == false)
             {
                 ResetConfiguration();
                 return;
             }
 
-            ApplyConfiguration(seed);
+            ApplyConfiguration(baseDamage, healthRegen, manaRegen, configuredItemName);
         }
 
         private bool TryParseSeed(string configurationHash, out int seed)
@@ -92,19 +92,41 @@ namespace TPSBR
             }
         }
 
-        private void ApplyConfiguration(int seed)
+        private void ApplyConfiguration(float baseDamage, float healthRegen, float manaRegen, string configuredItemName)
         {
-            var random = new System.Random(seed);
-
-            _baseDamage = GenerateStat(random, 18f, 32f, 0.5f);
-            _healthRegen = GenerateStat(random, 1f, 6f, 0.1f);
-            _manaRegen = GenerateStat(random, 2f, 9f, 0.1f);
-
-            _configuredItemName = GenerateName(random);
+            _baseDamage = baseDamage;
+            _healthRegen = healthRegen;
+            _manaRegen = manaRegen;
+            _configuredItemName = configuredItemName;
 
             SetWeaponSize(WeaponSize.Staff);
             SetDisplayName(_configuredItemName);
             SetNameShortcut(CreateShortcut(_configuredItemName));
+        }
+
+        private bool TryGetStatsFromConfiguration(string configurationHash, out float baseDamage, out float healthRegen, out float manaRegen, out string configuredItemName)
+        {
+            baseDamage = default;
+            healthRegen = default;
+            manaRegen = default;
+            configuredItemName = string.Empty;
+
+            if (TryParseSeed(configurationHash, out int seed) == false)
+            {
+                return false;
+            }
+
+            PopulateStats(new System.Random(seed), out baseDamage, out healthRegen, out manaRegen, out configuredItemName);
+
+            return true;
+        }
+
+        private void PopulateStats(System.Random random, out float baseDamage, out float healthRegen, out float manaRegen, out string configuredItemName)
+        {
+            baseDamage = GenerateStat(random, 18f, 32f, 0.5f);
+            healthRegen = GenerateStat(random, 1f, 6f, 0.1f);
+            manaRegen = GenerateStat(random, 2f, 9f, 0.1f);
+            configuredItemName = GenerateName(random);
         }
 
         private void ResetConfiguration()
@@ -177,10 +199,21 @@ namespace TPSBR
 
         public override string GetDescription()
         {
-            return 
-                   $"Damage: {_baseDamage}\n" +
-                   $"Health Regen: {_healthRegen}\n" +
-                   $"Mana Regen: {_manaRegen}\n" +
+            float baseDamage = _baseDamage;
+            float healthRegen = _healthRegen;
+            float manaRegen = _manaRegen;
+
+            if (TryGetStatsFromConfiguration(ConfigurationHash.ToString(), out float configBaseDamage, out float configHealthRegen, out float configManaRegen, out _))
+            {
+                baseDamage = configBaseDamage;
+                healthRegen = configHealthRegen;
+                manaRegen = configManaRegen;
+            }
+
+            return
+                   $"Damage: {baseDamage}\n" +
+                   $"Health Regen: {healthRegen}\n" +
+                   $"Mana Regen: {manaRegen}\n" +
                    $"" ;
         }
     }
