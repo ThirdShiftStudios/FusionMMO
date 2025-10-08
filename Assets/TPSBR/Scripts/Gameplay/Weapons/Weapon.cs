@@ -40,7 +40,8 @@ namespace TPSBR
 
         [SerializeField] private Sprite _icon;
 
-        [Networked(OnChanged = nameof(OnConfigurationHashChanged))]
+        //[Networked(OnChanged = nameof(OnConfigurationHashChanged))]
+        [Networked]
         private NetworkString<_32> _configurationHash { get; set; }
 
         private bool _isInitialized;
@@ -230,11 +231,7 @@ namespace TPSBR
             transform.localPosition = Vector3.zero;
             transform.localRotation = Quaternion.identity;
         }
-
-        private static void OnConfigurationHashChanged(Changed<Weapon> changed)
-        {
-            changed.Behaviour.ApplyConfigurationHash(changed.Behaviour._configurationHash);
-        }
+        
 
         private void ApplyConfigurationHash(NetworkString<_32> configurationHash)
         {

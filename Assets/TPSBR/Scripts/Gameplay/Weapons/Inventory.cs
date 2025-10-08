@@ -1300,14 +1300,14 @@ namespace TPSBR
 
         RemoveWeapon(weaponSlot);
 
-        if (weapon != null && weapon.Object != null)
-        {
-            Runner.Despawn(weapon.Object);
-        }
-
         if (definition != null)
         {
             SpawnInventoryItemPickup(definition, 1, weapon.ConfigurationHash);
+        }
+        
+        if (weapon != null && weapon.Object != null)
+        {
+            Runner.Despawn(weapon.Object);
         }
     }
 
