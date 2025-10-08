@@ -1,3 +1,5 @@
+using System;
+using TSS.Data;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -15,6 +17,11 @@ namespace TPSBR.UI
                 private RectTransform _dragIcon;
                 private Image _dragImage;
                 private CanvasGroup _dragCanvasGroup;
+                [SerializeField]
+                private Color _selectedSlotColor = Color.white;
+                internal event Action<ItemDefinition> ItemSelected;
+
+                private int _selectedSlotIndex = -1;
 
                 protected override void OnInitialize()
                 {
@@ -26,6 +33,8 @@ namespace TPSBR.UI
                         {
                                 _slots[i].InitializeSlot(this, i);
                         }
+
+                        UpdateSelectionHighlight();
                 }
 
                 protected override void OnDeinitialize()
@@ -65,6 +74,7 @@ namespace TPSBR.UI
 
                         SetDragVisible(false);
                         _dragSource = null;
+                        ClearSelection();
                 }
 
                 void IUIItemSlotOwner.BeginSlotDrag(UIItemSlot slot, PointerEventData eventData)
@@ -130,9 +140,71 @@ namespace TPSBR.UI
                         _inventory.RequestDropInventoryItem(slot.Index);
                 }
 
+                void IUIItemSlotOwner.HandleSlotSelected(UIItemSlot slot)
+                {
+                        if (_inventory == null || slot == null || slot.HasItem == false)
+                        {
+                                ClearSelection();
+                                return;
+                        }
+
+                        if (_selectedSlotIndex == slot.Index)
+                        {
+                                NotifySelectionChanged();
+                                return;
+                        }
+
+                        _selectedSlotIndex = slot.Index;
+                        UpdateSelectionHighlight();
+                        NotifySelectionChanged();
+                }
+
+                internal void SetSelectionColor(Color color)
+                {
+                        if (_selectedSlotColor == color)
+                                return;
+
+                        _selectedSlotColor = color;
+                        UpdateSelectionHighlight();
+                }
+
+                internal void ClearSelection(bool notify = true)
+                {
+                        if (_selectedSlotIndex < 0)
+                        {
+                                if (notify == true)
+                                {
+                                        NotifySelectionChanged();
+                                }
+                                return;
+                        }
+
+                        _selectedSlotIndex = -1;
+                        UpdateSelectionHighlight();
+
+                        if (notify == true)
+                        {
+                                NotifySelectionChanged();
+                        }
+                }
+
                 private void OnItemSlotChanged(int index, InventorySlot slot)
                 {
                         UpdateSlot(index, slot);
+
+                        if (_selectedSlotIndex == index)
+                        {
+                                if (slot.IsEmpty)
+                                {
+                                        _selectedSlotIndex = -1;
+                                        UpdateSelectionHighlight();
+                                        NotifySelectionChanged();
+                                }
+                                else
+                                {
+                                        NotifySelectionChanged();
+                                }
+                        }
                 }
 
                 private void UpdateSlot(int index, InventorySlot slot)
@@ -150,6 +222,40 @@ namespace TPSBR.UI
                         var sprite = definition != null ? definition.IconSprite : null;
 
                         _slots[index].SetItem(sprite, slot.Quantity);
+                }
+
+                private void UpdateSelectionHighlight()
+                {
+                        if (_slots == null)
+                                return;
+
+                        for (int i = 0; i < _slots.Length; i++)
+                        {
+                                bool isSelected = i == _selectedSlotIndex;
+                                _slots[i].SetSelectionHighlight(isSelected, _selectedSlotColor);
+                        }
+                }
+
+                private void NotifySelectionChanged()
+                {
+                        if (ItemSelected == null)
+                                return;
+
+                        if (_inventory == null || _selectedSlotIndex < 0)
+                        {
+                                ItemSelected.Invoke(null);
+                                return;
+                        }
+
+                        var slot = _inventory.GetItemSlot(_selectedSlotIndex);
+
+                        if (slot.IsEmpty)
+                        {
+                                ItemSelected.Invoke(null);
+                                return;
+                        }
+
+                        ItemSelected.Invoke(slot.GetDefinition());
                 }
 
                 private void EnsureDragVisual()

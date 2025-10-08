@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using TSS.Data;
 
 namespace TPSBR.UI
 {
@@ -14,6 +15,9 @@ namespace TPSBR.UI
         [SerializeField] private UIInventoryGrid _inventoryGrid;
         [SerializeField] private UIHotbar _hotbar;
         [SerializeField] private Color _selectedHotbarColor = Color.white;
+        [SerializeField] private Color _selectedInventorySlotColor = Color.white;
+        [SerializeField] private Color _selectedHotbarSlotColor = Color.white;
+        [SerializeField] private UIInventoryDetailsPanel _detailsPanel;
 
         private bool _menuVisible;
         private Agent _boundAgent;
@@ -60,23 +64,35 @@ namespace TPSBR.UI
             if (_hotbar != null)
             {
                 _hotbar.SetSelectedColor(_selectedHotbarColor);
+                _hotbar.SetSelectionHighlightColor(_selectedHotbarSlotColor);
+                _hotbar.ItemSelected += OnHotbarItemSelected;
+            }
+
+            if (_inventoryGrid != null)
+            {
+                _inventoryGrid.SetSelectionColor(_selectedInventorySlotColor);
+                _inventoryGrid.ItemSelected += OnInventoryItemSelected;
             }
 
             if (_cancelButton != null)
             {
                 _cancelButton.onClick.AddListener(OnCancelButton);
             }
+
+            _detailsPanel?.Hide();
         }
 
         protected override void OnDeinitialize()
         {
             if (_inventoryGrid != null)
             {
+                _inventoryGrid.ItemSelected -= OnInventoryItemSelected;
                 _inventoryGrid.Bind(null);
             }
 
             if (_hotbar != null)
             {
+                _hotbar.ItemSelected -= OnHotbarItemSelected;
                 _hotbar.Bind(null);
             }
 
@@ -97,6 +113,7 @@ namespace TPSBR.UI
             CanvasGroup.interactable = false;
 
             RefreshInventoryBinding();
+            _detailsPanel?.Hide();
         }
 
         protected override void OnTick()
@@ -121,6 +138,40 @@ namespace TPSBR.UI
         }
 
         // PRIVATE MEMBERS
+
+        private void OnInventoryItemSelected(ItemDefinition definition)
+        {
+            if (definition != null)
+            {
+                _hotbar?.ClearSelection(false);
+            }
+
+            ShowItemDetails(definition);
+        }
+
+        private void OnHotbarItemSelected(ItemDefinition definition)
+        {
+            if (definition != null)
+            {
+                _inventoryGrid?.ClearSelection(false);
+            }
+
+            ShowItemDetails(definition);
+        }
+
+        private void ShowItemDetails(ItemDefinition definition)
+        {
+            if (_detailsPanel == null)
+                return;
+
+            if (definition == null)
+            {
+                _detailsPanel.Hide();
+                return;
+            }
+
+            _detailsPanel.Show(definition);
+        }
 
         private void OnLeaveButton()
         {
