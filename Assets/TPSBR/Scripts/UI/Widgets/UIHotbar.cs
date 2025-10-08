@@ -1,4 +1,5 @@
 using System;
+using Fusion;
 using TPSBR;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -21,7 +22,7 @@ namespace TPSBR.UI
         private int _lastSelectedSlot = -1;
         [SerializeField]
         private Color _selectedSlotColor = Color.white;
-        internal event Action<Weapon> ItemSelected;
+        internal event Action<Weapon, NetworkString<_32>> ItemSelected;
 
         private int _selectedSlotIndex = -1;
 
@@ -295,7 +296,14 @@ namespace TPSBR.UI
 
         private void NotifySelectionChanged(Weapon weapon)
         {
-            ItemSelected?.Invoke(weapon);
+            NetworkString<_32> configurationHash = default;
+
+            if (weapon != null)
+            {
+                configurationHash = weapon.ConfigurationHash;
+            }
+
+            ItemSelected?.Invoke(weapon, configurationHash);
         }
 
         private void EnsureDragVisual()

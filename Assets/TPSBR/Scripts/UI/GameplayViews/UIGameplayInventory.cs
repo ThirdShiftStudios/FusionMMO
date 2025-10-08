@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using Fusion;
+using UnityEngine;
 
 namespace TPSBR.UI
 {
@@ -138,27 +139,27 @@ namespace TPSBR.UI
 
         // PRIVATE MEMBERS
 
-        private void OnInventoryItemSelected(Weapon weapon)
+        private void OnInventoryItemSelected(Weapon weapon, NetworkString<_32> configurationHash)
         {
             if (weapon != null)
             {
                 _hotbar?.ClearSelection(false);
             }
 
-            ShowItemDetails(weapon);
+            ShowItemDetails(weapon, configurationHash);
         }
 
-        private void OnHotbarItemSelected(Weapon weapon)
+        private void OnHotbarItemSelected(Weapon weapon, NetworkString<_32> configurationHash)
         {
             if (weapon != null)
             {
                 _inventoryGrid?.ClearSelection(false);
             }
 
-            ShowItemDetails(weapon);
+            ShowItemDetails(weapon, configurationHash);
         }
 
-        private void ShowItemDetails(Weapon weapon)
+        private void ShowItemDetails(Weapon weapon, NetworkString<_32> configurationHash)
         {
             if (_detailsPanel == null)
                 return;
@@ -169,7 +170,7 @@ namespace TPSBR.UI
                 return;
             }
 
-            _detailsPanel.Show(weapon);
+            _detailsPanel.Show(weapon, configurationHash);
         }
 
         private void OnLeaveButton()

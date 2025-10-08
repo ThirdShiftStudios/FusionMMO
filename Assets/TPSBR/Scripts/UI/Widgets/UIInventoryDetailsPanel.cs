@@ -1,3 +1,4 @@
+using Fusion;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -18,7 +19,7 @@ namespace TPSBR.UI
             Hide();
         }
 
-        internal void Show(Weapon weapon)
+        internal void Show(Weapon weapon, NetworkString<_32> configurationHash)
         {
             if (weapon == null)
             {
@@ -28,12 +29,24 @@ namespace TPSBR.UI
 
             if (_nameLabel != null)
             {
-                _nameLabel.SetTextSafe(weapon.DisplayName);
+                string displayName = weapon.GetDisplayName(configurationHash);
+                if (string.IsNullOrWhiteSpace(displayName) == true)
+                {
+                    displayName = weapon.DisplayName;
+                }
+
+                _nameLabel.SetTextSafe(displayName);
             }
 
             if (_descriptionLabel != null)
             {
-                _descriptionLabel.SetTextSafe(weapon.GetDescription());
+                string description = weapon.GetDescription(configurationHash);
+                if (string.IsNullOrWhiteSpace(description) == true)
+                {
+                    description = weapon.GetDescription();
+                }
+
+                _descriptionLabel.SetTextSafe(description);
             }
 
             if (_iconImage != null)

@@ -1,4 +1,5 @@
 using System;
+using Fusion;
 using UnityEngine;
 
 namespace TPSBR
@@ -203,22 +204,49 @@ namespace TPSBR
 
         public override string GetDescription()
         {
-            float baseDamage = _baseDamage;
-            float healthRegen = _healthRegen;
-            float manaRegen = _manaRegen;
-
-            if (TryGetStatsFromConfiguration(_lastConfigurationHash, out float configBaseDamage, out float configHealthRegen, out float configManaRegen, out _))
+            if (TryGetStatsFromConfiguration(_lastConfigurationHash, out float baseDamage, out float healthRegen, out float manaRegen, out _))
             {
-                baseDamage = configBaseDamage;
-                healthRegen = configHealthRegen;
-                manaRegen = configManaRegen;
+                return BuildDescription(baseDamage, healthRegen, manaRegen);
             }
 
+            return BuildDescription(_baseDamage, _healthRegen, _manaRegen);
+        }
+
+        public override string GetDescription(NetworkString<_32> configurationHash)
+        {
+            string hash = configurationHash.ToString();
+
+            if (TryGetStatsFromConfiguration(hash, out float baseDamage, out float healthRegen, out float manaRegen, out _))
+            {
+                return BuildDescription(baseDamage, healthRegen, manaRegen);
+            }
+
+            return GetDescription();
+        }
+
+        public override string GetDisplayName(NetworkString<_32> configurationHash)
+        {
+            string hash = configurationHash.ToString();
+
+            if (TryGetStatsFromConfiguration(hash, out _, out _, out _, out string configuredItemName) == true && string.IsNullOrWhiteSpace(configuredItemName) == false)
+            {
+                return configuredItemName;
+            }
+
+            if (string.IsNullOrWhiteSpace(_configuredItemName) == false)
+            {
+                return _configuredItemName;
+            }
+
+            return base.GetDisplayName(configurationHash);
+        }
+
+        private string BuildDescription(float baseDamage, float healthRegen, float manaRegen)
+        {
             return
-                   $"Damage: {baseDamage}\n" +
-                   $"Health Regen: {healthRegen}\n" +
-                   $"Mana Regen: {manaRegen}\n" +
-                   $"" ;
+                $"Damage: {baseDamage}\n" +
+                $"Health Regen: {healthRegen}\n" +
+                $"Mana Regen: {manaRegen}";
         }
     }
 }

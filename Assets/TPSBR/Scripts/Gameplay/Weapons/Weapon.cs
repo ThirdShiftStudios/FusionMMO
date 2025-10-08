@@ -20,6 +20,14 @@ namespace TPSBR
         {
             return _description + " this is the description";
         }
+        public virtual string GetDisplayName(NetworkString<_32> configurationHash)
+        {
+            return DisplayName;
+        }
+        public virtual string GetDescription(NetworkString<_32> configurationHash)
+        {
+            return GetDescription();
+        }
         public bool ValidOnlyWithAmmo => _validOnlyWithAmmo;
         public bool IsInitialized => _isInitialized;
         public bool IsArmed => _isArmed;

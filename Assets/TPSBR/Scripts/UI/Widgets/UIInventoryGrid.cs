@@ -1,4 +1,5 @@
 using System;
+using Fusion;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -19,7 +20,7 @@ namespace TPSBR.UI
                 private CanvasGroup _dragCanvasGroup;
                 [SerializeField]
                 private Color _selectedSlotColor = Color.white;
-                internal event Action<Weapon> ItemSelected;
+                internal event Action<Weapon, NetworkString<_32>> ItemSelected;
 
                 private int _selectedSlotIndex = -1;
 
@@ -243,7 +244,7 @@ namespace TPSBR.UI
 
                         if (_inventory == null || _selectedSlotIndex < 0)
                         {
-                                ItemSelected.Invoke(null);
+                                ItemSelected.Invoke(null, default);
                                 return;
                         }
 
@@ -251,12 +252,12 @@ namespace TPSBR.UI
 
                         if (slot.IsEmpty)
                         {
-                                ItemSelected.Invoke(null);
+                                ItemSelected.Invoke(null, default);
                                 return;
                         }
 
                         var definition = slot.GetDefinition() as WeaponDefinition;
-                        ItemSelected.Invoke(definition != null ? definition.WeaponPrefab : null);
+                        ItemSelected.Invoke(definition != null ? definition.WeaponPrefab : null, slot.ConfigurationHash);
                 }
 
                 private void EnsureDragVisual()
