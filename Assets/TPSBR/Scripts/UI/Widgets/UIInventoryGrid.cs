@@ -110,6 +110,14 @@ namespace TPSBR.UI
                         _inventory.RequestMoveItem(source.Index, target.Index);
                 }
 
+                void IUIItemSlotOwner.HandleSlotDropOutside(UIItemSlot slot, PointerEventData eventData)
+                {
+                        if (_inventory == null || slot == null)
+                                return;
+
+                        _inventory.RequestDropInventoryItem(slot.Index);
+                }
+
                 private void OnItemSlotChanged(int index, InventorySlot slot)
                 {
                         UpdateSlot(index, slot);
