@@ -188,6 +188,18 @@ namespace TPSBR
             }
         }
 
+        public void RequestStoreHotbar(int hotbarIndex, int inventoryIndex)
+        {
+            if (HasStateAuthority == true)
+            {
+                StoreHotbar(hotbarIndex, inventoryIndex);
+            }
+            else
+            {
+                RPC_RequestStoreHotbar((byte)hotbarIndex, (byte)inventoryIndex);
+            }
+        }
+
         public void RequestSwapHotbar(int fromIndex, int toIndex)
         {
             if (fromIndex == toIndex)
@@ -710,6 +722,12 @@ namespace TPSBR
         }
 
         [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
+        private void RPC_RequestStoreHotbar(byte hotbarIndex, byte inventoryIndex)
+        {
+            StoreHotbar(hotbarIndex, inventoryIndex);
+        }
+
+        [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
         private void RPC_RequestSwapHotbar(byte fromIndex, byte toIndex)
         {
             SwapHotbar(fromIndex, toIndex);
@@ -885,6 +903,58 @@ namespace TPSBR
             if (_currentWeaponSlot == slot)
             {
                 ArmCurrentWeapon();
+            }
+        }
+
+        private void StoreHotbar(int hotbarIndex, int inventoryIndex)
+        {
+            int slot = hotbarIndex + 1;
+            if (slot <= 0 || slot >= _hotbar.Length)
+                return;
+
+            if (inventoryIndex < 0 || inventoryIndex >= _items.Length)
+                return;
+
+            var targetSlot = _items[inventoryIndex];
+            if (targetSlot.IsEmpty == false)
+                return;
+
+            var weapon = _hotbar[slot];
+            if (weapon == null)
+                return;
+
+            var definition = weapon.Definition as WeaponDefinition;
+            if (definition == null)
+                return;
+
+            EnsureWeaponPrefabRegistered(definition, weapon);
+
+            if (slot == _currentWeaponSlot)
+            {
+                byte bestWeaponSlot = _previousWeaponSlot;
+                if (bestWeaponSlot == 0 || bestWeaponSlot == _currentWeaponSlot)
+                {
+                    bestWeaponSlot = FindBestWeaponSlot(_currentWeaponSlot);
+                }
+
+                SetCurrentWeapon(bestWeaponSlot);
+                ArmCurrentWeapon();
+            }
+            else if (_previousWeaponSlot == slot)
+            {
+                _previousWeaponSlot = 0;
+            }
+
+            var inventorySlot = new InventorySlot(definition.ID, 1, default);
+            _items.Set(inventoryIndex, inventorySlot);
+            UpdateWeaponDefinitionMapping(inventoryIndex, inventorySlot);
+            RefreshItems();
+
+            RemoveWeapon(slot);
+
+            if (weapon.Object != null)
+            {
+                Runner.Despawn(weapon.Object);
             }
         }
 

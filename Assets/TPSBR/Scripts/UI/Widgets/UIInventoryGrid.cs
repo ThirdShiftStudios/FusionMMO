@@ -104,10 +104,22 @@ namespace TPSBR.UI
                         SetDragVisible(false);
                         _dragSource = null;
 
-                        if (source.Index == target.Index)
+                        if (source == null || target == null)
                                 return;
 
-                        _inventory.RequestMoveItem(source.Index, target.Index);
+                        if (ReferenceEquals(source.Owner, this) == true)
+                        {
+                                if (source.Index == target.Index)
+                                        return;
+
+                                _inventory.RequestMoveItem(source.Index, target.Index);
+                                return;
+                        }
+
+                        if (source.Owner is UIHotbar)
+                        {
+                                _inventory.RequestStoreHotbar(source.Index, target.Index);
+                        }
                 }
 
                 private void OnItemSlotChanged(int index, InventorySlot slot)
