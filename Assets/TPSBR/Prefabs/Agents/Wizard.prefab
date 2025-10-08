@@ -143,8 +143,16 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 8993902097722301239, guid: 7e1afcdeae329bf40adba5ba1379eb3c, type: 3}
     - target: {fileID: 171957080266274596, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
+      propertyPath: _node.Clip
+      value: 
+      objectReference: {fileID: 8993902097722301239, guid: 400ec625fd8e3ac4aa2bd5c91a195ff1, type: 3}
+    - target: {fileID: 171957080266274596, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
       propertyPath: _sets.Array.size
       value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 171957080266274596, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
+      propertyPath: _nodes.Array.size
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 171957080266274596, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
       propertyPath: _sets.Array.data[0]._nodes.Array.data[0].Clip
@@ -206,6 +214,10 @@ PrefabInstance:
       propertyPath: _sets.Array.data[2]._nodes.Array.data[4].Clip
       value: 
       objectReference: {fileID: 8993902097722301239, guid: db6a3033446d5c24db47405d53dacb99, type: 3}
+    - target: {fileID: 738699020555729882, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
+      propertyPath: _node.Clip
+      value: 
+      objectReference: {fileID: 8993902097722301239, guid: 67ce5cac26167b0479d3cbdd11a0bfcf, type: 3}
     - target: {fileID: 738699020555729882, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
       propertyPath: _sets.Array.size
       value: 3
@@ -398,6 +410,10 @@ PrefabInstance:
       propertyPath: _sets.Array.data[2]._nodes.Array.data[8].Clip
       value: 
       objectReference: {fileID: 8993902097722301239, guid: 7e1afcdeae329bf40adba5ba1379eb3c, type: 3}
+    - target: {fileID: 4194939357288014882, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
+      propertyPath: _node.Clip
+      value: 
+      objectReference: {fileID: 8993902097722301239, guid: 7dd3df79abc6be44c958b4d29feb0880, type: 3}
     - target: {fileID: 4194939357288014882, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
       propertyPath: _sets.Array.size
       value: 3
@@ -989,7 +1005,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   targetAnimator: {fileID: 7573670145950396473}
-  frameInterval: 30
+  frameInterval: 15
 --- !u!4 &4610340260791413315 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 7349108630790632784, guid: d89dc8cce81c9a54eb3dfcd741fdcb58, type: 3}
