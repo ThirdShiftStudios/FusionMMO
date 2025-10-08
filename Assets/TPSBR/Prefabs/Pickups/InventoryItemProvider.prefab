@@ -11,6 +11,8 @@ GameObject:
   - component: {fileID: 2413579204384756285}
   - component: {fileID: 213456789012345678}
   - component: {fileID: 483920102938475611}
+  - component: {fileID: 2265123456789012345}
+  - component: {fileID: 4156234567890123456}
   - component: {fileID: 5821164388687506460}
   m_Layer: 0
   m_Name: InventoryItemProvider
@@ -52,6 +54,7 @@ MonoBehaviour:
   NestedObjects: []
   NetworkedBehaviours:
   - {fileID: 483920102938475611}
+  - {fileID: 4156234567890123456}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &483920102938475611
 MonoBehaviour:
@@ -63,12 +66,14 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b6eca988f2cb4717a6da4851e5eae5b9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   _interpolationTarget: {fileID: 0}
   _collider: {fileID: 5821164388687506460}
   _despawnTime: 600
   _visualOffset: {x: 0, y: 0, z: 0}
+  _networkRigidbody: {fileID: 4156234567890123456}
+  _rigidbody: {fileID: 2265123456789012345}
   _ItemDefinitionId: 0
   _Quantity: 0
   _ConfigurationHash:
@@ -96,3 +101,52 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!54 &2265123456789012345
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 4
+  m_Mass: 5
+  m_Drag: 0
+  m_AngularDrag: 12
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 0
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 2
+--- !u!114 &4156234567890123456
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1965739204384756284}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0a591d221a634417e9827eb58e17de84, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  _stateAuthorityChangeErrorCorrectionDelta: 0.15
+  SyncScale: 0
+  SyncParent: 0
+  _interpolationTarget: {fileID: 0}
+  UsePreciseRotation: 0
+  UseRenderSleepThresholds: 1
+  RenderThresholds:
+    UseEnergy: 1
+    Position: 0.01
+    Rotation: 0.01
+    Scale: 0.01
