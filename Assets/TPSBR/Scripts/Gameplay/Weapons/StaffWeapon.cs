@@ -174,5 +174,14 @@ namespace TPSBR
 
             return condensed.Substring(0, 4).ToUpperInvariant();
         }
+
+        public override string GetDescription()
+        {
+            return 
+                   $"Damage: {_baseDamage}\n" +
+                   $"Health Regen: {_healthRegen}\n" +
+                   $"Mana Regen: {_manaRegen}\n" +
+                   $"" ;
+        }
     }
 }
