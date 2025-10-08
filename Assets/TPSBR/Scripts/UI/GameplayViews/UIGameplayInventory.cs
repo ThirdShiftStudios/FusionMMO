@@ -13,6 +13,7 @@ namespace TPSBR.UI
         [SerializeField] private UIButton _cancelButton;
         [SerializeField] private UIInventoryGrid _inventoryGrid;
         [SerializeField] private UIHotbar _hotbar;
+        [SerializeField] private Color _selectedHotbarColor = Color.white;
 
         private bool _menuVisible;
         private Agent _boundAgent;
@@ -54,6 +55,11 @@ namespace TPSBR.UI
             if (_hotbar == null)
             {
                 _hotbar = GetComponentInChildren<UIHotbar>(true);
+            }
+
+            if (_hotbar != null)
+            {
+                _hotbar.SetSelectedColor(_selectedHotbarColor);
             }
 
             if (_cancelButton != null)

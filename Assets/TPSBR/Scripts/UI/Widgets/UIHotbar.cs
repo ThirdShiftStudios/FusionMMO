@@ -16,6 +16,8 @@ namespace TPSBR.UI
         private RectTransform _dragIcon;
         private Image _dragImage;
         private CanvasGroup _dragCanvasGroup;
+        private Color _selectionColor = Color.white;
+        private int _lastSelectedSlot = -1;
 
         protected override void OnInitialize()
         {
@@ -27,6 +29,8 @@ namespace TPSBR.UI
             {
                 _slots[i].InitializeSlot(this, i);
             }
+
+            UpdateSelection(true);
         }
 
         protected override void OnDeinitialize()
@@ -67,6 +71,24 @@ namespace TPSBR.UI
 
             SetDragVisible(false);
             _dragSource = null;
+
+            UpdateSelection(true);
+        }
+
+        internal void SetSelectedColor(Color color)
+        {
+            if (_selectionColor == color)
+                return;
+
+            _selectionColor = color;
+            UpdateSelection(true);
+        }
+
+        protected override void OnTick()
+        {
+            base.OnTick();
+
+            UpdateSelection();
         }
 
         void IUIItemSlotOwner.BeginSlotDrag(UIItemSlot slot, PointerEventData eventData)
@@ -143,6 +165,34 @@ namespace TPSBR.UI
             }
 
             _slots[index].SetItem(weapon.Icon, 1);
+        }
+
+        private void UpdateSelection(bool forceUpdate = false)
+        {
+            if (_slots == null || _slots.Length == 0)
+                return;
+
+            int selectedSlot = -1;
+
+            if (_inventory != null)
+            {
+                int inventorySlot = _inventory.CurrentWeaponSlot;
+                if (inventorySlot > 0)
+                {
+                    selectedSlot = inventorySlot - 1;
+                }
+            }
+
+            if (forceUpdate == false && selectedSlot == _lastSelectedSlot)
+                return;
+
+            _lastSelectedSlot = selectedSlot;
+
+            for (int i = 0; i < _slots.Length; i++)
+            {
+                bool isSelected = i == selectedSlot;
+                _slots[i].SetSelected(isSelected, _selectionColor);
+            }
         }
 
         private void EnsureDragVisual()

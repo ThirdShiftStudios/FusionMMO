@@ -13,6 +13,8 @@ namespace TPSBR.UI
         private static readonly List<UIItemSlot> _allSlots = new List<UIItemSlot>();
         private static UIItemSlot _activeDragSlot;
 
+        [SerializeField] private Image _backgroundImage;
+
         private IUIItemSlotOwner _owner;
         private UIButton _button;
         private CanvasGroup _canvasGroup;
@@ -21,6 +23,8 @@ namespace TPSBR.UI
         private Sprite _iconSprite;
         private int _quantity;
         private bool _isDragging;
+        private Color _defaultBackgroundColor;
+        private bool _defaultBackgroundColorCached;
 
         public int Index { get; private set; } = -1;
         public RectTransform SlotRectTransform => RectTransform;
@@ -34,6 +38,8 @@ namespace TPSBR.UI
 
             _button = GetComponent<UIButton>();
             EnsureCanvasGroup();
+
+            CacheDefaultBackgroundColor();
 
             if (_allSlots.Contains(this) == false)
             {
@@ -166,6 +172,16 @@ namespace TPSBR.UI
 
         internal IUIItemSlotOwner Owner => _owner;
 
+        internal void SetSelected(bool selected, Color selectedColor)
+        {
+            if (_backgroundImage == null)
+                return;
+
+            CacheDefaultBackgroundColor();
+
+            _backgroundImage.color = selected ? selectedColor : _defaultBackgroundColor;
+        }
+
         private void EnsureCanvasGroup()
         {
             if (_canvasGroup != null)
@@ -176,6 +192,15 @@ namespace TPSBR.UI
             {
                 _canvasGroup = gameObject.AddComponent<CanvasGroup>();
             }
+        }
+
+        private void CacheDefaultBackgroundColor()
+        {
+            if (_backgroundImage == null || _defaultBackgroundColorCached == true)
+                return;
+
+            _defaultBackgroundColor = _backgroundImage.color;
+            _defaultBackgroundColorCached = true;
         }
 
         private void EnsureIconImage()
