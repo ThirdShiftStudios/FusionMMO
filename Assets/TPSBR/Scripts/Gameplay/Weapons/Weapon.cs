@@ -18,7 +18,7 @@ namespace TPSBR
         public Sprite Icon => _weaponDefinition.IconSprite;
         public virtual string GetDescription()
         {
-            return _description;
+            return _description + " this is the description";
         }
         public bool ValidOnlyWithAmmo => _validOnlyWithAmmo;
         public bool IsInitialized => _isInitialized;
