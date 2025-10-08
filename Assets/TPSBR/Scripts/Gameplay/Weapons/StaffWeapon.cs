@@ -16,6 +16,8 @@ namespace TPSBR
         [SerializeField]
         private string _configuredItemName;
 
+        private string _lastConfigurationHash = string.Empty;
+
         public float BaseDamage => _baseDamage;
         public float HealthRegen => _healthRegen;
         public float ManaRegen => _manaRegen;
@@ -56,6 +58,7 @@ namespace TPSBR
                 return;
             }
 
+            _lastConfigurationHash = configurationHash;
             ApplyConfiguration(baseDamage, healthRegen, manaRegen, configuredItemName);
         }
 
@@ -135,6 +138,7 @@ namespace TPSBR
             _healthRegen = 0f;
             _manaRegen = 0f;
             _configuredItemName = string.Empty;
+            _lastConfigurationHash = string.Empty;
 
             SetWeaponSize(WeaponSize.Unarmed);
             SetDisplayName(string.Empty);
@@ -203,7 +207,7 @@ namespace TPSBR
             float healthRegen = _healthRegen;
             float manaRegen = _manaRegen;
 
-            if (TryGetStatsFromConfiguration(ConfigurationHash.ToString(), out float configBaseDamage, out float configHealthRegen, out float configManaRegen, out _))
+            if (TryGetStatsFromConfiguration(_lastConfigurationHash, out float configBaseDamage, out float configHealthRegen, out float configManaRegen, out _))
             {
                 baseDamage = configBaseDamage;
                 healthRegen = configHealthRegen;
