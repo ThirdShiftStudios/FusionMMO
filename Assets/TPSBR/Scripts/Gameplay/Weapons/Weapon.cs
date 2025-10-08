@@ -4,14 +4,13 @@ using UnityEngine;
 
 namespace TPSBR
 {
-    public abstract class Weapon : ContextBehaviour, IDynamicPickupProvider
+    public abstract class Weapon : ContextBehaviour
     {
         // PUBLIC MEMBERS
 
         public int WeaponID => _weaponDefinition.ID;
         public WeaponDefinition Definition => _weaponDefinition;
         public Transform LeftHandTarget => _leftHandTarget;
-        public DynamicPickup PickupPrefab => _pickupPrefab;
         public EHitType HitType => _hitType;
         public float AimFOV => _aimFOV;
         public string DisplayName => _displayName;
@@ -39,9 +38,6 @@ namespace TPSBR
         private string _nameShortcut;
 
         [SerializeField] private Sprite _icon;
-        [SerializeField] private Collider _pickupCollider;
-        [SerializeField] private Transform _pickupInterpolationTarget;
-        [SerializeField] private DynamicPickup _pickupPrefab;
 
         private bool _isInitialized;
         private bool _isArmed;
@@ -200,23 +196,6 @@ namespace TPSBR
             }
 
             return true;
-        }
-
-        // IPickupProvider INTERFACE
-
-        string IDynamicPickupProvider.Name => _displayName;
-        string IDynamicPickupProvider.Description => null;
-        Collider IDynamicPickupProvider.Collider => _pickupCollider;
-        Transform IDynamicPickupProvider.InterpolationTarget => _pickupInterpolationTarget;
-        float IDynamicPickupProvider.DespawnTime => 60f;
-
-        void IDynamicPickupProvider.Assigned(DynamicPickup pickup)
-        {
-            Deinitialize(_owner);
-        }
-
-        void IDynamicPickupProvider.Unassigned(DynamicPickup pickup)
-        {
         }
 
         // NETWORK CALLBACKS

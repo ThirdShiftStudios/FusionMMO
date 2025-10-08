@@ -1,9 +1,12 @@
 using Fusion;
+using Fusion.Addons.Physics;
 using UnityEngine;
 using TSS.Data;
 
 namespace TPSBR
 {
+        [RequireComponent(typeof(NetworkRigidbody3D))]
+        [RequireComponent(typeof(Rigidbody))]
         public sealed class InventoryItemPickupProvider : NetworkBehaviour, IDynamicPickupProvider
         {
                 [SerializeField]
@@ -14,6 +17,10 @@ namespace TPSBR
                 private float _despawnTime = 60f;
                 [SerializeField]
                 private Vector3 _visualOffset;
+                [SerializeField]
+                private NetworkRigidbody3D _networkRigidbody;
+                [SerializeField]
+                private Rigidbody _rigidbody;
 
                 [Networked]
                 public int ItemDefinitionId { get; private set; }
@@ -21,6 +28,8 @@ namespace TPSBR
                 public byte Quantity { get; private set; }
                 [Networked]
                 public NetworkString<_32> ConfigurationHash { get; private set; }
+                [Networked]
+                private TickTimer _despawnTimer { get; set; }
 
                 public ItemDefinition Definition => _definition;
 
@@ -58,6 +67,15 @@ namespace TPSBR
                         _definition = definition;
                         _visualInitialized = false;
 
+                        if (_despawnTime > 0f)
+                        {
+                                _despawnTimer = TickTimer.CreateFromSeconds(Runner, _despawnTime);
+                        }
+                        else
+                        {
+                                _despawnTimer = default;
+                        }
+
                         RefreshVisual();
                 }
 
@@ -66,22 +84,6 @@ namespace TPSBR
                         if (HasStateAuthority == true)
                         {
                                 Quantity = quantity;
-                        }
-                }
-
-                public void Assigned(DynamicPickup pickup)
-                {
-                        if (_collider != null)
-                        {
-                                _collider.enabled = true;
-                        }
-                }
-
-                public void Unassigned(DynamicPickup pickup)
-                {
-                        if (_collider != null)
-                        {
-                                _collider.enabled = false;
                         }
                 }
 
@@ -102,15 +104,42 @@ namespace TPSBR
                         if (_collider == null)
                         {
                                 var sphere = gameObject.AddComponent<SphereCollider>();
-                                sphere.isTrigger = true;
                                 sphere.radius = 0.35f;
                                 _collider = sphere;
                         }
 
                         if (_collider != null)
                         {
-                                _collider.enabled = false;
+                                _collider.enabled = true;
+                                _collider.isTrigger = false;
                                 _collider.gameObject.layer = ObjectLayer.Interaction;
+                        }
+
+                        if (_networkRigidbody == null)
+                        {
+                                _networkRigidbody = GetComponent<NetworkRigidbody3D>();
+                        }
+
+                        if (_rigidbody == null)
+                        {
+                                _rigidbody = GetComponent<Rigidbody>();
+                        }
+
+                        if (_rigidbody != null)
+                        {
+                                _rigidbody.useGravity = true;
+                                _rigidbody.isKinematic = false;
+                                _rigidbody.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
+                        }
+
+                        if (_networkRigidbody != null)
+                        {
+                                _networkRigidbody.InterpolationTarget = InterpolationTarget;
+                        }
+
+                        if (HasStateAuthority == true && _despawnTime > 0f)
+                        {
+                                _despawnTimer = TickTimer.CreateFromSeconds(Runner, _despawnTime);
                         }
 
                         EnsureDefinition();
@@ -120,6 +149,12 @@ namespace TPSBR
                 public override void FixedUpdateNetwork()
                 {
                         base.FixedUpdateNetwork();
+
+                        if (HasStateAuthority == true && _despawnTimer.IsRunning == true && _despawnTimer.Expired(Runner) == true)
+                        {
+                                Runner.Despawn(Object);
+                                return;
+                        }
 
                         if (_definition == null)
                         {
@@ -143,6 +178,7 @@ namespace TPSBR
                         ClearVisual();
                         _definition = null;
                         _visualInitialized = false;
+                        _despawnTimer = default;
                 }
 
                 private void EnsureDefinition()
@@ -195,5 +231,12 @@ namespace TPSBR
 
                         _visualInitialized = false;
                 }
+
+                // IInteraction INTERFACE
+
+                string  IInteraction.Name        => Name;
+                string  IInteraction.Description => Description;
+                Vector3 IInteraction.HUDPosition => transform.position;
+                bool    IInteraction.IsActive    => _collider != null && _collider.enabled;
         }
 }

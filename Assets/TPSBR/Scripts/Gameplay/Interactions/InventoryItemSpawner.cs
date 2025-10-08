@@ -7,8 +7,6 @@ namespace TPSBR
         public sealed class InventoryItemSpawner : NetworkBehaviour
         {
                 [SerializeField]
-                private DynamicPickup _pickupPrefab;
-                [SerializeField]
                 private InventoryItemPickupProvider _itemPrefab;
                 [SerializeField]
                 private ItemDefinition[] _possibleItems;
@@ -43,7 +41,7 @@ namespace TPSBR
 
                 private void SpawnItems()
                 {
-                        if (_pickupPrefab == null || _itemPrefab == null)
+                        if (_itemPrefab == null)
                                 return;
 
                         if (_possibleItems == null || _possibleItems.Length == 0)
@@ -75,12 +73,6 @@ namespace TPSBR
 
                                 var provider = Runner.Spawn(_itemPrefab, spawnPosition, rotation);
                                 provider.Initialize(definition, quantity);
-
-                                Runner.Spawn(_pickupPrefab, spawnPosition, rotation, PlayerRef.None, (runner, obj) =>
-                                {
-                                        var pickup = obj.GetComponent<DynamicPickup>();
-                                        pickup.AssignObject(provider.Object.Id);
-                                });
                         }
                 }
         }

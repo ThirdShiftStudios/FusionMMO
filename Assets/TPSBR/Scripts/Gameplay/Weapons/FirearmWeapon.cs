@@ -4,8 +4,8 @@ using System.Collections.Generic;
 
 namespace TPSBR
 {
-	public abstract class FirearmWeapon : Weapon, IDynamicPickupProvider
-	{
+        public abstract class FirearmWeapon : Weapon
+        {
 		// PUBLIC MEMBERS
 
 		public bool      IsFiring          { get { return _state.IsBitSet(0); } set { _state = _state.SetBitNoRef(0, value); } }
@@ -381,12 +381,7 @@ namespace TPSBR
 			}
 		}
 
-		// IPickupProvider INTERFACE
-
-		string IDynamicPickupProvider.Description => GetPickupDescription();
-		float  IDynamicPickupProvider.DespawnTime => WeaponAmmo == 0 && MagazineAmmo == 0 ? 5f : 60f;
-
-		// FireamWeapon INTERFACE
+                // FireamWeapon INTERFACE
 
 		protected virtual bool FireProjectile(Vector3 firePosition, Vector3 targetPosition, Vector3 direction, float distanceToTarget, LayerMask hitMask, bool isFirst)
 		{
