@@ -1,6 +1,5 @@
 using System;
 using TPSBR;
-using TSS.Data;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -22,7 +21,7 @@ namespace TPSBR.UI
         private int _lastSelectedSlot = -1;
         [SerializeField]
         private Color _selectedSlotColor = Color.white;
-        internal event Action<ItemDefinition> ItemSelected;
+        internal event Action<Weapon> ItemSelected;
 
         private int _selectedSlotIndex = -1;
 
@@ -186,13 +185,13 @@ namespace TPSBR.UI
 
             if (_selectedSlotIndex == slot.Index)
             {
-                NotifySelectionChanged(weapon.Definition);
+                NotifySelectionChanged(weapon);
                 return;
             }
 
             _selectedSlotIndex = slot.Index;
             UpdateSelectionHighlight();
-            NotifySelectionChanged(weapon.Definition);
+            NotifySelectionChanged(weapon);
         }
 
         internal void ClearSelection(bool notify = true)
@@ -248,7 +247,7 @@ namespace TPSBR.UI
 
             if (_selectedSlotIndex == index)
             {
-                NotifySelectionChanged(weapon.Definition);
+                NotifySelectionChanged(weapon);
             }
         }
 
@@ -294,9 +293,9 @@ namespace TPSBR.UI
             }
         }
 
-        private void NotifySelectionChanged(ItemDefinition definition)
+        private void NotifySelectionChanged(Weapon weapon)
         {
-            ItemSelected?.Invoke(definition);
+            ItemSelected?.Invoke(weapon);
         }
 
         private void EnsureDragVisual()

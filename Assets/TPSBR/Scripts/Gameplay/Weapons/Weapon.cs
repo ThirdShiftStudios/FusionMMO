@@ -16,6 +16,10 @@ namespace TPSBR
         public string DisplayName => _displayName;
         public string NameShortcut => _nameShortcut;
         public Sprite Icon => _weaponDefinition.IconSprite;
+        public virtual string GetDescription()
+        {
+            return _description;
+        }
         public bool ValidOnlyWithAmmo => _validOnlyWithAmmo;
         public bool IsInitialized => _isInitialized;
         public bool IsArmed => _isArmed;
@@ -33,6 +37,7 @@ namespace TPSBR
         [SerializeField] private float _aimFOV;
 
         [Header("Pickup")] [SerializeField] private string _displayName;
+        [SerializeField, TextArea] private string _description;
 
         [SerializeField, Tooltip("Up to 4 letter name shown in thumbnail")]
         private string _nameShortcut;

@@ -1,5 +1,4 @@
 ﻿using UnityEngine;
-using TSS.Data;
 
 namespace TPSBR.UI
 {
@@ -139,38 +138,38 @@ namespace TPSBR.UI
 
         // PRIVATE MEMBERS
 
-        private void OnInventoryItemSelected(ItemDefinition definition)
+        private void OnInventoryItemSelected(Weapon weapon)
         {
-            if (definition != null)
+            if (weapon != null)
             {
                 _hotbar?.ClearSelection(false);
             }
 
-            ShowItemDetails(definition);
+            ShowItemDetails(weapon);
         }
 
-        private void OnHotbarItemSelected(ItemDefinition definition)
+        private void OnHotbarItemSelected(Weapon weapon)
         {
-            if (definition != null)
+            if (weapon != null)
             {
                 _inventoryGrid?.ClearSelection(false);
             }
 
-            ShowItemDetails(definition);
+            ShowItemDetails(weapon);
         }
 
-        private void ShowItemDetails(ItemDefinition definition)
+        private void ShowItemDetails(Weapon weapon)
         {
             if (_detailsPanel == null)
                 return;
 
-            if (definition == null)
+            if (weapon == null)
             {
                 _detailsPanel.Hide();
                 return;
             }
 
-            _detailsPanel.Show(definition);
+            _detailsPanel.Show(weapon);
         }
 
         private void OnLeaveButton()

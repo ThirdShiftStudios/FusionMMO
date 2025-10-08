@@ -1,8 +1,8 @@
 using System;
-using TSS.Data;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using Unity.Template.CompetitiveActionMultiplayer;
 
 namespace TPSBR.UI
 {
@@ -19,7 +19,7 @@ namespace TPSBR.UI
                 private CanvasGroup _dragCanvasGroup;
                 [SerializeField]
                 private Color _selectedSlotColor = Color.white;
-                internal event Action<ItemDefinition> ItemSelected;
+                internal event Action<Weapon> ItemSelected;
 
                 private int _selectedSlotIndex = -1;
 
@@ -255,7 +255,8 @@ namespace TPSBR.UI
                                 return;
                         }
 
-                        ItemSelected.Invoke(slot.GetDefinition());
+                        var definition = slot.GetDefinition() as WeaponDefinition;
+                        ItemSelected.Invoke(definition != null ? definition.WeaponPrefab : null);
                 }
 
                 private void EnsureDragVisual()

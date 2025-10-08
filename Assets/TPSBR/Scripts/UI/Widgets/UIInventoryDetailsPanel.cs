@@ -1,6 +1,4 @@
 using TMPro;
-using TSS.Data;
-using Unity.Template.CompetitiveActionMultiplayer;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -20,9 +18,9 @@ namespace TPSBR.UI
             Hide();
         }
 
-        internal void Show(ItemDefinition definition)
+        internal void Show(Weapon weapon)
         {
-            if (definition == null)
+            if (weapon == null)
             {
                 Hide();
                 return;
@@ -30,17 +28,17 @@ namespace TPSBR.UI
 
             if (_nameLabel != null)
             {
-                _nameLabel.SetTextSafe(definition.Name);
+                _nameLabel.SetTextSafe(weapon.DisplayName);
             }
 
             if (_descriptionLabel != null)
             {
-                _descriptionLabel.SetTextSafe(GetDescription(definition));
+                _descriptionLabel.SetTextSafe(weapon.GetDescription());
             }
 
             if (_iconImage != null)
             {
-                var sprite = definition.IconSprite;
+                var sprite = weapon.Icon;
                 _iconImage.sprite = sprite;
                 _iconImage.enabled = sprite != null;
             }
@@ -89,14 +87,5 @@ namespace TPSBR.UI
             }
         }
 
-        private string GetDescription(ItemDefinition definition)
-        {
-            if (definition is WeaponDefinition weaponDefinition)
-            {
-                return weaponDefinition.Description;
-            }
-
-            return string.Empty;
-        }
     }
 }
