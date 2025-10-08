@@ -921,6 +921,8 @@ namespace TPSBR
             if (definition == null)
                 return;
 
+            var configurationHash = inventorySlot.ConfigurationHash;
+
             var weaponPrefab = EnsureWeaponPrefabRegistered(definition);
             if (weaponPrefab == null)
                 return;
@@ -933,7 +935,7 @@ namespace TPSBR
             {
                 if (TryStoreWeapon(existingWeapon, slot) == false)
                 {
-                    RestoreInventoryItem(inventoryIndex, definition);
+                    RestoreInventoryItem(inventoryIndex, definition, configurationHash);
                     return;
                 }
             }
@@ -941,10 +943,11 @@ namespace TPSBR
             var spawnedWeapon = Runner.Spawn(weaponPrefab, inputAuthority: Object.InputAuthority);
             if (spawnedWeapon == null)
             {
-                RestoreInventoryItem(inventoryIndex, definition);
+                RestoreInventoryItem(inventoryIndex, definition, configurationHash);
                 return;
             }
 
+            spawnedWeapon.SetConfigurationHash(configurationHash);
             AddWeapon(spawnedWeapon, slot);
 
             if (_currentWeaponSlot == slot)
@@ -992,7 +995,7 @@ namespace TPSBR
                 _previousWeaponSlot = 0;
             }
 
-            var inventorySlot = new InventorySlot(definition.ID, 1, default);
+            var inventorySlot = new InventorySlot(definition.ID, 1, weapon.ConfigurationHash);
             _items.Set(inventoryIndex, inventorySlot);
             UpdateWeaponDefinitionMapping(inventoryIndex, inventorySlot);
             RefreshItems();
@@ -1069,7 +1072,7 @@ namespace TPSBR
             if (RemoveInventoryItemInternal(index, quantity) == false)
                 return;
 
-            SpawnInventoryItemPickup(definition, quantity);
+            SpawnInventoryItemPickup(definition, quantity, slot.ConfigurationHash);
         }
 
         private bool RemoveInventoryItemInternal(int index, byte quantity)
@@ -1097,12 +1100,12 @@ namespace TPSBR
             return true;
         }
 
-        private void RestoreInventoryItem(int index, WeaponDefinition definition)
+        private void RestoreInventoryItem(int index, WeaponDefinition definition, NetworkString<_32> configurationHash)
         {
             if (index < 0 || index >= _items.Length || definition == null)
                 return;
 
-            var slot = new InventorySlot(definition.ID, 1, default);
+            var slot = new InventorySlot(definition.ID, 1, configurationHash);
             _items.Set(index, slot);
             UpdateWeaponDefinitionMapping(index, slot);
             RefreshItems();
@@ -1123,7 +1126,7 @@ namespace TPSBR
             if (emptySlot < 0)
                 return false;
 
-            var slot = new InventorySlot(definition.ID, 1, default);
+            var slot = new InventorySlot(definition.ID, 1, weapon.ConfigurationHash);
             _items.Set(emptySlot, slot);
             UpdateWeaponDefinitionMapping(emptySlot, slot);
             RefreshItems();
@@ -1304,7 +1307,7 @@ namespace TPSBR
 
         if (definition != null)
         {
-            SpawnInventoryItemPickup(definition, 1);
+            SpawnInventoryItemPickup(definition, 1, weapon.ConfigurationHash);
         }
     }
 
@@ -1454,7 +1457,7 @@ namespace TPSBR
         }
     }
 
-    private void SpawnInventoryItemPickup(ItemDefinition definition, byte quantity)
+    private void SpawnInventoryItemPickup(ItemDefinition definition, byte quantity, NetworkString<_32> configurationHash = default)
     {
         if (HasStateAuthority == false)
             return;
@@ -1497,7 +1500,7 @@ namespace TPSBR
         if (provider == null)
             return;
 
-        provider.Initialize(definition, quantity);
+        provider.Initialize(definition, quantity, configurationHash);
 
         var rigidbody = provider.GetComponent<Rigidbody>();
         if (rigidbody != null && _itemDropImpulse > 0f)

@@ -22,6 +22,7 @@ namespace TPSBR
         public NetworkObject Owner => _owner;
         public Character Character => _character;
         public WeaponSize Size => _weaponSize;
+        public NetworkString<_32> ConfigurationHash => _configurationHash;
 
         // PRIVATE MEMBERS
 
@@ -39,6 +40,9 @@ namespace TPSBR
 
         [SerializeField] private Sprite _icon;
 
+        [Networked(OnChanged = nameof(OnConfigurationHashChanged))]
+        private NetworkString<_32> _configurationHash { get; set; }
+
         private bool _isInitialized;
         private bool _isArmed;
         private NetworkObject _owner;
@@ -46,6 +50,7 @@ namespace TPSBR
         private Transform _armedParent;
         private Transform _disarmedParent;
         private AudioEffect[] _audioEffects;
+        private NetworkString<_32> _appliedConfigurationHash;
 
         // PUBLIC METHODS
 
@@ -156,6 +161,8 @@ namespace TPSBR
 
         public override void Spawned()
         {
+            ApplyConfigurationHash(_configurationHash);
+
             if (ApplicationSettings.IsStrippedBatch == true)
             {
                 gameObject.SetActive(false);
@@ -222,6 +229,58 @@ namespace TPSBR
             transform.SetParent(_isArmed == true ? _armedParent : _disarmedParent, false);
             transform.localPosition = Vector3.zero;
             transform.localRotation = Quaternion.identity;
+        }
+
+        private static void OnConfigurationHashChanged(Changed<Weapon> changed)
+        {
+            changed.Behaviour.ApplyConfigurationHash(changed.Behaviour._configurationHash);
+        }
+
+        private void ApplyConfigurationHash(NetworkString<_32> configurationHash)
+        {
+            if (_appliedConfigurationHash == configurationHash)
+                return;
+
+            _appliedConfigurationHash = configurationHash;
+            OnConfigurationHashApplied(configurationHash.ToString());
+        }
+
+        protected virtual void OnConfigurationHashApplied(string configurationHash)
+        {
+        }
+
+        protected void SetWeaponSize(WeaponSize size)
+        {
+            _weaponSize = size;
+        }
+
+        protected void SetDisplayName(string displayName)
+        {
+            _displayName = displayName;
+        }
+
+        protected void SetNameShortcut(string shortcut)
+        {
+            _nameShortcut = shortcut;
+        }
+
+        public virtual string GenerateRandomStats()
+        {
+            return string.Empty;
+        }
+
+        public void SetConfigurationHash(NetworkString<_32> configurationHash)
+        {
+            if (HasStateAuthority == false)
+            {
+                return;
+            }
+
+            if (_configurationHash == configurationHash)
+                return;
+
+            _configurationHash = configurationHash;
+            ApplyConfigurationHash(_configurationHash);
         }
     }
 }

@@ -1,4 +1,5 @@
 using Fusion;
+using Unity.Template.CompetitiveActionMultiplayer;
 using UnityEngine;
 using TSS.Data;
 
@@ -72,7 +73,19 @@ namespace TPSBR
                                 Quaternion rotation = Quaternion.Euler(0f, Random.Range(0f, 360f), 0f);
 
                                 var provider = Runner.Spawn(_itemPrefab, spawnPosition, rotation);
-                                provider.Initialize(definition, quantity);
+                                NetworkString<_32> configurationHash = default;
+
+                                if (definition is WeaponDefinition weaponDefinition &&
+                                    weaponDefinition.WeaponPrefab != null)
+                                {
+                                        string randomStats = weaponDefinition.WeaponPrefab.GenerateRandomStats();
+                                        if (string.IsNullOrWhiteSpace(randomStats) == false)
+                                        {
+                                                configurationHash = randomStats;
+                                        }
+                                }
+
+                                provider.Initialize(definition, quantity, configurationHash);
                         }
                 }
         }
