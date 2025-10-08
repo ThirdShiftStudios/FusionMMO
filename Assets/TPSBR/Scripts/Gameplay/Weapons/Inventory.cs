@@ -107,7 +107,6 @@ namespace TPSBR
         [SerializeField] private WeaponSlot[] _slots;
         [SerializeField] private WeaponSizeSlot[] _weaponSizeSlots;
         [SerializeField] private Weapon[] _initialWeapons;
-        [SerializeField] private Vector3 _dropWeaponImpulse = new Vector3(5, 5f, 10f);
         [SerializeField] private LayerMask _hitMask;
 
         [Header("Audio")] [SerializeField] private Transform _fireAudioEffectsRoot;
@@ -259,41 +258,7 @@ namespace TPSBR
             DropWeapon(_currentWeaponSlot);
         }
 
-        public void Pickup(DynamicPickup dynamicPickup, Weapon pickupWeapon)
-        {
-            if (HasStateAuthority == false || pickupWeapon == null)
-                return;
-
-            var ownedWeapon = FindWeaponById(pickupWeapon.WeaponID, out _);
-
-            EnsureWeaponPrefabRegistered(pickupWeapon.Definition, pickupWeapon);
-            if (ownedWeapon != null && ownedWeapon.WeaponID == pickupWeapon.WeaponID)
-            {
-                // We already have this weapon, try add at least the ammo
-                var firearmWeapon = pickupWeapon as FirearmWeapon;
-                bool consumed = firearmWeapon != null && ownedWeapon.AddAmmo(firearmWeapon.TotalAmmo);
-
-                if (consumed == true)
-                {
-                    dynamicPickup.UnassignObject();
-                    Runner.Despawn(pickupWeapon.Object);
-                }
-
-                return;
-            }
-
-            if (TryAddWeaponToInventory(pickupWeapon) == true)
-            {
-                dynamicPickup.UnassignObject();
-                Runner.Despawn(pickupWeapon.Object);
-                return;
-            }
-
-            dynamicPickup.UnassignObject();
-            PickupWeapon(pickupWeapon);
-        }
-
-        public void Pickup(DynamicPickup dynamicPickup, InventoryItemPickupProvider provider)
+        public void Pickup(InventoryItemPickupProvider provider)
         {
             if (HasStateAuthority == false || provider == null)
                 return;
@@ -315,7 +280,6 @@ namespace TPSBR
 
             if (remainder == 0)
             {
-                dynamicPickup.UnassignObject();
                 Runner.Despawn(provider.Object);
             }
         }
@@ -1172,12 +1136,6 @@ namespace TPSBR
         if (weapon == null)
             return;
 
-        if (weapon.PickupPrefab == null)
-        {
-            Debug.LogWarning($"Cannot drop weapon {gameObject.name}, pickup prefab not assigned.");
-            return;
-        }
-
         weapon.Deinitialize(Object);
 
         if (weaponSlot == _currentWeaponSlot)
@@ -1192,25 +1150,11 @@ namespace TPSBR
             ArmCurrentWeapon();
         }
 
-        var weaponTransform = weapon.transform;
-
-        var pickup = Runner.Spawn(weapon.PickupPrefab, weaponTransform.position, weaponTransform.rotation,
-            PlayerRef.None, BeforePickupSpawned);
-
         RemoveWeapon(weaponSlot);
 
-        var pickupRigidbody = pickup.GetComponent<Rigidbody>();
-        if (pickupRigidbody != null)
+        if (weapon != null && weapon.Object != null)
         {
-            var forcePosition = weaponTransform.TransformPoint(new Vector3(-0.005f, 0.005f, 0.015f) * weaponSlot);
-            pickupRigidbody.AddForceAtPosition(weaponTransform.rotation * _dropWeaponImpulse, forcePosition,
-                ForceMode.Impulse);
-        }
-
-        void BeforePickupSpawned(NetworkRunner runner, NetworkObject obj)
-        {
-            var dynamicPickup = obj.GetComponent<DynamicPickup>();
-            dynamicPickup.AssignObject(_hotbar[weaponSlot].Object.Id);
+            Runner.Despawn(weapon.Object);
         }
     }
 

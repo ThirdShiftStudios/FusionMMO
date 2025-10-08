@@ -69,22 +69,6 @@ namespace TPSBR
                         }
                 }
 
-                public void Assigned(DynamicPickup pickup)
-                {
-                        if (_collider != null)
-                        {
-                                _collider.enabled = true;
-                        }
-                }
-
-                public void Unassigned(DynamicPickup pickup)
-                {
-                        if (_collider != null)
-                        {
-                                _collider.enabled = false;
-                        }
-                }
-
                 public override void Spawned()
                 {
                         base.Spawned();
@@ -109,7 +93,8 @@ namespace TPSBR
 
                         if (_collider != null)
                         {
-                                _collider.enabled = false;
+                                _collider.enabled = true;
+                                _collider.isTrigger = true;
                                 _collider.gameObject.layer = ObjectLayer.Interaction;
                         }
 
@@ -195,5 +180,12 @@ namespace TPSBR
 
                         _visualInitialized = false;
                 }
+
+                // IInteraction INTERFACE
+
+                string  IInteraction.Name        => Name;
+                string  IInteraction.Description => Description;
+                Vector3 IInteraction.HUDPosition => transform.position;
+                bool    IInteraction.IsActive    => _collider != null && _collider.enabled;
         }
 }

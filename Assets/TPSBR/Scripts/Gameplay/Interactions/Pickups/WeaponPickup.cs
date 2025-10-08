@@ -27,7 +27,7 @@ namespace TPSBR
 			return true;
 		}
 
-		protected override string InteractionName        => (_weaponPrefab as IDynamicPickupProvider).Name;
-		protected override string InteractionDescription => (_weaponPrefab as IDynamicPickupProvider).Description;
-	}
+                protected override string InteractionName        => _weaponPrefab != null ? _weaponPrefab.DisplayName : string.Empty;
+                protected override string InteractionDescription => string.Empty;
+        }
 }

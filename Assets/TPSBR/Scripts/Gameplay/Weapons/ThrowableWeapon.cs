@@ -3,8 +3,8 @@ using Fusion;
 
 namespace TPSBR
 {
-	public sealed class ThrowableWeapon : FirearmWeapon, IDynamicPickupProvider
-	{
+        public sealed class ThrowableWeapon : FirearmWeapon
+        {
 		// PRIVATE MEMBERS
 
 		[Header("Throwable")]
@@ -61,12 +61,7 @@ namespace TPSBR
 			_dummyLoadedProjectile.SetActiveSafe(IsReloading == false && MagazineAmmo > 0);
 		}
 
-		// IPickupProvider INTERFACE
-
-		string IDynamicPickupProvider.Description => GetPickupDescription();
-		float IDynamicPickupProvider.DespawnTime => WeaponAmmo == 0 && MagazineAmmo == 0 ? 1f : 60f;
-
-		// PRIVATE METHODS
+                // PRIVATE METHODS
 
 		private void OnArmStarted()
 		{
