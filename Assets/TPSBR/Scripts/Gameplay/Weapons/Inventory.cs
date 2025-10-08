@@ -108,6 +108,10 @@ namespace TPSBR
         [SerializeField] private WeaponSizeSlot[] _weaponSizeSlots;
         [SerializeField] private Weapon[] _initialWeapons;
         [SerializeField] private LayerMask _hitMask;
+        [SerializeField] private InventoryItemPickupProvider _inventoryItemPickupPrefab;
+        [SerializeField] private float _itemDropForwardOffset = 1.5f;
+        [SerializeField] private float _itemDropUpOffset = 0.35f;
+        [SerializeField] private float _itemDropImpulse = 3f;
 
         [Header("Audio")] [SerializeField] private Transform _fireAudioEffectsRoot;
 
@@ -212,6 +216,37 @@ namespace TPSBR
             else
             {
                 RPC_RequestSwapHotbar((byte)fromIndex, (byte)toIndex);
+            }
+        }
+
+        public void RequestDropInventoryItem(int inventoryIndex)
+        {
+            if (inventoryIndex < 0 || inventoryIndex >= _items.Length)
+                return;
+
+            if (HasStateAuthority == true)
+            {
+                DropInventoryItem(inventoryIndex);
+            }
+            else
+            {
+                RPC_RequestDropInventoryItem((byte)inventoryIndex);
+            }
+        }
+
+        public void RequestDropHotbar(int hotbarIndex)
+        {
+            int weaponSlot = hotbarIndex + 1;
+            if (weaponSlot <= 0 || weaponSlot >= _hotbar.Length)
+                return;
+
+            if (HasStateAuthority == true)
+            {
+                DropWeapon(weaponSlot);
+            }
+            else
+            {
+                RPC_RequestDropHotbar((byte)weaponSlot);
             }
         }
 
@@ -733,6 +768,18 @@ namespace TPSBR
             SwapHotbar(fromIndex, toIndex);
         }
 
+        [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
+        private void RPC_RequestDropInventoryItem(byte inventoryIndex)
+        {
+            DropInventoryItem(inventoryIndex);
+        }
+
+        [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
+        private void RPC_RequestDropHotbar(byte weaponSlot)
+        {
+            DropWeapon(weaponSlot);
+        }
+
         private byte AddItemInternal(ItemDefinition definition, byte quantity, NetworkString<_32> configurationHash)
         {
             ushort maxStack = ItemDefinition.GetMaxStack(definition.ID);
@@ -1002,6 +1049,29 @@ namespace TPSBR
             RefreshWeapons();
         }
 
+        private void DropInventoryItem(int index)
+        {
+            if (index < 0 || index >= _items.Length)
+                return;
+
+            var slot = _items[index];
+            if (slot.IsEmpty == true)
+                return;
+
+            var definition = slot.GetDefinition();
+            if (definition == null)
+                return;
+
+            byte quantity = slot.Quantity;
+            if (quantity == 0)
+                return;
+
+            if (RemoveInventoryItemInternal(index, quantity) == false)
+                return;
+
+            SpawnInventoryItemPickup(definition, quantity);
+        }
+
         private bool RemoveInventoryItemInternal(int index, byte quantity)
         {
             if (index < 0 || index >= _items.Length)
@@ -1202,9 +1272,14 @@ namespace TPSBR
 
     private void DropWeapon(int weaponSlot)
     {
+        if (weaponSlot <= 0 || weaponSlot >= _hotbar.Length)
+            return;
+
         var weapon = _hotbar[weaponSlot];
         if (weapon == null)
             return;
+
+        var definition = weapon.Definition;
 
         weapon.Deinitialize(Object);
 
@@ -1225,6 +1300,11 @@ namespace TPSBR
         if (weapon != null && weapon.Object != null)
         {
             Runner.Despawn(weapon.Object);
+        }
+
+        if (definition != null)
+        {
+            SpawnInventoryItemPickup(definition, 1);
         }
     }
 
@@ -1371,6 +1451,64 @@ namespace TPSBR
         else
         {
             _weaponDefinitionsBySlot.Remove(index);
+        }
+    }
+
+    private void SpawnInventoryItemPickup(ItemDefinition definition, byte quantity)
+    {
+        if (HasStateAuthority == false)
+            return;
+
+        if (_inventoryItemPickupPrefab == null)
+            return;
+
+        if (definition == null || quantity == 0)
+            return;
+
+        Vector3 forward = transform.forward;
+        Vector3 origin = transform.position;
+
+        if (_character != null)
+        {
+            var characterTransform = _character.transform;
+            origin = characterTransform.position;
+            forward = characterTransform.forward;
+        }
+
+        forward.y = 0f;
+        if (forward.sqrMagnitude < 0.0001f)
+        {
+            forward = transform.forward;
+            forward.y = 0f;
+        }
+
+        if (forward.sqrMagnitude < 0.0001f)
+        {
+            forward = Vector3.forward;
+        }
+
+        forward.Normalize();
+
+        Vector3 randomOffset = new Vector3(UnityEngine.Random.Range(-0.25f, 0.25f), 0f, UnityEngine.Random.Range(-0.25f, 0.25f));
+        Vector3 spawnPosition = origin + forward * _itemDropForwardOffset + Vector3.up * _itemDropUpOffset + randomOffset;
+        Quaternion rotation = Quaternion.LookRotation(forward, Vector3.up);
+
+        var provider = Runner.Spawn(_inventoryItemPickupPrefab, spawnPosition, rotation);
+        if (provider == null)
+            return;
+
+        provider.Initialize(definition, quantity);
+
+        var rigidbody = provider.GetComponent<Rigidbody>();
+        if (rigidbody != null && _itemDropImpulse > 0f)
+        {
+            Vector3 impulseDirection = (forward + Vector3.up * 0.5f).normalized;
+            if (impulseDirection.sqrMagnitude < 0.0001f)
+            {
+                impulseDirection = Vector3.up;
+            }
+
+            rigidbody.AddForce(impulseDirection * _itemDropImpulse, ForceMode.VelocityChange);
         }
     }
 

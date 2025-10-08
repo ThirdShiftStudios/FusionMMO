@@ -146,7 +146,13 @@ namespace TPSBR.UI
                 return;
 
             var targetSlot = FindDropTarget(eventData);
-            if (targetSlot == null || targetSlot == this)
+            if (targetSlot == null)
+            {
+                _owner?.HandleSlotDropOutside(this, eventData);
+                return;
+            }
+
+            if (targetSlot == this)
                 return;
 
             var targetOwner = targetSlot.Owner;

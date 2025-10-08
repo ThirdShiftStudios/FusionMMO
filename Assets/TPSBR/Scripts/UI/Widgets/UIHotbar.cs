@@ -141,6 +141,14 @@ namespace TPSBR.UI
             }
         }
 
+        void IUIItemSlotOwner.HandleSlotDropOutside(UIItemSlot slot, PointerEventData eventData)
+        {
+            if (_inventory == null || slot == null)
+                return;
+
+            _inventory.RequestDropHotbar(slot.Index);
+        }
+
         private void OnHotbarSlotChanged(int index, Weapon weapon)
         {
             int slotIndex = index - 1;
