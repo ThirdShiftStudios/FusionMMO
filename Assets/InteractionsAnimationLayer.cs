@@ -51,15 +51,5 @@ namespace TPSBR
                 _activeInteraction = InteractionType.None;
             }
         }
-
-#if UNITY_EDITOR
-        private void OnValidate()
-        {
-            if (_openChest == null)
-            {
-                FindState(out _openChest, true);
-            }
-        }
-#endif
     }
 }
