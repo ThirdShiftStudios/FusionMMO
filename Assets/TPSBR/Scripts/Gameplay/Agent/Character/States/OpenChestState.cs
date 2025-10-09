@@ -75,7 +75,7 @@ namespace TPSBR
 
             if (_startCompleted == false)
             {
-                if (_startOpenChest == null || _startOpenChest.IsFinished())
+                if (_startOpenChest == null || _startOpenChest.IsFinished(0.5f))
                 {
                     _startCompleted = true;
 
