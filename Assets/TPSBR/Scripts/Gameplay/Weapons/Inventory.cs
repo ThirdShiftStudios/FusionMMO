@@ -90,6 +90,30 @@ namespace TPSBR
         }
     }
 
+    [Serializable]
+    public struct InventorySlotSaveData
+    {
+        public int ItemDefinitionId;
+        public byte Quantity;
+        public string ConfigurationHash;
+    }
+
+    [Serializable]
+    public struct HotbarSlotSaveData
+    {
+        public int WeaponDefinitionId;
+        public string ConfigurationHash;
+    }
+
+    [Serializable]
+    public class InventorySaveState
+    {
+        public InventorySlotSaveData[] InventorySlots;
+        public HotbarSlotSaveData[] HotbarSlots;
+        public byte CurrentWeaponSlot;
+        public byte PreviousWeaponSlot;
+    }
+
     public sealed class Inventory : NetworkBehaviour, IBeforeTick
     {
         // PUBLIC MEMBERS
@@ -329,6 +353,43 @@ namespace TPSBR
             {
                 Runner.Despawn(provider.Object);
             }
+        }
+
+        public InventorySaveState CaptureSaveState()
+        {
+            var state = new InventorySaveState
+            {
+                InventorySlots = new InventorySlotSaveData[_items.Length],
+                HotbarSlots = new HotbarSlotSaveData[Mathf.Max(0, _hotbar.Length - 1)],
+                CurrentWeaponSlot = _currentWeaponSlot,
+                PreviousWeaponSlot = _previousWeaponSlot,
+            };
+
+            for (int i = 0; i < _items.Length; i++)
+            {
+                var slot = _items[i];
+                state.InventorySlots[i] = new InventorySlotSaveData
+                {
+                    ItemDefinitionId = slot.ItemDefinitionId,
+                    Quantity = slot.Quantity,
+                    ConfigurationHash = slot.ConfigurationHash.ToString(),
+                };
+            }
+
+            int hotbarLength = state.HotbarSlots.Length;
+            for (int i = 0; i < hotbarLength; i++)
+            {
+                var weapon = _hotbar[i + 1];
+                WeaponDefinition definition = weapon != null ? weapon.Definition : null;
+
+                state.HotbarSlots[i] = new HotbarSlotSaveData
+                {
+                    WeaponDefinitionId = definition != null ? definition.ID : 0,
+                    ConfigurationHash = weapon != null ? weapon.ConfigurationHash.ToString() : string.Empty,
+                };
+            }
+
+            return state;
         }
 
         public void Pickup(WeaponPickup weaponPickup)
