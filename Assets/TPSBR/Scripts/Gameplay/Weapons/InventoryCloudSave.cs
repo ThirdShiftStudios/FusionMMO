@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Threading.Tasks;
 using Unity.Services.Authentication;
 using Unity.Services.CloudSave;
@@ -141,7 +143,14 @@ namespace TPSBR
                 if (AuthenticationService.Instance.IsAuthorized == false)
                 {
                     AuthenticationService.Instance.ClearSessionToken();
-                    await AuthenticationService.Instance.SignInAnonymouslyAsync();
+
+                    bool steamSignedIn = await TrySignInWithSteamAsync();
+
+                    if (steamSignedIn == false)
+                    {
+                        Debug.LogWarning("Falling back to anonymous Unity Authentication session for Cloud Save.");
+                        await AuthenticationService.Instance.SignInAnonymouslyAsync();
+                    }
                 }
 
                 return AuthenticationService.Instance.IsAuthorized;
@@ -150,6 +159,107 @@ namespace TPSBR
             {
                 Debug.LogException(exception);
                 return false;
+            }
+        }
+
+        private static async Task<bool> TrySignInWithSteamAsync()
+        {
+            try
+            {
+                string sessionTicket = SteamTicketProvider.TryCreateSessionTicket();
+
+                if (string.IsNullOrEmpty(sessionTicket) == true)
+                    return false;
+
+                await AuthenticationService.Instance.SignInWithExternalTokenAsync("steam", sessionTicket);
+                return AuthenticationService.Instance.IsAuthorized;
+            }
+            catch (AuthenticationException exception)
+            {
+                Debug.LogException(exception);
+            }
+            catch (RequestFailedException exception)
+            {
+                Debug.LogException(exception);
+            }
+            catch (Exception exception)
+            {
+                Debug.LogException(exception);
+            }
+
+            return false;
+        }
+
+        private static class SteamTicketProvider
+        {
+            private static readonly Type _steamUserType = Type.GetType("Steamworks.SteamUser, Assembly-CSharp-firstpass") ??
+                                                          Type.GetType("Steamworks.SteamUser, Steamworks.NET") ??
+                                                          Type.GetType("Steamworks.SteamUser");
+
+            private static readonly MethodInfo _getAuthSessionTicketMethod = _steamUserType?.GetMethod(
+                "GetAuthSessionTicket",
+                BindingFlags.Public | BindingFlags.Static,
+                null,
+                new[] { typeof(byte[]), typeof(int), typeof(uint).MakeByRefType() },
+                null);
+
+            private static readonly MethodInfo _cancelAuthTicketMethod = _steamUserType?.GetMethod(
+                "CancelAuthTicket",
+                BindingFlags.Public | BindingFlags.Static);
+
+            private static bool _steamUnavailableLogged;
+
+            public static string TryCreateSessionTicket()
+            {
+                if (_steamUserType == null || _getAuthSessionTicketMethod == null)
+                {
+                    if (_steamUnavailableLogged == false)
+                    {
+                        Debug.LogWarning("Steamworks session ticket API was not found. Ensure Steamworks.NET is installed and initialized before attempting Steam authentication.");
+                        _steamUnavailableLogged = true;
+                    }
+                    return null;
+                }
+
+                byte[] ticketBuffer = new byte[1024];
+                object[] parameters = { ticketBuffer, ticketBuffer.Length, 0u };
+
+                try
+                {
+                    object authTicket = _getAuthSessionTicketMethod.Invoke(null, parameters);
+                    uint ticketSize = (uint)parameters[2];
+
+                    if (ticketSize == 0)
+                    {
+                        if (_steamUnavailableLogged == false)
+                        {
+                            Debug.LogWarning("Steam returned an empty authentication ticket. Confirm that Steam is running and the user is logged in before launching the game.");
+                            _steamUnavailableLogged = true;
+                        }
+                        return null;
+                    }
+
+                    string ticket = Convert.ToBase64String(ticketBuffer, 0, (int)ticketSize);
+
+                    if (authTicket != null && _cancelAuthTicketMethod != null)
+                    {
+                        try
+                        {
+                            _cancelAuthTicketMethod.Invoke(null, new[] { authTicket });
+                        }
+                        catch (Exception cancelException)
+                        {
+                            Debug.LogWarning(cancelException.Message);
+                        }
+                    }
+
+                    return ticket;
+                }
+                catch (Exception exception)
+                {
+                    Debug.LogWarning(exception.Message);
+                    return null;
+                }
             }
         }
     }
