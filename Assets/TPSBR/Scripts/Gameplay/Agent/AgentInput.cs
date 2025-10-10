@@ -14,6 +14,8 @@ namespace TPSBR
 	{
 		// PUBLIC MEMBERS
 
+		public const byte WeaponDeselectValue = byte.MaxValue;
+
 		/// <summary>
 		/// Holds input for fixed update.
 		/// </summary>
@@ -610,6 +612,16 @@ namespace TPSBR
 
 		private byte GetWeaponInput(Keyboard keyboard)
 		{
+			if (keyboard == null)
+			{
+				return 0;
+			}
+
+			if (keyboard.xKey.wasPressedThisFrame == true)
+			{
+				return WeaponDeselectValue;
+			}
+
 			if (keyboard.qKey.wasPressedThisFrame == true)
 			{
 				int previousSlot = _agent.Inventory.PreviousWeaponSlot;
@@ -621,10 +633,8 @@ namespace TPSBR
 
 			int weaponSlot = -1;
 
-			if (keyboard.digit1Key.wasPressedThisFrame == true) { weaponSlot = 0; }
-			if (keyboard.digit2Key.wasPressedThisFrame == true) { weaponSlot = 1; }
-			if (keyboard.digit3Key.wasPressedThisFrame == true) { weaponSlot = 2; }
-			if (keyboard.digit4Key.wasPressedThisFrame == true) { weaponSlot = 3; }
+			if (Inventory.HOTBAR_VISIBLE_SLOTS >= 1 && keyboard.digit1Key.wasPressedThisFrame == true) { weaponSlot = 0; }
+			if (Inventory.HOTBAR_VISIBLE_SLOTS >= 2 && keyboard.digit2Key.wasPressedThisFrame == true) { weaponSlot = 1; }
 
 			if (weaponSlot < 0)
 			{

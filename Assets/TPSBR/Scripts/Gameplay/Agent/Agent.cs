@@ -239,16 +239,19 @@ namespace TPSBR
 
 			kcc.SetInputDirection(input.MoveDirection.IsZero() == true ? Vector3.zero : kcc.FixedData.TransformRotation * input.MoveDirection.X0Y());
 
-			if (input.Weapon > 0 && _character.AnimationController.CanSwitchWeapons(true) == true )//&& _inventory.SwitchWeapon(input.Weapon - 1) == true)
-			{
-				//_inventory.SetCurrentWeapon(input.Weapon - 1);
-				_inventory.SwitchWeapon(input.Weapon - 1);
-				//_character.AnimationController.SwitchWeapons();
-			}
-			else if (input.Weapon <= 0 && _character.AnimationController.CanSwitchWeapons(false) == true)
-			{
-				//_character.AnimationController.SwitchWeapons();
-			}
+                        if (input.Weapon == AgentInput.WeaponDeselectValue)
+                        {
+                                if (_character.AnimationController.CanSwitchWeapons(false) == true)
+                                {
+                                        _inventory.DisarmCurrentWeapon();
+                                }
+                        }
+                        else if (input.Weapon > 0 && _character.AnimationController.CanSwitchWeapons(true) == true )//&& _inventory.SwitchWeapon(input.Weapon - 1) == true)
+                        {
+                                //_inventory.SetCurrentWeapon(input.Weapon - 1);
+                                _inventory.SwitchWeapon(input.Weapon - 1);
+                                //_character.AnimationController.SwitchWeapons();
+                        }
 			
 			_agentInput.SetFixedInput(input, false);
 		}
