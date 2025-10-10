@@ -5,427 +5,447 @@ using Fusion.Addons.KCC;
 
 namespace TPSBR
 {
-	[DefaultExecutionOrder(-5)]
-	public sealed class Agent : ContextBehaviour, ISortedUpdate
-	{
-		// PUBLIC METHODS
+    [DefaultExecutionOrder(-5)]
+    public sealed class Agent : ContextBehaviour, ISortedUpdate
+    {
+        // PUBLIC METHODS
 
-		public bool IsObserved => Context != null && Context.ObservedAgent == this;
+        public bool IsObserved => Context != null && Context.ObservedAgent == this;
 
-		public AgentInput        AgentInput   => _agentInput;
-		public Interactions      Interactions => _interactions;
-		public Character         Character    => _character;
-		public Inventory           Inventory      => _inventory;
-		public Health            Health       => _health;
-		public AgentSenses       Senses       => _senses;
-		public AgentVFX          Effects      => _agentVFX;
-		public AgentInterestView InterestView => _interestView;
+        public AgentInput AgentInput => _agentInput;
+        public Interactions Interactions => _interactions;
+        public Character Character => _character;
+        public Inventory Inventory => _inventory;
+        public Health Health => _health;
+        public AgentSenses Senses => _senses;
+        public AgentVFX Effects => _agentVFX;
+        public AgentInterestView InterestView => _interestView;
 
-		// PRIVATE MEMBERS
+        // PRIVATE MEMBERS
 
-		[SerializeField]
-		private float _jumpPower;
-		[SerializeField]
-		private float _topCameraAngleLimit;
-		[SerializeField]
-		private float _bottomCameraAngleLimit;
-		[SerializeField]
-		private GameObject _visualRoot;
+        [SerializeField] private float _jumpPower;
+        [SerializeField] private float _topCameraAngleLimit;
+        [SerializeField] private float _bottomCameraAngleLimit;
+        [SerializeField] private GameObject _visualRoot;
 
-		[Header("Fall Damage")]
-		[SerializeField]
-		private float _minFallDamage = 5f;
-		[SerializeField]
-		private float _maxFallDamage = 200f;
-		[SerializeField]
-		private float _maxFallDamageVelocity = 20f;
-		[SerializeField]
-		private float _minFallDamageVelocity = 5f;
+        [Header("Fall Damage")] [SerializeField]
+        private float _minFallDamage = 5f;
 
-		private AgentInput          _agentInput;
-		private Interactions        _interactions;
-		private AgentFootsteps      _footsteps;
-		private Character           _character;
-		private Inventory             _inventory;
-		private AgentSenses         _senses;
-		private Health              _health;
-		private AgentVFX            _agentVFX;
-		private AgentInterestView   _interestView;
-		private SortedUpdateInvoker _sortedUpdateInvoker;
-		private Quaternion          _cachedLookRotation;
-		private Quaternion          _cachedPitchRotation;
+        [SerializeField] private float _maxFallDamage = 200f;
+        [SerializeField] private float _maxFallDamageVelocity = 20f;
+        [SerializeField] private float _minFallDamageVelocity = 5f;
 
-		// NetworkBehaviour INTERFACE
+        private AgentInput _agentInput;
+        private Interactions _interactions;
+        private AgentFootsteps _footsteps;
+        private Character _character;
+        private Inventory _inventory;
+        private AgentSenses _senses;
+        private Health _health;
+        private AgentVFX _agentVFX;
+        private AgentInterestView _interestView;
+        private SortedUpdateInvoker _sortedUpdateInvoker;
+        private Quaternion _cachedLookRotation;
+        private Quaternion _cachedPitchRotation;
 
-		public override void Spawned()
-		{
-			name = Object.InputAuthority.ToString();
+        // NetworkBehaviour INTERFACE
 
-			_sortedUpdateInvoker = Runner.GetSingleton<SortedUpdateInvoker>();
+        public override void Spawned()
+        {
+            name = Object.InputAuthority.ToString();
 
-			_visualRoot.SetActive(true);
+            _sortedUpdateInvoker = Runner.GetSingleton<SortedUpdateInvoker>();
 
-			_character.OnSpawned(this);
-			_health.OnSpawned(this);
-			_agentVFX.OnSpawned(this);
+            _visualRoot.SetActive(true);
 
-			if (ApplicationSettings.IsStrippedBatch == true)
-			{
-				gameObject.SetActive(false);
+            _character.OnSpawned(this);
+            _health.OnSpawned(this);
+            _agentVFX.OnSpawned(this);
 
-				if (ApplicationSettings.GenerateInput == true)
-				{
-					NetworkEvents networkEvents = Runner.GetComponent<NetworkEvents>();
-					networkEvents.OnInput.RemoveListener(GenerateRandomInput);
-					networkEvents.OnInput.AddListener(GenerateRandomInput);
-				}
-			}
+            if (ApplicationSettings.IsStrippedBatch == true)
+            {
+                gameObject.SetActive(false);
 
-			return;
-
-			void GenerateRandomInput(NetworkRunner runner, NetworkInput networkInput)
-			{
-				// Used for batch testing
-
-				GameplayInput gameplayInput = new GameplayInput();
-				gameplayInput.MoveDirection     = new Vector2(UnityEngine.Random.value * 2.0f - 1.0f, UnityEngine.Random.value > 0.25f ? 1.0f : -1.0f).normalized;
-				gameplayInput.LookRotationDelta = new Vector2(UnityEngine.Random.value * 2.0f - 1.0f, UnityEngine.Random.value * 2.0f - 1.0f);
-				gameplayInput.Jump              = UnityEngine.Random.value > 0.99f;
-				gameplayInput.Attack            = UnityEngine.Random.value > 0.99f;
-				gameplayInput.Interact          = UnityEngine.Random.value > 0.99f;
-				gameplayInput.Weapon            = (byte)(UnityEngine.Random.value > 0.99f ? (UnityEngine.Random.value > 0.25f ? 2 : 1) : 0);
-
-				networkInput.Set(gameplayInput);
-			}
-		}
-
-		public override void Despawned(NetworkRunner runner, bool hasState)
-		{
-			if (_inventory  != null) { _inventory.OnDespawned();  }
-			if (_health   != null) { _health.OnDespawned();   }
-			if (_agentVFX != null) { _agentVFX.OnDespawned(); }
-		}
-
-		public void EarlyFixedUpdateNetwork()
-		{
-			Profiler.BeginSample($"{nameof(Agent)}(Early)");
-
-			ProcessFixedInput();
-
-			_inventory.OnFixedUpdate();
-			_character.OnFixedUpdate();
-
-			Profiler.EndSample();
-		}
-
-		public override void FixedUpdateNetwork()
-		{
-			Profiler.BeginSample($"{nameof(Agent)}(Regular)");
-
-			// Performance optimization, unnecessary euler call
-			Quaternion currentLookRotation = _character.CharacterController.FixedData.LookRotation;
-			if (_cachedLookRotation.ComponentEquals(currentLookRotation) == false)
-			{
-				_cachedLookRotation  = currentLookRotation;
-				_cachedPitchRotation = Quaternion.Euler(_character.CharacterController.FixedData.LookPitch, 0.0f, 0.0f);
-			}
-
-			_character.GetCameraHandle().transform.localRotation = _cachedPitchRotation;
-
-			CheckFallDamage();
-
-			if (_health.IsAlive == true)
-			{
-				float sortOrder = _agentInput.FixedInput.LocalAlpha;
-				if (sortOrder <= 0.0f)
-				{
-					// Default LocalAlpha value results in update callback being executed last.
-					sortOrder = 1.0f;
-				}
-
-				// Schedule update to process render-accurate shooting.
-				_sortedUpdateInvoker.ScheduleSortedUpdate(this, sortOrder);
-
-				if (Runner.IsServer == true)
-				{
-					_interestView.SetPlayerInfo(_character.CharacterController.Transform, _character.GetCameraHandle());
-				}
-			}
-
-			_health.OnFixedUpdate();
-
-			Profiler.EndSample();
-		}
-
-		public void EarlyRender()
-		{
-			if (HasInputAuthority == true)
-			{
-				ProcessRenderInput();
-			}
-
-			_character.OnRender();
-		}
-
-		public override void Render()
-		{
-			if (HasInputAuthority == true || IsObserved == true)
-			{
-				// Performance optimization, unnecessary euler call
-				Quaternion currentLookRotation = _character.CharacterController.RenderData.LookRotation;
-				if (_cachedLookRotation.ComponentEquals(currentLookRotation) == false)
-				{
-					_cachedLookRotation  = currentLookRotation;
-					_cachedPitchRotation = Quaternion.Euler(_character.CharacterController.RenderData.LookPitch, 0.0f, 0.0f);
-				}
-
-				_character.GetCameraHandle().transform.localRotation = _cachedPitchRotation;
-			}
-
-			_character.OnAgentRender();
-			_footsteps.OnAgentRender();
-		}
-
-		// ISortedUpdate INTERFACE
-
-		void ISortedUpdate.SortedUpdate()
-		{
-			// This method execution is sorted by LocalAlpha property passed in input and preserves realtime order of input actions.
-
-			bool attackWasActivated   = _agentInput.WasActivated(EGameplayInputAction.Attack);
-			bool interactWasActivated = _agentInput.WasActivated(EGameplayInputAction.Interact);
-
-			TryFire(attackWasActivated, _agentInput.FixedInput.Attack);
-
-			_interactions.TryInteract(interactWasActivated, _agentInput.FixedInput.Interact);
-		}
-
-		// MonoBehaviour INTERFACE
-
-		private void Awake()
-		{
-			_agentInput   = GetComponent<AgentInput>();
-			_interactions = GetComponent<Interactions>();
-			_footsteps    = GetComponent<AgentFootsteps>();
-			_character    = GetComponent<Character>();
-			_inventory      = GetComponent<Inventory>();
-			_health       = GetComponent<Health>();
-			_agentVFX     = GetComponent<AgentVFX>();
-			_senses       = GetComponent<AgentSenses>();
-			_interestView = GetComponent<AgentInterestView>();
-		}
-
-		// PRIVATE METHODS
-
-		private void ProcessFixedInput()
-		{
-			KCC     kcc          = _character.CharacterController;
-			KCCData kccFixedData = kcc.FixedData;
-
-			GameplayInput input = default;
-
-			if (_health.IsAlive == true)
-			{
-				input = _agentInput.FixedInput;
-			}
-			
-
-			if (_agentInput.WasActivated(EGameplayInputAction.Jump, input) == true && _character.AnimationController.CanJump() == true)
-			{
-				kcc.Jump(Vector3.up * _jumpPower);
-			}
-
-			SetLookRotation(kccFixedData, input.LookRotationDelta, _inventory.GetRecoil(), out Vector2 newRecoil);
-
-			kcc.SetInputDirection(input.MoveDirection.IsZero() == true ? Vector3.zero : kcc.FixedData.TransformRotation * input.MoveDirection.X0Y());
-
-                        if (input.Weapon == AgentInput.WeaponDeselectValue)
-                        {
-                                if (_character.AnimationController.CanSwitchWeapons(false) == true)
-                                {
-                                        _inventory.DisarmCurrentWeapon();
-                                }
-                        }
-                        else if (input.Weapon > 0 && _character.AnimationController.CanSwitchWeapons(true) == true )//&& _inventory.SwitchWeapon(input.Weapon - 1) == true)
-                        {
-                                //_inventory.SetCurrentWeapon(input.Weapon - 1);
-                                _inventory.SwitchWeapon(input.Weapon - 1);
-                                //_character.AnimationController.SwitchWeapons();
-                        }
-			
-			_agentInput.SetFixedInput(input, false);
-		}
-
-		private void ProcessRenderInput()
-		{
-			KCC     kcc           = _character.CharacterController;
-			KCCData kccFixedData  = kcc.FixedData;
-
-			GameplayInput input = default;
-
-			if (_health.IsAlive == true)
-			{
-				input = _agentInput.RenderInput;
-
-				var accumulatedInput = _agentInput.AccumulatedInput;
-
-				input.LookRotationDelta = accumulatedInput.LookRotationDelta;
-			}
-			
-
-			SetLookRotation(kccFixedData, input.LookRotationDelta, _inventory.GetRecoil(), out Vector2 newRecoil);
-
-			kcc.SetInputDirection(input.MoveDirection.IsZero() == true ? Vector3.zero : kcc.RenderData.TransformRotation * input.MoveDirection.X0Y());
-
-			if (_agentInput.WasActivated(EGameplayInputAction.Jump, input) == true && _character.AnimationController.CanJump() == true)
-			{
-				kcc.Jump(Vector3.up * _jumpPower);
-			}
-		}
-
-                private void TryFire(bool attack, bool hold)
+                if (ApplicationSettings.GenerateInput == true)
                 {
-                        var currentWeapon = _inventory.CurrentWeapon;
-                        if (currentWeapon is ThrowableWeapon && _inventory.CurrentWeaponSize == WeaponSize.Throwable)
+                    NetworkEvents networkEvents = Runner.GetComponent<NetworkEvents>();
+                    networkEvents.OnInput.RemoveListener(GenerateRandomInput);
+                    networkEvents.OnInput.AddListener(GenerateRandomInput);
+                }
+            }
+
+            return;
+
+            void GenerateRandomInput(NetworkRunner runner, NetworkInput networkInput)
+            {
+                // Used for batch testing
+
+                GameplayInput gameplayInput = new GameplayInput();
+                gameplayInput.MoveDirection = new Vector2(UnityEngine.Random.value * 2.0f - 1.0f,
+                    UnityEngine.Random.value > 0.25f ? 1.0f : -1.0f).normalized;
+                gameplayInput.LookRotationDelta = new Vector2(UnityEngine.Random.value * 2.0f - 1.0f,
+                    UnityEngine.Random.value * 2.0f - 1.0f);
+                gameplayInput.Jump = UnityEngine.Random.value > 0.99f;
+                gameplayInput.Attack = UnityEngine.Random.value > 0.99f;
+                gameplayInput.Interact = UnityEngine.Random.value > 0.99f;
+                gameplayInput.Weapon =
+                    (byte)(UnityEngine.Random.value > 0.99f ? (UnityEngine.Random.value > 0.25f ? 2 : 1) : 0);
+
+                networkInput.Set(gameplayInput);
+            }
+        }
+
+        public override void Despawned(NetworkRunner runner, bool hasState)
+        {
+            if (_inventory != null)
+            {
+                _inventory.OnDespawned();
+            }
+
+            if (_health != null)
+            {
+                _health.OnDespawned();
+            }
+
+            if (_agentVFX != null)
+            {
+                _agentVFX.OnDespawned();
+            }
+        }
+
+        public void EarlyFixedUpdateNetwork()
+        {
+            Profiler.BeginSample($"{nameof(Agent)}(Early)");
+
+            ProcessFixedInput();
+
+            _inventory.OnFixedUpdate();
+            _character.OnFixedUpdate();
+
+            Profiler.EndSample();
+        }
+
+        public override void FixedUpdateNetwork()
+        {
+            Profiler.BeginSample($"{nameof(Agent)}(Regular)");
+
+            // Performance optimization, unnecessary euler call
+            Quaternion currentLookRotation = _character.CharacterController.FixedData.LookRotation;
+            if (_cachedLookRotation.ComponentEquals(currentLookRotation) == false)
+            {
+                _cachedLookRotation = currentLookRotation;
+                _cachedPitchRotation = Quaternion.Euler(_character.CharacterController.FixedData.LookPitch, 0.0f, 0.0f);
+            }
+
+            _character.GetCameraHandle().transform.localRotation = _cachedPitchRotation;
+
+            CheckFallDamage();
+
+            if (_health.IsAlive == true)
+            {
+                float sortOrder = _agentInput.FixedInput.LocalAlpha;
+                if (sortOrder <= 0.0f)
+                {
+                    // Default LocalAlpha value results in update callback being executed last.
+                    sortOrder = 1.0f;
+                }
+
+                // Schedule update to process render-accurate shooting.
+                _sortedUpdateInvoker.ScheduleSortedUpdate(this, sortOrder);
+
+                if (Runner.IsServer == true)
+                {
+                    _interestView.SetPlayerInfo(_character.CharacterController.Transform, _character.GetCameraHandle());
+                }
+            }
+
+            _health.OnFixedUpdate();
+
+            Profiler.EndSample();
+        }
+
+        public void EarlyRender()
+        {
+            if (HasInputAuthority == true)
+            {
+                ProcessRenderInput();
+            }
+
+            _character.OnRender();
+        }
+
+        public override void Render()
+        {
+            if (HasInputAuthority == true || IsObserved == true)
+            {
+                // Performance optimization, unnecessary euler call
+                Quaternion currentLookRotation = _character.CharacterController.RenderData.LookRotation;
+                if (_cachedLookRotation.ComponentEquals(currentLookRotation) == false)
+                {
+                    _cachedLookRotation = currentLookRotation;
+                    _cachedPitchRotation =
+                        Quaternion.Euler(_character.CharacterController.RenderData.LookPitch, 0.0f, 0.0f);
+                }
+
+                _character.GetCameraHandle().transform.localRotation = _cachedPitchRotation;
+            }
+
+            _character.OnAgentRender();
+            _footsteps.OnAgentRender();
+        }
+
+        // ISortedUpdate INTERFACE
+
+        void ISortedUpdate.SortedUpdate()
+        {
+            // This method execution is sorted by LocalAlpha property passed in input and preserves realtime order of input actions.
+
+            bool attackWasActivated = _agentInput.WasActivated(EGameplayInputAction.Attack);
+            bool interactWasActivated = _agentInput.WasActivated(EGameplayInputAction.Interact);
+
+            TryUseItem(attackWasActivated, _agentInput.FixedInput.Attack);
+
+            _interactions.TryInteract(interactWasActivated, _agentInput.FixedInput.Interact);
+        }
+
+        // MonoBehaviour INTERFACE
+
+        private void Awake()
+        {
+            _agentInput = GetComponent<AgentInput>();
+            _interactions = GetComponent<Interactions>();
+            _footsteps = GetComponent<AgentFootsteps>();
+            _character = GetComponent<Character>();
+            _inventory = GetComponent<Inventory>();
+            _health = GetComponent<Health>();
+            _agentVFX = GetComponent<AgentVFX>();
+            _senses = GetComponent<AgentSenses>();
+            _interestView = GetComponent<AgentInterestView>();
+        }
+
+        // PRIVATE METHODS
+
+        private void ProcessFixedInput()
+        {
+            KCC kcc = _character.CharacterController;
+            KCCData kccFixedData = kcc.FixedData;
+
+            GameplayInput input = default;
+
+            if (_health.IsAlive == true)
+            {
+                input = _agentInput.FixedInput;
+            }
+
+
+            if (_agentInput.WasActivated(EGameplayInputAction.Jump, input) == true &&
+                _character.AnimationController.CanJump() == true)
+            {
+                kcc.Jump(Vector3.up * _jumpPower);
+            }
+
+            SetLookRotation(kccFixedData, input.LookRotationDelta, _inventory.GetRecoil(), out Vector2 newRecoil);
+
+            kcc.SetInputDirection(input.MoveDirection.IsZero() == true
+                ? Vector3.zero
+                : kcc.FixedData.TransformRotation * input.MoveDirection.X0Y());
+
+            if (input.Weapon == AgentInput.WeaponDeselectValue)
+            {
+                if (_character.AnimationController.CanSwitchWeapons(false) == true)
+                {
+                    _inventory.DisarmCurrentWeapon();
+                }
+            }
+            else if (input.Weapon > 0 &&
+                     _character.AnimationController.CanSwitchWeapons(true) ==
+                     true) //&& _inventory.SwitchWeapon(input.Weapon - 1) == true)
+            {
+                //_inventory.SetCurrentWeapon(input.Weapon - 1);
+                _inventory.SwitchWeapon(input.Weapon - 1);
+                //_character.AnimationController.SwitchWeapons();
+            }
+
+            _agentInput.SetFixedInput(input, false);
+        }
+
+        private void ProcessRenderInput()
+        {
+            KCC kcc = _character.CharacterController;
+            KCCData kccFixedData = kcc.FixedData;
+
+            GameplayInput input = default;
+
+            if (_health.IsAlive == true)
+            {
+                input = _agentInput.RenderInput;
+
+                var accumulatedInput = _agentInput.AccumulatedInput;
+
+                input.LookRotationDelta = accumulatedInput.LookRotationDelta;
+            }
+
+
+            SetLookRotation(kccFixedData, input.LookRotationDelta, _inventory.GetRecoil(), out Vector2 newRecoil);
+
+            kcc.SetInputDirection(input.MoveDirection.IsZero() == true
+                ? Vector3.zero
+                : kcc.RenderData.TransformRotation * input.MoveDirection.X0Y());
+
+            if (_agentInput.WasActivated(EGameplayInputAction.Jump, input) == true &&
+                _character.AnimationController.CanJump() == true)
+            {
+                kcc.Jump(Vector3.up * _jumpPower);
+            }
+        }
+
+        private void TryUseItem(bool attack, bool hold)
+        {
+            var currentWeapon = _inventory.CurrentWeapon;
+            if (currentWeapon is ThrowableWeapon && _inventory.CurrentWeaponSize == WeaponSize.Throwable)
+            {
+                // Fire is handled form the grenade animation state itself
+                _character.AnimationController.ProcessThrow(attack, hold);
+                return;
+            }
+
+            if (hold == false)
+                return;
+            if (_inventory.CanFireWeapon(attack) == false)
+                return;
+
+            if (_character.AnimationController.StartUseItem() == true)
+            {
+                if (_inventory.Fire() == true)
+                {
+                    _health.ResetRegenDelay();
+
+                    if (Runner.IsServer == true)
+                    {
+                        PlayerRef inputAuthority = Object.InputAuthority;
+                        if (inputAuthority.IsRealPlayer == true)
                         {
-                                // Fire is handled form the grenade animation state itself
-                                _character.AnimationController.ProcessThrow(attack, hold);
-                                return;
+                            _interestView.UpdateShootInterestTargets();
                         }
+                    }
+                }
+            }
+        }
 
-			if (hold == false)
-				return;
-			if (_inventory.CanFireWeapon(attack) == false)
-				return;
+        private bool CanAim(KCCData kccData)
+        {
+            if (kccData.IsGrounded == false)
+                return false;
 
-			if (_character.AnimationController.StartFire() == true)
-			{
-				if (_inventory.Fire() == true)
-				{
-					_health.ResetRegenDelay();
+            return _inventory.CanAim();
+        }
 
-					if (Runner.IsServer == true)
-					{
-						PlayerRef inputAuthority = Object.InputAuthority;
-						if (inputAuthority.IsRealPlayer == true)
-						{
-							_interestView.UpdateShootInterestTargets();
-						}
-					}
-				}
-			}
-		}
+        private void SetLookRotation(KCCData kccData, Vector2 lookRotationDelta, Vector2 recoil, out Vector2 newRecoil)
+        {
+            if (lookRotationDelta.IsZero() == true && recoil.IsZero() == true &&
+                _character.CharacterController.Data.Recoil == Vector2.zero)
+            {
+                newRecoil = recoil;
+                return;
+            }
 
-		private bool CanAim(KCCData kccData)
-		{
-			if (kccData.IsGrounded == false)
-				return false;
+            Vector2 baseLookRotation = kccData.GetLookRotation(true, true) - kccData.Recoil;
+            Vector2 recoilReduction = Vector2.zero;
 
-			return _inventory.CanAim();
-		}
+            if (recoil.x > 0f && lookRotationDelta.x < 0)
+            {
+                recoilReduction.x = Mathf.Clamp(lookRotationDelta.x, -recoil.x, 0f);
+            }
 
-		private void SetLookRotation(KCCData kccData, Vector2 lookRotationDelta, Vector2 recoil, out Vector2 newRecoil)
-		{
-			if (lookRotationDelta.IsZero() == true && recoil.IsZero() == true && _character.CharacterController.Data.Recoil == Vector2.zero)
-			{
-				newRecoil = recoil;
-				return;
-			}
+            if (recoil.x < 0f && lookRotationDelta.x > 0f)
+            {
+                recoilReduction.x = Mathf.Clamp(lookRotationDelta.x, 0, -recoil.x);
+            }
 
-			Vector2 baseLookRotation = kccData.GetLookRotation(true, true) - kccData.Recoil;
-			Vector2 recoilReduction  = Vector2.zero;
+            if (recoil.y > 0f && lookRotationDelta.y < 0)
+            {
+                recoilReduction.y = Mathf.Clamp(lookRotationDelta.y, -recoil.y, 0f);
+            }
 
-			if (recoil.x > 0f && lookRotationDelta.x < 0)
-			{
-				recoilReduction.x = Mathf.Clamp(lookRotationDelta.x, -recoil.x, 0f);
-			}
+            if (recoil.y < 0f && lookRotationDelta.y > 0f)
+            {
+                recoilReduction.y = Mathf.Clamp(lookRotationDelta.y, 0, -recoil.y);
+            }
 
-			if (recoil.x < 0f && lookRotationDelta.x > 0f)
-			{
-				recoilReduction.x = Mathf.Clamp(lookRotationDelta.x, 0, -recoil.x);
-			}
+            lookRotationDelta -= recoilReduction;
+            recoil += recoilReduction;
 
-			if (recoil.y > 0f && lookRotationDelta.y < 0)
-			{
-				recoilReduction.y = Mathf.Clamp(lookRotationDelta.y, -recoil.y, 0f);
-			}
+            lookRotationDelta.x =
+                Mathf.Clamp(baseLookRotation.x + lookRotationDelta.x, -_topCameraAngleLimit, _bottomCameraAngleLimit) -
+                baseLookRotation.x;
 
-			if (recoil.y < 0f && lookRotationDelta.y > 0f)
-			{
-				recoilReduction.y = Mathf.Clamp(lookRotationDelta.y, 0, -recoil.y);
-			}
+            _character.CharacterController.SetLookRotation(baseLookRotation + recoil + lookRotationDelta);
 
-			lookRotationDelta -= recoilReduction;
-			recoil            += recoilReduction;
+            _character.AnimationController.Turn(lookRotationDelta.y);
 
-			lookRotationDelta.x = Mathf.Clamp(baseLookRotation.x + lookRotationDelta.x, -_topCameraAngleLimit, _bottomCameraAngleLimit) - baseLookRotation.x;
+            newRecoil = recoil;
+        }
 
-			_character.CharacterController.SetLookRotation(baseLookRotation + recoil + lookRotationDelta);
+        private void CheckFallDamage()
+        {
+            if (IsProxy == true)
+                return;
 
-			_character.AnimationController.Turn(lookRotationDelta.y);
+            if (_health.IsAlive == false)
+                return;
 
-			newRecoil = recoil;
-		}
+            var kccData = _character.CharacterController.Data;
 
-		private void CheckFallDamage()
-		{
-			if (IsProxy == true)
-				return;
+            if (kccData.IsGrounded == false || kccData.WasGrounded == true)
+                return;
 
-			if (_health.IsAlive == false)
-				return;
+            float fallVelocity = -kccData.DesiredVelocity.y;
+            for (int i = 1; i < 3; ++i)
+            {
+                var historyData = _character.CharacterController.GetHistoryData(kccData.Tick - i);
+                if (historyData != null)
+                {
+                    fallVelocity = Mathf.Max(fallVelocity, -historyData.DesiredVelocity.y);
+                }
+            }
 
-			var kccData = _character.CharacterController.Data;
+            if (fallVelocity < 0f)
+                return;
 
-			if (kccData.IsGrounded == false || kccData.WasGrounded == true)
-				return;
+            float damage = MathUtility.Map(_minFallDamageVelocity, _maxFallDamageVelocity, 0f, _maxFallDamage,
+                fallVelocity);
 
-			float fallVelocity = -kccData.DesiredVelocity.y;
-			for (int i = 1; i < 3; ++i)
-			{
-				var historyData = _character.CharacterController.GetHistoryData(kccData.Tick - i);
-				if (historyData != null)
-				{
-					fallVelocity = Mathf.Max(fallVelocity, -historyData.DesiredVelocity.y);
-				}
-			}
+            if (damage <= _minFallDamage)
+                return;
 
-			if (fallVelocity < 0f)
-				return;
+            var hitData = new HitData
+            {
+                Action = EHitAction.Damage,
+                Amount = damage,
+                Position = transform.position,
+                Normal = Vector3.up,
+                Direction = -Vector3.up,
+                InstigatorRef = Object.InputAuthority,
+                Instigator = _health,
+                Target = _health,
+                HitType = EHitType.Suicide,
+            };
 
-			float damage = MathUtility.Map(_minFallDamageVelocity, _maxFallDamageVelocity, 0f, _maxFallDamage, fallVelocity);
+            (_health as IHitTarget).ProcessHit(ref hitData);
+        }
 
-			if (damage <= _minFallDamage)
-				return;
+        private void OnCullingUpdated(bool isCulled)
+        {
+            bool isActive = isCulled == false;
 
-			var hitData = new HitData
-			{
-				Action           = EHitAction.Damage,
-				Amount           = damage,
-				Position         = transform.position,
-				Normal           = Vector3.up,
-				Direction        = -Vector3.up,
-				InstigatorRef    = Object.InputAuthority,
-				Instigator       = _health,
-				Target           = _health,
-				HitType          = EHitType.Suicide,
-			};
+            // Show/hide the game object based on AoI (Area of Interest)
 
-			(_health as IHitTarget).ProcessHit(ref hitData);
-		}
+            _visualRoot.SetActive(isActive);
 
-		private void OnCullingUpdated(bool isCulled)
-		{
-			bool isActive = isCulled == false;
-
-			// Show/hide the game object based on AoI (Area of Interest)
-
-			_visualRoot.SetActive(isActive);
-
-			if (_character.CharacterController.Collider != null)
-			{
-				_character.CharacterController.Collider.enabled = isActive;
-			}
-		}
-	}
+            if (_character.CharacterController.Collider != null)
+            {
+                _character.CharacterController.Collider.enabled = isActive;
+            }
+        }
+    }
 }

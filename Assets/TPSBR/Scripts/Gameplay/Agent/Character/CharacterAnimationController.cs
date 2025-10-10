@@ -16,7 +16,7 @@ namespace TPSBR
 		private FullBodyLayer   _fullBody;
 		private LowerBodyLayer  _lowerBody;
 		private UpperBodyLayer  _upperBody;
-		private ShootLayer      _shoot;
+		private AttackLayer      _attack;
 		private LookLayer       _look;
 
 		// PUBLIC METHODS
@@ -75,15 +75,15 @@ namespace TPSBR
 			}
 		}
 
-		public bool StartFire()
+		public bool StartUseItem()
 		{
 			if (_fullBody.Dead.IsActive() == true)
 					return false;
 			if (_upperBody.HasActiveState() == true)
 				return false;
 
-			_shoot.Shoot.SetAnimationTime(0.0f);
-			_shoot.Shoot.Activate(0.2f);
+			//_attack.StaffAttack.SetAnimationTime(0.0f);
+			//_attack.StaffAttack.Activate(0.2f);
 			return true;
 		}
 
@@ -136,7 +136,7 @@ namespace TPSBR
 			_fullBody   = FindLayer<FullBodyLayer>();
 			_lowerBody  = FindLayer<LowerBodyLayer>();
 			_upperBody  = FindLayer<UpperBodyLayer>();
-			_shoot      = FindLayer<ShootLayer>();
+			_attack      = FindLayer<AttackLayer>();
 			_look       = FindLayer<LookLayer>();
 
 			_kcc.MoveState = _locomotion.FindState<MoveState>();
