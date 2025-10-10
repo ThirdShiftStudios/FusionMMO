@@ -17,9 +17,9 @@ namespace TPSBR
                 void Deinitialize();
         }
 
-	public static class Global
-	{
-		// PUBLIC MEMBERS
+        public static class Global
+        {
+                // PUBLIC MEMBERS
 
                 public static GlobalSettings   Settings          { get; private set; }
                 public static RuntimeSettings  RuntimeSettings   { get; private set; }
@@ -31,6 +31,7 @@ namespace TPSBR
 
 		// PRIVATE MEMBERS
 
+                private static readonly string LogPrefix = "[<color=green>Global</color>] ";
                 private static bool _isInitialized;
                 private static bool _servicesInitializationComplete;
                 private static TaskCompletionSource<bool> _servicesInitializedTask;
@@ -57,106 +58,137 @@ namespace TPSBR
 		// PRIVATE METHODS
 
 		[RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-		private static void InitializeSubSystem()
-		{
-			if (Application.isBatchMode == true)
-			{
-				UnityEngine.AudioListener.volume = 0.0f;
-				PlayerLoopUtility.RemovePlayerLoopSystems(typeof(PostLateUpdate.UpdateAudio));
-			}
+                private static void InitializeSubSystem()
+                {
+                        Log("Subsystem registration starting");
+
+                        if (Application.isBatchMode == true)
+                        {
+                                Log("Application running in batch mode - muting audio and updating player loop");
+                                UnityEngine.AudioListener.volume = 0.0f;
+                                PlayerLoopUtility.RemovePlayerLoopSystems(typeof(PostLateUpdate.UpdateAudio));
+                        }
 
 #if UNITY_EDITOR
 			if (Application.isPlaying == false)
 				return;
 #endif
-			if (PlayerLoopUtility.HasPlayerLoopSystem(typeof(Global)) == false)
-			{
-				PlayerLoopUtility.AddPlayerLoopSystem(typeof(Global), typeof(Update.ScriptRunBehaviourUpdate), BeforeUpdate, AfterUpdate);
-			}
+                        if (PlayerLoopUtility.HasPlayerLoopSystem(typeof(Global)) == false)
+                        {
+                                Log("Adding Global to PlayerLoop");
+                                PlayerLoopUtility.AddPlayerLoopSystem(typeof(Global), typeof(Update.ScriptRunBehaviourUpdate), BeforeUpdate, AfterUpdate);
+                        }
 
-			Application.quitting -= OnApplicationQuit;
-			Application.quitting += OnApplicationQuit;
+                        Application.quitting -= OnApplicationQuit;
+                        Application.quitting += OnApplicationQuit;
 
-			_isInitialized = true;
-		}
+                        Log("Subsystem registration complete");
+                        _isInitialized = true;
+                }
 
-		[RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
-		private static void InitializeBeforeSceneLoad()
-		{
-			Initialize();
+                [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+                private static void InitializeBeforeSceneLoad()
+                {
+                        Log("InitializeBeforeSceneLoad starting");
 
-			// You can pause network services here
+                        Initialize();
 
-			if (ApplicationSettings.IsBatchServer == true)
-			{
-				Application.targetFrameRate = TickRate.Resolve(NetworkProjectConfig.Global.Simulation.TickRateSelection).Server;
-			}
+                        // You can pause network services here
 
-			if (ApplicationSettings.HasFrameRate == true)
-			{
-				Application.targetFrameRate = ApplicationSettings.FrameRate;
-			}
-		}
+                        if (ApplicationSettings.IsBatchServer == true)
+                        {
+                                Log("Configuring target frame rate for batch server");
+                                Application.targetFrameRate = TickRate.Resolve(NetworkProjectConfig.Global.Simulation.TickRateSelection).Server;
+                        }
 
-		[RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-		private static void InitializeAfterSceneLoad()
-		{
-			// You can unpause network services here
-		}
+                        if (ApplicationSettings.HasFrameRate == true)
+                        {
+                                Log("Applying custom frame rate");
+                                Application.targetFrameRate = ApplicationSettings.FrameRate;
+                        }
 
-		private static void Initialize()
-		{
-			if (_isInitialized == false)
-				return;
+                        Log("InitializeBeforeSceneLoad complete");
+                }
 
-			if (typeof(DebugManager).GetField("m_DebugActions", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(DebugManager.instance) == null)
-			{
-				typeof(DebugManager).GetMethod("RegisterInputs", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(DebugManager.instance, null);
-				typeof(DebugManager).GetMethod("RegisterActions", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(DebugManager.instance, null);
-			}
+                [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+                private static void InitializeAfterSceneLoad()
+                {
+                        // You can unpause network services here
+                        Log("InitializeAfterSceneLoad invoked");
+                }
 
-			GlobalSettings[] globalSettings = Resources.LoadAll<GlobalSettings>("");
-			Settings = globalSettings.Length > 0 ? Object.Instantiate(globalSettings[0]) : null;
-
-                        RuntimeSettings = new RuntimeSettings();
-                        RuntimeSettings.Initialize(Settings);
-
-                        ResetServicesInitializationTracker();
-
-                        PrepareGlobalServices();
-
-                        Networking = CreateStaticObject<Networking>();
-
-			if (ApplicationSettings.UseMultiplay == true && ApplicationSettings.IsServer == true)
-			{
-				MultiplayManager = CreateStaticObject<MultiplayManager>();
-			}
-
-			_isInitialized = true;
-		}
-
-                private static void Deinitialize()
+                private static void Initialize()
                 {
                         if (_isInitialized == false)
                                 return;
+
+                        Log("Initialize starting");
+
+                        if (typeof(DebugManager).GetField("m_DebugActions", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(DebugManager.instance) == null)
+                        {
+                                Log("Registering DebugManager inputs and actions");
+                                typeof(DebugManager).GetMethod("RegisterInputs", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(DebugManager.instance, null);
+                                typeof(DebugManager).GetMethod("RegisterActions", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(DebugManager.instance, null);
+                        }
+
+                        GlobalSettings[] globalSettings = Resources.LoadAll<GlobalSettings>("");
+                        Settings = globalSettings.Length > 0 ? Object.Instantiate(globalSettings[0]) : null;
+
+                        Log(Settings != null ? "Global settings loaded" : "No global settings asset found");
+
+                        RuntimeSettings = new RuntimeSettings();
+                        RuntimeSettings.Initialize(Settings);
+                        Log("Runtime settings initialized");
+
+                        ResetServicesInitializationTracker();
+
+                        Log("Preparing global services");
+
+                        PrepareGlobalServices();
+
+                        Log("Creating networking service");
+                        Networking = CreateStaticObject<Networking>();
+
+                        if (ApplicationSettings.UseMultiplay == true && ApplicationSettings.IsServer == true)
+                        {
+                                Log("Creating MultiplayManager");
+                                MultiplayManager = CreateStaticObject<MultiplayManager>();
+                        }
+
+                        Log("Initialize complete");
+                        _isInitialized = true;
+                }
+
+                private static void Deinitialize()
+                {
+                        Log("Deinitialize starting");
+
+                        if (_isInitialized == false)
+                        {
+                                Log("Deinitialize called while Global not initialized");
+                                return;
+                        }
 
                         for (int i = _globalServices.Count - 1; i >= 0; i--)
                         {
                                 var service = _globalServices[i];
                                 if (service != null)
                                 {
+                                        Log($"Deinitializing service {service.GetType().Name}");
                                         service.Deinitialize();
                                 }
                         }
 
                         ResetServicesInitializationTracker();
                         _isInitialized = false;
+                        Log("Deinitialize complete");
                 }
 
-		private static void OnApplicationQuit()
-		{
-			Deinitialize();
-		}
+                private static void OnApplicationQuit()
+                {
+                        Log("Application quitting");
+                        Deinitialize();
+                }
 
                 private static void BeforeUpdate()
                 {
@@ -182,6 +214,7 @@ namespace TPSBR
                 private static void PrepareGlobalServices()
                 {
                         _globalServices.Clear();
+                        Log("Instantiating PlayerAuthenticationService");
 
                         PlayerAuthenticationService = new PlayerAuthenticationService();
                         PlayerService = new PlayerService();
@@ -189,8 +222,10 @@ namespace TPSBR
                         _globalServices.Add(PlayerAuthenticationService);
                         _globalServices.Add(PlayerService);
 
+                        Log("Initializing global services");
                         for (int i = 0; i < _globalServices.Count; i++)
                         {
+                                Log($"Initializing service {_globalServices[i].GetType().Name}");
                                 _globalServices[i].Initialize();
                         }
 
@@ -214,11 +249,13 @@ namespace TPSBR
                         }
 
                         _servicesInitializationComplete = true;
+                        Log("All global services initialized");
                         _servicesInitializedTask.TrySetResult(true);
                 }
 
                 private static T CreateStaticObject<T>() where T : Component
                 {
+                        Log($"Creating static object for {typeof(T).Name}");
                         GameObject gameObject = new GameObject(typeof(T).Name);
                         Object.DontDestroyOnLoad(gameObject);
 
@@ -228,16 +265,23 @@ namespace TPSBR
                 private static void ResetServicesInitializationTracker()
                 {
                         _servicesInitializationComplete = false;
+                        Log("Resetting services initialization tracker");
 
                         if (_servicesInitializedTask == null || _servicesInitializedTask.Task.IsCompleted == true)
                         {
                                 _servicesInitializedTask = CreateServicesInitializedTask();
+                                Log("Created new services initialization TaskCompletionSource");
                         }
                 }
 
                 private static TaskCompletionSource<bool> CreateServicesInitializedTask()
                 {
                         return new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+                }
+
+                private static void Log(string message)
+                {
+                        Debug.Log(LogPrefix + message);
                 }
         }
 }
