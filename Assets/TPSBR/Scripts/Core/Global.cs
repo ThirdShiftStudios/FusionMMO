@@ -19,11 +19,12 @@ namespace TPSBR
 	{
 		// PUBLIC MEMBERS
 
-		public static GlobalSettings   Settings          { get; private set; }
-		public static RuntimeSettings  RuntimeSettings   { get; private set; }
-		public static PlayerService    PlayerService     { get; private set; }
-		public static Networking       Networking        { get; private set; }
-		public static MultiplayManager MultiplayManager  { get; private set; }
+                public static GlobalSettings   Settings          { get; private set; }
+                public static RuntimeSettings  RuntimeSettings   { get; private set; }
+                public static PlayerAuthenticationService PlayerAuthenticationService { get; private set; }
+                public static PlayerService    PlayerService     { get; private set; }
+                public static Networking       Networking        { get; private set; }
+                public static MultiplayManager MultiplayManager  { get; private set; }
 
 		// PRIVATE MEMBERS
 
@@ -162,9 +163,11 @@ namespace TPSBR
 
 		private static void PrepareGlobalServices()
 		{
-			PlayerService = new PlayerService();
+                        PlayerAuthenticationService = new PlayerAuthenticationService();
+                        PlayerService = new PlayerService();
 
-			_globalServices.Add(PlayerService);
+                        _globalServices.Add(PlayerAuthenticationService);
+                        _globalServices.Add(PlayerService);
 
 			for (int i = 0; i < _globalServices.Count; i++)
 			{

@@ -1,7 +1,4 @@
 using System;
-using System.Threading.Tasks;
-using Unity.Services.Authentication;
-using Unity.Services.Core;
 using UnityEngine;
 
 namespace TPSBR
@@ -20,16 +17,16 @@ namespace TPSBR
 		{
 			PlayerData = LoadPlayer();
 
-			try
-			{
-				PlayerData.UnityID = await GetUnityID();
-			}
-			catch (Exception exception)
-			{
-				PlayerData.UnityID = default;
-				Debug.LogException(exception);
-				Debug.LogWarning("Exception raised when initializing Unity Services. Please check if a Unity Project ID is linked in project settings.");
-			}
+                        try
+                        {
+                                PlayerData.UnityID = await Global.PlayerAuthenticationService.GetPlayerIdAsync();
+                        }
+                        catch (Exception exception)
+                        {
+                                PlayerData.UnityID = default;
+                                Debug.LogException(exception);
+                                Debug.LogWarning("Exception raised when authenticating player with Steam.");
+                        }
 
 			PlayerData.Lock();
 			SavePlayer();
@@ -111,26 +108,5 @@ namespace TPSBR
 			return userID;
 		}
 
-		private async Task<string> GetUnityID()
-		{
-#if UNITY_EDITOR
-			if (UnityEditor.CloudProjectSettings.projectId.HasValue() == false)
-				return default;
-#endif
-
-			if (UnityServices.State == ServicesInitializationState.Uninitialized)
-			{
-				await UnityServices.InitializeAsync();
-			}
-
-			if (AuthenticationService.Instance.IsAuthorized == false)
-			{
-				AuthenticationService.Instance.ClearSessionToken();
-
-				await AuthenticationService.Instance.SignInAnonymouslyAsync();
-			}
-
-			return AuthenticationService.Instance.PlayerId;
-		}
-	}
+        }
 }
