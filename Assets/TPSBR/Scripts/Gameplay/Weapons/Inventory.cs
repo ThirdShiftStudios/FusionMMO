@@ -210,7 +210,7 @@ namespace TPSBR
                 for (int i = 0; i < count; i++)
                 {
                     var slotData = data.InventorySlots[i];
-                    if ( slotData.Quantity == 0)
+                    if (slotData.ItemDefinitionId == 0 || slotData.Quantity == 0)
                         continue;
 
                     NetworkString<_32> configurationHash = default;
@@ -233,9 +233,10 @@ namespace TPSBR
                     if (i == 0)
                         continue;
 
-                    var slotData = data.HotbarSlots[i];
-                    if (slotData.WeaponDefinitionId == 0)
+                    if(data.HotbarSlots[i].WeaponDefinitionId == 0)
                         continue;
+                    
+                    var slotData = data.HotbarSlots[i];
 
                     var itemDefinition = ItemDefinition.Get(slotData.WeaponDefinitionId) as WeaponDefinition;
                     if (itemDefinition == null)
