@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Fusion;
 using Unity.Services.Authentication;
 using Unity.Services.CloudSave;
+using Unity.Services.CloudSave.Models;
 using UnityEngine;
 
 namespace TPSBR
@@ -49,6 +50,7 @@ namespace TPSBR
                 private bool                    _suppressTracking;
                 private bool                    _cloudSaveReady;
                 private Task                    _saveTask;
+                private bool                    _initialLoadComplete;
 
                 // PUBLIC PROPERTIES
 
@@ -68,6 +70,7 @@ namespace TPSBR
                         _storageKey               = null;
                         _cloudSaveReady           = false;
                         _saveTask                 = null;
+                        _initialLoadComplete      = false;
                         _isInitialized            = false;
 
                         _pendingRegistration    = pendingInventory;
@@ -118,6 +121,7 @@ namespace TPSBR
                         _isInitialized           = false;
                         _pendingSave             = false;
                         _cloudSaveReady          = false;
+                        _initialLoadComplete     = false;
                 }
 
                 // PUBLIC METHODS
@@ -296,6 +300,7 @@ namespace TPSBR
                         }
                         finally
                         {
+                                _initialLoadComplete = true;
                                 _isInitialized = true;
                         }
                 }
@@ -349,8 +354,10 @@ namespace TPSBR
                                 var keys = new HashSet<string> { _storageKey };
                                 var result = await CloudSaveService.Instance.Data.LoadAsync(keys);
 
-                                if (result != null && result.TryGetValue(_storageKey, out string json) == true)
+                                if (result != null && result.TryGetValue(_storageKey, out Item item) == true)
                                 {
+                                        string json = item.Value.GetAs<string>();
+
                                         if (string.IsNullOrEmpty(json) == false)
                                         {
                                                 _cachedData = JsonUtility.FromJson<PlayerInventorySaveData>(json);
@@ -397,7 +404,10 @@ namespace TPSBR
                                 }
                                 else if (_cachedData == null)
                                 {
-                                        _pendingRestoreInventory = null;
+                                        if (_initialLoadComplete == true)
+                                        {
+                                                _pendingRestoreInventory = null;
+                                        }
                                 }
                                 else if (inventory.HasStateAuthority == true)
                                 {
