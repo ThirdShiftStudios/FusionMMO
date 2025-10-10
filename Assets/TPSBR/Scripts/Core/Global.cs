@@ -1,6 +1,8 @@
+using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Threading.Tasks;
+using Unity.Services.Core;
 using UnityEngine;
 using UnityEngine.PlayerLoop;
 using UnityEngine.Rendering;
@@ -29,6 +31,7 @@ namespace TPSBR
                 public static Networking       Networking        { get; private set; }
                 public static MultiplayManager MultiplayManager  { get; private set; }
                 public static Task             AreServicesInitialized => _servicesInitializedTask.Task;
+                public static Task             UnityServicesInitialization => _unityServicesInitializationTask ?? Task.CompletedTask;
 
 		// PRIVATE MEMBERS
 
@@ -38,6 +41,7 @@ namespace TPSBR
                 private static TaskCompletionSource<bool> _servicesInitializedTask;
                 private static List<IGlobalService> _globalServices = new List<IGlobalService>(16);
                 private static List<IGlobalService> _pendingServiceInitializations = new List<IGlobalService>(16);
+                private static Task _unityServicesInitializationTask;
 
                 static Global()
                 {
@@ -228,6 +232,7 @@ namespace TPSBR
                 {
                         _globalServices.Clear();
                         _pendingServiceInitializations.Clear();
+                        StartUnityServicesInitialization();
                         Log("Instantiating PlayerAuthenticationService");
 
                         PlayerAuthenticationService = new PlayerAuthenticationService();
@@ -316,12 +321,49 @@ namespace TPSBR
                 {
                         _servicesInitializationComplete = false;
                         _pendingServiceInitializations.Clear();
+                        _unityServicesInitializationTask = null;
                         Log("Resetting services initialization tracker");
 
                         if (_servicesInitializedTask == null || _servicesInitializedTask.Task.IsCompleted == true)
                         {
                                 _servicesInitializedTask = CreateServicesInitializedTask();
                                 Log("Created new services initialization TaskCompletionSource");
+                        }
+                }
+
+                private static void StartUnityServicesInitialization()
+                {
+                        if (_unityServicesInitializationTask != null)
+                                return;
+
+                        _unityServicesInitializationTask = InitializeUnityServicesAsync();
+                }
+
+                private static async Task InitializeUnityServicesAsync()
+                {
+                        if (UnityServices.State == ServicesInitializationState.Initialized)
+                                return;
+
+                        if (UnityServices.State == ServicesInitializationState.Initializing)
+                        {
+                                while (UnityServices.State == ServicesInitializationState.Initializing)
+                                {
+                                        await Task.Delay(100);
+                                }
+
+                                if (UnityServices.State == ServicesInitializationState.Initialized)
+                                        return;
+                        }
+
+                        try
+                        {
+                                await UnityServices.InitializeAsync();
+                        }
+                        catch (Exception exception)
+                        {
+                                Debug.LogWarning("Failed to initialize Unity Services.");
+                                Debug.LogException(exception);
+                                throw;
                         }
                 }
 

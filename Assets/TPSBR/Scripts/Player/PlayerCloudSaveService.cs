@@ -4,8 +4,6 @@ using System.Threading.Tasks;
 using Fusion;
 using Unity.Services.Authentication;
 using Unity.Services.CloudSave;
-using Unity.Services.CloudSave.Models;
-using Unity.Services.Core;
 using UnityEngine;
 
 namespace TPSBR
@@ -291,7 +289,7 @@ namespace TPSBR
                 {
                         try
                         {
-                                await EnsureUnityServicesReadyAsync();
+                                await Global.UnityServicesInitialization;
                                 await EnsurePlayerSignedInAsync();
 
                                 _cloudSaveReady = AuthenticationService.Instance != null && AuthenticationService.Instance.IsSignedIn == true;
@@ -314,33 +312,6 @@ namespace TPSBR
                         {
                                 _isInitialized = true;
                         }
-                }
-
-                private async Task EnsureUnityServicesReadyAsync()
-                {
-                        if (UnityServices.State == ServicesInitializationState.Initialized)
-                                return;
-
-                        if (UnityServices.State == ServicesInitializationState.Initializing)
-                        {
-                                while (UnityServices.State == ServicesInitializationState.Initializing)
-                                {
-                                        await Task.Delay(100);
-                                }
-
-                                if (UnityServices.State == ServicesInitializationState.Initialized)
-                                        return;
-                        }
-
-                        var initializationOptions = new InitializationOptions();
-
-                        var playerData = Global.PlayerService?.PlayerData;
-                        if (playerData != null && playerData.UserID.HasValue() == true)
-                        {
-                                initializationOptions.SetProfile(playerData.UserID);
-                        }
-
-                        await UnityServices.InitializeAsync(initializationOptions);
                 }
 
                 private async Task EnsurePlayerSignedInAsync()
@@ -366,9 +337,8 @@ namespace TPSBR
                                 var keys = new HashSet<string> { _storageKey };
                                 var result = await CloudSaveService.Instance.Data.LoadAsync(keys);
 
-                                if (result != null && result.TryGetValue(_storageKey, out Item item) == true)
+                                if (result != null && result.TryGetValue(_storageKey, out string json) == true)
                                 {
-                                        string json = item.Value.GetAsString();
                                         if (string.IsNullOrEmpty(json) == false)
                                         {
                                                 _cachedData = JsonUtility.FromJson<PlayerInventorySaveData>(json);
