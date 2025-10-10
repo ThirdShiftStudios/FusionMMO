@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using Fusion;
 using Unity.Services.Authentication;
 using Unity.Services.CloudSave;
-using Unity.Services.CloudSave.Models;
 using UnityEngine;
 
 namespace TPSBR
@@ -354,10 +353,8 @@ namespace TPSBR
                                 var keys = new HashSet<string> { _storageKey };
                                 var result = await CloudSaveService.Instance.Data.LoadAsync(keys);
 
-                                if (result != null && result.TryGetValue(_storageKey, out Item item) == true)
+                                if (result != null && result.TryGetValue(_storageKey, out string json) == true)
                                 {
-                                        string json = item.Value.GetAs<string>();
-
                                         if (string.IsNullOrEmpty(json) == false)
                                         {
                                                 _cachedData = JsonUtility.FromJson<PlayerInventorySaveData>(json);
