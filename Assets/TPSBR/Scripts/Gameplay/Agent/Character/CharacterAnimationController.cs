@@ -8,16 +8,6 @@ namespace TPSBR
 	public sealed class CharacterAnimationController : AnimationController
 	{
 		// PRIVATE MEMBERS
-
-		[SerializeField]
-		private Transform       _leftHand;
-		[SerializeField]
-		private Transform       _leftLowerArm;
-		[SerializeField]
-		private Transform       _leftUpperArm;
-		[SerializeField][Range(0.0f, 1.0f)]
-		private float           _aimSnapPower = 0.5f;
-
 		private KCC             _kcc;
 		private Agent           _agent;
 		private Inventory         _inventory;
@@ -109,7 +99,7 @@ namespace TPSBR
 
 		public void RefreshSnapping()
 		{
-			SnapWeapon();
+
 		}
 
 		// AnimationController INTERFACE
@@ -129,7 +119,7 @@ namespace TPSBR
 
 		protected override void OnEvaluate()
 		{
-			SnapWeapon();
+
 		}
 
 		// MonoBehaviour INTERFACE
@@ -150,81 +140,6 @@ namespace TPSBR
 			_look       = FindLayer<LookLayer>();
 
 			_kcc.MoveState = _locomotion.FindState<MoveState>();
-		}
-
-		// PRIVATE METHODS
-
-		private void SnapWeapon()
-		{
-			if (ApplicationSettings.IsBatchServer == true)
-				return;
-			if (_inventory.CurrentWeapon == null || CanSnapHand() == false)
-				return;
-
-			return;
-			
-			Transform weaponHandle = _inventory.CurrentWeaponHandle;
-			if (HasInputAuthority == true || _agent.IsObserved == true)
-			{
-				weaponHandle.localRotation = _inventory.CurrentWeaponBaseRotation;
-
-				Quaternion handleRotation = weaponHandle.rotation;
-				Quaternion targetRotation = Quaternion.LookRotation(_agent.Context.Camera.transform.position + _agent.Context.Camera.transform.forward * 100.0f - weaponHandle.position);
-
-				float   snapPower    = Mathf.Clamp(Mathf.Abs(_kcc.FixedData.LookPitch) / 60.0f, _aimSnapPower, 1.0f);
-				Vector3 snapRotation = Quaternion.Slerp(handleRotation, targetRotation, snapPower).eulerAngles;
-
-				snapRotation.y = targetRotation.eulerAngles.y;
-
-				weaponHandle.rotation = Quaternion.Euler(snapRotation);
-			}
-			else
-			{
-				weaponHandle.rotation = Quaternion.LookRotation(_kcc.FixedData.LookDirection);
-			}
-
-			Transform leftHandTarget = _inventory.CurrentWeapon.LeftHandTarget;
-			if (leftHandTarget != null)
-			{
-				Vector3    leftHandLocalPosition       = _leftLowerArm.InverseTransformPoint(_leftHand.position);
-				Vector3    leftHandTargetLocalPosition = _leftLowerArm.InverseTransformPoint(leftHandTarget.position);
-				Quaternion leftLowerArmRotation        = Quaternion.FromToRotation(leftHandLocalPosition, leftHandTargetLocalPosition);
-
-				_leftLowerArm.rotation *=  leftLowerArmRotation;
-
-				for (int i = 0; i < 2; ++i)
-				{
-					Vector3    leftLowerArmOffset              = leftHandTarget.position - _leftHand.position;
-					Vector3    leftLowerArmTargetPosition      = _leftLowerArm.position + leftLowerArmOffset;
-					Vector3    leftLowerArmLocalPosition       = _leftUpperArm.InverseTransformPoint(_leftLowerArm.position);
-					Vector3    leftLowerArmTargetLocalPosition = _leftUpperArm.InverseTransformPoint(leftLowerArmTargetPosition);
-					Quaternion leftUpperArmRotation            = Quaternion.FromToRotation(leftLowerArmLocalPosition, leftLowerArmTargetLocalPosition);
-
-					_leftUpperArm.rotation *= leftUpperArmRotation;
-
-					leftHandLocalPosition       = _leftLowerArm.InverseTransformPoint(_leftHand.position);
-					leftHandTargetLocalPosition = _leftLowerArm.InverseTransformPoint(leftHandTarget.position);
-					leftLowerArmRotation        = Quaternion.FromToRotation(leftHandLocalPosition, leftHandTargetLocalPosition);
-
-					_leftLowerArm.rotation *= leftLowerArmRotation;
-				}
-
-				_leftHand.position = leftHandTarget.position;
-				_leftHand.rotation = leftHandTarget.rotation;
-			}
-		}
-
-		private bool CanSnapHand()
-		{
-			if (_fullBody.Dead.IsActive() == true)
-				return false;
-
-			if (_upperBody.HasActiveState() == true)
-			{
-				return false;
-			}
-
-			return true;
 		}
 	}
 }
