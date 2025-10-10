@@ -37,6 +37,7 @@ namespace TPSBR
                 private static bool _servicesInitializationComplete;
                 private static TaskCompletionSource<bool> _servicesInitializedTask;
                 private static List<IGlobalService> _globalServices = new List<IGlobalService>(16);
+                private static List<IGlobalService> _pendingServiceInitializations = new List<IGlobalService>(16);
 
                 static Global()
                 {
@@ -193,14 +194,25 @@ namespace TPSBR
 
                 private static void BeforeUpdate()
                 {
+                        if (_globalServices.Count == 0)
+                                return;
+
                         if (_servicesInitializationComplete == false)
                         {
+                                TryInitializePendingServices();
                                 UpdateServicesInitializedState();
                         }
 
                         for (int i = 0; i < _globalServices.Count; i++)
                         {
-                                _globalServices[i].Tick();
+                                var service = _globalServices[i];
+                                if (service == null)
+                                        continue;
+
+                                if (ReferenceEquals(service, PlayerAuthenticationService) == false && service.IsInitialized == false)
+                                        continue;
+
+                                service.Tick();
                         }
                 }
 
@@ -215,6 +227,7 @@ namespace TPSBR
                 private static void PrepareGlobalServices()
                 {
                         _globalServices.Clear();
+                        _pendingServiceInitializations.Clear();
                         Log("Instantiating PlayerAuthenticationService");
 
                         PlayerAuthenticationService = new PlayerAuthenticationService();
@@ -225,14 +238,48 @@ namespace TPSBR
                         _globalServices.Add(PlayerService);
                         _globalServices.Add(PlayerCloudSaveService);
 
-                        Log("Initializing global services");
+                        Log("Initializing authentication service");
+                        PlayerAuthenticationService.Initialize();
+                        QueuePendingServices();
+                        TryInitializePendingServices();
+                        UpdateServicesInitializedState();
+                }
+
+                private static void QueuePendingServices()
+                {
+                        _pendingServiceInitializations.Clear();
+
                         for (int i = 0; i < _globalServices.Count; i++)
                         {
-                                Log($"Initializing service {_globalServices[i].GetType().Name}");
-                                _globalServices[i].Initialize();
+                                var service = _globalServices[i];
+                                if (service == null || ReferenceEquals(service, PlayerAuthenticationService) == true)
+                                        continue;
+
+                                _pendingServiceInitializations.Add(service);
+                        }
+                }
+
+                private static void TryInitializePendingServices()
+                {
+                        if (PlayerAuthenticationService == null || PlayerAuthenticationService.IsInitialized == false)
+                                return;
+
+                        if (_pendingServiceInitializations.Count == 0)
+                                return;
+
+                        Log("Initializing deferred global services");
+
+                        for (int i = 0; i < _pendingServiceInitializations.Count; i++)
+                        {
+                                var service = _pendingServiceInitializations[i];
+                                if (service == null || service.IsInitialized == true)
+                                        continue;
+
+                                Log($"Initializing service {service.GetType().Name}");
+                                service.Initialize();
                         }
 
-                        UpdateServicesInitializedState();
+                        _pendingServiceInitializations.Clear();
                 }
 
                 private static void UpdateServicesInitializedState()
@@ -268,6 +315,7 @@ namespace TPSBR
                 private static void ResetServicesInitializationTracker()
                 {
                         _servicesInitializationComplete = false;
+                        _pendingServiceInitializations.Clear();
                         Log("Resetting services initialization tracker");
 
                         if (_servicesInitializedTask == null || _servicesInitializedTask.Task.IsCompleted == true)

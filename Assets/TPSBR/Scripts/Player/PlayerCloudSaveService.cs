@@ -35,6 +35,8 @@ namespace TPSBR
                 // PRIVATE MEMBERS
 
                 private Inventory               _trackedInventory;
+                private Inventory               _pendingRegistration;
+                private Inventory               _pendingRestoreInventory;
                 private PlayerInventorySaveData _cachedData;
                 private string                  _storageKey;
                 private bool                    _isInitialized;
@@ -49,27 +51,33 @@ namespace TPSBR
 
                 void IGlobalService.Initialize()
                 {
-                        _trackedInventory = null;
-                        _pendingSave      = false;
-                        _suppressTracking = false;
+                        var pendingInventory = _pendingRegistration;
 
-                        var playerData = Global.PlayerService?.PlayerData;
-                        if (playerData != null && playerData.UserID.HasValue() == true)
-                        {
-                                _storageKey = StorageKeyPrefix + playerData.UserID;
-                                _cachedData = PersistentStorage.GetObject<PlayerInventorySaveData>(_storageKey);
-                        }
-                        else
-                        {
-                                _storageKey = null;
-                                _cachedData = null;
-                        }
+                        _trackedInventory        = null;
+                        _pendingRestoreInventory = null;
+                        _pendingSave             = false;
+                        _suppressTracking        = false;
+
+                        ResolveStorageKey();
 
                         _isInitialized = true;
+
+                        if (pendingInventory != null)
+                        {
+                                _pendingRegistration = null;
+                                RegisterInventoryAndRestore(pendingInventory);
+                        }
                 }
 
                 void IGlobalService.Tick()
                 {
+                        if (_isInitialized == false)
+                        {
+                                return;
+                        }
+
+                        ProcessDeferredInventory();
+
                         if (_pendingSave == false)
                                 return;
 
@@ -81,10 +89,12 @@ namespace TPSBR
                         CaptureAndStoreSnapshot(true);
                         DetachInventory();
 
-                        _storageKey    = null;
-                        _cachedData    = null;
-                        _isInitialized = false;
-                        _pendingSave   = false;
+                        _storageKey             = null;
+                        _cachedData             = null;
+                        _pendingRegistration    = null;
+                        _pendingRestoreInventory = null;
+                        _isInitialized          = false;
+                        _pendingSave            = false;
                 }
 
                 // PUBLIC METHODS
@@ -94,25 +104,55 @@ namespace TPSBR
                         if (IsInventoryEligible(inventory) == false)
                                 return;
 
-                        if (_trackedInventory == inventory)
+                        if (_isInitialized == false)
+                        {
+                                _pendingRegistration = inventory;
                                 return;
+                        }
 
-                        DetachInventory();
-
-                        _trackedInventory = inventory;
-                        _trackedInventory.ItemSlotChanged += OnItemSlotChanged;
-                        _trackedInventory.HotbarSlotChanged += OnHotbarSlotChanged;
+                        AttachInventory(inventory);
                 }
 
                 public bool RegisterInventoryAndRestore(Inventory inventory)
                 {
-                        RegisterInventory(inventory);
+                        if (IsInventoryEligible(inventory) == false)
+                                return false;
 
-                        return TryRestoreInventory(inventory);
+                        if (_isInitialized == false)
+                        {
+                                _pendingRegistration     = inventory;
+                                _pendingRestoreInventory = inventory;
+                                return false;
+                        }
+
+                        AttachInventory(inventory);
+
+                        bool restored = TryRestoreInventory(inventory);
+
+                        if (restored == false && _cachedData != null)
+                        {
+                                _pendingRestoreInventory = inventory;
+                        }
+                        else if (restored == true && ReferenceEquals(_pendingRestoreInventory, inventory) == true)
+                        {
+                                _pendingRestoreInventory = null;
+                        }
+
+                        return restored;
                 }
 
                 public void UnregisterInventory(Inventory inventory)
                 {
+                        if (_pendingRegistration == inventory)
+                        {
+                                _pendingRegistration = null;
+                        }
+
+                        if (_pendingRestoreInventory == inventory)
+                        {
+                                _pendingRestoreInventory = null;
+                        }
+
                         if (_trackedInventory != inventory)
                                 return;
 
@@ -131,6 +171,11 @@ namespace TPSBR
                         _suppressTracking = true;
                         inventory.ApplySaveData(_cachedData);
                         _suppressTracking = false;
+
+                        if (ReferenceEquals(_pendingRestoreInventory, inventory) == true)
+                        {
+                                _pendingRestoreInventory = null;
+                        }
 
                         return true;
                 }
@@ -152,6 +197,21 @@ namespace TPSBR
                         return runner.LocalPlayer == inventory.Object.InputAuthority;
                 }
 
+                private void AttachInventory(Inventory inventory)
+                {
+                        if (_trackedInventory == inventory)
+                                return;
+
+                        DetachInventory();
+
+                        _trackedInventory = inventory;
+                        if (_trackedInventory != null)
+                        {
+                                _trackedInventory.ItemSlotChanged += OnItemSlotChanged;
+                                _trackedInventory.HotbarSlotChanged += OnHotbarSlotChanged;
+                        }
+                }
+
                 private void DetachInventory()
                 {
                         if (_trackedInventory == null)
@@ -160,6 +220,73 @@ namespace TPSBR
                         _trackedInventory.ItemSlotChanged -= OnItemSlotChanged;
                         _trackedInventory.HotbarSlotChanged -= OnHotbarSlotChanged;
                         _trackedInventory = null;
+                }
+
+                private void ResolveStorageKey()
+                {
+                        var authenticationService = Global.PlayerAuthenticationService;
+                        if (authenticationService != null && authenticationService.IsInitialized == true && authenticationService.IsAuthenticated == true)
+                        {
+                                _storageKey = StorageKeyPrefix + authenticationService.PlayerId;
+                                _cachedData = PersistentStorage.GetObject<PlayerInventorySaveData>(_storageKey);
+                                return;
+                        }
+
+                        var playerData = Global.PlayerService?.PlayerData;
+                        if (playerData != null && playerData.UserID.HasValue() == true)
+                        {
+                                _storageKey = StorageKeyPrefix + playerData.UserID;
+                                _cachedData = PersistentStorage.GetObject<PlayerInventorySaveData>(_storageKey);
+                        }
+                        else
+                        {
+                                _storageKey = null;
+                                _cachedData = null;
+                        }
+                }
+
+                private void ProcessDeferredInventory()
+                {
+                        if (_pendingRegistration != null)
+                        {
+                                var inventory = _pendingRegistration;
+                                _pendingRegistration = null;
+
+                                if (IsInventoryEligible(inventory) == true)
+                                {
+                                        AttachInventory(inventory);
+
+                                        if (_cachedData != null)
+                                        {
+                                                bool restored = TryRestoreInventory(inventory);
+                                                if (restored == false)
+                                                {
+                                                        _pendingRestoreInventory = inventory;
+                                                }
+                                        }
+                                }
+                        }
+
+                        if (_pendingRestoreInventory != null)
+                        {
+                                var inventory = _pendingRestoreInventory;
+
+                                if (IsInventoryEligible(inventory) == false)
+                                {
+                                        _pendingRestoreInventory = null;
+                                }
+                                else if (_cachedData == null)
+                                {
+                                        _pendingRestoreInventory = null;
+                                }
+                                else if (inventory.HasStateAuthority == true)
+                                {
+                                        if (TryRestoreInventory(inventory) == true)
+                                        {
+                                                _pendingRestoreInventory = null;
+                                        }
+                                }
+                        }
                 }
 
                 private void OnItemSlotChanged(int index, InventorySlot slot)
