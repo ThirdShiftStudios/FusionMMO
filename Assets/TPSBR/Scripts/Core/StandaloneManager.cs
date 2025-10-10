@@ -5,7 +5,8 @@ using UnityEngine.SceneManagement;
 
 namespace TPSBR
 {
-	using System;
+        using System;
+        using System.Collections;
 
 	[Serializable]
 	public sealed class StandaloneConfiguration
@@ -47,41 +48,63 @@ namespace TPSBR
 			}
 		}
 
-		protected void Start()
-		{
-			StandaloneConfiguration configuration = ExternalConfiguration ?? _defaultConfiguration;
+                protected void Start()
+                {
+                        if (Global.AreServicesInitialized == true)
+                        {
+                                StartStandaloneSession();
+                        }
+                        else
+                        {
+                                StartCoroutine(WaitForServicesAndStart());
+                        }
+                }
 
-			var playerData = Global.PlayerService.PlayerData;
-			var scenePath = SceneManager.GetActiveScene().path;
+                private IEnumerator WaitForServicesAndStart()
+                {
+                        while (Global.AreServicesInitialized == false)
+                        {
+                                yield return null;
+                        }
 
-			scenePath = scenePath.Substring("Assets/".Length, scenePath.Length - "Assets/".Length - ".unity".Length);
+                        StartStandaloneSession();
+                }
 
-			PhotonAppSettings.Global.AppSettings.FixedRegion = configuration.Region;
+                private void StartStandaloneSession()
+                {
+                        StandaloneConfiguration configuration = ExternalConfiguration ?? _defaultConfiguration;
 
-			var request = new SessionRequest
-			{
-				UserID       = playerData.UserID.HasValue() ? playerData.UserID : new Guid().ToString(),
-				GameMode     = configuration.GameMode,
-				SessionName  = configuration.SessionName.HasValue() ? configuration.SessionName : Guid.NewGuid().ToString(),
-				DisplayName  = configuration.ServerName,
-				ScenePath    = scenePath,
-				GameplayType = configuration.GameplayType,
-				ExtraPeers   = configuration.ExtraPeers,
-				MaxPlayers   = configuration.MaxPlayers,
-				CustomLobby  = configuration.CustomLobby.HasValue() ? configuration.CustomLobby : "FusionBR." + Application.version,
-				IPAddress    = configuration.IPAddress,
-				Port         = configuration.Port,
-			};
+                        var playerData = Global.PlayerService.PlayerData;
+                        var scenePath = SceneManager.GetActiveScene().path;
 
-			if (configuration.Multiplay)
-			{
-				// A Multiplay allocation will trigger the game session creation
-				Global.MultiplayManager.StartMultiplay(request, configuration);
-			}
-			else
-			{
-				Global.Networking.StartGame(request);
-			}
-		}
-	}
+                        scenePath = scenePath.Substring("Assets/".Length, scenePath.Length - "Assets/".Length - ".unity".Length);
+
+                        PhotonAppSettings.Global.AppSettings.FixedRegion = configuration.Region;
+
+                        var request = new SessionRequest
+                        {
+                                UserID       = playerData.UserID.HasValue() ? playerData.UserID : new Guid().ToString(),
+                                GameMode     = configuration.GameMode,
+                                SessionName  = configuration.SessionName.HasValue() ? configuration.SessionName : Guid.NewGuid().ToString(),
+                                DisplayName  = configuration.ServerName,
+                                ScenePath    = scenePath,
+                                GameplayType = configuration.GameplayType,
+                                ExtraPeers   = configuration.ExtraPeers,
+                                MaxPlayers   = configuration.MaxPlayers,
+                                CustomLobby  = configuration.CustomLobby.HasValue() ? configuration.CustomLobby : "FusionBR." + Application.version,
+                                IPAddress    = configuration.IPAddress,
+                                Port         = configuration.Port,
+                        };
+
+                        if (configuration.Multiplay)
+                        {
+                                // A Multiplay allocation will trigger the game session creation
+                                Global.MultiplayManager.StartMultiplay(request, configuration);
+                        }
+                        else
+                        {
+                                Global.Networking.StartGame(request);
+                        }
+                }
+        }
 }

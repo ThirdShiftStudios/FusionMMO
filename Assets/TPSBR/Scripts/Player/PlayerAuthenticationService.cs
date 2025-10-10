@@ -1,5 +1,4 @@
 using System;
-using System.Threading.Tasks;
 using Steamworks;
 using UnityEngine;
 
@@ -11,24 +10,28 @@ namespace TPSBR
 
                 public string PlayerId { get; private set; }
                 public bool IsAuthenticated => string.IsNullOrEmpty(PlayerId) == false;
+                public bool IsInitialized  { get; private set; }
 
                 // PRIVATE MEMBERS
 
-                private Task<string> _authenticationTask;
                 private bool _steamInitialized;
 
                 // IGlobalService INTERFACE
 
-                async void IGlobalService.Initialize()
+                void IGlobalService.Initialize()
                 {
                         try
                         {
-                                await GetPlayerIdAsync();
+                                AuthenticateInternal();
                         }
                         catch (Exception exception)
                         {
                                 Debug.LogWarning("Failed to authenticate with Steam.");
                                 Debug.LogException(exception);
+                        }
+                        finally
+                        {
+                                IsInitialized = true;
                         }
                 }
 
@@ -43,7 +46,7 @@ namespace TPSBR
                 void IGlobalService.Deinitialize()
                 {
                         PlayerId = default;
-                        _authenticationTask = null;
+                        IsInitialized = false;
 
                         if (_steamInitialized == true)
                         {
@@ -54,26 +57,24 @@ namespace TPSBR
 
                 // PUBLIC METHODS
 
-                public Task<string> GetPlayerIdAsync()
+                public string GetPlayerId()
                 {
-                        if (_authenticationTask == null || _authenticationTask.IsFaulted == true || _authenticationTask.IsCanceled == true)
+                        if (IsAuthenticated == false)
                         {
-                                _authenticationTask = AuthenticateInternalAsync();
+                                return AuthenticateInternal();
                         }
 
-                        return _authenticationTask;
+                        return PlayerId;
                 }
 
                 // PRIVATE METHODS
 
-                private async Task<string> AuthenticateInternalAsync()
+                private string AuthenticateInternal()
                 {
                         if (_steamInitialized == true && string.IsNullOrEmpty(PlayerId) == false)
                         {
                                 return PlayerId;
                         }
-
-                        await Task.Yield();
 
                         if (_steamInitialized == false)
                         {

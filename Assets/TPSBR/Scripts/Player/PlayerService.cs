@@ -7,19 +7,20 @@ namespace TPSBR
 	{
 		// PUBLIC MEMBERS
 
-		public Action<PlayerData> PlayerDataChanged;
+                public Action<PlayerData> PlayerDataChanged;
 
-		public PlayerData PlayerData { get; private set; }
+                public PlayerData PlayerData { get; private set; }
+                public bool       IsInitialized { get; private set; }
 
 		// IGlobalService INTERFACE
 
-		async void IGlobalService.Initialize()
-		{
-			PlayerData = LoadPlayer();
+                void IGlobalService.Initialize()
+                {
+                        PlayerData = LoadPlayer();
 
                         try
                         {
-                                PlayerData.UnityID = await Global.PlayerAuthenticationService.GetPlayerIdAsync();
+                                PlayerData.UnityID = Global.PlayerAuthenticationService.GetPlayerId();
                         }
                         catch (Exception exception)
                         {
@@ -28,9 +29,11 @@ namespace TPSBR
                                 Debug.LogWarning("Exception raised when authenticating player with Steam.");
                         }
 
-			PlayerData.Lock();
-			SavePlayer();
-		}
+                        PlayerData.Lock();
+                        SavePlayer();
+
+                        IsInitialized = true;
+                }
 
 		void IGlobalService.Tick()
 		{
@@ -43,13 +46,14 @@ namespace TPSBR
 			}
 		}
 
-		void IGlobalService.Deinitialize()
-		{
-			PlayerData.Unlock();
-			SavePlayer();
+                void IGlobalService.Deinitialize()
+                {
+                        PlayerData.Unlock();
+                        SavePlayer();
 
-			PlayerDataChanged = null;
-		}
+                        PlayerDataChanged = null;
+                        IsInitialized = false;
+                }
 
 		// PRIVATE METHODS
 

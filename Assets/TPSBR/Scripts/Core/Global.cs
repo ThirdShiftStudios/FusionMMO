@@ -8,12 +8,13 @@ using Fusion.Photon.Realtime;
 
 namespace TPSBR
 {
-	public interface IGlobalService
-	{
-		void Initialize();
-		void Tick();
-		void Deinitialize();
-	}
+        public interface IGlobalService
+        {
+                bool IsInitialized { get; }
+                void Initialize();
+                void Tick();
+                void Deinitialize();
+        }
 
 	public static class Global
 	{
@@ -25,6 +26,7 @@ namespace TPSBR
                 public static PlayerService    PlayerService     { get; private set; }
                 public static Networking       Networking        { get; private set; }
                 public static MultiplayManager MultiplayManager  { get; private set; }
+                public static bool             AreServicesInitialized { get; private set; }
 
 		// PRIVATE MEMBERS
 
@@ -123,35 +125,41 @@ namespace TPSBR
 			_isInitialized = true;
 		}
 
-		private static void Deinitialize()
-		{
-			if (_isInitialized == false)
-				return;
+                private static void Deinitialize()
+                {
+                        if (_isInitialized == false)
+                                return;
 
-			for (int i = _globalServices.Count - 1; i >= 0; i--)
-			{
-				var service = _globalServices[i];
-				if (service != null)
-				{
-					service.Deinitialize();
-				}
-			}
+                        for (int i = _globalServices.Count - 1; i >= 0; i--)
+                        {
+                                var service = _globalServices[i];
+                                if (service != null)
+                                {
+                                        service.Deinitialize();
+                                }
+                        }
 
-			_isInitialized = false;
-		}
+                        AreServicesInitialized = false;
+                        _isInitialized = false;
+                }
 
 		private static void OnApplicationQuit()
 		{
 			Deinitialize();
 		}
 
-		private static void BeforeUpdate()
-		{
-			for (int i = 0; i < _globalServices.Count; i++)
-			{
-				_globalServices[i].Tick();
-			}
-		}
+                private static void BeforeUpdate()
+                {
+                        if (AreServicesInitialized == false)
+                        {
+                                UpdateServicesInitializedState();
+                        }
+
+                        for (int i = 0; i < _globalServices.Count; i++)
+                        {
+                                _globalServices[i].Tick();
+                        }
+                }
 
 		private static void AfterUpdate()
 		{
@@ -161,19 +169,44 @@ namespace TPSBR
 			}
 		}
 
-		private static void PrepareGlobalServices()
-		{
+                private static void PrepareGlobalServices()
+                {
+                        _globalServices.Clear();
+                        AreServicesInitialized = false;
+
                         PlayerAuthenticationService = new PlayerAuthenticationService();
                         PlayerService = new PlayerService();
 
                         _globalServices.Add(PlayerAuthenticationService);
                         _globalServices.Add(PlayerService);
 
-			for (int i = 0; i < _globalServices.Count; i++)
-			{
-				_globalServices[i].Initialize();
-			}
-		}
+                        for (int i = 0; i < _globalServices.Count; i++)
+                        {
+                                _globalServices[i].Initialize();
+                        }
+
+                        UpdateServicesInitializedState();
+                }
+
+                private static void UpdateServicesInitializedState()
+                {
+                        if (_globalServices.Count == 0)
+                        {
+                                AreServicesInitialized = false;
+                                return;
+                        }
+
+                        for (int i = 0; i < _globalServices.Count; i++)
+                        {
+                                if (_globalServices[i] == null || _globalServices[i].IsInitialized == false)
+                                {
+                                        AreServicesInitialized = false;
+                                        return;
+                                }
+                        }
+
+                        AreServicesInitialized = true;
+                }
 
 		private static T CreateStaticObject<T>() where T : Component
 		{
