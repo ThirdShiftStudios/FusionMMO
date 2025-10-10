@@ -317,15 +317,41 @@ namespace TPSBR
                 private async Task EnsurePlayerSignedInAsync()
                 {
                         var desiredProfile = Global.PlayerService?.PlayerData?.UserID;
-                        if (desiredProfile.HasValue() == true && AuthenticationService.Instance.Profile != desiredProfile)
+                        var sanitizedProfile = SanitizeProfileName(desiredProfile);
+
+                        if (sanitizedProfile.HasValue() == true && AuthenticationService.Instance.Profile != sanitizedProfile)
                         {
-                                AuthenticationService.Instance.SwitchProfile(desiredProfile);
+                                AuthenticationService.Instance.SwitchProfile(sanitizedProfile);
                         }
 
                         if (AuthenticationService.Instance != null && AuthenticationService.Instance.IsSignedIn == true)
                                 return;
 
                         await AuthenticationService.Instance.SignInAnonymouslyAsync(new SignInOptions { CreateAccount = true });
+                }
+
+                private static string SanitizeProfileName(string profileName)
+                {
+                        if (string.IsNullOrEmpty(profileName) == true)
+                                return null;
+
+                        Span<char> buffer = stackalloc char[Math.Min(profileName.Length, 30)];
+                        int index = 0;
+
+                        for (int i = 0; i < profileName.Length && index < buffer.Length; i++)
+                        {
+                                char character = profileName[i];
+
+                                if (char.IsLetterOrDigit(character) == false && character != '-' && character != '_')
+                                        continue;
+
+                                buffer[index++] = character;
+                        }
+
+                        if (index == 0)
+                                return null;
+
+                        return new string(buffer.Slice(0, index));
                 }
 
                 private async Task LoadCachedDataAsync()
