@@ -9,17 +9,28 @@ namespace TPSBR
 	{
 		// PUBLIC MEMBERS
 
-		public StaffAttackState StaffAttack => staffAttack;
+                public StaffAttackState StaffAttack => staffAttack;
 
 		// PRIVATE MEMBERS
 
 		[FormerlySerializedAs("_shoot")] [SerializeField]
-		private StaffAttackState staffAttack;
+                private StaffAttackState staffAttack;
 
-		// AnimationLayer INTERFACE
+                public bool TryHandleUse(Weapon weapon, in WeaponUseRequest request)
+                {
+                        if (request.ShouldUse == false)
+                                return true;
 
-		protected override void OnFixedUpdate()
-		{
+                        if (weapon == null)
+                                return false;
+
+                        return weapon.HandleAnimationRequest(this, request);
+                }
+
+                // AnimationLayer INTERFACE
+
+                protected override void OnFixedUpdate()
+                {
 			
 		}
 	}

@@ -16,12 +16,14 @@ namespace TPSBR
 		private FullBodyLayer   _fullBody;
 		private LowerBodyLayer  _lowerBody;
 		private UpperBodyLayer  _upperBody;
-		private AttackLayer      _attack;
+                private AttackLayer      _attack;
 		private LookLayer       _look;
 
 		// PUBLIC METHODS
 
-		public bool CanJump()
+                public AttackLayer AttackLayer => _attack;
+
+                public bool CanJump()
 		{
 			if (_fullBody.IsActive() == true)
 			{
@@ -75,17 +77,24 @@ namespace TPSBR
 			}
 		}
 
-		public bool StartUseItem()
-		{
-			if (_fullBody.Dead.IsActive() == true)
-					return false;
-			if (_upperBody.HasActiveState() == true)
-				return false;
+                public bool StartUseItem(Weapon weapon, in WeaponUseRequest request)
+                {
+                        if (weapon == null)
+                                return false;
 
-			//_attack.StaffAttack.SetAnimationTime(0.0f);
-			//_attack.StaffAttack.Activate(0.2f);
-			return true;
-		}
+                        if (_fullBody.Dead.IsActive() == true)
+                                        return false;
+                        if (_upperBody.HasActiveState() == true)
+                                return false;
+
+                        if (_attack != null && request.ShouldUse == true)
+                        {
+                                if (_attack.TryHandleUse(weapon, request) == false)
+                                        return false;
+                        }
+
+                        return true;
+                }
 
 		public void ProcessThrow(bool start, bool hold)
 		{

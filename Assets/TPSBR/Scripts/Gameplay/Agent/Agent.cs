@@ -301,22 +301,35 @@ namespace TPSBR
 
         private void TryUseItem(bool attack, bool hold)
         {
-            var currentWeapon = _inventory.CurrentWeapon;
-            if (currentWeapon is ThrowableWeapon && _inventory.CurrentWeaponSize == WeaponSize.Throwable)
-            {
-                // Fire is handled form the grenade animation state itself
-                _character.AnimationController.ProcessThrow(attack, hold);
-                return;
-            }
+            Weapon currentWeapon = _inventory.CurrentWeapon;
 
-            if (hold == false)
-                return;
-            if (_inventory.CanFireWeapon(attack) == false)
-                return;
-
-            if (_character.AnimationController.StartUseItem() == true)
+            if (currentWeapon != null)
             {
-                if (_inventory.Fire() == true)
+                if (currentWeapon is ThrowableWeapon && _inventory.CurrentWeaponSize == WeaponSize.Throwable)
+                {
+                    // Fire is handled form the grenade animation state itself
+                    _character.AnimationController.ProcessThrow(attack, hold);
+                    return;
+                }
+
+                bool attackReleased = _agentInput.WasDeactivated(EGameplayInputAction.Attack);
+
+                // Evaluate how the weapon wants to handle the current input snapshot.
+                WeaponUseRequest useRequest = currentWeapon.EvaluateUse(attack, hold, attackReleased);
+
+                if (useRequest.ShouldUse == false)
+                {
+                    return;
+                }
+
+                if (_character.AnimationController.StartUseItem(currentWeapon, useRequest) == false)
+                {
+                    return;
+                }
+
+                currentWeapon.OnUseStarted(useRequest);
+
+                if (useRequest.FireImmediately == true && _inventory.Fire() == true)
                 {
                     _health.ResetRegenDelay();
 
@@ -329,7 +342,11 @@ namespace TPSBR
                         }
                     }
                 }
+
+                return;
             }
+
+            // TODO: Handle consumable usage (trigger animation, apply effects, sync to network).
         }
 
         private bool CanAim(KCCData kccData)

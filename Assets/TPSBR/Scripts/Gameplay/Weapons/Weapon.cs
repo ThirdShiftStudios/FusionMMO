@@ -4,6 +4,44 @@ using UnityEngine;
 
 namespace TPSBR
 {
+    public enum WeaponUseAnimation
+    {
+        None,
+        Charge,
+        LightAttack,
+        HeavyAttack,
+        Ability
+    }
+
+    public readonly struct WeaponUseRequest
+    {
+        public static WeaponUseRequest None => default;
+
+        public WeaponUseRequest(bool shouldUse, bool fireImmediately, WeaponUseAnimation animation, float chargeProgress = -1f)
+        {
+            ShouldUse = shouldUse;
+            FireImmediately = fireImmediately;
+            Animation = animation;
+            ChargeProgress = chargeProgress;
+        }
+
+        public bool ShouldUse { get; }
+        public bool FireImmediately { get; }
+        public WeaponUseAnimation Animation { get; }
+        public float ChargeProgress { get; }
+        public bool HasChargeProgress => ChargeProgress >= 0f;
+
+        public static WeaponUseRequest FireImmediate()
+        {
+            return new WeaponUseRequest(true, true, WeaponUseAnimation.None);
+        }
+
+        public static WeaponUseRequest CreateAnimation(WeaponUseAnimation animation, bool fireImmediately = false, float chargeProgress = -1f)
+        {
+            return new WeaponUseRequest(true, fireImmediately, animation, chargeProgress);
+        }
+    }
+
     public abstract class Weapon : ContextBehaviour
     {
         // PUBLIC MEMBERS
@@ -136,6 +174,25 @@ namespace TPSBR
 
         public abstract bool CanFire(bool keyDown);
         public abstract void Fire(Vector3 firePosition, Vector3 targetPosition, LayerMask hitMask);
+
+        public virtual WeaponUseRequest EvaluateUse(bool attackActivated, bool attackHeld, bool attackReleased)
+        {
+            if ((attackHeld == false && attackActivated == false) || CanFire(attackActivated) == false)
+            {
+                return WeaponUseRequest.None;
+            }
+
+            return WeaponUseRequest.FireImmediate();
+        }
+
+        public virtual void OnUseStarted(in WeaponUseRequest request)
+        {
+        }
+
+        public virtual bool HandleAnimationRequest(AttackLayer attackLayer, in WeaponUseRequest request)
+        {
+            return true;
+        }
 
         public virtual bool CanReload(bool autoReload)
         {
