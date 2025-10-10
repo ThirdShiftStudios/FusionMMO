@@ -104,6 +104,13 @@ namespace TPSBR
                         _trackedInventory.HotbarSlotChanged += OnHotbarSlotChanged;
                 }
 
+                public bool RegisterInventoryAndRestore(Inventory inventory)
+                {
+                        RegisterInventory(inventory);
+
+                        return TryRestoreInventory(inventory);
+                }
+
                 public void UnregisterInventory(Inventory inventory)
                 {
                         if (_trackedInventory != inventory)

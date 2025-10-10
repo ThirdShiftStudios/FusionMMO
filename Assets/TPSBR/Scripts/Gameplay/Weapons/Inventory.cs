@@ -502,7 +502,8 @@ namespace TPSBR
 
         public override void Spawned()
         {
-            Global.PlayerCloudSaveService?.RegisterInventory(this);
+            bool restoredFromCloud = Global.PlayerCloudSaveService != null &&
+                                      Global.PlayerCloudSaveService.RegisterInventoryAndRestore(this);
 
             if (HasStateAuthority == false)
             {
@@ -514,7 +515,7 @@ namespace TPSBR
             _currentWeaponSlot = 0;
             _previousWeaponSlot = 0;
 
-            if (Global.PlayerCloudSaveService != null && Global.PlayerCloudSaveService.TryRestoreInventory(this) == true)
+            if (restoredFromCloud == true)
             {
                 return;
             }
