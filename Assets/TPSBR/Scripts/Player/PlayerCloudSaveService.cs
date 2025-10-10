@@ -1,5 +1,12 @@
 using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using Fusion;
+using Unity.Services.Authentication;
+using Unity.Services.CloudSave;
+using Unity.Services.CloudSave.Models;
+using Unity.Services.Core;
+using UnityEngine;
 
 namespace TPSBR
 {
@@ -42,6 +49,8 @@ namespace TPSBR
                 private bool                    _isInitialized;
                 private bool                    _pendingSave;
                 private bool                    _suppressTracking;
+                private bool                    _cloudSaveReady;
+                private Task                    _saveTask;
 
                 // PUBLIC PROPERTIES
 
@@ -53,20 +62,20 @@ namespace TPSBR
                 {
                         var pendingInventory = _pendingRegistration;
 
-                        _trackedInventory        = null;
-                        _pendingRestoreInventory = null;
-                        _pendingSave             = false;
-                        _suppressTracking        = false;
+                        _trackedInventory         = null;
+                        _pendingRestoreInventory  = null;
+                        _pendingSave              = false;
+                        _suppressTracking         = false;
+                        _cachedData               = null;
+                        _storageKey               = null;
+                        _cloudSaveReady           = false;
+                        _saveTask                 = null;
+                        _isInitialized            = false;
 
-                        ResolveStorageKey();
+                        _pendingRegistration    = pendingInventory;
+                        _pendingRestoreInventory = pendingInventory;
 
-                        _isInitialized = true;
-
-                        if (pendingInventory != null)
-                        {
-                                _pendingRegistration = null;
-                                RegisterInventoryAndRestore(pendingInventory);
-                        }
+                        _ = InitializeAsync();
                 }
 
                 void IGlobalService.Tick()
@@ -76,25 +85,48 @@ namespace TPSBR
                                 return;
                         }
 
+                        if (_saveTask != null && _saveTask.IsCompleted == true)
+                        {
+                                _saveTask = null;
+                        }
+
                         ProcessDeferredInventory();
 
                         if (_pendingSave == false)
                                 return;
 
-                        CaptureAndStoreSnapshot(false);
+                        if (_saveTask != null)
+                                return;
+
+                        _saveTask = CaptureAndStoreSnapshotAsync(false);
                 }
 
                 void IGlobalService.Deinitialize()
                 {
-                        CaptureAndStoreSnapshot(true);
+                        var saveTask = CaptureAndStoreSnapshotAsync(true);
+
+                        if (saveTask.IsCompleted == false)
+                        {
+                                try
+                                {
+                                        saveTask.GetAwaiter().GetResult();
+                                }
+                                catch (Exception exception)
+                                {
+                                        Debug.LogException(exception);
+                                }
+                        }
+
                         DetachInventory();
 
-                        _storageKey             = null;
-                        _cachedData             = null;
-                        _pendingRegistration    = null;
+                        _storageKey              = null;
+                        _cachedData              = null;
+                        _pendingRegistration     = null;
                         _pendingRestoreInventory = null;
-                        _isInitialized          = false;
-                        _pendingSave            = false;
+                        _saveTask                = null;
+                        _isInitialized           = false;
+                        _pendingSave             = false;
+                        _cloudSaveReady          = false;
                 }
 
                 // PUBLIC METHODS
@@ -156,7 +188,20 @@ namespace TPSBR
                         if (_trackedInventory != inventory)
                                 return;
 
-                        CaptureAndStoreSnapshot(true);
+                        var saveTask = CaptureAndStoreSnapshotAsync(true);
+
+                        if (saveTask.IsCompleted == false)
+                        {
+                                try
+                                {
+                                        saveTask.GetAwaiter().GetResult();
+                                }
+                                catch (Exception exception)
+                                {
+                                        Debug.LogException(exception);
+                                }
+                        }
+
                         DetachInventory();
                 }
 
@@ -228,7 +273,6 @@ namespace TPSBR
                         if (authenticationService != null && authenticationService.IsInitialized == true && authenticationService.IsAuthenticated == true)
                         {
                                 _storageKey = StorageKeyPrefix + authenticationService.PlayerId;
-                                _cachedData = PersistentStorage.GetObject<PlayerInventorySaveData>(_storageKey);
                                 return;
                         }
 
@@ -236,12 +280,106 @@ namespace TPSBR
                         if (playerData != null && playerData.UserID.HasValue() == true)
                         {
                                 _storageKey = StorageKeyPrefix + playerData.UserID;
-                                _cachedData = PersistentStorage.GetObject<PlayerInventorySaveData>(_storageKey);
                         }
                         else
                         {
                                 _storageKey = null;
+                        }
+                }
+
+                private async Task InitializeAsync()
+                {
+                        try
+                        {
+                                await EnsureUnityServicesReadyAsync();
+                                await EnsurePlayerSignedInAsync();
+
+                                _cloudSaveReady = AuthenticationService.Instance != null && AuthenticationService.Instance.IsSignedIn == true;
+
+                                ResolveStorageKey();
+
+                                if (_cloudSaveReady == true && _storageKey.HasValue() == true)
+                                {
+                                        await LoadCachedDataAsync();
+                                }
+                        }
+                        catch (Exception exception)
+                        {
+                                _cloudSaveReady = false;
                                 _cachedData = null;
+                                Debug.LogWarning("Failed to initialize Unity Cloud Save for player inventory persistence.");
+                                Debug.LogException(exception);
+                        }
+                        finally
+                        {
+                                _isInitialized = true;
+                        }
+                }
+
+                private async Task EnsureUnityServicesReadyAsync()
+                {
+                        if (UnityServices.State == ServicesInitializationState.Initialized)
+                                return;
+
+                        if (UnityServices.State == ServicesInitializationState.Initializing)
+                        {
+                                while (UnityServices.State == ServicesInitializationState.Initializing)
+                                {
+                                        await Task.Delay(100);
+                                }
+
+                                if (UnityServices.State == ServicesInitializationState.Initialized)
+                                        return;
+                        }
+
+                        var initializationOptions = new InitializationOptions();
+
+                        var playerData = Global.PlayerService?.PlayerData;
+                        if (playerData != null && playerData.UserID.HasValue() == true)
+                        {
+                                initializationOptions.SetProfile(playerData.UserID);
+                        }
+
+                        await UnityServices.InitializeAsync(initializationOptions);
+                }
+
+                private async Task EnsurePlayerSignedInAsync()
+                {
+                        var desiredProfile = Global.PlayerService?.PlayerData?.UserID;
+                        if (desiredProfile.HasValue() == true && AuthenticationService.Instance.Profile != desiredProfile)
+                        {
+                                AuthenticationService.Instance.SwitchProfile(desiredProfile);
+                        }
+
+                        if (AuthenticationService.Instance != null && AuthenticationService.Instance.IsSignedIn == true)
+                                return;
+
+                        await AuthenticationService.Instance.SignInAnonymouslyAsync(new SignInOptions { CreateAccount = true });
+                }
+
+                private async Task LoadCachedDataAsync()
+                {
+                        _cachedData = null;
+
+                        try
+                        {
+                                var keys = new HashSet<string> { _storageKey };
+                                var result = await CloudSaveService.Instance.Data.LoadAsync(keys);
+
+                                if (result != null && result.TryGetValue(_storageKey, out Item item) == true)
+                                {
+                                        string json = item.Value.GetAsString();
+                                        if (string.IsNullOrEmpty(json) == false)
+                                        {
+                                                _cachedData = JsonUtility.FromJson<PlayerInventorySaveData>(json);
+                                        }
+                                }
+                        }
+                        catch (Exception exception)
+                        {
+                                _cachedData = null;
+                                Debug.LogWarning($"Failed to load inventory from Unity Cloud Save using key {_storageKey}.");
+                                Debug.LogException(exception);
                         }
                 }
 
@@ -317,13 +455,16 @@ namespace TPSBR
                         _pendingSave = true;
                 }
 
-                private void CaptureAndStoreSnapshot(bool forceSave)
+                private async Task CaptureAndStoreSnapshotAsync(bool forceSave)
                 {
-                        if (_storageKey.HasValue() == false)
-                        {
-                                _pendingSave = false;
+                        _ = forceSave;
+                        _pendingSave = false;
+
+                        if (_cloudSaveReady == false || _storageKey.HasValue() == false)
                                 return;
-                        }
+
+                        if (AuthenticationService.Instance != null && AuthenticationService.Instance.IsSignedIn == false)
+                                return;
 
                         if (_trackedInventory != null && _trackedInventory.HasStateAuthority == true)
                         {
@@ -333,20 +474,23 @@ namespace TPSBR
                         }
 
                         if (_cachedData == null)
-                        {
-                                PersistentStorage.Delete(_storageKey, saveImmediately: forceSave);
-                        }
-                        else
-                        {
-                                PersistentStorage.SetObject(_storageKey, _cachedData, saveImmeditely: forceSave);
-                        }
+                                return;
 
-                        if (forceSave == true)
+                        try
                         {
-                                PersistentStorage.Save();
-                        }
+                                string payload = JsonUtility.ToJson(_cachedData);
+                                var data = new Dictionary<string, object>
+                                {
+                                        { _storageKey, payload }
+                                };
 
-                        _pendingSave = false;
+                                await CloudSaveService.Instance.Data.ForceSaveAsync(data);
+                        }
+                        catch (Exception exception)
+                        {
+                                Debug.LogWarning($"Failed to save inventory to Unity Cloud Save using key {_storageKey}.");
+                                Debug.LogException(exception);
+                        }
                 }
         }
 }
