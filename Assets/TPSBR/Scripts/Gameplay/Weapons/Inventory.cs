@@ -140,6 +140,137 @@ namespace TPSBR
 
         public int InventorySize => _items.Length;
 
+        internal PlayerInventorySaveData CreateSaveData()
+        {
+            var data = new PlayerInventorySaveData
+            {
+                InventorySlots = new PlayerInventoryItemData[_items.Length],
+                HotbarSlots    = new PlayerHotbarSlotData[_hotbar.Length],
+                CurrentWeaponSlot = _currentWeaponSlot
+            };
+
+            for (int i = 0; i < _items.Length; i++)
+            {
+                var slot = _items[i];
+                string configurationHash = slot.ConfigurationHash.ToString();
+
+                data.InventorySlots[i] = new PlayerInventoryItemData
+                {
+                    ItemDefinitionId = slot.ItemDefinitionId,
+                    Quantity = slot.Quantity,
+                    ConfigurationHash = string.IsNullOrEmpty(configurationHash) == false ? configurationHash : null
+                };
+            }
+
+            for (int i = 0; i < _hotbar.Length; i++)
+            {
+                var weapon = _hotbar[i];
+                if (weapon == null)
+                {
+                    data.HotbarSlots[i] = default;
+                    continue;
+                }
+
+                string configurationHash = weapon.ConfigurationHash.ToString();
+
+                data.HotbarSlots[i] = new PlayerHotbarSlotData
+                {
+                    WeaponDefinitionId = weapon.Definition != null ? weapon.Definition.ID : 0,
+                    ConfigurationHash = string.IsNullOrEmpty(configurationHash) == false ? configurationHash : null
+                };
+            }
+
+            return data;
+        }
+
+        internal void ApplySaveData(PlayerInventorySaveData data)
+        {
+            if (data == null)
+                return;
+
+            if (HasStateAuthority == false)
+                return;
+
+            DisarmCurrentWeapon();
+
+            for (int i = 0; i < _hotbar.Length; i++)
+            {
+                RemoveWeapon(i);
+            }
+
+            for (int i = 0; i < _items.Length; i++)
+            {
+                _items.Set(i, default);
+                UpdateWeaponDefinitionMapping(i, default);
+            }
+
+            if (data.InventorySlots != null)
+            {
+                int count = Mathf.Min(data.InventorySlots.Length, _items.Length);
+                for (int i = 0; i < count; i++)
+                {
+                    var slotData = data.InventorySlots[i];
+                    if (slotData.ItemDefinitionId == 0 || slotData.Quantity == 0)
+                        continue;
+
+                    NetworkString<_32> configurationHash = default;
+                    if (string.IsNullOrEmpty(slotData.ConfigurationHash) == false)
+                    {
+                        configurationHash = slotData.ConfigurationHash;
+                    }
+
+                    var slot = new InventorySlot(slotData.ItemDefinitionId, slotData.Quantity, configurationHash);
+                    _items.Set(i, slot);
+                    UpdateWeaponDefinitionMapping(i, slot);
+                }
+            }
+
+            if (data.HotbarSlots != null)
+            {
+                int count = Mathf.Min(data.HotbarSlots.Length, _hotbar.Length);
+                for (int i = 0; i < count; i++)
+                {
+                    if (i == 0)
+                        continue;
+
+                    var slotData = data.HotbarSlots[i];
+                    if (slotData.WeaponDefinitionId == 0)
+                        continue;
+
+                    var itemDefinition = ItemDefinition.Get(slotData.WeaponDefinitionId) as WeaponDefinition;
+                    if (itemDefinition == null)
+                        continue;
+
+                    var weaponPrefab = EnsureWeaponPrefabRegistered(itemDefinition);
+                    if (weaponPrefab == null)
+                        continue;
+
+                    var weapon = Runner.Spawn(weaponPrefab, inputAuthority: Object.InputAuthority);
+                    if (weapon == null)
+                        continue;
+
+                    if (string.IsNullOrEmpty(slotData.ConfigurationHash) == false)
+                    {
+                        NetworkString<_32> configurationHash = slotData.ConfigurationHash;
+                        weapon.SetConfigurationHash(configurationHash);
+                    }
+
+                    AddWeapon(weapon, i);
+                }
+            }
+
+            _previousWeaponSlot = 0;
+            byte targetSlot = data.CurrentWeaponSlot;
+            if (targetSlot >= _hotbar.Length)
+            {
+                targetSlot = 0;
+            }
+
+            SetCurrentWeapon(targetSlot);
+            RefreshItems();
+            ArmCurrentWeapon();
+        }
+
         public InventorySlot GetItemSlot(int index)
         {
             if (index < 0 || index >= _items.Length)
@@ -371,6 +502,8 @@ namespace TPSBR
 
         public override void Spawned()
         {
+            Global.PlayerCloudSaveService?.RegisterInventory(this);
+
             if (HasStateAuthority == false)
             {
                 RefreshWeapons();
@@ -380,6 +513,11 @@ namespace TPSBR
 
             _currentWeaponSlot = 0;
             _previousWeaponSlot = 0;
+
+            if (Global.PlayerCloudSaveService != null && Global.PlayerCloudSaveService.TryRestoreInventory(this) == true)
+            {
+                return;
+            }
 
             byte bestWeaponSlot = 0;
             int bestPriority = -1;
@@ -414,6 +552,8 @@ namespace TPSBR
 
         public void OnDespawned()
         {
+            Global.PlayerCloudSaveService?.UnregisterInventory(this);
+
             // Cleanup weapons
             for (int i = 0; i < _hotbar.Length; i++)
             {
