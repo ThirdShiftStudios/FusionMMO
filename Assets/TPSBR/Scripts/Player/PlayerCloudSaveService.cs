@@ -297,6 +297,9 @@ namespace TPSBR
                         if (_trackedInventory == null || _trackedInventory.HasStateAuthority == false)
                                 return;
 
+                        if (ReferenceEquals(_pendingRestoreInventory, _trackedInventory) == true)
+                                return;
+
                         _pendingSave = true;
                 }
 
@@ -306,6 +309,9 @@ namespace TPSBR
                                 return;
 
                         if (_trackedInventory == null || _trackedInventory.HasStateAuthority == false)
+                                return;
+
+                        if (ReferenceEquals(_pendingRestoreInventory, _trackedInventory) == true)
                                 return;
 
                         _pendingSave = true;
