@@ -102,6 +102,8 @@ namespace TPSBR
         public int PreviousWeaponSlot => _previousWeaponSlot;
         public WeaponSize CurrentWeaponSize => CurrentWeapon != null ? CurrentWeapon.Size : WeaponSize.Unarmed;
         public const int INVENTORY_SIZE = 10;
+        public const int HOTBAR_CAPACITY = 3;
+        public const int HOTBAR_VISIBLE_SLOTS = HOTBAR_CAPACITY - 1;
         // PRIVATE MEMBERS
 
         [SerializeField] private WeaponSlot[] _slots;
@@ -115,7 +117,7 @@ namespace TPSBR
 
         [Header("Audio")] [SerializeField] private Transform _fireAudioEffectsRoot;
 
-        [Networked, Capacity(8)] private NetworkArray<Weapon> _hotbar { get; }
+        [Networked, Capacity(HOTBAR_CAPACITY)] private NetworkArray<Weapon> _hotbar { get; }
         [Networked, Capacity(INVENTORY_SIZE)] private NetworkArray<InventorySlot> _items { get; }
         [Networked] private byte _currentWeaponSlot { get; set; }
 
@@ -125,7 +127,7 @@ namespace TPSBR
         private Character _character;
         private Interactions _interactions;
         private AudioEffect[] _fireAudioEffects;
-        private Weapon[] _localWeapons = new Weapon[8];
+        private Weapon[] _localWeapons = new Weapon[HOTBAR_CAPACITY];
         private Weapon[] _lastHotbarWeapons;
         private InventorySlot[] _localItems;
         private Dictionary<int, WeaponDefinition> _weaponDefinitionsBySlot = new Dictionary<int, WeaponDefinition>();
