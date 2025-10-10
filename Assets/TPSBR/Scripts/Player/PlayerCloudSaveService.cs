@@ -355,9 +355,28 @@ namespace TPSBR
 
                                 if (result != null && result.TryGetValue(_storageKey, out string json) == true)
                                 {
-                                        if (string.IsNullOrEmpty(json) == false)
+                                        if (string.IsNullOrEmpty(json) == false && string.Equals(json, "null", StringComparison.OrdinalIgnoreCase) == false)
                                         {
                                                 _cachedData = JsonUtility.FromJson<PlayerInventorySaveData>(json);
+                                        }
+                                }
+
+                                if (_cachedData != null)
+                                {
+                                        if (_trackedInventory != null)
+                                        {
+                                                if (_trackedInventory.HasStateAuthority == true)
+                                                {
+                                                        _pendingRestoreInventory = _trackedInventory;
+                                                }
+                                                else if (ReferenceEquals(_pendingRestoreInventory, _trackedInventory) == false)
+                                                {
+                                                        _pendingRestoreInventory = _trackedInventory;
+                                                }
+                                        }
+                                        else if (_pendingRegistration != null)
+                                        {
+                                                _pendingRestoreInventory = _pendingRegistration;
                                         }
                                 }
                         }

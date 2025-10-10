@@ -512,13 +512,15 @@ namespace TPSBR
                 return;
             }
 
-            _currentWeaponSlot = 0;
-            _previousWeaponSlot = 0;
-
             if (restoredFromCloud == true)
             {
+                RefreshWeapons();
+                RefreshItems();
                 return;
             }
+
+            _currentWeaponSlot = 0;
+            _previousWeaponSlot = 0;
 
             byte bestWeaponSlot = 0;
             int bestPriority = -1;
