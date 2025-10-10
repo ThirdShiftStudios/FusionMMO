@@ -101,19 +101,12 @@ namespace TPSBR
 
                 void IGlobalService.Deinitialize()
                 {
-                        var saveTask = CaptureAndStoreSnapshotAsync(true);
+                        var activeSaveTask = _saveTask;
+                        _saveTask = null;
+                        ObserveTask(activeSaveTask);
 
-                        if (saveTask.IsCompleted == false)
-                        {
-                                try
-                                {
-                                        saveTask.GetAwaiter().GetResult();
-                                }
-                                catch (Exception exception)
-                                {
-                                        Debug.LogException(exception);
-                                }
-                        }
+                        var saveTask = CaptureAndStoreSnapshotAsync(true);
+                        ObserveTask(saveTask);
 
                         DetachInventory();
 
@@ -186,19 +179,12 @@ namespace TPSBR
                         if (_trackedInventory != inventory)
                                 return;
 
-                        var saveTask = CaptureAndStoreSnapshotAsync(true);
+                        var activeSaveTask = _saveTask;
+                        _saveTask = null;
+                        ObserveTask(activeSaveTask);
 
-                        if (saveTask.IsCompleted == false)
-                        {
-                                try
-                                {
-                                        saveTask.GetAwaiter().GetResult();
-                                }
-                                catch (Exception exception)
-                                {
-                                        Debug.LogException(exception);
-                                }
-                        }
+                        var saveTask = CaptureAndStoreSnapshotAsync(true);
+                        ObserveTask(saveTask);
 
                         DetachInventory();
                 }
@@ -487,6 +473,30 @@ namespace TPSBR
                                 Debug.LogWarning($"Failed to save inventory to Unity Cloud Save using key {_storageKey}.");
                                 Debug.LogException(exception);
                         }
+                }
+
+                private static void ObserveTask(Task task)
+                {
+                        if (task == null)
+                                return;
+
+                        if (task.IsCompleted == true)
+                        {
+                                if (task.IsFaulted == true && task.Exception != null)
+                                {
+                                        Debug.LogException(task.Exception);
+                                }
+
+                                return;
+                        }
+
+                        task.ContinueWith(static t =>
+                        {
+                                if (t.Exception != null)
+                                {
+                                        Debug.LogException(t.Exception);
+                                }
+                        }, TaskContinuationOptions.ExecuteSynchronously | TaskContinuationOptions.OnlyOnFaulted);
                 }
         }
 }
