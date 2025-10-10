@@ -15,28 +15,25 @@ namespace TPSBR
                 // PRIVATE MEMBERS
 
                 private bool _steamInitialized;
+                private bool _hasLoggedAuthenticationFailure;
 
                 // IGlobalService INTERFACE
 
                 void IGlobalService.Initialize()
                 {
-                        try
-                        {
-                                AuthenticateInternal();
-                        }
-                        catch (Exception exception)
-                        {
-                                Debug.LogWarning("Failed to authenticate with Steam.");
-                                Debug.LogException(exception);
-                        }
-                        finally
-                        {
-                                IsInitialized = true;
-                        }
+                        TryAuthenticate(logFailure: true, throwOnFailure: false);
                 }
 
                 void IGlobalService.Tick()
                 {
+                        if (IsInitialized == false)
+                        {
+                                if (TryAuthenticate(logFailure: true, throwOnFailure: false) == false)
+                                {
+                                        return;
+                                }
+                        }
+
                         if (_steamInitialized == true)
                         {
                                 SteamAPI.RunCallbacks();
@@ -47,6 +44,7 @@ namespace TPSBR
                 {
                         PlayerId = default;
                         IsInitialized = false;
+                        _hasLoggedAuthenticationFailure = false;
 
                         if (_steamInitialized == true)
                         {
@@ -61,7 +59,7 @@ namespace TPSBR
                 {
                         if (IsAuthenticated == false)
                         {
-                                return AuthenticateInternal();
+                                TryAuthenticate(logFailure: false, throwOnFailure: true);
                         }
 
                         return PlayerId;
@@ -94,8 +92,37 @@ namespace TPSBR
                         }
 
                         PlayerId = steamId;
+                        IsInitialized = true;
+                        _hasLoggedAuthenticationFailure = false;
 
                         return PlayerId;
+                }
+
+                private bool TryAuthenticate(bool logFailure, bool throwOnFailure)
+                {
+                        try
+                        {
+                                AuthenticateInternal();
+                                return true;
+                        }
+                        catch (Exception exception)
+                        {
+                                IsInitialized = false;
+
+                                if (logFailure == true && _hasLoggedAuthenticationFailure == false)
+                                {
+                                        Debug.LogWarning("Failed to authenticate with Steam.");
+                                        Debug.LogException(exception);
+                                        _hasLoggedAuthenticationFailure = true;
+                                }
+
+                                if (throwOnFailure == true)
+                                {
+                                        throw;
+                                }
+
+                                return false;
+                        }
                 }
         }
 }
