@@ -5,7 +5,7 @@ using UnityEngine.SceneManagement;
 
 namespace TPSBR
 {
-	using System;
+        using System;
 
 	[Serializable]
 	public sealed class StandaloneConfiguration
@@ -39,49 +39,64 @@ namespace TPSBR
 
 		// MONOBEHAVIOUR
 
-		protected void Awake()
-		{
-			if (Global.Networking.HasSession == true)
-			{
-				Destroy(gameObject);
-			}
-		}
+                protected async void Awake()
+                {
+                        await Global.AreServicesInitialized;
 
-		protected void Start()
-		{
-			StandaloneConfiguration configuration = ExternalConfiguration ?? _defaultConfiguration;
+                        if (this == null)
+                                return;
 
-			var playerData = Global.PlayerService.PlayerData;
-			var scenePath = SceneManager.GetActiveScene().path;
+                        if (Global.Networking.HasSession == true)
+                        {
+                                Destroy(gameObject);
+                        }
+                }
 
-			scenePath = scenePath.Substring("Assets/".Length, scenePath.Length - "Assets/".Length - ".unity".Length);
+                protected async void Start()
+                {
+                        await Global.AreServicesInitialized;
 
-			PhotonAppSettings.Global.AppSettings.FixedRegion = configuration.Region;
+                        if (this == null)
+                                return;
 
-			var request = new SessionRequest
-			{
-				UserID       = playerData.UserID.HasValue() ? playerData.UserID : new Guid().ToString(),
-				GameMode     = configuration.GameMode,
-				SessionName  = configuration.SessionName.HasValue() ? configuration.SessionName : Guid.NewGuid().ToString(),
-				DisplayName  = configuration.ServerName,
-				ScenePath    = scenePath,
-				GameplayType = configuration.GameplayType,
-				ExtraPeers   = configuration.ExtraPeers,
-				MaxPlayers   = configuration.MaxPlayers,
-				CustomLobby  = configuration.CustomLobby.HasValue() ? configuration.CustomLobby : "FusionBR." + Application.version,
-				IPAddress    = configuration.IPAddress,
-				Port         = configuration.Port,
-			};
+                        StartStandaloneSession();
+                }
 
-			if (configuration.Multiplay)
-			{
-				// A Multiplay allocation will trigger the game session creation
-				Global.MultiplayManager.StartMultiplay(request, configuration);
-			}
-			else
-			{
-				Global.Networking.StartGame(request);
-			}
-		}
-	}
+                private void StartStandaloneSession()
+                {
+                        StandaloneConfiguration configuration = ExternalConfiguration ?? _defaultConfiguration;
+
+                        var playerData = Global.PlayerService.PlayerData;
+                        var scenePath = SceneManager.GetActiveScene().path;
+
+                        scenePath = scenePath.Substring("Assets/".Length, scenePath.Length - "Assets/".Length - ".unity".Length);
+
+                        PhotonAppSettings.Global.AppSettings.FixedRegion = configuration.Region;
+
+                        var request = new SessionRequest
+                        {
+                                UserID       = playerData.UserID.HasValue() ? playerData.UserID : new Guid().ToString(),
+                                GameMode     = configuration.GameMode,
+                                SessionName  = configuration.SessionName.HasValue() ? configuration.SessionName : Guid.NewGuid().ToString(),
+                                DisplayName  = configuration.ServerName,
+                                ScenePath    = scenePath,
+                                GameplayType = configuration.GameplayType,
+                                ExtraPeers   = configuration.ExtraPeers,
+                                MaxPlayers   = configuration.MaxPlayers,
+                                CustomLobby  = configuration.CustomLobby.HasValue() ? configuration.CustomLobby : "FusionBR." + Application.version,
+                                IPAddress    = configuration.IPAddress,
+                                Port         = configuration.Port,
+                        };
+
+                        if (configuration.Multiplay)
+                        {
+                                // A Multiplay allocation will trigger the game session creation
+                                Global.MultiplayManager.StartMultiplay(request, configuration);
+                        }
+                        else
+                        {
+                                Global.Networking.StartGame(request);
+                        }
+                }
+        }
 }
