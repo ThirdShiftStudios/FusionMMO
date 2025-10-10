@@ -210,7 +210,7 @@ namespace TPSBR
                 for (int i = 0; i < count; i++)
                 {
                     var slotData = data.InventorySlots[i];
-                    if (slotData.ItemDefinitionId == 0 || slotData.Quantity == 0)
+                    if ( slotData.Quantity == 0)
                         continue;
 
                     NetworkString<_32> configurationHash = default;

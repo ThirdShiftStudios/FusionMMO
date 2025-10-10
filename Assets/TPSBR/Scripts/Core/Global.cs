@@ -138,7 +138,7 @@ namespace TPSBR
                         }
 
                         GlobalSettings[] globalSettings = Resources.LoadAll<GlobalSettings>("");
-                        Settings = globalSettings.Length > 0 ? Object.Instantiate(globalSettings[0]) : null;
+                        Settings = globalSettings.Length > 0 ? UnityEngine.Object.Instantiate(globalSettings[0]) : null;
 
                         Log(Settings != null ? "Global settings loaded" : "No global settings asset found");
 
@@ -312,7 +312,7 @@ namespace TPSBR
                 {
                         Log($"Creating static object for {typeof(T).Name}");
                         GameObject gameObject = new GameObject(typeof(T).Name);
-                        Object.DontDestroyOnLoad(gameObject);
+                        UnityEngine.Object.DontDestroyOnLoad(gameObject);
 
                         return gameObject.AddComponent<T>();
                 }

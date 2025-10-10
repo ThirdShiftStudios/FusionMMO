@@ -356,7 +356,7 @@ namespace TPSBR
 
                                 if (result != null && result.TryGetValue(_storageKey, out var item) == true)
                                 {
-                                        string json = item.Value?.GetAsString();
+                                        string json = item.ToString();
 
                                         if (string.IsNullOrEmpty(json) == false && string.Equals(json, "null", StringComparison.OrdinalIgnoreCase) == false)
                                         {

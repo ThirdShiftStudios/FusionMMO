@@ -9,7 +9,7 @@ namespace TSS.Data
 {
     public abstract class DataDefinition : ScriptableObject
     {
-        [SerializeField, HideInInspector] private int id = -1;
+        [SerializeField] private int id = -1;
         public int ID => id;
 
         public abstract string Name { get; }
