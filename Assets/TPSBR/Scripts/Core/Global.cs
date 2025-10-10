@@ -239,7 +239,7 @@ namespace TPSBR
                         _globalServices.Add(PlayerCloudSaveService);
 
                         Log("Initializing authentication service");
-                        PlayerAuthenticationService.Initialize();
+                        ((IGlobalService)PlayerAuthenticationService).Initialize();
                         QueuePendingServices();
                         TryInitializePendingServices();
                         UpdateServicesInitializedState();
