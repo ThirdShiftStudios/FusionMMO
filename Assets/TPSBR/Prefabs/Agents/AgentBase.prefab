@@ -97,7 +97,6 @@ Transform:
   - {fileID: 5283105946388001788}
   - {fileID: 3082183168571873835}
   - {fileID: 1489436706626510999}
-  - {fileID: 3034740772054572619}
   m_Father: {fileID: 8847045542829627438}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &195171513792086366
@@ -1065,60 +1064,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: afa0cb58fadc30f4fa9a06050b7784b0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _sets:
-  - _speed: 1
-    _nodes:
-    - Clip: {fileID: 7400000, guid: 6029665ea479b5d4e8b35e2eebeaf017, type: 2}
-      Speed: 1
-      Position: {x: 0, y: 0}
-    - Clip: {fileID: 7400000, guid: d861cdfe929e9034da6fdf9493dc555f, type: 2}
-      Speed: 1
-      Position: {x: 0, y: 2.4}
-    - Clip: {fileID: 7400000, guid: 84ddee80cdd386243a7a2f658d2da785, type: 2}
-      Speed: 1
-      Position: {x: 0, y: -2.4}
-    - Clip: {fileID: 7400000, guid: 7cf4637a2c9eb6a47b6d313bf63e83b7, type: 2}
-      Speed: 1
-      Position: {x: -2.4, y: 0}
-    - Clip: {fileID: 7400000, guid: 31cbcef4f9ee5e74d8a0aedb7c623660, type: 2}
-      Speed: 1
-      Position: {x: 2.4, y: 0}
-  - _speed: 1
-    _nodes:
-    - Clip: {fileID: 7400000, guid: 37c6266fe21833542aa2bb6c547a1316, type: 2}
-      Speed: 1
-      Position: {x: 0, y: 0}
-    - Clip: {fileID: 7400000, guid: e486f49d289ab8f4794a934f695f9af6, type: 2}
-      Speed: 1
-      Position: {x: 0, y: 2.4}
-    - Clip: {fileID: 7400000, guid: 1987f04f6e5d8d341865b89cd7ef7002, type: 2}
-      Speed: 1
-      Position: {x: 0, y: -2.4}
-    - Clip: {fileID: 7400000, guid: 1ddffd0c761aeb149876c8adeeabbb0d, type: 2}
-      Speed: 1
-      Position: {x: -2.4, y: 0}
-    - Clip: {fileID: 7400000, guid: 2526cea7bf9b190468f085d4cfea5bee, type: 2}
-      Speed: 1
-      Position: {x: 2.4, y: 0}
-  - _speed: 1
-    _nodes:
-    - Clip: {fileID: 7400000, guid: 8a91a52abf3a07e4e9c76d64dc476206, type: 2}
-      Speed: 1
-      Position: {x: 0, y: 0}
-    - Clip: {fileID: 7400000, guid: 62e5aaadd82b76446ae67741cd144bf3, type: 2}
-      Speed: 1
-      Position: {x: 0, y: 2.4}
-    - Clip: {fileID: 7400000, guid: 7b6364accd8badf40b410f8aa7b3670a, type: 2}
-      Speed: 1
-      Position: {x: 0, y: -2.4}
-    - Clip: {fileID: 7400000, guid: d8fe44b7bf7b6be4a8a967bc2e06d3b2, type: 2}
-      Speed: 1
-      Position: {x: -2.4, y: 0}
-    - Clip: {fileID: 7400000, guid: 5f1b4acd09e306f46bb4ff1af9bace77, type: 2}
-      Speed: 1
-      Position: {x: 2.4, y: 0}
-  _isLooping: 1
-  _mirrorState: {fileID: 4156882667332348794}
+  _node:
+    Clip: {fileID: 0}
+    Speed: 1
+    IsLooping: 0
 --- !u!1 &947799145683622653
 GameObject:
   m_ObjectHideFlags: 0
@@ -1472,60 +1421,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e040ca907120b3648bbd3eaa81d944a7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _sets:
-  - _speed: 1
-    _nodes:
-    - Clip: {fileID: 7400000, guid: 2ea31b076e468a94bad1d43cf884303b, type: 2}
-      Speed: 1
-      Position: {x: 0, y: 0}
-    - Clip: {fileID: 7400000, guid: 9e914d9f0fff1294db3b6dd3feb9fc66, type: 2}
-      Speed: 1
-      Position: {x: 0, y: 2.4}
-    - Clip: {fileID: 7400000, guid: c2994231e69e5154eae68046a15427d6, type: 2}
-      Speed: 1
-      Position: {x: 0, y: -2.4}
-    - Clip: {fileID: 7400000, guid: cb31bf9c8e7fdb349ac651685a7611a2, type: 2}
-      Speed: 1
-      Position: {x: -2.4, y: 0}
-    - Clip: {fileID: 7400000, guid: b72cdc49d5cdbfe49b5464fb510977f0, type: 2}
-      Speed: 1
-      Position: {x: 2.4, y: 0}
-  - _speed: 1
-    _nodes:
-    - Clip: {fileID: 7400000, guid: 02fbd517cd2c7d3439cbe6a30236a206, type: 2}
-      Speed: 1
-      Position: {x: 0, y: 0}
-    - Clip: {fileID: 7400000, guid: 8e9546eda9bdf4b43931df1839292bdd, type: 2}
-      Speed: 1
-      Position: {x: 0, y: 2.4}
-    - Clip: {fileID: 7400000, guid: 536337fc50b32ef4496b74fc1cba59ab, type: 2}
-      Speed: 1
-      Position: {x: 0, y: -2.4}
-    - Clip: {fileID: 7400000, guid: 71628e8a1cdef8847a4c8c507bb828bd, type: 2}
-      Speed: 1
-      Position: {x: -2.4, y: 0}
-    - Clip: {fileID: 7400000, guid: 907a88d6316b1014ab6e0944a502074b, type: 2}
-      Speed: 1
-      Position: {x: 2.4, y: 0}
-  - _speed: 1
-    _nodes:
-    - Clip: {fileID: 7400000, guid: bfcbb094525f81340b293100627613ba, type: 2}
-      Speed: 1
-      Position: {x: 0, y: 0}
-    - Clip: {fileID: 7400000, guid: 0b3e0dcf1aff11344a54670bbb86c8c3, type: 2}
-      Speed: 1
-      Position: {x: 0, y: 2.4}
-    - Clip: {fileID: 7400000, guid: 227fb785f3e666741828b6a0eb82eb10, type: 2}
-      Speed: 1
-      Position: {x: 0, y: -2.4}
-    - Clip: {fileID: 7400000, guid: fe017d9377bb1db45a72bec5f44ba6ae, type: 2}
-      Speed: 1
-      Position: {x: -2.4, y: 0}
-    - Clip: {fileID: 7400000, guid: a6957976097f7ac48a2b00de490cbc5a, type: 2}
-      Speed: 1
-      Position: {x: 2.4, y: 0}
-  _isLooping: 0
-  _mirrorState: {fileID: 4156882667332348794}
+  _node:
+    Clip: {fileID: 0}
+    Speed: 1
+    IsLooping: 0
 --- !u!1 &1731883671423317964
 GameObject:
   m_ObjectHideFlags: 0
@@ -2151,78 +2050,6 @@ MonoBehaviour:
     Repeat: 0
     RepeatPlayCount: 0
     RepeatDelay: 0
---- !u!1 &3303531903838527584
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 3077893574655048178}
-  - component: {fileID: 8967296952433600223}
-  m_Layer: 8
-  m_Name: LookState
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &3077893574655048178
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3303531903838527584}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 3034740772054572619}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &8967296952433600223
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3303531903838527584}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 87b7fa331ea40ed4d9137b1ea4461aef, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _sets:
-  - Nodes:
-    - Clip: {fileID: 7400000, guid: a973c1366db25d94f9a9006e494cb8b1, type: 2}
-      Speed: 1
-      IsLooping: 0
-    - Clip: {fileID: 7400000, guid: 8226d30db0f03f3499ad529491c85d8d, type: 2}
-      Speed: 1
-      IsLooping: 0
-    Offset: 0
-    Power: 1
-  - Nodes:
-    - Clip: {fileID: 7400000, guid: 8063e903740336a4790ec29add93d177, type: 2}
-      Speed: 1
-      IsLooping: 0
-    - Clip: {fileID: 7400000, guid: 5efbdcfd1ce5b3b45b2c2cc5910d71f2, type: 2}
-      Speed: 1
-      IsLooping: 0
-    Offset: 0
-    Power: 1.1
-  - Nodes:
-    - Clip: {fileID: 7400000, guid: 083319823b5d8754a8669408074b851c, type: 2}
-      Speed: 1
-      IsLooping: 0
-    - Clip: {fileID: 7400000, guid: 046eec8c67f74474ebae0c58c028d039, type: 2}
-      Speed: 1
-      IsLooping: 0
-    Offset: 0
-    Power: 1.1
 --- !u!1 &3355978745350405383
 GameObject:
   m_ObjectHideFlags: 0
@@ -2271,55 +2098,6 @@ MonoBehaviour:
     Clip: {fileID: 7400000, guid: bb776bc4cda21334cb7f37d02f363d95, type: 2}
     Speed: 1
     IsLooping: 0
---- !u!1 &3421257199873373228
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 3034740772054572619}
-  - component: {fileID: 4417874078765363392}
-  m_Layer: 8
-  m_Name: Look
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &3034740772054572619
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3421257199873373228}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 3077893574655048178}
-  m_Father: {fileID: 6007643176418695006}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &4417874078765363392
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3421257199873373228}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 94426a63ca134064eb496c0ddc3e429d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _avatarMask: {fileID: 101100000, guid: a5b5bfc1e90b5514f9b30b23377aa15e, type: 2}
-  _isAdditive: 1
-  _initialWeight: 1
-  _look: {fileID: 8967296952433600223}
 --- !u!1 &3596855401804240591
 GameObject:
   m_ObjectHideFlags: 0
@@ -2460,60 +2238,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e64a1f417303d0e449dec6b6153ab573, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _sets:
-  - _speed: 1
-    _nodes:
-    - Clip: {fileID: 7400000, guid: 90274f3507709e34f9384807324f02a2, type: 2}
-      Speed: 1
-      Position: {x: 0, y: 0}
-    - Clip: {fileID: 7400000, guid: 12f8b3df819519340bbf1e2815e5ede2, type: 2}
-      Speed: 1
-      Position: {x: 0, y: 2.4}
-    - Clip: {fileID: 7400000, guid: 64634c320c191bb49987dc27e40fb7d0, type: 2}
-      Speed: 1
-      Position: {x: 0, y: -2.4}
-    - Clip: {fileID: 7400000, guid: 23db40196fe4da0408540bf4046133a6, type: 2}
-      Speed: 1
-      Position: {x: -2.4, y: 0}
-    - Clip: {fileID: 7400000, guid: 6b171f010d2b30a4da6a6af69b48b56e, type: 2}
-      Speed: 1
-      Position: {x: 2.4, y: 0}
-  - _speed: 1
-    _nodes:
-    - Clip: {fileID: 7400000, guid: d51a4a7d9187b2b4399ddc7abfdaf487, type: 2}
-      Speed: 1
-      Position: {x: 0, y: 0}
-    - Clip: {fileID: 7400000, guid: c1762f53bd8f2db4b810dd34838603c8, type: 2}
-      Speed: 1
-      Position: {x: 0, y: 2.4}
-    - Clip: {fileID: 7400000, guid: 508d60dcb92466b4eb7bf7a3c859d9b5, type: 2}
-      Speed: 1
-      Position: {x: 0, y: -2.4}
-    - Clip: {fileID: 7400000, guid: 7c34b5ab84838dd4db3b3598ba5a8066, type: 2}
-      Speed: 1
-      Position: {x: -2.4, y: 0}
-    - Clip: {fileID: 7400000, guid: 48d0a25d9ebc4704999af76324015794, type: 2}
-      Speed: 1
-      Position: {x: 2.4, y: 0}
-  - _speed: 1
-    _nodes:
-    - Clip: {fileID: 7400000, guid: 7c042d4a68ebe30428baf27f28f4e459, type: 2}
-      Speed: 1
-      Position: {x: 0, y: 0}
-    - Clip: {fileID: 7400000, guid: 65b975a25cb010a45bd7fe6b2bd11534, type: 2}
-      Speed: 1
-      Position: {x: 0, y: 2.4}
-    - Clip: {fileID: 7400000, guid: 9289ece86a7acb447a1f0152290220d4, type: 2}
-      Speed: 1
-      Position: {x: 0, y: -2.4}
-    - Clip: {fileID: 7400000, guid: c19cd179be5d8b4479b3c9f593ba2f6d, type: 2}
-      Speed: 1
-      Position: {x: -2.4, y: 0}
-    - Clip: {fileID: 7400000, guid: 07ab8250f67680845ac1830e1e9bec4d, type: 2}
-      Speed: 1
-      Position: {x: 2.4, y: 0}
-  _isLooping: 0
-  _mirrorState: {fileID: 4156882667332348794}
+  _node:
+    Clip: {fileID: 0}
+    Speed: 1
+    IsLooping: 0
 --- !u!1 &4742340331645829702
 GameObject:
   m_ObjectHideFlags: 0
@@ -3033,26 +2761,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bce9cb28486c8e143bbdca2e279bfa65, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _nodes:
-  - Clip: {fileID: 7400000, guid: c99d7148f04b3c045baef46891a3d89e, type: 2}
-    Speed: 1
-    IsLooping: 0
-  - Clip: {fileID: 7400000, guid: c99d7148f04b3c045baef46891a3d89e, type: 2}
-    Speed: 1
-    IsLooping: 0
-  - Clip: {fileID: 7400000, guid: 0a68137e3dcda1a47a23da9f9951c816, type: 2}
-    Speed: 1
-    IsLooping: 0
-  - Clip: {fileID: 7400000, guid: c477fdb0e35c0bd4680a5991568d92cd, type: 2}
-    Speed: 1
-    IsLooping: 0
-  - Clip: {fileID: 7400000, guid: dcb9445d5ba949d4aaed76a0d8b5db96, type: 2}
-    Speed: 1
-    IsLooping: 0
-  - Clip: {fileID: 7400000, guid: 3333e3dd94e88f744b9376d8053e6658, type: 2}
-    Speed: 1
-    IsLooping: 0
-  _animationPower: 0.5
+  _chargeState: {fileID: 0}
+  _lightAttackState: {fileID: 0}
+  _heavyAttackState: {fileID: 0}
+  _abilityAttackState: {fileID: 0}
+  _blendInDuration: 0.1
+  _blendOutDuration: 0.15
 --- !u!1 &6299571402256045430
 GameObject:
   m_ObjectHideFlags: 0
@@ -4082,7 +3796,7 @@ MonoBehaviour:
   _avatarMask: {fileID: 101100000, guid: 196c2a4d35623c44d901ca411b9557df, type: 2}
   _isAdditive: 1
   _initialWeight: 1
-  _shoot: {fileID: 6393532497836863752}
+  staffAttack: {fileID: 6393532497836863752}
 --- !u!1 &7584108064808970602
 GameObject:
   m_ObjectHideFlags: 0
@@ -4683,10 +4397,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _root: {fileID: 6007643176418695006}
   _animator: {fileID: 0}
-  _leftHand: {fileID: 0}
-  _leftLowerArm: {fileID: 0}
-  _leftUpperArm: {fileID: 0}
-  _aimSnapPower: 0.8
 --- !u!114 &8019168302190258968
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4703,10 +4413,13 @@ MonoBehaviour:
   _weaponSizeSlots: []
   _initialWeapons:
   - {fileID: 0}
-  _dropWeaponImpulse: {x: 5, y: 5, z: 10}
   _hitMask:
     serializedVersion: 2
     m_Bits: 265
+  _inventoryItemPickupPrefab: {fileID: 0}
+  _itemDropForwardOffset: 1.5
+  _itemDropUpOffset: 0.35
+  _itemDropImpulse: 3
   _fireAudioEffectsRoot: {fileID: 5519487549885795405}
 --- !u!114 &1018819908989435078
 MonoBehaviour:

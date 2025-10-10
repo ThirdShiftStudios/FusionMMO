@@ -1,154 +1,149 @@
 namespace TPSBR
 {
-	using UnityEngine;
-	using Fusion.Addons.KCC;
-	using Fusion.Addons.AnimationController;
+    using UnityEngine;
+    using Fusion.Addons.KCC;
+    using Fusion.Addons.AnimationController;
 
-	[DefaultExecutionOrder(3)]
-	public sealed class CharacterAnimationController : AnimationController
-	{
-		// PRIVATE MEMBERS
-		private KCC             _kcc;
-		private Agent           _agent;
-		private Inventory         _inventory;
+    [DefaultExecutionOrder(3)]
+    public sealed class CharacterAnimationController : AnimationController
+    {
+        // PRIVATE MEMBERS
+        private KCC _kcc;
+        private Agent _agent;
+        private Inventory _inventory;
 
-		private LocomotionLayer _locomotion;
-		private FullBodyLayer   _fullBody;
-		private LowerBodyLayer  _lowerBody;
-		private UpperBodyLayer  _upperBody;
-                private AttackLayer      _attack;
-		private LookLayer       _look;
+        private LocomotionLayer _locomotion;
+        private FullBodyLayer _fullBody;
+        private LowerBodyLayer _lowerBody;
+        private UpperBodyLayer _upperBody;
+        private AttackLayer _attack;
 
-		// PUBLIC METHODS
+        // PUBLIC METHODS
 
-                public AttackLayer AttackLayer => _attack;
+        public AttackLayer AttackLayer => _attack;
 
-                public bool CanJump()
-		{
-			if (_fullBody.IsActive() == true)
-			{
-				if (_fullBody.Jump.IsActive(true) == true)
-					return false;
-				if (_fullBody.Fall.IsActive(true) == true)
-					return false;
-				if (_fullBody.Dead.IsActive(true) == true)
-					return false;
-			}
+        public bool CanJump()
+        {
+            if (_fullBody.IsActive() == true)
+            {
+                if (_fullBody.Jump.IsActive(true) == true)
+                    return false;
+                if (_fullBody.Fall.IsActive(true) == true)
+                    return false;
+                if (_fullBody.Dead.IsActive(true) == true)
+                    return false;
+            }
 
-			return true;
-		}
+            return true;
+        }
 
-		public bool CanSwitchWeapons(bool force)
-		{
-			if (_fullBody.IsActive() == true)
-			{
-				if (_fullBody.Dead.IsActive() == true)
-					return false;
-			}
+        public bool CanSwitchWeapons(bool force)
+        {
+            if (_fullBody.IsActive() == true)
+            {
+                if (_fullBody.Dead.IsActive() == true)
+                    return false;
+            }
 
-			if (_upperBody.IsActive() == true)
-			{
-				if (_upperBody.Grenade.IsActive() == true && _upperBody.Grenade.CanSwitchWeapon() == false)
-					return false;
-			}
+            if (_upperBody.IsActive() == true)
+            {
+                if (_upperBody.Grenade.IsActive() == true && _upperBody.Grenade.CanSwitchWeapon() == false)
+                    return false;
+            }
 
-			return true;
-		}
+            return true;
+        }
 
-		public void SetDead(bool isDead)
-		{
-			if (isDead == true)
-			{
-				_fullBody.Dead.Activate(0.2f);
+        public void SetDead(bool isDead)
+        {
+            if (isDead == true)
+            {
+                _fullBody.Dead.Activate(0.2f);
 
-				if (_kcc.Data.IsGrounded == true)
-				{
-					_kcc.SetColliderLayer(LayerMask.NameToLayer("Ignore Raycast"));
-					_kcc.SetCollisionLayerMask(_kcc.Settings.CollisionLayerMask & ~(1 << LayerMask.NameToLayer("AgentKCC")));
-				}
-
-				_upperBody.DeactivateAllStates(0.2f, true);
-				_look.DeactivateAllStates(0.2f, true);
-			}
-			else
-			{
-				_fullBody.Dead.Deactivate(0.2f);
-				_kcc.SetShape(EKCCShape.Capsule);
-			}
-		}
-
-                public bool StartUseItem(Weapon weapon, in WeaponUseRequest request)
+                if (_kcc.Data.IsGrounded == true)
                 {
-                        if (weapon == null)
-                                return false;
-
-                        if (_fullBody.Dead.IsActive() == true)
-                                        return false;
-                        if (_upperBody.HasActiveState() == true)
-                                return false;
-
-                        if (_attack != null && request.ShouldUse == true)
-                        {
-                                if (_attack.TryHandleUse(weapon, request) == false)
-                                        return false;
-                        }
-
-                        return true;
+                    _kcc.SetColliderLayer(LayerMask.NameToLayer("Ignore Raycast"));
+                    _kcc.SetCollisionLayerMask(_kcc.Settings.CollisionLayerMask &
+                                               ~(1 << LayerMask.NameToLayer("AgentKCC")));
                 }
 
-		public void ProcessThrow(bool start, bool hold)
-		{
-			_upperBody.Grenade.ProcessThrow(start, hold);
-		}
+                _upperBody.DeactivateAllStates(0.2f, true);
+            }
+            else
+            {
+                _fullBody.Dead.Deactivate(0.2f);
+                _kcc.SetShape(EKCCShape.Capsule);
+            }
+        }
 
-		public void Turn(float angle)
-		{
-			_lowerBody.Turn.Refresh(angle);
-		}
+        public bool StartUseItem(Weapon weapon, in WeaponUseRequest request)
+        {
+            if (weapon == null)
+                return false;
 
-		public void RefreshSnapping()
-		{
+            if (_fullBody.Dead.IsActive() == true)
+                return false;
+            if (_upperBody.HasActiveState() == true)
+                return false;
 
-		}
+            if (_attack != null && request.ShouldUse == true)
+            {
+                if (_attack.TryHandleUse(weapon, request) == false)
+                    return false;
+            }
 
-		// AnimationController INTERFACE
+            return true;
+        }
 
-		protected override void OnSpawned()
-		{
-			if (HasStateAuthority == true)
-			{
-				Animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
-			}
-		}
+        public void ProcessThrow(bool start, bool hold)
+        {
+            _upperBody.Grenade.ProcessThrow(start, hold);
+        }
 
-		protected override void OnFixedUpdate()
-		{
-			
-		}
+        public void Turn(float angle)
+        {
+            _lowerBody.Turn.Refresh(angle);
+        }
 
-		protected override void OnEvaluate()
-		{
+        public void RefreshSnapping()
+        {
+        }
 
-		}
+        // AnimationController INTERFACE
 
-		// MonoBehaviour INTERFACE
+        protected override void OnSpawned()
+        {
+            if (HasStateAuthority == true)
+            {
+                Animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+            }
+        }
 
-		protected override void Awake()
-		{
-			base.Awake();
+        protected override void OnFixedUpdate()
+        {
+        }
 
-			_kcc        = this.GetComponentNoAlloc<KCC>();
-			_agent      = this.GetComponentNoAlloc<Agent>();
-			_inventory    = this.GetComponentNoAlloc<Inventory>();
+        protected override void OnEvaluate()
+        {
+        }
 
-			_locomotion = FindLayer<LocomotionLayer>();
-			_fullBody   = FindLayer<FullBodyLayer>();
-			_lowerBody  = FindLayer<LowerBodyLayer>();
-			_upperBody  = FindLayer<UpperBodyLayer>();
-			_attack      = FindLayer<AttackLayer>();
-			_look       = FindLayer<LookLayer>();
+        // MonoBehaviour INTERFACE
 
-			_kcc.MoveState = _locomotion.FindState<MoveState>();
-		}
-	}
+        protected override void Awake()
+        {
+            base.Awake();
+
+            _kcc = this.GetComponentNoAlloc<KCC>();
+            _agent = this.GetComponentNoAlloc<Agent>();
+            _inventory = this.GetComponentNoAlloc<Inventory>();
+
+            _locomotion = FindLayer<LocomotionLayer>();
+            _fullBody = FindLayer<FullBodyLayer>();
+            _lowerBody = FindLayer<LowerBodyLayer>();
+            _upperBody = FindLayer<UpperBodyLayer>();
+            _attack = FindLayer<AttackLayer>();
+
+            _kcc.MoveState = _locomotion.FindState<MoveState>();
+        }
+    }
 }
