@@ -6,7 +6,6 @@ using UnityEngine.SceneManagement;
 namespace TPSBR
 {
         using System;
-        using System.Collections;
 
 	[Serializable]
 	public sealed class StandaloneConfiguration
@@ -40,32 +39,25 @@ namespace TPSBR
 
 		// MONOBEHAVIOUR
 
-		protected void Awake()
-		{
-			if (Global.Networking.HasSession == true)
-			{
-				Destroy(gameObject);
-			}
-		}
-
-                protected void Start()
+                protected async void Awake()
                 {
-                        if (Global.AreServicesInitialized == true)
+                        await Global.AreServicesInitialized;
+
+                        if (this == null)
+                                return;
+
+                        if (Global.Networking.HasSession == true)
                         {
-                                StartStandaloneSession();
-                        }
-                        else
-                        {
-                                StartCoroutine(WaitForServicesAndStart());
+                                Destroy(gameObject);
                         }
                 }
 
-                private IEnumerator WaitForServicesAndStart()
+                protected async void Start()
                 {
-                        while (Global.AreServicesInitialized == false)
-                        {
-                                yield return null;
-                        }
+                        await Global.AreServicesInitialized;
+
+                        if (this == null)
+                                return;
 
                         StartStandaloneSession();
                 }

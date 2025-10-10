@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Reflection;
+using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.PlayerLoop;
 using UnityEngine.Rendering;
@@ -26,12 +27,19 @@ namespace TPSBR
                 public static PlayerService    PlayerService     { get; private set; }
                 public static Networking       Networking        { get; private set; }
                 public static MultiplayManager MultiplayManager  { get; private set; }
-                public static bool             AreServicesInitialized { get; private set; }
+                public static Task             AreServicesInitialized => _servicesInitializedTask.Task;
 
 		// PRIVATE MEMBERS
 
-		private static bool _isInitialized;
-		private static List<IGlobalService> _globalServices = new List<IGlobalService>(16);
+                private static bool _isInitialized;
+                private static bool _servicesInitializationComplete;
+                private static TaskCompletionSource<bool> _servicesInitializedTask;
+                private static List<IGlobalService> _globalServices = new List<IGlobalService>(16);
+
+                static Global()
+                {
+                        ResetServicesInitializationTracker();
+                }
 
 		// PUBLIC METHODS
 
@@ -110,12 +118,14 @@ namespace TPSBR
 			GlobalSettings[] globalSettings = Resources.LoadAll<GlobalSettings>("");
 			Settings = globalSettings.Length > 0 ? Object.Instantiate(globalSettings[0]) : null;
 
-			RuntimeSettings = new RuntimeSettings();
-			RuntimeSettings.Initialize(Settings);
+                        RuntimeSettings = new RuntimeSettings();
+                        RuntimeSettings.Initialize(Settings);
 
-			PrepareGlobalServices();
+                        ResetServicesInitializationTracker();
 
-			Networking = CreateStaticObject<Networking>();
+                        PrepareGlobalServices();
+
+                        Networking = CreateStaticObject<Networking>();
 
 			if (ApplicationSettings.UseMultiplay == true && ApplicationSettings.IsServer == true)
 			{
@@ -139,7 +149,7 @@ namespace TPSBR
                                 }
                         }
 
-                        AreServicesInitialized = false;
+                        ResetServicesInitializationTracker();
                         _isInitialized = false;
                 }
 
@@ -150,7 +160,7 @@ namespace TPSBR
 
                 private static void BeforeUpdate()
                 {
-                        if (AreServicesInitialized == false)
+                        if (_servicesInitializationComplete == false)
                         {
                                 UpdateServicesInitializedState();
                         }
@@ -172,7 +182,6 @@ namespace TPSBR
                 private static void PrepareGlobalServices()
                 {
                         _globalServices.Clear();
-                        AreServicesInitialized = false;
 
                         PlayerAuthenticationService = new PlayerAuthenticationService();
                         PlayerService = new PlayerService();
@@ -190,30 +199,45 @@ namespace TPSBR
 
                 private static void UpdateServicesInitializedState()
                 {
-                        if (_globalServices.Count == 0)
-                        {
-                                AreServicesInitialized = false;
+                        if (_servicesInitializationComplete == true)
                                 return;
-                        }
+
+                        if (_globalServices.Count == 0)
+                                return;
 
                         for (int i = 0; i < _globalServices.Count; i++)
                         {
                                 if (_globalServices[i] == null || _globalServices[i].IsInitialized == false)
                                 {
-                                        AreServicesInitialized = false;
                                         return;
                                 }
                         }
 
-                        AreServicesInitialized = true;
+                        _servicesInitializationComplete = true;
+                        _servicesInitializedTask.TrySetResult(true);
                 }
 
-		private static T CreateStaticObject<T>() where T : Component
-		{
-			GameObject gameObject = new GameObject(typeof(T).Name);
-			Object.DontDestroyOnLoad(gameObject);
+                private static T CreateStaticObject<T>() where T : Component
+                {
+                        GameObject gameObject = new GameObject(typeof(T).Name);
+                        Object.DontDestroyOnLoad(gameObject);
 
-			return gameObject.AddComponent<T>();
-		}
-	}
+                        return gameObject.AddComponent<T>();
+                }
+
+                private static void ResetServicesInitializationTracker()
+                {
+                        _servicesInitializationComplete = false;
+
+                        if (_servicesInitializedTask == null || _servicesInitializedTask.Task.IsCompleted == true)
+                        {
+                                _servicesInitializedTask = CreateServicesInitializedTask();
+                        }
+                }
+
+                private static TaskCompletionSource<bool> CreateServicesInitializedTask()
+                {
+                        return new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+                }
+        }
 }
