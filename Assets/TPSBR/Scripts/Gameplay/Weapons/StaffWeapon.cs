@@ -1,12 +1,14 @@
 using System;
 using Fusion;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace TPSBR
 {
     public class StaffWeapon : Weapon
     {
         private const string HASH_PREFIX = "STF";
+        private const string LogPrefix = "[<color=#FFA500>StaffWeapon</color>]";
 
         [SerializeField]
         private float _baseDamage;
@@ -17,7 +19,14 @@ namespace TPSBR
         [SerializeField]
         private string _configuredItemName;
 
+        [Header("Combat")]
+        [SerializeField]
+        [Tooltip("Duration in seconds the left mouse button must be held to fully charge the heavy attack.")]
+        private float _heavyChargeDuration = 1.25f;
         private string _lastConfigurationHash = string.Empty;
+        private float _attackButtonDownTime;
+        private bool _pendingLightAttack;
+        private bool _isChargingHeavy;
 
         public float BaseDamage => _baseDamage;
         public float HealthRegen => _healthRegen;
@@ -28,12 +37,70 @@ namespace TPSBR
 
         public override bool CanFire(bool keyDown)
         {
+            if (keyDown == true)
+            {
+                BeginAttackCharge();
+            }
+
+            // Attack resolution is handled manually in FixedUpdateNetwork.
             return false;
         }
 
         public override void Fire(Vector3 firePosition, Vector3 targetPosition, LayerMask hitMask)
         {
             throw new NotImplementedException();
+        }
+
+        public override void FixedUpdateNetwork()
+        {
+            base.FixedUpdateNetwork();
+
+            if (Character == null || Character.Agent == null)
+            {
+                ResetAttackState();
+                return;
+            }
+
+            if (Character.Agent.Inventory.CurrentWeapon != this)
+            {
+                ResetAttackState();
+                return;
+            }
+
+            var agentInput = Character.Agent.AgentInput;
+            if (agentInput == null)
+            {
+                return;
+            }
+
+            bool attackHeld = agentInput.HasActive(EGameplayInputAction.Attack);
+            bool attackReleased = agentInput.WasDeactivated(EGameplayInputAction.Attack);
+
+            if (attackHeld == true)
+            {
+                UpdateHeavyCharge();
+            }
+
+            if (_isChargingHeavy == true)
+            {
+                if (CheckHeavyCancelRequested() == true)
+                {
+                    CancelHeavyCharge();
+                }
+                else if (attackReleased == true)
+                {
+                    PerformHeavyAttack();
+                }
+            }
+            else if (attackReleased == true && _pendingLightAttack == true)
+            {
+                PerformLightAttack();
+            }
+
+            if (attackHeld == false && attackReleased == false && _pendingLightAttack == false && _isChargingHeavy == false)
+            {
+                _attackButtonDownTime = 0f;
+            }
         }
 
         public override bool CanAim()
@@ -200,6 +267,93 @@ namespace TPSBR
             }
 
             return condensed.Substring(0, 4).ToUpperInvariant();
+        }
+
+        private void BeginAttackCharge()
+        {
+            if (_pendingLightAttack == true || _isChargingHeavy == true)
+            {
+                return;
+            }
+
+            _pendingLightAttack = true;
+            _attackButtonDownTime = GetCurrentTime();
+            Debug.Log($"{LogPrefix} Left click pressed. Tracking for light attack and potential heavy charge.");
+        }
+
+        private void UpdateHeavyCharge()
+        {
+            if (_pendingLightAttack == false)
+            {
+                return;
+            }
+
+            float elapsed = GetCurrentTime() - _attackButtonDownTime;
+            if (_isChargingHeavy == false && elapsed >= _heavyChargeDuration)
+            {
+                StartHeavyCharge();
+            }
+        }
+
+        private void StartHeavyCharge()
+        {
+            _isChargingHeavy = true;
+            _pendingLightAttack = false;
+            Debug.Log($"{LogPrefix} Heavy charge started after holding left click for {_heavyChargeDuration:0.00}s.");
+        }
+
+        private void PerformLightAttack()
+        {
+            Character.Agent.Health?.ResetRegenDelay();
+
+            Debug.Log($"{LogPrefix} Executing light staff attack.");
+            ResetAttackState();
+        }
+
+        private void PerformHeavyAttack()
+        {
+            Character.Agent.Health?.ResetRegenDelay();
+
+            Debug.Log($"{LogPrefix} Heavy attack triggered on left click release.");
+            ResetAttackState();
+        }
+
+        private void CancelHeavyCharge()
+        {
+            Debug.Log($"{LogPrefix} Heavy charge cancelled by secondary input.");
+            ResetAttackState();
+        }
+
+        private void ResetAttackState()
+        {
+            _pendingLightAttack = false;
+            _isChargingHeavy = false;
+            _attackButtonDownTime = 0f;
+        }
+
+        private bool CheckHeavyCancelRequested()
+        {
+            if (HasInputAuthority == false)
+            {
+                return false;
+            }
+
+            if (Mouse.current == null)
+            {
+                return false;
+            }
+
+            return Mouse.current.rightButton.wasPressedThisFrame;
+        }
+
+        private float GetCurrentTime()
+        {
+            if (Runner != null && Runner.IsRunning == true)
+            {
+                return (float)Runner.SimulationTime;
+            }
+
+            return Time.time;
         }
 
         public override string GetDescription()
