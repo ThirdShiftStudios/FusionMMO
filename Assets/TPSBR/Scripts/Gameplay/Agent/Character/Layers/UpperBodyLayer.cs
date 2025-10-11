@@ -6,11 +6,8 @@ namespace TPSBR
 	public sealed class UpperBodyLayer : AnimationLayer
 	{
 		// PUBLIC MEMBERS
-		public GrenadeState Grenade => _grenade;
 
 		// PRIVATE MEMBERS
-		[SerializeField]
-		private GrenadeState _grenade;
 
 		private Inventory      _inventory;
 

@@ -244,7 +244,7 @@ namespace TPSBR
                 kcc.Jump(Vector3.up * _jumpPower);
             }
 
-            SetLookRotation(kccFixedData, input.LookRotationDelta, _inventory.GetRecoil(), out Vector2 newRecoil);
+            SetLookRotation(kccFixedData, input.LookRotationDelta );
 
             kcc.SetInputDirection(input.MoveDirection.IsZero() == true
                 ? Vector3.zero
@@ -286,7 +286,7 @@ namespace TPSBR
             }
 
 
-            SetLookRotation(kccFixedData, input.LookRotationDelta, _inventory.GetRecoil(), out Vector2 newRecoil);
+            SetLookRotation(kccFixedData, input.LookRotationDelta);
 
             kcc.SetInputDirection(input.MoveDirection.IsZero() == true
                 ? Vector3.zero
@@ -305,13 +305,6 @@ namespace TPSBR
 
             if (currentWeapon != null)
             {
-                if (currentWeapon is ThrowableWeapon && _inventory.CurrentWeaponSize == WeaponSize.Throwable)
-                {
-                    // Fire is handled form the grenade animation state itself
-                    _character.AnimationController.ProcessThrow(attack, hold);
-                    return;
-                }
-
                 bool attackReleased = _agentInput.WasDeactivated(EGameplayInputAction.Attack);
 
                 // Evaluate how the weapon wants to handle the current input snapshot.
@@ -357,50 +350,20 @@ namespace TPSBR
             return _inventory.CanAim();
         }
 
-        private void SetLookRotation(KCCData kccData, Vector2 lookRotationDelta, Vector2 recoil, out Vector2 newRecoil)
+        private void SetLookRotation(KCCData kccData, Vector2 lookRotationDelta)
         {
-            if (lookRotationDelta.IsZero() == true && recoil.IsZero() == true &&
-                _character.CharacterController.Data.Recoil == Vector2.zero)
-            {
-                newRecoil = recoil;
-                return;
-            }
-
             Vector2 baseLookRotation = kccData.GetLookRotation(true, true) - kccData.Recoil;
             Vector2 recoilReduction = Vector2.zero;
 
-            if (recoil.x > 0f && lookRotationDelta.x < 0)
-            {
-                recoilReduction.x = Mathf.Clamp(lookRotationDelta.x, -recoil.x, 0f);
-            }
-
-            if (recoil.x < 0f && lookRotationDelta.x > 0f)
-            {
-                recoilReduction.x = Mathf.Clamp(lookRotationDelta.x, 0, -recoil.x);
-            }
-
-            if (recoil.y > 0f && lookRotationDelta.y < 0)
-            {
-                recoilReduction.y = Mathf.Clamp(lookRotationDelta.y, -recoil.y, 0f);
-            }
-
-            if (recoil.y < 0f && lookRotationDelta.y > 0f)
-            {
-                recoilReduction.y = Mathf.Clamp(lookRotationDelta.y, 0, -recoil.y);
-            }
-
             lookRotationDelta -= recoilReduction;
-            recoil += recoilReduction;
 
             lookRotationDelta.x =
                 Mathf.Clamp(baseLookRotation.x + lookRotationDelta.x, -_topCameraAngleLimit, _bottomCameraAngleLimit) -
                 baseLookRotation.x;
 
-            _character.CharacterController.SetLookRotation(baseLookRotation + recoil + lookRotationDelta);
+            _character.CharacterController.SetLookRotation(baseLookRotation  + lookRotationDelta);
 
             _character.AnimationController.Turn(lookRotationDelta.y);
-
-            newRecoil = recoil;
         }
 
         private void CheckFallDamage()

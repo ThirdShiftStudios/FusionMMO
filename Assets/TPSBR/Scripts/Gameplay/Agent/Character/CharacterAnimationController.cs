@@ -47,8 +47,7 @@ namespace TPSBR
 
             if (_upperBody.IsActive() == true)
             {
-                if (_upperBody.Grenade.IsActive() == true && _upperBody.Grenade.CanSwitchWeapon() == false)
-                    return false;
+                
             }
 
             return true;
@@ -93,11 +92,6 @@ namespace TPSBR
             }
 
             return true;
-        }
-
-        public void ProcessThrow(bool start, bool hold)
-        {
-            _upperBody.Grenade.ProcessThrow(start, hold);
         }
 
         public void Turn(float angle)

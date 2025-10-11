@@ -1,5 +1,7 @@
+using System;
 using UnityEngine;
 using Fusion;
+using Random = UnityEngine.Random;
 
 namespace TPSBR
 {
@@ -37,8 +39,19 @@ namespace TPSBR
 			if (_refillCooldown.ExpiredOrNotRunning(Runner) == false)
 				return;
 
-			var prefab = _pickupPrefabs[Random.Range(0, _pickupPrefabs.Length)];
-			_activePickup = Runner.Spawn(prefab, _spawnPoint.position, _spawnPoint.rotation);
+			if(_pickupPrefabs.Length == 0)
+				return;
+			
+			try
+			{
+				var prefab = _pickupPrefabs[Random.Range(0, _pickupPrefabs.Length)];
+				_activePickup = Runner.Spawn(prefab, _spawnPoint.position, _spawnPoint.rotation);
+			}
+			catch (Exception e)
+			{
+				Debug.LogError($"{gameObject.name} nono");
+				throw;
+			}
 		}
 	}
 }

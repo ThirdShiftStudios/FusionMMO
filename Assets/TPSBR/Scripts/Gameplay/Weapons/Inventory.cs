@@ -472,21 +472,7 @@ namespace TPSBR
 
             if (weaponPickup.Consumed == true || weaponPickup.IsDisabled == true)
                 return;
-
-            var ownedWeapon = FindWeaponById(weaponPickup.WeaponPrefab.WeaponID, out _);
-            if (ownedWeapon != null && ownedWeapon.WeaponID == weaponPickup.WeaponPrefab.WeaponID)
-            {
-                // We already have this weapon, try add at least the ammo
-                var firearmWeapon = weaponPickup.WeaponPrefab as FirearmWeapon;
-                bool consumed = firearmWeapon != null && ownedWeapon.AddAmmo(firearmWeapon.InitialAmmo);
-
-                if (consumed == true)
-                {
-                    weaponPickup.TryConsume(gameObject, out string weaponPickupResult);
-                }
-            }
-            else
-            {
+            
                 weaponPickup.TryConsume(gameObject, out string weaponPickupResult2);
 
                 EnsureWeaponPrefabRegistered(
@@ -500,7 +486,7 @@ namespace TPSBR
 
                 var weapon = Runner.Spawn(weaponPickup.WeaponPrefab, inputAuthority: Object.InputAuthority);
                 PickupWeapon(weapon);
-            }
+         
         }
 
         public override void Spawned()
@@ -650,13 +636,6 @@ namespace TPSBR
         public bool CanAim()
         {
             return CurrentWeapon != null && CurrentWeapon.CanAim() == true;
-        }
-
-        public Vector2 GetRecoil()
-        {
-            var firearmWeapon = CurrentWeapon as FirearmWeapon;
-            var recoil = firearmWeapon != null ? firearmWeapon.Recoil : Vector2.zero;
-            return new Vector2(-recoil.y, recoil.x); // Convert to axis angles
         }
 
         public bool HasWeapon(int slot, bool checkAmmo = false)
@@ -1345,11 +1324,6 @@ namespace TPSBR
                 {
                     weapon.DisarmWeapon();
                 }
-
-                if (weapon.IsArmed == true && weapon is FirearmWeapon fw)
-                {
-                    lastRecoil = fw.Recoil;
-                }
             }
 
             // Only run swap logic when the slot changed (or weapon ref changed)
@@ -1368,12 +1342,6 @@ namespace TPSBR
                 if (CurrentWeapon != null)
                 {
                     CurrentWeapon.ArmWeapon();
-
-                    if (CurrentWeapon is FirearmWeapon newFw)
-                    {
-                        // transfer recoil
-                        newFw.Recoil = lastRecoil;
-                    }
                 }
                 else
                 {
