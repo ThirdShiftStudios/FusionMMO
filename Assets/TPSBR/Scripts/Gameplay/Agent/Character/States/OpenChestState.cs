@@ -77,7 +77,7 @@ namespace TPSBR
 
                         if (_startCompleted == false)
                         {
-                                if (_startOpenChest == null || _startOpenChest.IsFinished(_currentCompletionThreshold) == true)
+                                if (_startOpenChest == null || HasReachedStartThreshold() == true)
                                 {
                                         _startCompleted = true;
 
@@ -135,6 +135,17 @@ namespace TPSBR
                         _onOpenTriggered = null;
 
                         finished?.Invoke();
+                }
+
+                private bool HasReachedStartThreshold()
+                {
+                        if (_startOpenChest == null)
+                                return true;
+
+                        if (_startOpenChest.AnimationTime >= _currentCompletionThreshold)
+                                return true;
+
+                        return _startOpenChest.IsFinished();
                 }
         }
 }
