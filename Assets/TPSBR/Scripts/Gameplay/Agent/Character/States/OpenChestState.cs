@@ -1,4 +1,3 @@
-using System;
 using Fusion.Addons.AnimationController;
 using UnityEngine;
 
@@ -14,35 +13,28 @@ namespace TPSBR
         [SerializeField] private float _blendInDuration  = 0.1f;
         [SerializeField] private float _blendOutDuration = 0.1f;
 
-        private float  _currentCompletionThreshold;
-        private Action _onOpenTriggered;
-        private Action _onFinished;
-
-        private bool _isPlaying;
-        private bool _startCompleted;
-        private bool _endActivated;
+        private bool  _isPlaying;
+        private bool  _startCompleted;
+        private bool  _endActivated;
+        private bool  _openTriggered;
+        private float _openTriggerNormalizedTime = 0.5f;
 
         public bool IsPlaying => _isPlaying;
 
-        /// <summary>
-        /// Starts the sequence. If openNormalizedTime &lt; 0, uses _completionThreshold; else uses the provided 0..1 value.
-        /// </summary>
-        public bool Play(Action onOpenTriggered, Action onFinished, float openNormalizedTime = -1.0f)
+        public bool Play(float openNormalizedTime = -1.0f)
         {
             if (_startOpenChest == null)
                 return false;
 
-            if (_isPlaying)
+            if (_isPlaying == true)
                 return false;
 
-            _onOpenTriggered            = onOpenTriggered;
-            _onFinished                 = onFinished;
-            _isPlaying                  = true;
-            _startCompleted             = false;
-            _endActivated               = false;
-            _currentCompletionThreshold = 0.5f;
+            _isPlaying                 = true;
+            _startCompleted            = false;
+            _endActivated              = false;
+            _openTriggered             = false;
+            _openTriggerNormalizedTime = openNormalizedTime >= 0.0f ? Mathf.Clamp01(openNormalizedTime) : 0.5f;
 
-            // Reset clips
             _startOpenChest.SetAnimationTime(0.0f);
             _startOpenChest.Activate(_blendInDuration);
 
@@ -52,7 +44,6 @@ namespace TPSBR
                 _endOpenChest.Deactivate(0.0f, true);
             }
 
-            // Bring this mixer online
             Activate(_blendInDuration);
 
             return true;
@@ -66,18 +57,13 @@ namespace TPSBR
             _isPlaying      = false;
             _startCompleted = false;
             _endActivated   = false;
+            _openTriggered  = false;
 
             _startOpenChest?.Deactivate(_blendOutDuration, true);
             _endOpenChest?.Deactivate(_blendOutDuration, true);
             Deactivate(_blendOutDuration);
-
-            _onOpenTriggered = null;
-            InvokeFinished();
         }
 
-        /// <summary>
-        /// FixedUpdate-driven flow, as requested.
-        /// </summary>
         protected override void OnFixedUpdate()
         {
             base.OnFixedUpdate();
@@ -85,20 +71,14 @@ namespace TPSBR
             if (_isPlaying == false)
                 return;
 
-            // Phase 1: wait until the start clip reaches the threshold
             if (_startCompleted == false)
             {
-                if (HasReachedStartThreshold())
+                if (_startOpenChest == null || _startOpenChest.IsFinished())
                 {
                     _startCompleted = true;
 
-                    // Fire the gameplay trigger exactly at the threshold
-                    _onOpenTriggered?.Invoke();
-                    _onOpenTriggered = null;
-
                     if (_endOpenChest != null)
                     {
-                        // Clean handoff: fade start out while bringing end in
                         _startOpenChest?.Deactivate(_blendOutDuration, true);
 
                         _endActivated = true;
@@ -107,11 +87,41 @@ namespace TPSBR
                     }
                     else
                     {
-                        
+                        Complete();
                     }
+                }
+            }
+            else if (_endActivated == true)
+            {
+                if (_endOpenChest == null || _endOpenChest.IsFinished())
+                {
                     Complete();
                 }
             }
+            else
+            {
+                Complete();
+            }
+        }
+
+        public bool TryConsumeOpenTrigger()
+        {
+            if (_isPlaying == false)
+                return false;
+
+            if (_openTriggered == true)
+                return false;
+
+            if (_startOpenChest == null)
+                return false;
+
+            float normalizedTime = Mathf.Max(_startOpenChest.AnimationTime, _startOpenChest.InterpolatedAnimationTime);
+
+            if (normalizedTime < _openTriggerNormalizedTime)
+                return false;
+
+            _openTriggered = true;
+            return true;
         }
 
         private void Complete()
@@ -122,35 +132,11 @@ namespace TPSBR
             _isPlaying      = false;
             _startCompleted = false;
             _endActivated   = false;
+            _openTriggered  = false;
 
             _startOpenChest?.Deactivate(_blendOutDuration, true);
             _endOpenChest?.Deactivate(_blendOutDuration, true);
             Deactivate(_blendOutDuration);
-
-            InvokeFinished();
-        }
-
-        private void InvokeFinished()
-        {
-            Action finished = _onFinished;
-            _onFinished      = null;
-            _onOpenTriggered = null;
-
-            finished?.Invoke();
-        }
-
-        /// <summary>
-        /// Strict threshold check: flips true when visible animation time crosses the threshold.
-        /// No fallback to IsFinished(threshold) to avoid late triggers.
-        /// </summary>
-        private bool HasReachedStartThreshold()
-        {
-            return _startOpenChest.IsFinished(_currentCompletionThreshold);
-            if (_startOpenChest == null)
-                return true;
-
-            float t = Mathf.Max(_startOpenChest.AnimationTime, _startOpenChest.InterpolatedAnimationTime);
-            return t >= _currentCompletionThreshold;
         }
     }
 }
