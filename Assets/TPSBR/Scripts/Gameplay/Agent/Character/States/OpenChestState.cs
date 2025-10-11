@@ -101,10 +101,7 @@ namespace TPSBR
 
                         if (_endActivated == true)
                         {
-                                bool endFinished   = _endOpenChest == null || _endOpenChest.IsFinished();
-                                bool startFinished = _startOpenChest == null || _startOpenChest.IsFinished(_currentCompletionThreshold);
-
-                                if (endFinished == true && startFinished == true)
+                                if (_startOpenChest == null || _startOpenChest.IsFinished(_currentCompletionThreshold) == true)
                                 {
                                         Complete();
                                 }
