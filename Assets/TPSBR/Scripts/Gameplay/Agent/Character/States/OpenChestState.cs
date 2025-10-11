@@ -108,10 +108,25 @@ namespace TPSBR
                         _endOpenChest.SetAnimationTime(0.0f);
                         _endOpenChest.Activate(_blendInDuration);
                     }
-                    else
-                    {
-                        
-                    }
+                }
+
+                return;
+            }
+
+            if (_endActivated == true)
+            {
+                if (_endOpenChest == null || _endOpenChest.IsFinished())
+                {
+                    Complete();
+                }
+
+                return;
+            }
+
+            if (_endOpenChest == null)
+            {
+                if (_startOpenChest == null || _startOpenChest.IsFinished())
+                {
                     Complete();
                 }
             }
@@ -148,7 +163,6 @@ namespace TPSBR
         /// </summary>
         private bool HasReachedStartThreshold()
         {
-            return _startOpenChest.IsFinished(0.5f);
             if (_startOpenChest == null)
                 return true;
 
