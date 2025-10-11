@@ -2,7 +2,8 @@
 {
 	using System;
 	using UnityEngine;
-	using Fusion;
+        using Fusion;
+        using Fusion.Addons.KCC;
 
 	[DefaultExecutionOrder(-8)]
 	public sealed class Interactions : ContextBehaviour
@@ -24,30 +25,52 @@
 
 		[SerializeField]
 		private LayerMask _interactionMask;
-		[SerializeField]
-		private float     _interactionDistance = 2f;
-		[SerializeField]
-		private float     _interactionPrecisionRadius = 0.3f;
-		[SerializeField]
-		private float     _itemDropTime;
+                [SerializeField]
+                private float     _interactionDistance = 2f;
+                [SerializeField]
+                private float     _interactionPrecisionRadius = 0.3f;
+                [SerializeField]
+                private float     _itemDropTime;
+                [SerializeField]
+                private float     _itemBoxCancelMoveDistance = 0.35f;
+                [SerializeField]
+                private float     _itemBoxCancelInputThreshold = 0.1f;
 
 		private Health       _health;
-		private Inventory      _inventory;
-		private Character    _character;
-		private RaycastHit[] _interactionHits = new RaycastHit[10];
+                private Inventory      _inventory;
+                private Character    _character;
+                private RaycastHit[] _interactionHits = new RaycastHit[10];
+                private InteractionsAnimationLayer _interactionsAnimationLayer;
+                private OpenChestState             _openChestState;
+                private ItemBox                    _activeItemBox;
+                private Vector3                    _itemBoxStartPosition;
+                private bool                       _isOpeningItemBox;
+                private bool                       _itemBoxOpened;
 
 		// PUBLIC METHODS
 
-		public void TryInteract(bool interact, bool hold)
-		{
-			if (hold == false)
-			{
-				DropItemTimer = default;
-				return;
-			}
-			
+                public void TryInteract(bool interact, bool hold)
+                {
+                        if (_isOpeningItemBox == true)
+                        {
+                                InteractionTarget = _activeItemBox;
 
-			if (_inventory.CurrentWeapon != null && _inventory.CurrentWeapon.IsBusy() == true)
+                                if (ShouldCancelItemBoxInteraction() == true)
+                                {
+                                        CancelItemBoxInteraction();
+                                }
+
+                                return;
+                        }
+
+                        if (hold == false)
+                        {
+                                DropItemTimer = default;
+                                return;
+                        }
+
+
+                        if (_inventory.CurrentWeapon != null && _inventory.CurrentWeapon.IsBusy() == true)
 			{
 				DropItemTimer = default;
 				return;
@@ -85,10 +108,10 @@
                         {
 				_inventory.Pickup(weaponPickup);
 			}
-			else if (InteractionTarget is ItemBox itemBox)
-			{
-				itemBox.Open();
-			}
+                        else if (InteractionTarget is ItemBox itemBox)
+                        {
+                                TryOpenItemBox(itemBox);
+                        }
 			else if (InteractionTarget is StaticPickup staticPickup)
 			{
 				bool success = staticPickup.TryConsume(gameObject, out string result);
@@ -155,20 +178,22 @@
 
 		// MonoBehaviour INTERFACE
 
-		private void Awake()
-		{
-			_health    = GetComponent<Health>();
-			_inventory   = GetComponent<Inventory>();
-			_character = GetComponent<Character>();
-		}
+                private void Awake()
+                {
+                        _health    = GetComponent<Health>();
+                        _inventory   = GetComponent<Inventory>();
+                        _character = GetComponent<Character>();
+
+                        InitializeAnimationLayer();
+                }
 
 		// PRIVATE METHODS
 
-		private void UpdateInteractionTarget()
-		{
-			InteractionTarget = null;
+                private void UpdateInteractionTarget()
+                {
+                        InteractionTarget = null;
 
-			var cameraTransform = _character.GetCameraTransform(false);
+                        var cameraTransform = _character.GetCameraTransform(false);
 			var cameraDirection = cameraTransform.Rotation * Vector3.forward;
 
 			var physicsScene = Runner.GetPhysicsScene();
@@ -215,10 +240,146 @@
 			}
 
 			if (interaction != null && interaction.IsActive == true)
-			{
-				InteractionTarget = interaction;
-			}
-		}
+                        {
+                                InteractionTarget = interaction;
+                        }
+                }
+
+                private void InitializeAnimationLayer()
+                {
+                        if (_character == null)
+                                return;
+
+                        CharacterAnimationController animationController = _character.AnimationController;
+                        if (animationController == null)
+                                return;
+
+                        if (animationController.FindLayer<InteractionsAnimationLayer>(out var interactionsLayer) == true)
+                        {
+                                _interactionsAnimationLayer = interactionsLayer;
+                                _openChestState             = _interactionsAnimationLayer.OpenChest;
+                        }
+                }
+
+                private bool EnsureOpenChestState()
+                {
+                        if (_openChestState != null)
+                                return true;
+
+                        if (_interactionsAnimationLayer == null)
+                        {
+                                if (_character == null)
+                                        return false;
+
+                                CharacterAnimationController animationController = _character.AnimationController;
+                                if (animationController == null)
+                                        return false;
+
+                                _interactionsAnimationLayer = animationController.FindLayer<InteractionsAnimationLayer>();
+                        }
+
+                        if (_interactionsAnimationLayer == null)
+                                return false;
+
+                        _openChestState = _interactionsAnimationLayer.OpenChest;
+                        return _openChestState != null;
+                }
+
+                private void TryOpenItemBox(ItemBox itemBox)
+                {
+                        if (itemBox == null)
+                                return;
+
+                        if (EnsureOpenChestState() == false)
+                        {
+                                itemBox.Open();
+                                return;
+                        }
+
+                        if (_openChestState.IsPlaying == true)
+                                return;
+
+                        _activeItemBox    = itemBox;
+                        _itemBoxOpened    = false;
+                        _isOpeningItemBox = true;
+
+                        KCC kcc = _character.CharacterController;
+                        if (kcc != null)
+                        {
+                                _itemBoxStartPosition = kcc.FixedData.TargetPosition;
+                        }
+                        else
+                        {
+                                _itemBoxStartPosition = transform.position;
+                        }
+
+                        if (_openChestState.Play(OnItemBoxOpened, OnItemBoxAnimationFinished) == false)
+                        {
+                                _isOpeningItemBox = false;
+                                _activeItemBox    = null;
+                                itemBox.Open();
+                        }
+                }
+
+                private bool ShouldCancelItemBoxInteraction()
+                {
+                        if (_itemBoxOpened == true)
+                                return false;
+
+                        if (_character == null)
+                                return true;
+
+                        KCC kcc = _character.CharacterController;
+                        if (kcc == null)
+                                return true;
+
+                        KCCData data = kcc.FixedData;
+
+                        Vector3 inputDirection = data.InputDirection;
+                        inputDirection.y = 0f;
+
+                        float inputThreshold = _itemBoxCancelInputThreshold * _itemBoxCancelInputThreshold;
+                        if (inputDirection.sqrMagnitude > inputThreshold)
+                                return true;
+
+                        Vector3 currentPosition = data.TargetPosition;
+                        Vector3 horizontalDelta = currentPosition - _itemBoxStartPosition;
+                        horizontalDelta.y = 0f;
+
+                        float cancelDistance = _itemBoxCancelMoveDistance * _itemBoxCancelMoveDistance;
+                        if (horizontalDelta.sqrMagnitude > cancelDistance)
+                                return true;
+
+                        return false;
+                }
+
+                private void CancelItemBoxInteraction()
+                {
+                        if (_isOpeningItemBox == false)
+                                return;
+
+                        _isOpeningItemBox = false;
+                        _itemBoxOpened    = false;
+                        _activeItemBox    = null;
+
+                        _openChestState?.Cancel();
+                }
+
+                private void OnItemBoxOpened()
+                {
+                        if (_activeItemBox == null)
+                                return;
+
+                        _itemBoxOpened = true;
+                        _activeItemBox.Open();
+                }
+
+                private void OnItemBoxAnimationFinished()
+                {
+                        _isOpeningItemBox = false;
+                        _itemBoxOpened    = false;
+                        _activeItemBox    = null;
+                }
 
 		// RPCs
 

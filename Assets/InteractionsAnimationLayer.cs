@@ -7,5 +7,7 @@ namespace TPSBR
     {
         [SerializeField]
         private OpenChestState    _openChest;
+
+        public OpenChestState OpenChest => _openChest;
     }
 }
