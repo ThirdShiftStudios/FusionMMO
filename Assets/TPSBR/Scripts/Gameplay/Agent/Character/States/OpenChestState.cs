@@ -59,9 +59,11 @@ namespace TPSBR
             _endActivated   = false;
             _openTriggered  = false;
 
-            _startOpenChest?.Deactivate(_blendOutDuration, true);
-            _endOpenChest?.Deactivate(_blendOutDuration, true);
-            Deactivate(_blendOutDuration);
+            const float instantFadeDuration = 0.0f;
+
+            _startOpenChest?.Deactivate(instantFadeDuration, true);
+            _endOpenChest?.Deactivate(instantFadeDuration, true);
+            Deactivate(instantFadeDuration);
         }
 
         protected override void OnFixedUpdate()
