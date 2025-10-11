@@ -3,114 +3,136 @@ using UnityEngine;
 
 namespace TPSBR
 {
-	public class PlayerService : IGlobalService
-	{
-		// PUBLIC MEMBERS
+        public class PlayerService : IGlobalService
+        {
+                // PUBLIC MEMBERS
 
                 public Action<PlayerData> PlayerDataChanged;
 
-                public PlayerData PlayerData { get; private set; }
+                public PlayerData PlayerData
+                {
+                        get
+                        {
+                                if (_playerData == null)
+                                {
+                                        _playerData = LoadPlayer();
+                                }
+
+                                return _playerData;
+                        }
+                        private set => _playerData = value;
+                }
                 public bool       IsInitialized { get; private set; }
 
-		// IGlobalService INTERFACE
+                // IGlobalService INTERFACE
 
                 void IGlobalService.Initialize()
                 {
-                        PlayerData = LoadPlayer();
+                        var playerData = PlayerData;
 
                         try
                         {
-                                PlayerData.UnityID = Global.PlayerAuthenticationService.GetPlayerId();
+                                playerData.UnityID = Global.PlayerAuthenticationService.GetPlayerId();
                         }
                         catch (Exception exception)
                         {
-                                PlayerData.UnityID = default;
+                                playerData.UnityID = default;
                                 Debug.LogException(exception);
                                 Debug.LogWarning("Exception raised when authenticating player with Steam.");
                         }
 
-                        PlayerData.Lock();
+                        playerData.Lock();
                         SavePlayer();
 
                         IsInitialized = true;
                 }
 
-		void IGlobalService.Tick()
-		{
-			if (PlayerData.IsDirty == true)
-			{
-				SavePlayer();
-				PlayerData.ClearDirty();
+                void IGlobalService.Tick()
+                {
+                        if (PlayerData.IsDirty == true)
+                        {
+                                SavePlayer();
+                                PlayerData.ClearDirty();
 
-				PlayerDataChanged?.Invoke(PlayerData);
-			}
-		}
+                                PlayerDataChanged?.Invoke(PlayerData);
+                        }
+                }
 
                 void IGlobalService.Deinitialize()
                 {
-                        PlayerData.Unlock();
+                        if (_playerData != null)
+                        {
+                                _playerData.Unlock();
+                        }
+
                         SavePlayer();
 
                         PlayerDataChanged = null;
                         IsInitialized = false;
                 }
 
-		// PRIVATE METHODS
+                // PRIVATE METHODS
 
-		private PlayerData LoadPlayer()
-		{
-			var baseUserID = GetUserID();
-			var userID = baseUserID;
+                private PlayerData LoadPlayer()
+                {
+                        var baseUserID = GetUserID();
+                        var userID = baseUserID;
 
-			var playerData = PersistentStorage.GetObject<PlayerData>($"PlayerData-{userID}");
+                        var playerData = PersistentStorage.GetObject<PlayerData>($"PlayerData-{userID}");
 
-			if (Application.isMobilePlatform == false || Application.isEditor == true)
-			{
-				int clientIndex = 1;
-				while (playerData != null && playerData.IsLocked() == true)
-				{
-					// We are probably running multiple clients, let's create unique player data for each one
+                        if (Application.isMobilePlatform == false || Application.isEditor == true)
+                        {
+                                int clientIndex = 1;
+                                while (playerData != null && playerData.IsLocked() == true)
+                                {
+                                        // We are probably running multiple clients, let's create unique player data for each one
 
-					userID = $"{baseUserID}.{clientIndex}";
-					playerData = PersistentStorage.GetObject<PlayerData>($"PlayerData-{userID}");
+                                        userID = $"{baseUserID}.{clientIndex}";
+                                        playerData = PersistentStorage.GetObject<PlayerData>($"PlayerData-{userID}");
 
-					clientIndex++;
-				}
-			}
+                                        clientIndex++;
+                                }
+                        }
 
-			if (playerData == null)
-			{
-				playerData = new PlayerData(userID);
-				playerData.AgentID = Global.Settings.Agent.GetRandomAgentSetup().ID;
-			};
+                        if (playerData == null)
+                        {
+                                playerData = new PlayerData(userID);
+                                playerData.AgentID = Global.Settings.Agent.GetRandomAgentSetup().ID;
+                        };
 
-			return playerData;
-		}
+                        return playerData;
+                }
 
-		private void SavePlayer()
-		{
-			PersistentStorage.SetObject($"PlayerData-{PlayerData.UserID}", PlayerData, true);
-		}
+                private void SavePlayer()
+                {
+                        if (_playerData == null)
+                                return;
 
-		private string GetUserID()
-		{
-			var userID = SystemInfo.deviceUniqueIdentifier;
+                        PersistentStorage.SetObject($"PlayerData-{_playerData.UserID}", _playerData, true);
+                }
 
-			if (ApplicationSettings.UseRandomDeviceID == true)
-			{
-				userID = Guid.NewGuid().ToString();
-			}
-			if (ApplicationSettings.HasCustomDeviceID == true)
-			{
-				userID = ApplicationSettings.CustomDeviceID;
-			}
+                private string GetUserID()
+                {
+                        var userID = SystemInfo.deviceUniqueIdentifier;
+
+                        if (ApplicationSettings.UseRandomDeviceID == true)
+                        {
+                                userID = Guid.NewGuid().ToString();
+                        }
+                        if (ApplicationSettings.HasCustomDeviceID == true)
+                        {
+                                userID = ApplicationSettings.CustomDeviceID;
+                        }
 
 #if UNITY_EDITOR
-			userID = $"{userID}_{Application.dataPath.GetHashCode()}";
+                        userID = $"{userID}_{Application.dataPath.GetHashCode()}";
 #endif
 
-			return userID;
-		}
+                        return userID;
+                }
 
+                // PRIVATE MEMBERS
+
+                private PlayerData _playerData;
         }
 }
