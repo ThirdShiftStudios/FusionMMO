@@ -35,6 +35,8 @@
                 private float     _itemBoxCancelMoveDistance = 0.35f;
                 [SerializeField]
                 private float     _itemBoxCancelInputThreshold = 0.1f;
+                [SerializeField, Range(0.0f, 1.0f)]
+                private float     _itemBoxOpenNormalizedTime = 0.8f;
 
 		private Health       _health;
                 private Inventory      _inventory;
@@ -313,7 +315,7 @@
                                 _itemBoxStartPosition = transform.position;
                         }
 
-                        if (_openChestState.Play(OnItemBoxOpened, OnItemBoxAnimationFinished) == false)
+                        if (_openChestState.Play(OnItemBoxOpened, OnItemBoxAnimationFinished, _itemBoxOpenNormalizedTime) == false)
                         {
                                 _isOpeningItemBox = false;
                                 _activeItemBox    = null;

@@ -12,6 +12,8 @@ namespace TPSBR
                 [SerializeField] private float     _blendOutDuration = 0.1f;
                 [SerializeField, Range(0.0f, 1.0f)] private float _completionThreshold = 0.98f;
 
+                private float _currentCompletionThreshold;
+
                 private Action _onOpenTriggered;
                 private Action _onFinished;
                 private bool   _isPlaying;
@@ -20,7 +22,7 @@ namespace TPSBR
 
                 public bool IsPlaying => _isPlaying;
 
-                public bool Play(Action onOpenTriggered, Action onFinished)
+                public bool Play(Action onOpenTriggered, Action onFinished, float openNormalizedTime = -1.0f)
                 {
                         if (_startOpenChest == null)
                                 return false;
@@ -28,11 +30,12 @@ namespace TPSBR
                         if (_isPlaying == true)
                                 return false;
 
-                        _onOpenTriggered = onOpenTriggered;
-                        _onFinished      = onFinished;
-                        _isPlaying       = true;
-                        _startCompleted  = false;
-                        _endActivated    = false;
+                        _onOpenTriggered            = onOpenTriggered;
+                        _onFinished                 = onFinished;
+                        _isPlaying                  = true;
+                        _startCompleted             = false;
+                        _endActivated               = false;
+                        _currentCompletionThreshold = Mathf.Clamp01(openNormalizedTime < 0.0f ? _completionThreshold : openNormalizedTime);
 
                         _startOpenChest.SetAnimationTime(0.0f);
                         _startOpenChest.Activate(_blendInDuration);
@@ -74,7 +77,7 @@ namespace TPSBR
 
                         if (_startCompleted == false)
                         {
-                                if (_startOpenChest == null || _startOpenChest.IsFinished(_completionThreshold) == true)
+                                if (_startOpenChest == null || _startOpenChest.IsFinished(_currentCompletionThreshold) == true)
                                 {
                                         _startCompleted = true;
 
