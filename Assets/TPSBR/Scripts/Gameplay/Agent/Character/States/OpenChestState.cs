@@ -24,6 +24,7 @@ namespace TPSBR
         private bool _isPlaying;
         private bool _startCompleted;
         private bool _endActivated;
+        private bool _openTriggered;
 
         public bool IsPlaying => _isPlaying;
 
@@ -43,6 +44,7 @@ namespace TPSBR
             _isPlaying                  = true;
             _startCompleted             = false;
             _endActivated               = false;
+            _openTriggered              = false;
             _currentCompletionThreshold = Mathf.Clamp01(openNormalizedTime < 0.0f ? _completionThreshold : openNormalizedTime);
 
             // Reset clips
@@ -69,6 +71,7 @@ namespace TPSBR
             _isPlaying      = false;
             _startCompleted = false;
             _endActivated   = false;
+            _openTriggered  = false;
 
             _startOpenChest?.Deactivate(_blendOutDuration, true);
             _endOpenChest?.Deactivate(_blendOutDuration, true);
@@ -91,22 +94,36 @@ namespace TPSBR
             // Phase 1: wait until the start clip reaches the threshold
             if (_startCompleted == false)
             {
-                if (HasReachedStartThreshold())
+                if (_openTriggered == false && HasReachedStartThreshold())
                 {
-                    _startCompleted = true;
-
                     // Fire the gameplay trigger exactly at the threshold
+                    _openTriggered = true;
                     _onOpenTriggered?.Invoke();
                     _onOpenTriggered = null;
+                }
+
+                if (_startOpenChest == null || _startOpenChest.IsFinished())
+                {
+                    if (_openTriggered == false)
+                    {
+                        _openTriggered = true;
+                        _onOpenTriggered?.Invoke();
+                        _onOpenTriggered = null;
+                    }
+
+                    _startCompleted = true;
 
                     if (_endOpenChest != null)
                     {
-                        // Clean handoff: fade start out while bringing end in
                         _startOpenChest?.Deactivate(_blendOutDuration, true);
 
                         _endActivated = true;
                         _endOpenChest.SetAnimationTime(0.0f);
                         _endOpenChest.Activate(_blendInDuration);
+                    }
+                    else
+                    {
+                        Complete();
                     }
                 }
 
@@ -140,6 +157,7 @@ namespace TPSBR
             _isPlaying      = false;
             _startCompleted = false;
             _endActivated   = false;
+            _openTriggered  = false;
 
             _startOpenChest?.Deactivate(_blendOutDuration, true);
             _endOpenChest?.Deactivate(_blendOutDuration, true);
