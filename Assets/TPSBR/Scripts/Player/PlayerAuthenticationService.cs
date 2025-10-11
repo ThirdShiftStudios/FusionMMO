@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Threading.Tasks;
 using Steamworks;
 using Unity.Services.Authentication;
@@ -22,6 +23,7 @@ namespace TPSBR
                 public string PlayerId { get; private set; }
                 public bool IsAuthenticated => string.IsNullOrEmpty(PlayerId) == false;
                 public bool IsInitialized  { get; private set; }
+                public string UnityProfileName => _unityProfileName;
 
                 // PRIVATE MEMBERS
 
@@ -29,6 +31,7 @@ namespace TPSBR
                 private bool _hasLoggedAuthenticationFailure;
                 private AuthenticationMode _authenticationMode = AuthenticationMode.Steam;
                 private Task _unityAuthenticationTask;
+                private string _unityProfileName;
 
                 // IGlobalService INTERFACE
 
@@ -60,6 +63,7 @@ namespace TPSBR
                         IsInitialized = false;
                         _hasLoggedAuthenticationFailure = false;
                         _unityAuthenticationTask = null;
+                        _unityProfileName = null;
 
                         if (_authenticationMode == AuthenticationMode.Steam)
                         {
@@ -197,6 +201,16 @@ namespace TPSBR
                                 throw new InvalidOperationException("Unity Authentication service is unavailable.");
                         }
 
+                        if (string.IsNullOrEmpty(_unityProfileName) == false && AuthenticationService.Instance.Profile != _unityProfileName)
+                        {
+                                if (AuthenticationService.Instance.IsSignedIn == true)
+                                {
+                                        AuthenticationService.Instance.SignOut();
+                                }
+
+                                AuthenticationService.Instance.SwitchProfile(_unityProfileName);
+                        }
+
                         if (AuthenticationService.Instance.IsSignedIn == false)
                         {
                                 await AuthenticationService.Instance.SignInAnonymouslyAsync(new SignInOptions { CreateAccount = true });
@@ -219,12 +233,60 @@ namespace TPSBR
 #if UNITY_EDITOR
                         if (ClonesManager.IsClone() == true)
                         {
+                                _unityProfileName = DetermineUnityProfileNameForClone();
                                 _authenticationMode = AuthenticationMode.UnityAnonymous;
                                 return;
                         }
 #endif
 
+                        _unityProfileName = null;
                         _authenticationMode = AuthenticationMode.Steam;
+                }
+
+#if UNITY_EDITOR
+                private string DetermineUnityProfileNameForClone()
+                {
+                        var projectPath = Path.GetDirectoryName(Application.dataPath);
+
+                        if (string.IsNullOrEmpty(projectPath) == true)
+                        {
+                                return null;
+                        }
+
+                        var projectFolder = Path.GetFileName(projectPath);
+
+                        return SanitizeProfileName(projectFolder);
+                }
+#endif
+
+                private static string SanitizeProfileName(string profileName)
+                {
+                        if (string.IsNullOrEmpty(profileName) == true)
+                        {
+                                return null;
+                        }
+
+                        Span<char> buffer = stackalloc char[Math.Min(profileName.Length, 30)];
+                        int index = 0;
+
+                        for (int i = 0; i < profileName.Length && index < buffer.Length; i++)
+                        {
+                                char character = profileName[i];
+
+                                if (char.IsLetterOrDigit(character) == false && character != '-' && character != '_')
+                                {
+                                        continue;
+                                }
+
+                                buffer[index++] = character;
+                        }
+
+                        if (index == 0)
+                        {
+                                return null;
+                        }
+
+                        return new string(buffer.Slice(0, index));
                 }
         }
 }
