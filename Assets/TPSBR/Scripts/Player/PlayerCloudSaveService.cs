@@ -309,18 +309,32 @@ namespace TPSBR
 
         private async Task EnsurePlayerSignedInAsync()
         {
-            var desiredProfile = Global.PlayerService?.PlayerData?.UserID;
-            var sanitizedProfile = SanitizeProfileName(desiredProfile);
+            var authenticationInstance = AuthenticationService.Instance;
 
-            if (sanitizedProfile.HasValue() == true && AuthenticationService.Instance.Profile != sanitizedProfile)
-            {
-                AuthenticationService.Instance.SwitchProfile(sanitizedProfile);
-            }
-
-            if (AuthenticationService.Instance != null && AuthenticationService.Instance.IsSignedIn == true)
+            if (authenticationInstance == null)
                 return;
 
-            await AuthenticationService.Instance.SignInAnonymouslyAsync(new SignInOptions { CreateAccount = true });
+            string desiredProfile = Global.PlayerAuthenticationService?.UnityProfileName;
+
+            if (desiredProfile.HasValue() == false)
+            {
+                desiredProfile = Global.PlayerService?.PlayerData?.UserID;
+            }
+
+            var sanitizedProfile = SanitizeProfileName(desiredProfile);
+
+            if (sanitizedProfile.HasValue() == true && authenticationInstance.Profile != sanitizedProfile)
+            {
+                if (authenticationInstance.IsSignedIn == true)
+                    authenticationInstance.SignOut();
+
+                authenticationInstance.SwitchProfile(sanitizedProfile);
+            }
+
+            if (authenticationInstance.IsSignedIn == true)
+                return;
+
+            await authenticationInstance.SignInAnonymouslyAsync(new SignInOptions { CreateAccount = true });
         }
 
         private static string SanitizeProfileName(string profileName)
