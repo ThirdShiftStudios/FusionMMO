@@ -11,11 +11,7 @@ namespace TPSBR.UI
 		[SerializeField]
 		private UIPlayer _player;
 		[SerializeField]
-		private UICrosshair _crosshair;
-		[SerializeField]
 		private UIHealth _health;
-		[SerializeField]
-		private UIWeapons _weapons;
 		[SerializeField]
 		private UIGameplayInteractions _interactions;
 		[SerializeField]
@@ -137,8 +133,6 @@ namespace TPSBR.UI
 
 			_health.UpdateHealth(_localAgent.Health);
 			_effects.UpdateEffects(_localAgent);
-			_weapons.UpdateWeapons(_localAgent.Inventory, _localAgent.AgentInput);
-			_crosshair.UpdateCrosshair(_localAgent);
 			_interactions.UpdateInteractions(Context, _localAgent);
 			_teamPlayerPanels.UpdateTeamPlayerPanels(Context, _localAgent);
 		}
@@ -147,7 +141,6 @@ namespace TPSBR.UI
 
 		private void OnHitPerformed(HitData hitData)
 		{
-			_crosshair.HitPerformed(hitData);
 			_hitDamage.HitPerformed(hitData);
 		}
 
@@ -257,11 +250,9 @@ namespace TPSBR.UI
 			_localAgentId = agent.Id;
 
 			_health.SetActive(true);
-			_crosshair.SetActive(true);
 			_interactions.SetActive(true);
 			_effects.SetActive(true);
 			_spectatingGroup.SetActive(isLocalPlayer == false);
-			_weapons.SetActive(true);
 
 			_player.SetData(Context, player);
 
@@ -278,8 +269,6 @@ namespace TPSBR.UI
 		private void ClearLocalAgent()
 		{
 			_health.SetActive(false);
-			_weapons.SetActive(false);
-			_crosshair.SetActive(false);
 			_interactions.SetActive(false);
 			_effects.SetActive(false);
 			_spectatingGroup.SetActive(false);

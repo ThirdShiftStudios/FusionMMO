@@ -14,9 +14,6 @@ namespace TPSBR
         [SerializeField] private float _blendInDuration  = 0.1f;
         [SerializeField] private float _blendOutDuration = 0.1f;
 
-        [Header("Threshold")]
-        [SerializeField, Range(0.0f, 1.0f)] private float _completionThreshold = 0.5f;
-
         private float  _currentCompletionThreshold;
         private Action _onOpenTriggered;
         private Action _onFinished;
@@ -43,7 +40,7 @@ namespace TPSBR
             _isPlaying                  = true;
             _startCompleted             = false;
             _endActivated               = false;
-            _currentCompletionThreshold = Mathf.Clamp01(openNormalizedTime < 0.0f ? _completionThreshold : openNormalizedTime);
+            _currentCompletionThreshold = 0.5f;
 
             // Reset clips
             _startOpenChest.SetAnimationTime(0.0f);
@@ -148,7 +145,7 @@ namespace TPSBR
         /// </summary>
         private bool HasReachedStartThreshold()
         {
-            return _startOpenChest.IsFinished(0.5f);
+            return _startOpenChest.IsFinished(_currentCompletionThreshold);
             if (_startOpenChest == null)
                 return true;
 
