@@ -142,10 +142,11 @@ namespace TPSBR
                         if (_startOpenChest == null)
                                 return true;
 
-                        if (_startOpenChest.AnimationTime >= _currentCompletionThreshold)
+                        float normalizedTime = Mathf.Max(_startOpenChest.AnimationTime, _startOpenChest.InterpolatedAnimationTime);
+                        if (normalizedTime >= _currentCompletionThreshold)
                                 return true;
 
-                        return _startOpenChest.IsFinished();
+                        return _startOpenChest.IsFinished(_currentCompletionThreshold);
                 }
         }
 }
