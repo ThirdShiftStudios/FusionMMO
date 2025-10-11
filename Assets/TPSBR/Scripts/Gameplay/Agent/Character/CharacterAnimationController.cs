@@ -254,6 +254,9 @@ namespace TPSBR
 
         private void CancelItemBoxInteraction()
         {
+            OpenChestState openChest = _interactionsLayer?.OpenChest;
+
+            openChest?.Cancel();
             _interactionsLayer?.EndInteraction(InteractionsAnimationLayer.InteractionType.OpenChest);
             _activeInteraction = null;
             _activeItemBox = null;
