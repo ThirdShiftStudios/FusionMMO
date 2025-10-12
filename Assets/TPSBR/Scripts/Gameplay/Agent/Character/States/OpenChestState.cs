@@ -73,7 +73,7 @@ namespace TPSBR
 
             if (_startCompleted == false)
             {
-                if (_startOpenChest == null || _startOpenChest.IsFinished(0.5f))
+                if (_startOpenChest == null || _startOpenChest.IsFinished())
                 {
                     _startCompleted = true;
 
@@ -115,9 +115,7 @@ namespace TPSBR
             if (_startOpenChest == null)
                 return false;
 
-            float normalizedTime = Mathf.Max(_startOpenChest.AnimationTime, _startOpenChest.InterpolatedAnimationTime);
-
-            if (normalizedTime < _openTriggerNormalizedTime)
+            if (_startOpenChest.IsFinished(_openTriggerNormalizedTime) == false)
                 return false;
 
             _openTriggered = true;
