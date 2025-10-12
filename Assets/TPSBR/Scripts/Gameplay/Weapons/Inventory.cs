@@ -118,6 +118,8 @@ namespace TPSBR
         [SerializeField] private float _itemDropImpulse = 3f;
         [SerializeField] private Transform _pickaxeEquippedParent;
         [SerializeField] private Transform _pickaxeUnequippedParent;
+        [SerializeField] private Transform _woodAxeEquippedParent;
+        [SerializeField] private Transform _woodAxeUnequippedParent;
 
         [Header("Audio")] [SerializeField] private Transform _fireAudioEffectsRoot;
 
@@ -130,6 +132,8 @@ namespace TPSBR
         [Networked] private byte _previousWeaponSlot { get; set; }
         [Networked] private Pickaxe _pickaxe { get; set; }
         [Networked] private NetworkBool _isPickaxeEquipped { get; set; }
+        [Networked] private WoodAxe _woodAxe { get; set; }
+        [Networked] private NetworkBool _isWoodAxeEquipped { get; set; }
 
         private Health _health;
         private Character _character;
@@ -143,6 +147,9 @@ namespace TPSBR
         private Pickaxe _localPickaxe;
         private bool _localPickaxeEquipped;
         private byte _weaponSlotBeforePickaxe = byte.MaxValue;
+        private WoodAxe _localWoodAxe;
+        private bool _localWoodAxeEquipped;
+        private byte _weaponSlotBeforeWoodAxe = byte.MaxValue;
         private Dictionary<int, WeaponDefinition> _weaponDefinitionsBySlot = new Dictionary<int, WeaponDefinition>();
         private readonly Dictionary<WeaponSize, int> _weaponSizeToSlotIndex = new Dictionary<WeaponSize, int>();
 
@@ -565,6 +572,64 @@ namespace TPSBR
             RefreshPickaxeVisuals();
         }
 
+        public bool BeginWoodAxeUse()
+        {
+            if (_woodAxeSlot.IsEmpty == true)
+                return false;
+
+            if (_weaponSlotBeforeWoodAxe == byte.MaxValue)
+            {
+                _weaponSlotBeforeWoodAxe = _currentWeaponSlot;
+            }
+
+            if (HasStateAuthority == true)
+            {
+                EnsureToolAvailability();
+                EnsureWoodAxeInstance();
+
+                if (_woodAxe == null)
+                {
+                    RefreshWoodAxeVisuals();
+                    return false;
+                }
+
+                if (_currentWeaponSlot != 0)
+                {
+                    SetCurrentWeapon(0);
+                    ArmCurrentWeapon();
+                }
+
+                _isWoodAxeEquipped = true;
+            }
+
+            RefreshWoodAxeVisuals();
+            return _woodAxe != null;
+        }
+
+        public void EndWoodAxeUse()
+        {
+            if (HasStateAuthority == true)
+            {
+                if (_isWoodAxeEquipped == true)
+                {
+                    _isWoodAxeEquipped = false;
+                }
+
+                if (_weaponSlotBeforeWoodAxe != byte.MaxValue)
+                {
+                    byte targetSlot = _weaponSlotBeforeWoodAxe;
+                    _weaponSlotBeforeWoodAxe = byte.MaxValue;
+
+                    SetCurrentWeapon(targetSlot);
+                    ArmCurrentWeapon();
+                }
+            }
+
+            _weaponSlotBeforeWoodAxe = byte.MaxValue;
+
+            RefreshWoodAxeVisuals();
+        }
+
         public void DropCurrentWeapon()
         {
             DropWeapon(_currentWeaponSlot);
@@ -629,6 +694,8 @@ namespace TPSBR
             {
                 RefreshWeapons();
                 RefreshItems();
+                RefreshPickaxeVisuals();
+                RefreshWoodAxeVisuals();
                 return;
             }
 
@@ -636,6 +703,8 @@ namespace TPSBR
             {
                 RefreshWeapons();
                 RefreshItems();
+                RefreshPickaxeVisuals();
+                RefreshWoodAxeVisuals();
                 return;
             }
 
@@ -672,6 +741,8 @@ namespace TPSBR
             RefreshWeapons();
             RefreshItems();
             EnsureToolAvailability();
+            RefreshPickaxeVisuals();
+            RefreshWoodAxeVisuals();
         }
 
         public void OnDespawned()
@@ -679,6 +750,7 @@ namespace TPSBR
             Global.PlayerCloudSaveService?.UnregisterInventory(this);
 
             DespawnPickaxe();
+            DespawnWoodAxe();
 
             // Cleanup weapons
             for (int i = 0; i < _hotbar.Length; i++)
@@ -726,6 +798,7 @@ namespace TPSBR
             _localPickaxeSlot = default;
             _woodAxeSlot = default;
             _localWoodAxeSlot = default;
+            _localWoodAxe = null;
 
             ItemSlotChanged = null;
             HotbarSlotChanged = null;
@@ -761,6 +834,7 @@ namespace TPSBR
             RefreshWeapons();
             RefreshItems();
             RefreshPickaxeVisuals();
+            RefreshWoodAxeVisuals();
         }
 
         public bool CanFireWeapon(bool keyDown)
@@ -2119,6 +2193,40 @@ namespace TPSBR
             }
         }
 
+        private void RefreshWoodAxeVisuals()
+        {
+            var networkWoodAxe = _woodAxe;
+
+            if (_localWoodAxe != networkWoodAxe)
+            {
+                if (_localWoodAxe != null)
+                {
+                    _localWoodAxe.DeinitializeTool(Object);
+                }
+
+                _localWoodAxe = networkWoodAxe;
+                _localWoodAxeEquipped = false;
+
+                if (_localWoodAxe != null)
+                {
+                    _localWoodAxe.InitializeTool(Object, _woodAxeEquippedParent, _woodAxeUnequippedParent);
+                }
+            }
+
+            if (_localWoodAxe != null)
+            {
+                _localWoodAxe.RefreshParents(_woodAxeEquippedParent, _woodAxeUnequippedParent);
+
+                bool desiredState = _isWoodAxeEquipped;
+                _localWoodAxe.SetEquipped(desiredState);
+                _localWoodAxeEquipped = desiredState;
+            }
+            else
+            {
+                _localWoodAxeEquipped = false;
+            }
+        }
+
         private void EnsurePickaxeInstance()
         {
             if (HasStateAuthority == false)
@@ -2185,6 +2293,72 @@ namespace TPSBR
             _weaponSlotBeforePickaxe = byte.MaxValue;
         }
 
+        private void EnsureWoodAxeInstance()
+        {
+            if (HasStateAuthority == false)
+            {
+                RefreshWoodAxeVisuals();
+                return;
+            }
+
+            if (_woodAxeSlot.IsEmpty == true || IsWoodAxeSlotItem(_woodAxeSlot) == false)
+            {
+                DespawnWoodAxe();
+                return;
+            }
+
+            var definition = _woodAxeSlot.GetDefinition() as WoodAxeDefinition;
+            if (definition == null || definition.WoodAxePrefab == null || Runner == null)
+            {
+                DespawnWoodAxe();
+                return;
+            }
+
+            var woodAxe = _woodAxe;
+            if (woodAxe != null && woodAxe.Definition != definition)
+            {
+                DespawnWoodAxe();
+                woodAxe = null;
+            }
+
+            if (woodAxe == null)
+            {
+                woodAxe = Runner.Spawn(definition.WoodAxePrefab, inputAuthority: Object.InputAuthority);
+                _woodAxe = woodAxe;
+            }
+
+            RefreshWoodAxeVisuals();
+        }
+
+        private void DespawnWoodAxe()
+        {
+            if ((_weaponSlotBeforeWoodAxe != byte.MaxValue || _isWoodAxeEquipped == true) && (_woodAxe != null || _localWoodAxe != null))
+            {
+                EndWoodAxeUse();
+            }
+
+            if (HasStateAuthority == true)
+            {
+                var woodAxe = _woodAxe;
+                if (woodAxe != null)
+                {
+                    Runner.Despawn(woodAxe.Object);
+                }
+
+                _woodAxe = null;
+                _isWoodAxeEquipped = false;
+            }
+
+            if (_localWoodAxe != null)
+            {
+                _localWoodAxe.DeinitializeTool(Object);
+                _localWoodAxe = null;
+            }
+
+            _localWoodAxeEquipped = false;
+            _weaponSlotBeforeWoodAxe = byte.MaxValue;
+        }
+
         private void EnsureToolAvailability()
         {
             EnsurePickaxeAvailabilityInternal();
@@ -2249,6 +2423,7 @@ namespace TPSBR
             {
                 _woodAxeSlot = default;
                 RefreshWoodAxeSlot();
+                DespawnWoodAxe();
             }
 
             if (IsWoodAxeSlotItem(_woodAxeSlot) == false)
@@ -2262,21 +2437,29 @@ namespace TPSBR
                     UpdateWeaponDefinitionMapping(woodAxeIndex, default);
                     RefreshWoodAxeSlot();
                     RefreshItems();
+                    EnsureWoodAxeInstance();
                     return;
                 }
             }
 
             if (HasAnyWoodAxe() == true)
+            {
+                EnsureWoodAxeInstance();
                 return;
+            }
 
             var defaultWoodAxe = ResolveDefaultWoodAxe();
             if (defaultWoodAxe == null)
+            {
+                DespawnWoodAxe();
                 return;
+            }
 
             ItemDefinition.Get(defaultWoodAxe.ID);
 
             _woodAxeSlot = new InventorySlot(defaultWoodAxe.ID, 1, default);
             RefreshWoodAxeSlot();
+            EnsureWoodAxeInstance();
         }
 
         private static PickaxeDefinition ResolveDefaultPickaxe()

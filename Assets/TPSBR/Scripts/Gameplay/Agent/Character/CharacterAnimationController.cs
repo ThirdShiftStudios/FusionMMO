@@ -242,6 +242,8 @@ namespace TPSBR
                 return false;
             }
 
+            _inventory?.BeginWoodAxeUse();
+
             _activeInteraction = treeNode;
             _activeTreeNode = treeNode;
 
@@ -505,6 +507,8 @@ namespace TPSBR
 
         private void ResetTreeInteraction()
         {
+            _inventory?.EndWoodAxeUse();
+
             _activeInteraction = null;
             _activeTreeNode = null;
             _treeStartPosition = Vector3.zero;
