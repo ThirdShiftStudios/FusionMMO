@@ -31,6 +31,8 @@
         [SerializeField, Range(0.0f, 1.0f)] private float _itemBoxOpenNormalizedTime = 0.8f;
         [SerializeField] private float _oreCancelMoveDistance = 0.35f;
         [SerializeField] private float _oreCancelInputThreshold = 0.1f;
+        [SerializeField] private float _glyphCancelMoveDistance = 0.35f;
+        [SerializeField] private float _glyphCancelInputThreshold = 0.1f;
 
         private Health _health;
         private Inventory _inventory;
@@ -108,6 +110,10 @@
             else if (InteractionTarget is OreNode oreNode)
             {
                 TryMineOreNode(oreNode);
+            }
+            else if (InteractionTarget is GlyphNode glyphNode)
+            {
+                TryHarvestGlyphNode(glyphNode);
             }
         }
 
@@ -269,6 +275,26 @@
             if (agent != null)
             {
                 oreNode.TryBeginMining(agent);
+            }
+        }
+
+        private void TryHarvestGlyphNode(GlyphNode glyphNode)
+        {
+            if (glyphNode == null)
+                return;
+
+            if (_animationController != null &&
+                _animationController.TryStartGlyphInteraction(glyphNode, _glyphCancelMoveDistance,
+                    _glyphCancelInputThreshold) == true)
+            {
+                return;
+            }
+
+            Agent agent = _character != null ? _character.Agent : null;
+
+            if (agent != null)
+            {
+                glyphNode.TryBeginHarvest(agent);
             }
         }
 

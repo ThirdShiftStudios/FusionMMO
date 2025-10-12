@@ -29,6 +29,10 @@ namespace TPSBR
         private Vector3 _oreStartPosition;
         private float _oreCancelDistanceSqr;
         private float _oreCancelInputThresholdSqr;
+        private GlyphNode _activeGlyphNode;
+        private Vector3 _glyphStartPosition;
+        private float _glyphCancelDistanceSqr;
+        private float _glyphCancelInputThresholdSqr;
 
         // PUBLIC METHODS
 
@@ -202,6 +206,53 @@ namespace TPSBR
             return true;
         }
 
+        public bool TryStartGlyphInteraction(GlyphNode glyphNode, float cancelMoveDistance, float cancelInputThreshold)
+        {
+            if (glyphNode == null)
+                return false;
+
+            if (_agent == null)
+                return false;
+
+            if (_interactionsLayer == null)
+                return false;
+
+            if (_interactionsLayer.TryBeginInteraction(InteractionsAnimationLayer.InteractionType.HarvestGlyph) == false)
+                return false;
+
+            HarvestGlyphState harvestGlyph = _interactionsLayer.HarvestGlyph;
+            if (harvestGlyph == null)
+            {
+                _interactionsLayer.EndInteraction(InteractionsAnimationLayer.InteractionType.HarvestGlyph);
+                return false;
+            }
+
+            if (harvestGlyph.Play() == false)
+            {
+                _interactionsLayer.EndInteraction(InteractionsAnimationLayer.InteractionType.HarvestGlyph);
+                return false;
+            }
+
+            if (glyphNode.TryBeginHarvest(_agent) == false)
+            {
+                harvestGlyph.Stop();
+                _interactionsLayer.EndInteraction(InteractionsAnimationLayer.InteractionType.HarvestGlyph);
+                return false;
+            }
+
+            _activeInteraction = glyphNode;
+            _activeGlyphNode = glyphNode;
+
+            cancelMoveDistance = Mathf.Max(0.0f, cancelMoveDistance);
+            cancelInputThreshold = Mathf.Max(0.0f, cancelInputThreshold);
+
+            _glyphCancelDistanceSqr = cancelMoveDistance * cancelMoveDistance;
+            _glyphCancelInputThresholdSqr = cancelInputThreshold * cancelInputThreshold;
+            _glyphStartPosition = _kcc != null ? _kcc.FixedData.TargetPosition : transform.position;
+
+            return true;
+        }
+
         // AnimationController INTERFACE
 
         protected override void OnSpawned()
@@ -253,6 +304,9 @@ namespace TPSBR
                     break;
                 case InteractionsAnimationLayer.InteractionType.MineOre:
                     UpdateOreInteraction();
+                    break;
+                case InteractionsAnimationLayer.InteractionType.HarvestGlyph:
+                    UpdateGlyphInteraction();
                     break;
             }
         }
@@ -388,6 +442,70 @@ namespace TPSBR
             _oreStartPosition = Vector3.zero;
             _oreCancelDistanceSqr = 0f;
             _oreCancelInputThresholdSqr = 0f;
+        }
+
+        private void UpdateGlyphInteraction()
+        {
+            HarvestGlyphState harvestGlyph = _interactionsLayer.HarvestGlyph;
+
+            if (_activeGlyphNode == null || harvestGlyph == null)
+            {
+                CancelGlyphInteraction();
+                return;
+            }
+
+            if (harvestGlyph.IsPlaying == false)
+            {
+                FinishGlyphInteraction();
+                return;
+            }
+
+            if (ShouldCancelInteraction(_glyphStartPosition, _glyphCancelDistanceSqr, _glyphCancelInputThresholdSqr) == true)
+            {
+                CancelGlyphInteraction();
+                return;
+            }
+
+            if (_agent == null)
+                return;
+
+            float deltaTime = Runner != null ? Runner.DeltaTime : Time.fixedDeltaTime;
+
+            if (_activeGlyphNode.TickHarvest(deltaTime, _agent) == true)
+            {
+                FinishGlyphInteraction();
+            }
+        }
+
+        private void CancelGlyphInteraction()
+        {
+            HarvestGlyphState harvestGlyph = _interactionsLayer?.HarvestGlyph;
+
+            harvestGlyph?.Stop();
+            _interactionsLayer?.EndInteraction(InteractionsAnimationLayer.InteractionType.HarvestGlyph);
+
+            _activeGlyphNode?.CancelHarvest(_agent);
+
+            ResetGlyphInteraction();
+        }
+
+        private void FinishGlyphInteraction()
+        {
+            HarvestGlyphState harvestGlyph = _interactionsLayer?.HarvestGlyph;
+
+            harvestGlyph?.Stop();
+            _interactionsLayer?.EndInteraction(InteractionsAnimationLayer.InteractionType.HarvestGlyph);
+
+            ResetGlyphInteraction();
+        }
+
+        private void ResetGlyphInteraction()
+        {
+            _activeInteraction = null;
+            _activeGlyphNode = null;
+            _glyphStartPosition = Vector3.zero;
+            _glyphCancelDistanceSqr = 0f;
+            _glyphCancelInputThresholdSqr = 0f;
         }
 
         private bool ShouldCancelInteraction(Vector3 startPosition, float cancelDistanceSqr, float cancelInputThresholdSqr)

@@ -10,12 +10,15 @@ namespace TPSBR
             None,
             OpenChest,
             MineOre,
+            HarvestGlyph,
         }
 
         [SerializeField]
         private OpenChestState _openChest;
         [SerializeField]
         private MineOreState _mineOre;
+        [SerializeField]
+        private HarvestGlyphState _harvestGlyph;
 
         private InteractionType _activeInteraction = InteractionType.None;
 
@@ -42,6 +45,19 @@ namespace TPSBR
                 }
 
                 return _mineOre;
+            }
+        }
+
+        public HarvestGlyphState HarvestGlyph
+        {
+            get
+            {
+                if (_harvestGlyph == null)
+                {
+                    FindState(out _harvestGlyph, true);
+                }
+
+                return _harvestGlyph;
             }
         }
 
