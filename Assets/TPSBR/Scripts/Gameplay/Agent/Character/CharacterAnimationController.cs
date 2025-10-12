@@ -223,6 +223,16 @@ namespace TPSBR
             if (_itemBoxOpened == false && openChest.TryConsumeOpenTrigger() == true)
             {
                 _itemBoxOpened = true;
+
+                if (_kcc != null)
+                {
+                    _itemBoxStartPosition = _kcc.FixedData.TargetPosition;
+                }
+                else
+                {
+                    _itemBoxStartPosition = transform.position;
+                }
+
                 _activeItemBox.Open();
             }
         }
@@ -233,13 +243,6 @@ namespace TPSBR
                 return true;
 
             KCCData data = _kcc.FixedData;
-
-            Vector3 realVelocity = data.RealVelocity;
-            realVelocity.y = 0f;
-
-            // Cancel immediately if the player starts moving.
-            if (realVelocity.sqrMagnitude > 0.0001f)
-                return true;
 
             Vector3 inputDirection = data.InputDirection;
             inputDirection.y = 0f;
