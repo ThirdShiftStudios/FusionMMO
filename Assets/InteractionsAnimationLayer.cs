@@ -9,10 +9,13 @@ namespace TPSBR
         {
             None,
             OpenChest,
+            MineOre,
         }
 
         [SerializeField]
         private OpenChestState _openChest;
+        [SerializeField]
+        private MineOreState _mineOre;
 
         private InteractionType _activeInteraction = InteractionType.None;
 
@@ -26,6 +29,19 @@ namespace TPSBR
                 }
 
                 return _openChest;
+            }
+        }
+
+        public MineOreState MineOre
+        {
+            get
+            {
+                if (_mineOre == null)
+                {
+                    FindState(out _mineOre, true);
+                }
+
+                return _mineOre;
             }
         }
 

@@ -25,6 +25,10 @@ namespace TPSBR
         private float _itemBoxCancelDistanceSqr;
         private float _itemBoxCancelInputThresholdSqr;
         private bool _itemBoxOpened;
+        private OreNode _activeOreNode;
+        private Vector3 _oreStartPosition;
+        private float _oreCancelDistanceSqr;
+        private float _oreCancelInputThresholdSqr;
 
         // PUBLIC METHODS
 
@@ -151,6 +155,53 @@ namespace TPSBR
             return true;
         }
 
+        public bool TryStartOreInteraction(OreNode oreNode, float cancelMoveDistance, float cancelInputThreshold)
+        {
+            if (oreNode == null)
+                return false;
+
+            if (_agent == null)
+                return false;
+
+            if (_interactionsLayer == null)
+                return false;
+
+            if (_interactionsLayer.TryBeginInteraction(InteractionsAnimationLayer.InteractionType.MineOre) == false)
+                return false;
+
+            MineOreState mineOre = _interactionsLayer.MineOre;
+            if (mineOre == null)
+            {
+                _interactionsLayer.EndInteraction(InteractionsAnimationLayer.InteractionType.MineOre);
+                return false;
+            }
+
+            if (mineOre.Play() == false)
+            {
+                _interactionsLayer.EndInteraction(InteractionsAnimationLayer.InteractionType.MineOre);
+                return false;
+            }
+
+            if (oreNode.TryBeginMining(_agent) == false)
+            {
+                mineOre.Stop();
+                _interactionsLayer.EndInteraction(InteractionsAnimationLayer.InteractionType.MineOre);
+                return false;
+            }
+
+            _activeInteraction = oreNode;
+            _activeOreNode = oreNode;
+
+            cancelMoveDistance = Mathf.Max(0.0f, cancelMoveDistance);
+            cancelInputThreshold = Mathf.Max(0.0f, cancelInputThreshold);
+
+            _oreCancelDistanceSqr = cancelMoveDistance * cancelMoveDistance;
+            _oreCancelInputThresholdSqr = cancelInputThreshold * cancelInputThreshold;
+            _oreStartPosition = _kcc != null ? _kcc.FixedData.TargetPosition : transform.position;
+
+            return true;
+        }
+
         // AnimationController INTERFACE
 
         protected override void OnSpawned()
@@ -195,9 +246,47 @@ namespace TPSBR
             if (_interactionsLayer == null || _interactionsLayer.ActiveInteraction == InteractionsAnimationLayer.InteractionType.None)
                 return;
 
-            if (_interactionsLayer.ActiveInteraction != InteractionsAnimationLayer.InteractionType.OpenChest)
-                return;
+            switch (_interactionsLayer.ActiveInteraction)
+            {
+                case InteractionsAnimationLayer.InteractionType.OpenChest:
+                    UpdateOpenChestInteraction();
+                    break;
+                case InteractionsAnimationLayer.InteractionType.MineOre:
+                    UpdateOreInteraction();
+                    break;
+            }
+        }
 
+        private bool ShouldCancelItemBoxInteraction()
+        {
+            return ShouldCancelInteraction(_itemBoxStartPosition, _itemBoxCancelDistanceSqr, _itemBoxCancelInputThresholdSqr);
+        }
+
+        private void CancelItemBoxInteraction()
+        {
+            OpenChestState openChest = _interactionsLayer?.OpenChest;
+
+            openChest?.Cancel();
+            _interactionsLayer?.EndInteraction(InteractionsAnimationLayer.InteractionType.OpenChest);
+            _activeInteraction = null;
+            _activeItemBox = null;
+            _itemBoxOpened = false;
+            _itemBoxCancelDistanceSqr = 0f;
+            _itemBoxCancelInputThresholdSqr = 0f;
+        }
+
+        private void FinishItemBoxInteraction()
+        {
+            _interactionsLayer?.EndInteraction(InteractionsAnimationLayer.InteractionType.OpenChest);
+            _activeInteraction = null;
+            _activeItemBox = null;
+            _itemBoxOpened = false;
+            _itemBoxCancelDistanceSqr = 0f;
+            _itemBoxCancelInputThresholdSqr = 0f;
+        }
+
+        private void UpdateOpenChestInteraction()
+        {
             OpenChestState openChest = _interactionsLayer.OpenChest;
 
             if (_activeItemBox == null || openChest == null)
@@ -237,7 +326,71 @@ namespace TPSBR
             }
         }
 
-        private bool ShouldCancelItemBoxInteraction()
+        private void UpdateOreInteraction()
+        {
+            MineOreState mineOre = _interactionsLayer.MineOre;
+
+            if (_activeOreNode == null || mineOre == null)
+            {
+                CancelOreInteraction();
+                return;
+            }
+
+            if (mineOre.IsPlaying == false)
+            {
+                FinishOreInteraction();
+                return;
+            }
+
+            if (ShouldCancelInteraction(_oreStartPosition, _oreCancelDistanceSqr, _oreCancelInputThresholdSqr) == true)
+            {
+                CancelOreInteraction();
+                return;
+            }
+
+            if (_agent == null)
+                return;
+
+            float deltaTime = Runner != null ? Runner.DeltaTime : Time.fixedDeltaTime;
+
+            if (_activeOreNode.TickMining(deltaTime, _agent) == true)
+            {
+                FinishOreInteraction();
+            }
+        }
+
+        private void CancelOreInteraction()
+        {
+            MineOreState mineOre = _interactionsLayer?.MineOre;
+
+            mineOre?.Stop();
+            _interactionsLayer?.EndInteraction(InteractionsAnimationLayer.InteractionType.MineOre);
+
+            _activeOreNode?.CancelMining(_agent);
+
+            ResetOreInteraction();
+        }
+
+        private void FinishOreInteraction()
+        {
+            MineOreState mineOre = _interactionsLayer?.MineOre;
+
+            mineOre?.Stop();
+            _interactionsLayer?.EndInteraction(InteractionsAnimationLayer.InteractionType.MineOre);
+
+            ResetOreInteraction();
+        }
+
+        private void ResetOreInteraction()
+        {
+            _activeInteraction = null;
+            _activeOreNode = null;
+            _oreStartPosition = Vector3.zero;
+            _oreCancelDistanceSqr = 0f;
+            _oreCancelInputThresholdSqr = 0f;
+        }
+
+        private bool ShouldCancelInteraction(Vector3 startPosition, float cancelDistanceSqr, float cancelInputThresholdSqr)
         {
             if (_kcc == null)
                 return true;
@@ -247,39 +400,16 @@ namespace TPSBR
             Vector3 inputDirection = data.InputDirection;
             inputDirection.y = 0f;
 
-            if (inputDirection.sqrMagnitude > _itemBoxCancelInputThresholdSqr)
+            if (inputDirection.sqrMagnitude > cancelInputThresholdSqr)
                 return true;
 
-            Vector3 horizontalDelta = data.TargetPosition - _itemBoxStartPosition;
+            Vector3 horizontalDelta = data.TargetPosition - startPosition;
             horizontalDelta.y = 0f;
 
-            if (horizontalDelta.sqrMagnitude > _itemBoxCancelDistanceSqr)
+            if (horizontalDelta.sqrMagnitude > cancelDistanceSqr)
                 return true;
 
             return false;
-        }
-
-        private void CancelItemBoxInteraction()
-        {
-            OpenChestState openChest = _interactionsLayer?.OpenChest;
-
-            openChest?.Cancel();
-            _interactionsLayer?.EndInteraction(InteractionsAnimationLayer.InteractionType.OpenChest);
-            _activeInteraction = null;
-            _activeItemBox = null;
-            _itemBoxOpened = false;
-            _itemBoxCancelDistanceSqr = 0f;
-            _itemBoxCancelInputThresholdSqr = 0f;
-        }
-
-        private void FinishItemBoxInteraction()
-        {
-            _interactionsLayer?.EndInteraction(InteractionsAnimationLayer.InteractionType.OpenChest);
-            _activeInteraction = null;
-            _activeItemBox = null;
-            _itemBoxOpened = false;
-            _itemBoxCancelDistanceSqr = 0f;
-            _itemBoxCancelInputThresholdSqr = 0f;
         }
     }
 }

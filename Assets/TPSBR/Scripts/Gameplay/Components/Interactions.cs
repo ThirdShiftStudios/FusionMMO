@@ -29,6 +29,8 @@
         [SerializeField] private float _itemBoxCancelMoveDistance = 0.35f;
         [SerializeField] private float _itemBoxCancelInputThreshold = 0.1f;
         [SerializeField, Range(0.0f, 1.0f)] private float _itemBoxOpenNormalizedTime = 0.8f;
+        [SerializeField] private float _oreCancelMoveDistance = 0.35f;
+        [SerializeField] private float _oreCancelInputThreshold = 0.1f;
 
         private Health _health;
         private Inventory _inventory;
@@ -102,6 +104,10 @@
                 {
                     RPC_InteractionFailed(result);
                 }
+            }
+            else if (InteractionTarget is OreNode oreNode)
+            {
+                TryMineOreNode(oreNode);
             }
         }
 
@@ -244,6 +250,25 @@
                     _itemBoxCancelMoveDistance, _itemBoxCancelInputThreshold) == false)
             {
                 itemBox.Open();
+            }
+        }
+
+        private void TryMineOreNode(OreNode oreNode)
+        {
+            if (oreNode == null)
+                return;
+
+            if (_animationController != null &&
+                _animationController.TryStartOreInteraction(oreNode, _oreCancelMoveDistance, _oreCancelInputThreshold) == true)
+            {
+                return;
+            }
+
+            Agent agent = _character != null ? _character.Agent : null;
+
+            if (agent != null)
+            {
+                oreNode.TryBeginMining(agent);
             }
         }
 
