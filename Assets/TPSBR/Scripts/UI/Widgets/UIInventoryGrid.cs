@@ -34,6 +34,7 @@ namespace TPSBR.UI
                         var discoveredSlots = GetComponentsInChildren<UIItemSlot>(true);
                         var generalSlots = new List<UIItemSlot>(discoveredSlots.Length);
                         UIItemSlot pickaxeSlot = null;
+                        UIItemSlot woodAxeSlot = null;
 
                         for (int i = 0; i < discoveredSlots.Length; i++)
                         {
@@ -42,13 +43,17 @@ namespace TPSBR.UI
                                 {
                                         pickaxeSlot = slot;
                                 }
+                                else if (IsWoodAxeUISlot(slot) == true)
+                                {
+                                        woodAxeSlot = slot;
+                                }
                                 else
                                 {
                                         generalSlots.Add(slot);
                                 }
                         }
 
-                        var orderedSlots = new List<UIItemSlot>(generalSlots.Count + (pickaxeSlot != null ? 1 : 0));
+                        var orderedSlots = new List<UIItemSlot>(generalSlots.Count + (pickaxeSlot != null ? 1 : 0) + (woodAxeSlot != null ? 1 : 0));
                         var indices = new List<int>(orderedSlots.Capacity);
                         _slotLookup = new Dictionary<int, UIItemSlot>(orderedSlots.Capacity);
 
@@ -72,6 +77,20 @@ namespace TPSBR.UI
                         else
                         {
                                 Debug.LogWarning($"{nameof(UIInventoryGrid)} is missing a pickaxe inventory slot.");
+                        }
+#endif
+
+                        if (woodAxeSlot != null)
+                        {
+                                woodAxeSlot.InitializeSlot(this, Inventory.WOOD_AXE_SLOT_INDEX);
+                                orderedSlots.Add(woodAxeSlot);
+                                indices.Add(Inventory.WOOD_AXE_SLOT_INDEX);
+                                _slotLookup[Inventory.WOOD_AXE_SLOT_INDEX] = woodAxeSlot;
+                        }
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                        else
+                        {
+                                Debug.LogWarning($"{nameof(UIInventoryGrid)} is missing a wood axe inventory slot.");
                         }
 #endif
 
@@ -179,7 +198,7 @@ namespace TPSBR.UI
 
                         if (source.Owner is UIHotbar)
                         {
-                                if (target.Index == Inventory.PICKAXE_SLOT_INDEX)
+                                if (target.Index == Inventory.PICKAXE_SLOT_INDEX || target.Index == Inventory.WOOD_AXE_SLOT_INDEX)
                                         return;
 
                                 _inventory.RequestStoreHotbar(source.Index, target.Index);
@@ -394,6 +413,23 @@ namespace TPSBR.UI
                                 return false;
 
                         return slotName.IndexOf("pickaxe", StringComparison.OrdinalIgnoreCase) >= 0;
+                }
+
+                private static bool IsWoodAxeUISlot(UIItemSlot slot)
+                {
+                        if (slot == null)
+                                return false;
+
+                        var slotObject = slot.gameObject;
+                        if (slotObject == null)
+                                return false;
+
+                        var slotName = slotObject.name;
+                        if (string.IsNullOrEmpty(slotName))
+                                return false;
+
+                        slotName = slotName.ToLowerInvariant();
+                        return slotName.Contains("wood") && slotName.Contains("axe");
                 }
         }
 }

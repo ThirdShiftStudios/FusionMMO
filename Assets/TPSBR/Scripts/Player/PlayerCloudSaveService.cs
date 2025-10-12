@@ -16,6 +16,7 @@ namespace TPSBR
         public PlayerHotbarSlotData[] HotbarSlots;
         public byte CurrentWeaponSlot;
         public PlayerInventoryItemData PickaxeSlot;
+        public PlayerInventoryItemData WoodAxeSlot;
     }
 
     [Serializable]
