@@ -237,6 +237,13 @@ namespace TPSBR
 
             KCCData data = _kcc.FixedData;
 
+            Vector3 realVelocity = data.RealVelocity;
+            realVelocity.y = 0f;
+
+            // Cancel immediately if the player starts moving.
+            if (realVelocity.sqrMagnitude > 0.0001f)
+                return true;
+
             Vector3 inputDirection = data.InputDirection;
             inputDirection.y = 0f;
 
