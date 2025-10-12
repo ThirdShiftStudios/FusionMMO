@@ -31,6 +31,8 @@
         [SerializeField, Range(0.0f, 1.0f)] private float _itemBoxOpenNormalizedTime = 0.8f;
         [SerializeField] private float _oreCancelMoveDistance = 0.35f;
         [SerializeField] private float _oreCancelInputThreshold = 0.1f;
+        [SerializeField] private float _treeCancelMoveDistance = 0.35f;
+        [SerializeField] private float _treeCancelInputThreshold = 0.1f;
 
         private Health _health;
         private Inventory _inventory;
@@ -108,6 +110,10 @@
             else if (InteractionTarget is OreNode oreNode)
             {
                 TryMineOreNode(oreNode);
+            }
+            else if (InteractionTarget is TreeNode treeNode)
+            {
+                TryChopTreeNode(treeNode);
             }
         }
 
@@ -269,6 +275,25 @@
             if (agent != null)
             {
                 oreNode.TryBeginMining(agent);
+            }
+        }
+
+        private void TryChopTreeNode(TreeNode treeNode)
+        {
+            if (treeNode == null)
+                return;
+
+            if (_animationController != null &&
+                _animationController.TryStartTreeInteraction(treeNode, _treeCancelMoveDistance, _treeCancelInputThreshold) == true)
+            {
+                return;
+            }
+
+            Agent agent = _character != null ? _character.Agent : null;
+
+            if (agent != null)
+            {
+                treeNode.TryBeginChopping(agent);
             }
         }
 

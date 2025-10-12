@@ -10,12 +10,15 @@ namespace TPSBR
             None,
             OpenChest,
             MineOre,
+            ChopTree,
         }
 
         [SerializeField]
         private OpenChestState _openChest;
         [SerializeField]
         private MineOreState _mineOre;
+        [SerializeField]
+        private ChopTreeState _chopTree;
 
         private InteractionType _activeInteraction = InteractionType.None;
 
@@ -42,6 +45,19 @@ namespace TPSBR
                 }
 
                 return _mineOre;
+            }
+        }
+
+        public ChopTreeState ChopTree
+        {
+            get
+            {
+                if (_chopTree == null)
+                {
+                    FindState(out _chopTree, true);
+                }
+
+                return _chopTree;
             }
         }
 

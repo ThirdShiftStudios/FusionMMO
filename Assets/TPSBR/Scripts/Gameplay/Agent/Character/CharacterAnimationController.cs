@@ -29,6 +29,10 @@ namespace TPSBR
         private Vector3 _oreStartPosition;
         private float _oreCancelDistanceSqr;
         private float _oreCancelInputThresholdSqr;
+        private TreeNode _activeTreeNode;
+        private Vector3 _treeStartPosition;
+        private float _treeCancelDistanceSqr;
+        private float _treeCancelInputThresholdSqr;
 
         // PUBLIC METHODS
 
@@ -202,6 +206,53 @@ namespace TPSBR
             return true;
         }
 
+        public bool TryStartTreeInteraction(TreeNode treeNode, float cancelMoveDistance, float cancelInputThreshold)
+        {
+            if (treeNode == null)
+                return false;
+
+            if (_agent == null)
+                return false;
+
+            if (_interactionsLayer == null)
+                return false;
+
+            if (_interactionsLayer.TryBeginInteraction(InteractionsAnimationLayer.InteractionType.ChopTree) == false)
+                return false;
+
+            ChopTreeState chopTree = _interactionsLayer.ChopTree;
+            if (chopTree == null)
+            {
+                _interactionsLayer.EndInteraction(InteractionsAnimationLayer.InteractionType.ChopTree);
+                return false;
+            }
+
+            if (chopTree.Play() == false)
+            {
+                _interactionsLayer.EndInteraction(InteractionsAnimationLayer.InteractionType.ChopTree);
+                return false;
+            }
+
+            if (treeNode.TryBeginChopping(_agent) == false)
+            {
+                chopTree.Stop();
+                _interactionsLayer.EndInteraction(InteractionsAnimationLayer.InteractionType.ChopTree);
+                return false;
+            }
+
+            _activeInteraction = treeNode;
+            _activeTreeNode = treeNode;
+
+            cancelMoveDistance = Mathf.Max(0.0f, cancelMoveDistance);
+            cancelInputThreshold = Mathf.Max(0.0f, cancelInputThreshold);
+
+            _treeCancelDistanceSqr = cancelMoveDistance * cancelMoveDistance;
+            _treeCancelInputThresholdSqr = cancelInputThreshold * cancelInputThreshold;
+            _treeStartPosition = _kcc != null ? _kcc.FixedData.TargetPosition : transform.position;
+
+            return true;
+        }
+
         // AnimationController INTERFACE
 
         protected override void OnSpawned()
@@ -253,6 +304,9 @@ namespace TPSBR
                     break;
                 case InteractionsAnimationLayer.InteractionType.MineOre:
                     UpdateOreInteraction();
+                    break;
+                case InteractionsAnimationLayer.InteractionType.ChopTree:
+                    UpdateTreeInteraction();
                     break;
             }
         }
@@ -388,6 +442,70 @@ namespace TPSBR
             _oreStartPosition = Vector3.zero;
             _oreCancelDistanceSqr = 0f;
             _oreCancelInputThresholdSqr = 0f;
+        }
+
+        private void UpdateTreeInteraction()
+        {
+            ChopTreeState chopTree = _interactionsLayer.ChopTree;
+
+            if (_activeTreeNode == null || chopTree == null)
+            {
+                CancelTreeInteraction();
+                return;
+            }
+
+            if (chopTree.IsPlaying == false)
+            {
+                FinishTreeInteraction();
+                return;
+            }
+
+            if (ShouldCancelInteraction(_treeStartPosition, _treeCancelDistanceSqr, _treeCancelInputThresholdSqr) == true)
+            {
+                CancelTreeInteraction();
+                return;
+            }
+
+            if (_agent == null)
+                return;
+
+            float deltaTime = Runner != null ? Runner.DeltaTime : Time.fixedDeltaTime;
+
+            if (_activeTreeNode.TickChopping(deltaTime, _agent) == true)
+            {
+                FinishTreeInteraction();
+            }
+        }
+
+        private void CancelTreeInteraction()
+        {
+            ChopTreeState chopTree = _interactionsLayer?.ChopTree;
+
+            chopTree?.Stop();
+            _interactionsLayer?.EndInteraction(InteractionsAnimationLayer.InteractionType.ChopTree);
+
+            _activeTreeNode?.CancelChopping(_agent);
+
+            ResetTreeInteraction();
+        }
+
+        private void FinishTreeInteraction()
+        {
+            ChopTreeState chopTree = _interactionsLayer?.ChopTree;
+
+            chopTree?.Stop();
+            _interactionsLayer?.EndInteraction(InteractionsAnimationLayer.InteractionType.ChopTree);
+
+            ResetTreeInteraction();
+        }
+
+        private void ResetTreeInteraction()
+        {
+            _activeInteraction = null;
+            _activeTreeNode = null;
+            _treeStartPosition = Vector3.zero;
+            _treeCancelDistanceSqr = 0f;
+            _treeCancelInputThresholdSqr = 0f;
         }
 
         private bool ShouldCancelInteraction(Vector3 startPosition, float cancelDistanceSqr, float cancelInputThresholdSqr)
