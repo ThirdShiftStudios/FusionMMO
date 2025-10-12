@@ -29,6 +29,10 @@ namespace TPSBR
         private Vector3 _oreStartPosition;
         private float _oreCancelDistanceSqr;
         private float _oreCancelInputThresholdSqr;
+        private PlantNode _activePlantNode;
+        private Vector3 _plantStartPosition;
+        private float _plantCancelDistanceSqr;
+        private float _plantCancelInputThresholdSqr;
 
         // PUBLIC METHODS
 
@@ -202,6 +206,53 @@ namespace TPSBR
             return true;
         }
 
+        public bool TryStartPlantInteraction(PlantNode plantNode, float cancelMoveDistance, float cancelInputThreshold)
+        {
+            if (plantNode == null)
+                return false;
+
+            if (_agent == null)
+                return false;
+
+            if (_interactionsLayer == null)
+                return false;
+
+            if (_interactionsLayer.TryBeginInteraction(InteractionsAnimationLayer.InteractionType.HarvestPlant) == false)
+                return false;
+
+            HarvestPlantState harvestPlant = _interactionsLayer.HarvestPlant;
+            if (harvestPlant == null)
+            {
+                _interactionsLayer.EndInteraction(InteractionsAnimationLayer.InteractionType.HarvestPlant);
+                return false;
+            }
+
+            if (harvestPlant.Play() == false)
+            {
+                _interactionsLayer.EndInteraction(InteractionsAnimationLayer.InteractionType.HarvestPlant);
+                return false;
+            }
+
+            if (plantNode.TryBeginHarvest(_agent) == false)
+            {
+                harvestPlant.Stop();
+                _interactionsLayer.EndInteraction(InteractionsAnimationLayer.InteractionType.HarvestPlant);
+                return false;
+            }
+
+            _activeInteraction = plantNode;
+            _activePlantNode = plantNode;
+
+            cancelMoveDistance = Mathf.Max(0.0f, cancelMoveDistance);
+            cancelInputThreshold = Mathf.Max(0.0f, cancelInputThreshold);
+
+            _plantCancelDistanceSqr = cancelMoveDistance * cancelMoveDistance;
+            _plantCancelInputThresholdSqr = cancelInputThreshold * cancelInputThreshold;
+            _plantStartPosition = _kcc != null ? _kcc.FixedData.TargetPosition : transform.position;
+
+            return true;
+        }
+
         // AnimationController INTERFACE
 
         protected override void OnSpawned()
@@ -253,6 +304,9 @@ namespace TPSBR
                     break;
                 case InteractionsAnimationLayer.InteractionType.MineOre:
                     UpdateOreInteraction();
+                    break;
+                case InteractionsAnimationLayer.InteractionType.HarvestPlant:
+                    UpdatePlantInteraction();
                     break;
             }
         }
@@ -388,6 +442,70 @@ namespace TPSBR
             _oreStartPosition = Vector3.zero;
             _oreCancelDistanceSqr = 0f;
             _oreCancelInputThresholdSqr = 0f;
+        }
+
+        private void UpdatePlantInteraction()
+        {
+            HarvestPlantState harvestPlant = _interactionsLayer.HarvestPlant;
+
+            if (_activePlantNode == null || harvestPlant == null)
+            {
+                CancelPlantInteraction();
+                return;
+            }
+
+            if (harvestPlant.IsPlaying == false)
+            {
+                FinishPlantInteraction();
+                return;
+            }
+
+            if (ShouldCancelInteraction(_plantStartPosition, _plantCancelDistanceSqr, _plantCancelInputThresholdSqr) == true)
+            {
+                CancelPlantInteraction();
+                return;
+            }
+
+            if (_agent == null)
+                return;
+
+            float deltaTime = Runner != null ? Runner.DeltaTime : Time.fixedDeltaTime;
+
+            if (_activePlantNode.TickHarvest(deltaTime, _agent) == true)
+            {
+                FinishPlantInteraction();
+            }
+        }
+
+        private void CancelPlantInteraction()
+        {
+            HarvestPlantState harvestPlant = _interactionsLayer?.HarvestPlant;
+
+            harvestPlant?.Stop();
+            _interactionsLayer?.EndInteraction(InteractionsAnimationLayer.InteractionType.HarvestPlant);
+
+            _activePlantNode?.CancelHarvest(_agent);
+
+            ResetPlantInteraction();
+        }
+
+        private void FinishPlantInteraction()
+        {
+            HarvestPlantState harvestPlant = _interactionsLayer?.HarvestPlant;
+
+            harvestPlant?.Stop();
+            _interactionsLayer?.EndInteraction(InteractionsAnimationLayer.InteractionType.HarvestPlant);
+
+            ResetPlantInteraction();
+        }
+
+        private void ResetPlantInteraction()
+        {
+            _activeInteraction = null;
+            _activePlantNode = null;
+            _plantStartPosition = Vector3.zero;
+            _plantCancelDistanceSqr = 0f;
+            _plantCancelInputThresholdSqr = 0f;
         }
 
         private bool ShouldCancelInteraction(Vector3 startPosition, float cancelDistanceSqr, float cancelInputThresholdSqr)
