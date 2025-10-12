@@ -14,7 +14,8 @@ namespace TPSBR
 
         [SerializeField]
         private PickaxeDefinition _defaultPickaxe;
-
+        [SerializeField]
+        private WoodAxeDefinition _defaultWoodAxe;
         public static DefaultItemDefinitions Instance
         {
             get
