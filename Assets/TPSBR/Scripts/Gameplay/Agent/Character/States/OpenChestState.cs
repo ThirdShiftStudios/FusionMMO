@@ -17,7 +17,6 @@ namespace TPSBR
         private bool  _startCompleted;
         private bool  _endActivated;
         private bool  _openTriggered;
-        private float _openTriggerNormalizedTime = 0.5f;
 
         public bool IsPlaying => _isPlaying;
 
@@ -33,7 +32,6 @@ namespace TPSBR
             _startCompleted            = false;
             _endActivated              = false;
             _openTriggered             = false;
-            _openTriggerNormalizedTime = openNormalizedTime >= 0.0f ? Mathf.Clamp01(openNormalizedTime) : 0.5f;
 
             _startOpenChest.SetAnimationTime(0.0f);
             _startOpenChest.Activate(_blendInDuration);
@@ -115,7 +113,7 @@ namespace TPSBR
             if (_startOpenChest == null)
                 return false;
 
-            if (_startOpenChest.IsFinished(_openTriggerNormalizedTime) == false)
+            if (_startOpenChest.IsFinished(0.5f) == false)
                 return false;
 
             _openTriggered = true;
