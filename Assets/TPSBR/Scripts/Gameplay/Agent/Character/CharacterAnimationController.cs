@@ -229,9 +229,6 @@ namespace TPSBR
 
         private bool ShouldCancelItemBoxInteraction()
         {
-            if (_itemBoxOpened == true)
-                return false;
-
             if (_kcc == null)
                 return true;
 
