@@ -193,6 +193,8 @@ namespace TPSBR
                 return false;
             }
 
+            _inventory?.BeginPickaxeUse();
+
             _activeInteraction = oreNode;
             _activeOreNode = oreNode;
 
@@ -437,6 +439,8 @@ namespace TPSBR
 
         private void ResetOreInteraction()
         {
+            _inventory?.EndPickaxeUse();
+
             _activeInteraction = null;
             _activeOreNode = null;
             _oreStartPosition = Vector3.zero;

@@ -115,6 +115,8 @@ namespace TPSBR
         [SerializeField] private float _itemDropForwardOffset = 1.5f;
         [SerializeField] private float _itemDropUpOffset = 0.35f;
         [SerializeField] private float _itemDropImpulse = 3f;
+        [SerializeField] private Transform _pickaxeEquippedParent;
+        [SerializeField] private Transform _pickaxeUnequippedParent;
 
         [Header("Audio")] [SerializeField] private Transform _fireAudioEffectsRoot;
 
@@ -124,6 +126,8 @@ namespace TPSBR
         [Networked] private byte _currentWeaponSlot { get; set; }
 
         [Networked] private byte _previousWeaponSlot { get; set; }
+        [Networked] private Pickaxe _pickaxe { get; set; }
+        [Networked] private NetworkBool _isPickaxeEquipped { get; set; }
 
         private Health _health;
         private Character _character;
@@ -133,6 +137,9 @@ namespace TPSBR
         private Weapon[] _lastHotbarWeapons;
         private InventorySlot[] _localItems;
         private InventorySlot _localPickaxeSlot;
+        private Pickaxe _localPickaxe;
+        private bool _localPickaxeEquipped;
+        private byte _weaponSlotBeforePickaxe = byte.MaxValue;
         private Dictionary<int, WeaponDefinition> _weaponDefinitionsBySlot = new Dictionary<int, WeaponDefinition>();
         private readonly Dictionary<WeaponSize, int> _weaponSizeToSlotIndex = new Dictionary<WeaponSize, int>();
 
@@ -471,6 +478,64 @@ namespace TPSBR
             }
         }
 
+        public bool BeginPickaxeUse()
+        {
+            if (_pickaxeSlot.IsEmpty == true)
+                return false;
+
+            if (_weaponSlotBeforePickaxe == byte.MaxValue)
+            {
+                _weaponSlotBeforePickaxe = _currentWeaponSlot;
+            }
+
+            if (HasStateAuthority == true)
+            {
+                EnsurePickaxeAvailability();
+                EnsurePickaxeInstance();
+
+                if (_pickaxe == null)
+                {
+                    RefreshPickaxeVisuals();
+                    return false;
+                }
+
+                if (_currentWeaponSlot != 0)
+                {
+                    SetCurrentWeapon(0);
+                    ArmCurrentWeapon();
+                }
+
+                _isPickaxeEquipped = true;
+            }
+
+            RefreshPickaxeVisuals();
+            return _pickaxe != null;
+        }
+
+        public void EndPickaxeUse()
+        {
+            if (HasStateAuthority == true)
+            {
+                if (_isPickaxeEquipped == true)
+                {
+                    _isPickaxeEquipped = false;
+                }
+
+                if (_weaponSlotBeforePickaxe != byte.MaxValue)
+                {
+                    byte targetSlot = _weaponSlotBeforePickaxe;
+                    _weaponSlotBeforePickaxe = byte.MaxValue;
+
+                    SetCurrentWeapon(targetSlot);
+                    ArmCurrentWeapon();
+                }
+            }
+
+            _weaponSlotBeforePickaxe = byte.MaxValue;
+
+            RefreshPickaxeVisuals();
+        }
+
         public void DropCurrentWeapon()
         {
             DropWeapon(_currentWeaponSlot);
@@ -584,6 +649,8 @@ namespace TPSBR
         {
             Global.PlayerCloudSaveService?.UnregisterInventory(this);
 
+            DespawnPickaxe();
+
             // Cleanup weapons
             for (int i = 0; i < _hotbar.Length; i++)
             {
@@ -662,6 +729,7 @@ namespace TPSBR
         {
             RefreshWeapons();
             RefreshItems();
+            RefreshPickaxeVisuals();
         }
 
         public bool CanFireWeapon(bool keyDown)
@@ -1809,6 +1877,106 @@ namespace TPSBR
             }
         }
 
+        private void RefreshPickaxeVisuals()
+        {
+            var networkPickaxe = _pickaxe;
+
+            if (_localPickaxe != networkPickaxe)
+            {
+                if (_localPickaxe != null)
+                {
+                    _localPickaxe.DeinitializeTool(Object);
+                }
+
+                _localPickaxe = networkPickaxe;
+                _localPickaxeEquipped = false;
+
+                if (_localPickaxe != null)
+                {
+                    _localPickaxe.InitializeTool(Object, _pickaxeEquippedParent, _pickaxeUnequippedParent);
+                }
+            }
+
+            if (_localPickaxe != null)
+            {
+                _localPickaxe.RefreshParents(_pickaxeEquippedParent, _pickaxeUnequippedParent);
+
+                bool desiredState = _isPickaxeEquipped;
+                _localPickaxe.SetEquipped(desiredState);
+                _localPickaxeEquipped = desiredState;
+            }
+            else
+            {
+                _localPickaxeEquipped = false;
+            }
+        }
+
+        private void EnsurePickaxeInstance()
+        {
+            if (HasStateAuthority == false)
+            {
+                RefreshPickaxeVisuals();
+                return;
+            }
+
+            if (_pickaxeSlot.IsEmpty == true || IsPickaxeSlotItem(_pickaxeSlot) == false)
+            {
+                DespawnPickaxe();
+                return;
+            }
+
+            var definition = _pickaxeSlot.GetDefinition() as PickaxeDefinition;
+            if (definition == null || definition.PickaxePrefab == null || Runner == null)
+            {
+                DespawnPickaxe();
+                return;
+            }
+
+            var pickaxe = _pickaxe;
+            if (pickaxe != null && pickaxe.Definition != definition)
+            {
+                DespawnPickaxe();
+                pickaxe = null;
+            }
+
+            if (pickaxe == null)
+            {
+                pickaxe = Runner.Spawn(definition.PickaxePrefab, inputAuthority: Object.InputAuthority);
+                _pickaxe = pickaxe;
+            }
+
+            RefreshPickaxeVisuals();
+        }
+
+        private void DespawnPickaxe()
+        {
+            if ((_weaponSlotBeforePickaxe != byte.MaxValue || _isPickaxeEquipped == true) && (_pickaxe != null || _localPickaxe != null))
+            {
+                EndPickaxeUse();
+            }
+
+            if (HasStateAuthority == true)
+            {
+                var pickaxe = _pickaxe;
+                if (pickaxe != null)
+                {
+                    Runner.Despawn(pickaxe.Object);
+                }
+
+                _pickaxe = null;
+                _isPickaxeEquipped = false;
+            }
+
+            if (_localPickaxe != null)
+            {
+                _localPickaxe.DeinitializeTool(Object);
+                _localPickaxe = null;
+            }
+
+            _localPickaxeEquipped = false;
+            _weaponSlotBeforePickaxe = byte.MaxValue;
+        }
+
         private void EnsurePickaxeAvailability()
         {
             if (HasStateAuthority == false)
@@ -1818,6 +1986,7 @@ namespace TPSBR
             {
                 _pickaxeSlot = default;
                 RefreshPickaxeSlot();
+                DespawnPickaxe();
             }
 
             if (IsPickaxeSlotItem(_pickaxeSlot) == false)
@@ -1831,22 +2000,30 @@ namespace TPSBR
                     UpdateWeaponDefinitionMapping(pickaxeIndex, default);
                     RefreshPickaxeSlot();
                     RefreshItems();
+                    EnsurePickaxeInstance();
                     return;
                 }
             }
 
             if (HasAnyPickaxe() == true)
+            {
+                EnsurePickaxeInstance();
                 return;
+            }
 
             var defaultPickaxe = ResolveDefaultPickaxe();
             if (defaultPickaxe == null)
+            {
+                EnsurePickaxeInstance();
                 return;
+            }
 
             // Ensure the pickaxe definition is registered before we assign it so UI lookups succeed.
             ItemDefinition.Get(defaultPickaxe.ID);
 
             _pickaxeSlot = new InventorySlot(defaultPickaxe.ID, 1, default);
             RefreshPickaxeSlot();
+            EnsurePickaxeInstance();
         }
 
         private static PickaxeDefinition ResolveDefaultPickaxe()

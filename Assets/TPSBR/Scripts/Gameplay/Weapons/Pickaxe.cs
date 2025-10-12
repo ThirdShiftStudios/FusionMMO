@@ -1,4 +1,4 @@
-﻿using Unity.Template.CompetitiveActionMultiplayer;
+using Unity.Template.CompetitiveActionMultiplayer;
 using UnityEngine;
 
 namespace TPSBR
@@ -7,5 +7,7 @@ namespace TPSBR
     {
         [SerializeField]
         private PickaxeDefinition _pickaxeDefinition;
+
+        public PickaxeDefinition Definition => _pickaxeDefinition;
     }
 }
