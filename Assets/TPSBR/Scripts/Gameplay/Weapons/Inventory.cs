@@ -137,6 +137,7 @@ namespace TPSBR
         private readonly Dictionary<WeaponSize, int> _weaponSizeToSlotIndex = new Dictionary<WeaponSize, int>();
 
         private static readonly Dictionary<int, Weapon> _weaponPrefabsByDefinitionId = new Dictionary<int, Weapon>();
+        private static PickaxeDefinition _cachedFallbackPickaxe;
 
         public event Action<int, InventorySlot> ItemSlotChanged;
         public event Action<int, Weapon> HotbarSlotChanged;
@@ -1837,13 +1838,40 @@ namespace TPSBR
             if (HasAnyPickaxe() == true)
                 return;
 
-            var defaultDefinitions = DefaultItemDefinitions.Instance;
-            var defaultPickaxe = defaultDefinitions != null ? defaultDefinitions.DefaultPickaxe : null;
+            var defaultPickaxe = ResolveDefaultPickaxe();
             if (defaultPickaxe == null)
                 return;
 
+            // Ensure the pickaxe definition is registered before we assign it so UI lookups succeed.
+            ItemDefinition.Get(defaultPickaxe.ID);
+
             _pickaxeSlot = new InventorySlot(defaultPickaxe.ID, 1, default);
             RefreshPickaxeSlot();
+        }
+
+        private static PickaxeDefinition ResolveDefaultPickaxe()
+        {
+            var defaultDefinitions = DefaultItemDefinitions.Instance;
+            if (defaultDefinitions != null && defaultDefinitions.DefaultPickaxe != null)
+            {
+                return defaultDefinitions.DefaultPickaxe;
+            }
+
+            // Fallback: locate any pickaxe definition so new profiles always receive a tool.
+            if (_cachedFallbackPickaxe == null)
+            {
+                var pickaxes = Resources.LoadAll<PickaxeDefinition>(string.Empty);
+                for (int i = 0; i < pickaxes.Length; i++)
+                {
+                    if (pickaxes[i] != null)
+                    {
+                        _cachedFallbackPickaxe = pickaxes[i];
+                        break;
+                    }
+                }
+            }
+
+            return _cachedFallbackPickaxe;
         }
 
         private bool HasAnyPickaxe()
