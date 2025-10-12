@@ -1032,8 +1032,8 @@ namespace TPSBR
 
             if (fromPickaxe == true)
             {
-                var fromSlot = _pickaxeSlot;
-                if (fromSlot.IsEmpty == true)
+                var pickaxeSourceSlot = _pickaxeSlot;
+                if (pickaxeSourceSlot.IsEmpty == true)
                     return;
 
                 if (toPickaxe == true)
@@ -1043,8 +1043,8 @@ namespace TPSBR
                 if (targetSlot.IsEmpty == false && IsPickaxeSlotItem(targetSlot) == false)
                     return;
 
-                _items.Set(toIndex, fromSlot);
-                UpdateWeaponDefinitionMapping(toIndex, fromSlot);
+                _items.Set(toIndex, pickaxeSourceSlot);
+                UpdateWeaponDefinitionMapping(toIndex, pickaxeSourceSlot);
 
                 if (targetSlot.IsEmpty == false && IsPickaxeSlotItem(targetSlot) == true)
                 {
@@ -1063,15 +1063,15 @@ namespace TPSBR
 
             if (toPickaxe == true)
             {
-                var fromSlot = _items[fromIndex];
-                if (fromSlot.IsEmpty == true)
+                var sourceSlot = _items[fromIndex];
+                if (sourceSlot.IsEmpty == true)
                     return;
 
-                if (IsPickaxeSlotItem(fromSlot) == false)
+                if (IsPickaxeSlotItem(sourceSlot) == false)
                     return;
 
                 var previousPickaxe = _pickaxeSlot;
-                _pickaxeSlot = fromSlot;
+                _pickaxeSlot = sourceSlot;
                 RefreshPickaxeSlot();
 
                 if (previousPickaxe.IsEmpty == true)
@@ -1090,24 +1090,24 @@ namespace TPSBR
                 return;
             }
 
-            var fromSlot = _items[fromIndex];
-            if (fromSlot.IsEmpty == true)
+            var generalSourceSlot = _items[fromIndex];
+            if (generalSourceSlot.IsEmpty == true)
                 return;
 
             var toSlot = _items[toIndex];
 
             if (toSlot.IsEmpty == true)
             {
-                _items.Set(toIndex, fromSlot);
+                _items.Set(toIndex, generalSourceSlot);
                 _items.Set(fromIndex, default);
                 RefreshItems();
                 return;
             }
 
-            if (fromSlot.ItemDefinitionId == toSlot.ItemDefinitionId &&
-                fromSlot.ConfigurationHash == toSlot.ConfigurationHash)
+            if (generalSourceSlot.ItemDefinitionId == toSlot.ItemDefinitionId &&
+                generalSourceSlot.ConfigurationHash == toSlot.ConfigurationHash)
             {
-                ushort maxStack = ItemDefinition.GetMaxStack(fromSlot.ItemDefinitionId);
+                ushort maxStack = ItemDefinition.GetMaxStack(generalSourceSlot.ItemDefinitionId);
                 if (maxStack == 0)
                 {
                     maxStack = 1;
@@ -1116,24 +1116,24 @@ namespace TPSBR
                 int clampedMaxStack = Mathf.Clamp(maxStack, 1, byte.MaxValue);
                 if (toSlot.Quantity < clampedMaxStack)
                 {
-                    byte space = (byte)Mathf.Min(clampedMaxStack - toSlot.Quantity, fromSlot.Quantity);
+                    byte space = (byte)Mathf.Min(clampedMaxStack - toSlot.Quantity, generalSourceSlot.Quantity);
                     if (space > 0)
                     {
                         toSlot.Add(space);
-                        fromSlot.Remove(space);
+                        generalSourceSlot.Remove(space);
 
                         _items.Set(toIndex, toSlot);
                         UpdateWeaponDefinitionMapping(toIndex, toSlot);
 
-                        if (fromSlot.IsEmpty == true)
+                        if (generalSourceSlot.IsEmpty == true)
                         {
                             _items.Set(fromIndex, default);
                             UpdateWeaponDefinitionMapping(fromIndex, default);
                         }
                         else
                         {
-                            _items.Set(fromIndex, fromSlot);
-                            UpdateWeaponDefinitionMapping(fromIndex, fromSlot);
+                            _items.Set(fromIndex, generalSourceSlot);
+                            UpdateWeaponDefinitionMapping(fromIndex, generalSourceSlot);
                         }
 
                         RefreshItems();
@@ -1142,8 +1142,8 @@ namespace TPSBR
                 }
             }
 
-            _items.Set(toIndex, fromSlot);
-            UpdateWeaponDefinitionMapping(toIndex, fromSlot);
+            _items.Set(toIndex, generalSourceSlot);
+            UpdateWeaponDefinitionMapping(toIndex, generalSourceSlot);
 
             _items.Set(fromIndex, toSlot);
             UpdateWeaponDefinitionMapping(fromIndex, toSlot);
@@ -1302,22 +1302,22 @@ namespace TPSBR
         {
             if (index == PICKAXE_SLOT_INDEX)
             {
-                var slot = _pickaxeSlot;
-                if (slot.IsEmpty == true)
+                var pickaxeSlotData = _pickaxeSlot;
+                if (pickaxeSlotData.IsEmpty == true)
                     return;
 
-                var definition = slot.GetDefinition();
-                if (definition == null)
+                var pickaxeDefinition = pickaxeSlotData.GetDefinition();
+                if (pickaxeDefinition == null)
                     return;
 
-                byte quantity = slot.Quantity;
-                if (quantity == 0)
+                byte pickaxeQuantity = pickaxeSlotData.Quantity;
+                if (pickaxeQuantity == 0)
                     return;
 
                 _pickaxeSlot = default;
                 RefreshPickaxeSlot();
 
-                SpawnInventoryItemPickup(definition, quantity, slot.ConfigurationHash);
+                SpawnInventoryItemPickup(pickaxeDefinition, pickaxeQuantity, pickaxeSlotData.ConfigurationHash);
                 EnsurePickaxeAvailability();
                 return;
             }
@@ -1325,22 +1325,22 @@ namespace TPSBR
             if (IsGeneralInventoryIndex(index) == false)
                 return;
 
-            var slot = _items[index];
-            if (slot.IsEmpty == true)
+            var inventorySlot = _items[index];
+            if (inventorySlot.IsEmpty == true)
                 return;
 
-            var definition = slot.GetDefinition();
-            if (definition == null)
+            var inventoryDefinition = inventorySlot.GetDefinition();
+            if (inventoryDefinition == null)
                 return;
 
-            byte quantity = slot.Quantity;
-            if (quantity == 0)
+            byte inventoryQuantity = inventorySlot.Quantity;
+            if (inventoryQuantity == 0)
                 return;
 
-            if (RemoveInventoryItemInternal(index, quantity) == false)
+            if (RemoveInventoryItemInternal(index, inventoryQuantity) == false)
                 return;
 
-            SpawnInventoryItemPickup(definition, quantity, slot.ConfigurationHash);
+            SpawnInventoryItemPickup(inventoryDefinition, inventoryQuantity, inventorySlot.ConfigurationHash);
         }
 
         private bool RemoveInventoryItemInternal(int index, byte quantity)
@@ -1350,18 +1350,18 @@ namespace TPSBR
                 if (quantity == 0)
                     return false;
 
-                var slot = _pickaxeSlot;
-                if (slot.IsEmpty == true)
+                var pickaxeSlotData = _pickaxeSlot;
+                if (pickaxeSlotData.IsEmpty == true)
                     return false;
 
-                if (slot.Quantity <= quantity)
+                if (pickaxeSlotData.Quantity <= quantity)
                 {
                     _pickaxeSlot = default;
                 }
                 else
                 {
-                    slot.Remove(quantity);
-                    _pickaxeSlot = slot;
+                    pickaxeSlotData.Remove(quantity);
+                    _pickaxeSlot = pickaxeSlotData;
                 }
 
                 RefreshPickaxeSlot();
@@ -1372,22 +1372,22 @@ namespace TPSBR
             if (IsGeneralInventoryIndex(index) == false)
                 return false;
 
-            var slot = _items[index];
-            if (slot.IsEmpty == true)
+            var inventorySlot = _items[index];
+            if (inventorySlot.IsEmpty == true)
                 return false;
 
-            bool removedPickaxe = IsPickaxeSlotItem(slot);
+            bool removedPickaxe = IsPickaxeSlotItem(inventorySlot);
 
-            if (slot.Quantity <= quantity)
+            if (inventorySlot.Quantity <= quantity)
             {
                 _items.Set(index, default);
                 UpdateWeaponDefinitionMapping(index, default);
             }
             else
             {
-                slot.Remove(quantity);
-                _items.Set(index, slot);
-                UpdateWeaponDefinitionMapping(index, slot);
+                inventorySlot.Remove(quantity);
+                _items.Set(index, inventorySlot);
+                UpdateWeaponDefinitionMapping(index, inventorySlot);
             }
 
             RefreshItems();
