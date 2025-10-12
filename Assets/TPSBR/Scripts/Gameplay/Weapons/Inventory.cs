@@ -102,6 +102,7 @@ namespace TPSBR
         public int PreviousWeaponSlot => _previousWeaponSlot;
         public WeaponSize CurrentWeaponSize => CurrentWeapon != null ? CurrentWeapon.Size : WeaponSize.Unarmed;
         public const int INVENTORY_SIZE = 10;
+        public const int PICKAXE_SLOT_INDEX = byte.MaxValue;
         public const int HOTBAR_CAPACITY = 3;
         public const int HOTBAR_VISIBLE_SLOTS = HOTBAR_CAPACITY - 1;
         // PRIVATE MEMBERS
@@ -119,6 +120,7 @@ namespace TPSBR
 
         [Networked, Capacity(HOTBAR_CAPACITY)] private NetworkArray<Weapon> _hotbar { get; }
         [Networked, Capacity(INVENTORY_SIZE)] private NetworkArray<InventorySlot> _items { get; }
+        [Networked] private InventorySlot _pickaxeSlot { get; set; }
         [Networked] private byte _currentWeaponSlot { get; set; }
 
         [Networked] private byte _previousWeaponSlot { get; set; }
@@ -130,6 +132,7 @@ namespace TPSBR
         private Weapon[] _localWeapons = new Weapon[HOTBAR_CAPACITY];
         private Weapon[] _lastHotbarWeapons;
         private InventorySlot[] _localItems;
+        private InventorySlot _localPickaxeSlot;
         private Dictionary<int, WeaponDefinition> _weaponDefinitionsBySlot = new Dictionary<int, WeaponDefinition>();
         private readonly Dictionary<WeaponSize, int> _weaponSizeToSlotIndex = new Dictionary<WeaponSize, int>();
 
@@ -182,6 +185,14 @@ namespace TPSBR
                 };
             }
 
+            string pickaxeConfigurationHash = _pickaxeSlot.ConfigurationHash.ToString();
+            data.PickaxeSlot = new PlayerInventoryItemData
+            {
+                ItemDefinitionId = _pickaxeSlot.ItemDefinitionId,
+                Quantity = _pickaxeSlot.Quantity,
+                ConfigurationHash = string.IsNullOrEmpty(pickaxeConfigurationHash) == false ? pickaxeConfigurationHash : null
+            };
+
             return data;
         }
 
@@ -199,6 +210,9 @@ namespace TPSBR
             {
                 RemoveWeapon(i);
             }
+
+            _pickaxeSlot = default;
+            RefreshPickaxeSlot();
 
             for (int i = 0; i < _items.Length; i++)
             {
@@ -225,6 +239,18 @@ namespace TPSBR
                     _items.Set(i, slot);
                     UpdateWeaponDefinitionMapping(i, slot);
                 }
+            }
+
+            if (data.PickaxeSlot.ItemDefinitionId != 0 && data.PickaxeSlot.Quantity != 0)
+            {
+                NetworkString<_32> pickaxeHash = default;
+                if (string.IsNullOrEmpty(data.PickaxeSlot.ConfigurationHash) == false)
+                {
+                    pickaxeHash = data.PickaxeSlot.ConfigurationHash;
+                }
+
+                _pickaxeSlot = new InventorySlot(data.PickaxeSlot.ItemDefinitionId, data.PickaxeSlot.Quantity, pickaxeHash);
+                RefreshPickaxeSlot();
             }
 
             if (data.HotbarSlots != null)
@@ -271,11 +297,15 @@ namespace TPSBR
 
             SetCurrentWeapon(targetSlot);
             RefreshItems();
+            EnsurePickaxeAvailability();
             ArmCurrentWeapon();
         }
 
         public InventorySlot GetItemSlot(int index)
         {
+            if (index == PICKAXE_SLOT_INDEX)
+                return _pickaxeSlot;
+
             if (index < 0 || index >= _items.Length)
                 return default;
 
@@ -298,10 +328,10 @@ namespace TPSBR
             if (fromIndex == toIndex)
                 return;
 
-            if (fromIndex < 0 || fromIndex >= _items.Length)
+            if (IsValidInventoryIndex(fromIndex) == false)
                 return;
 
-            if (toIndex < 0 || toIndex >= _items.Length)
+            if (IsValidInventoryIndex(toIndex) == false)
                 return;
 
             if (HasStateAuthority == true)
@@ -316,6 +346,9 @@ namespace TPSBR
 
         public void RequestAssignHotbar(int inventoryIndex, int hotbarIndex)
         {
+            if (IsGeneralInventoryIndex(inventoryIndex) == false)
+                return;
+
             if (HasStateAuthority == true)
             {
                 AssignHotbar(inventoryIndex, hotbarIndex);
@@ -328,6 +361,9 @@ namespace TPSBR
 
         public void RequestStoreHotbar(int hotbarIndex, int inventoryIndex)
         {
+            if (IsGeneralInventoryIndex(inventoryIndex) == false)
+                return;
+
             if (HasStateAuthority == true)
             {
                 StoreHotbar(hotbarIndex, inventoryIndex);
@@ -355,7 +391,7 @@ namespace TPSBR
 
         public void RequestDropInventoryItem(int inventoryIndex)
         {
-            if (inventoryIndex < 0 || inventoryIndex >= _items.Length)
+            if (IsValidInventoryIndex(inventoryIndex) == false)
                 return;
 
             if (HasStateAuthority == true)
@@ -540,6 +576,7 @@ namespace TPSBR
             ArmCurrentWeapon();
             RefreshWeapons();
             RefreshItems();
+            EnsurePickaxeAvailability();
         }
 
         public void OnDespawned()
@@ -587,6 +624,9 @@ namespace TPSBR
             }
 
             _weaponDefinitionsBySlot.Clear();
+
+            _pickaxeSlot = default;
+            _localPickaxeSlot = default;
 
             ItemSlotChanged = null;
             HotbarSlotChanged = null;
@@ -750,6 +790,11 @@ namespace TPSBR
         {
             RefreshWeapons();
             RefreshItems();
+
+            if (HasStateAuthority == true)
+            {
+                EnsurePickaxeAvailability();
+            }
         }
 
         // MONOBEHAVIOUR
@@ -907,6 +952,8 @@ namespace TPSBR
 
         private byte AddItemInternal(ItemDefinition definition, byte quantity, NetworkString<_32> configurationHash)
         {
+            bool isPickaxe = definition is PickaxeDefinition;
+
             ushort maxStack = ItemDefinition.GetMaxStack(definition.ID);
             if (maxStack == 0)
             {
@@ -917,6 +964,11 @@ namespace TPSBR
             byte maxStackByte = (byte)clampedMaxStack;
 
             byte remaining = quantity;
+
+            if (isPickaxe == true && remaining > 0)
+            {
+                remaining = AddToPickaxeSlot(definition, remaining, configurationHash);
+            }
 
             for (int i = 0; i < _items.Length && remaining > 0; i++)
             {
@@ -968,6 +1020,75 @@ namespace TPSBR
         {
             if (fromIndex == toIndex)
                 return;
+
+            bool fromPickaxe = fromIndex == PICKAXE_SLOT_INDEX;
+            bool toPickaxe = toIndex == PICKAXE_SLOT_INDEX;
+
+            if (fromPickaxe == false && fromIndex >= _items.Length)
+                return;
+
+            if (toPickaxe == false && toIndex >= _items.Length)
+                return;
+
+            if (fromPickaxe == true)
+            {
+                var fromSlot = _pickaxeSlot;
+                if (fromSlot.IsEmpty == true)
+                    return;
+
+                if (toPickaxe == true)
+                    return;
+
+                var targetSlot = _items[toIndex];
+                if (targetSlot.IsEmpty == false && IsPickaxeSlotItem(targetSlot) == false)
+                    return;
+
+                _items.Set(toIndex, fromSlot);
+                UpdateWeaponDefinitionMapping(toIndex, fromSlot);
+
+                if (targetSlot.IsEmpty == false && IsPickaxeSlotItem(targetSlot) == true)
+                {
+                    _pickaxeSlot = targetSlot;
+                }
+                else
+                {
+                    _pickaxeSlot = default;
+                }
+
+                RefreshPickaxeSlot();
+                RefreshItems();
+                EnsurePickaxeAvailability();
+                return;
+            }
+
+            if (toPickaxe == true)
+            {
+                var fromSlot = _items[fromIndex];
+                if (fromSlot.IsEmpty == true)
+                    return;
+
+                if (IsPickaxeSlotItem(fromSlot) == false)
+                    return;
+
+                var previousPickaxe = _pickaxeSlot;
+                _pickaxeSlot = fromSlot;
+                RefreshPickaxeSlot();
+
+                if (previousPickaxe.IsEmpty == true)
+                {
+                    _items.Set(fromIndex, default);
+                    UpdateWeaponDefinitionMapping(fromIndex, default);
+                }
+                else
+                {
+                    _items.Set(fromIndex, previousPickaxe);
+                    UpdateWeaponDefinitionMapping(fromIndex, previousPickaxe);
+                }
+
+                RefreshItems();
+                EnsurePickaxeAvailability();
+                return;
+            }
 
             var fromSlot = _items[fromIndex];
             if (fromSlot.IsEmpty == true)
@@ -1031,7 +1152,7 @@ namespace TPSBR
 
         private void AssignHotbar(int inventoryIndex, int hotbarIndex)
         {
-            if (inventoryIndex < 0 || inventoryIndex >= _items.Length)
+            if (IsGeneralInventoryIndex(inventoryIndex) == false)
                 return;
 
             int slot = hotbarIndex + 1;
@@ -1087,7 +1208,7 @@ namespace TPSBR
             if (slot <= 0 || slot >= _hotbar.Length)
                 return;
 
-            if (inventoryIndex < 0 || inventoryIndex >= _items.Length)
+            if (IsGeneralInventoryIndex(inventoryIndex) == false)
                 return;
 
             var targetSlot = _items[inventoryIndex];
@@ -1179,7 +1300,29 @@ namespace TPSBR
 
         private void DropInventoryItem(int index)
         {
-            if (index < 0 || index >= _items.Length)
+            if (index == PICKAXE_SLOT_INDEX)
+            {
+                var slot = _pickaxeSlot;
+                if (slot.IsEmpty == true)
+                    return;
+
+                var definition = slot.GetDefinition();
+                if (definition == null)
+                    return;
+
+                byte quantity = slot.Quantity;
+                if (quantity == 0)
+                    return;
+
+                _pickaxeSlot = default;
+                RefreshPickaxeSlot();
+
+                SpawnInventoryItemPickup(definition, quantity, slot.ConfigurationHash);
+                EnsurePickaxeAvailability();
+                return;
+            }
+
+            if (IsGeneralInventoryIndex(index) == false)
                 return;
 
             var slot = _items[index];
@@ -1202,12 +1345,38 @@ namespace TPSBR
 
         private bool RemoveInventoryItemInternal(int index, byte quantity)
         {
-            if (index < 0 || index >= _items.Length)
+            if (index == PICKAXE_SLOT_INDEX)
+            {
+                if (quantity == 0)
+                    return false;
+
+                var slot = _pickaxeSlot;
+                if (slot.IsEmpty == true)
+                    return false;
+
+                if (slot.Quantity <= quantity)
+                {
+                    _pickaxeSlot = default;
+                }
+                else
+                {
+                    slot.Remove(quantity);
+                    _pickaxeSlot = slot;
+                }
+
+                RefreshPickaxeSlot();
+                EnsurePickaxeAvailability();
+                return true;
+            }
+
+            if (IsGeneralInventoryIndex(index) == false)
                 return false;
 
             var slot = _items[index];
             if (slot.IsEmpty == true)
                 return false;
+
+            bool removedPickaxe = IsPickaxeSlotItem(slot);
 
             if (slot.Quantity <= quantity)
             {
@@ -1222,12 +1391,18 @@ namespace TPSBR
             }
 
             RefreshItems();
+
+            if (removedPickaxe == true)
+            {
+                EnsurePickaxeAvailability();
+            }
+
             return true;
         }
 
         private void RestoreInventoryItem(int index, WeaponDefinition definition, NetworkString<_32> configurationHash)
         {
-            if (index < 0 || index >= _items.Length || definition == null)
+            if (IsGeneralInventoryIndex(index) == false || definition == null)
                 return;
 
             var slot = new InventorySlot(definition.ID, 1, configurationHash);
@@ -1282,6 +1457,8 @@ namespace TPSBR
                     ItemSlotChanged?.Invoke(i, slot);
                 }
             }
+
+            RefreshPickaxeSlot();
         }
 
         private void RefreshWeapons()
@@ -1552,24 +1729,166 @@ namespace TPSBR
         return -1;
     }
 
-    private void UpdateWeaponDefinitionMapping(int index, InventorySlot slot)
-    {
-        if (slot.IsEmpty == true)
+        private void UpdateWeaponDefinitionMapping(int index, InventorySlot slot)
         {
-            _weaponDefinitionsBySlot.Remove(index);
-            return;
+            if (slot.IsEmpty == true)
+            {
+                _weaponDefinitionsBySlot.Remove(index);
+                return;
+            }
+
+            var definition = slot.GetDefinition() as WeaponDefinition;
+            if (definition != null)
+            {
+                _weaponDefinitionsBySlot[index] = definition;
+            }
+            else
+            {
+                _weaponDefinitionsBySlot.Remove(index);
+            }
         }
 
-        var definition = slot.GetDefinition() as WeaponDefinition;
-        if (definition != null)
+        private byte AddToPickaxeSlot(ItemDefinition definition, byte quantity, NetworkString<_32> configurationHash)
         {
-            _weaponDefinitionsBySlot[index] = definition;
+            if (quantity == 0)
+                return 0;
+
+            var slot = _pickaxeSlot;
+
+            if (slot.IsEmpty == false && IsPickaxeSlotItem(slot) == false)
+            {
+                _pickaxeSlot = default;
+                RefreshPickaxeSlot();
+                slot = default;
+            }
+
+            int clampedMaxStack = Mathf.Clamp((int)ItemDefinition.GetMaxStack(definition.ID), 1, byte.MaxValue);
+
+            if (slot.IsEmpty == true)
+            {
+                byte addAmount = (byte)Mathf.Min(quantity, clampedMaxStack);
+                if (addAmount > 0)
+                {
+                    slot = new InventorySlot(definition.ID, addAmount, configurationHash);
+                    _pickaxeSlot = slot;
+                    RefreshPickaxeSlot();
+                    quantity -= addAmount;
+                }
+
+                return quantity;
+            }
+
+            if (slot.ItemDefinitionId != definition.ID)
+                return quantity;
+
+            if (slot.ConfigurationHash != configurationHash)
+                return quantity;
+
+            if (slot.Quantity >= clampedMaxStack)
+                return quantity;
+
+            byte space = (byte)Mathf.Min(clampedMaxStack - slot.Quantity, quantity);
+            if (space == 0)
+                return quantity;
+
+            slot.Add(space);
+            _pickaxeSlot = slot;
+            RefreshPickaxeSlot();
+
+            return (byte)(quantity - space);
         }
-        else
+
+        private void RefreshPickaxeSlot()
         {
-            _weaponDefinitionsBySlot.Remove(index);
+            var slot = _pickaxeSlot;
+            if (_localPickaxeSlot.Equals(slot) == false)
+            {
+                _localPickaxeSlot = slot;
+                ItemSlotChanged?.Invoke(PICKAXE_SLOT_INDEX, slot);
+            }
         }
-    }
+
+        private void EnsurePickaxeAvailability()
+        {
+            if (HasStateAuthority == false)
+                return;
+
+            if (_pickaxeSlot.IsEmpty == false && IsPickaxeSlotItem(_pickaxeSlot) == false)
+            {
+                _pickaxeSlot = default;
+                RefreshPickaxeSlot();
+            }
+
+            if (IsPickaxeSlotItem(_pickaxeSlot) == false)
+            {
+                int pickaxeIndex = FindPickaxeInInventory();
+                if (pickaxeIndex >= 0)
+                {
+                    var slot = _items[pickaxeIndex];
+                    _pickaxeSlot = slot;
+                    _items.Set(pickaxeIndex, default);
+                    UpdateWeaponDefinitionMapping(pickaxeIndex, default);
+                    RefreshPickaxeSlot();
+                    RefreshItems();
+                    return;
+                }
+            }
+
+            if (HasAnyPickaxe() == true)
+                return;
+
+            var defaultDefinitions = DefaultItemDefinitions.Instance;
+            var defaultPickaxe = defaultDefinitions != null ? defaultDefinitions.DefaultPickaxe : null;
+            if (defaultPickaxe == null)
+                return;
+
+            _pickaxeSlot = new InventorySlot(defaultPickaxe.ID, 1, default);
+            RefreshPickaxeSlot();
+        }
+
+        private bool HasAnyPickaxe()
+        {
+            if (IsPickaxeSlotItem(_pickaxeSlot) == true)
+                return true;
+
+            for (int i = 0; i < _items.Length; i++)
+            {
+                if (IsPickaxeSlotItem(_items[i]) == true)
+                    return true;
+            }
+
+            return false;
+        }
+
+        private int FindPickaxeInInventory()
+        {
+            for (int i = 0; i < _items.Length; i++)
+            {
+                if (IsPickaxeSlotItem(_items[i]) == true)
+                    return i;
+            }
+
+            return -1;
+        }
+
+        private bool IsGeneralInventoryIndex(int index)
+        {
+            return index >= 0 && index < _items.Length;
+        }
+
+        private bool IsValidInventoryIndex(int index)
+        {
+            return IsGeneralInventoryIndex(index) || index == PICKAXE_SLOT_INDEX;
+        }
+
+        private static bool IsPickaxeSlotItem(InventorySlot slot)
+        {
+            if (slot.IsEmpty == true)
+                return false;
+
+            var definition = slot.GetDefinition();
+            return definition is PickaxeDefinition;
+        }
 
     private void SpawnInventoryItemPickup(ItemDefinition definition, byte quantity, NetworkString<_32> configurationHash = default)
     {

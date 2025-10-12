@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Fusion;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -13,6 +14,8 @@ namespace TPSBR.UI
                 private RectTransform _dragLayer;
 
                 private UIItemSlot[] _slots;
+                private int[] _slotIndices;
+                private Dictionary<int, UIItemSlot> _slotLookup;
                 private Inventory _inventory;
                 private UIItemSlot _dragSource;
                 private RectTransform _dragIcon;
@@ -28,12 +31,52 @@ namespace TPSBR.UI
                 {
                         base.OnInitialize();
 
-                        _slots = GetComponentsInChildren<UIItemSlot>(true);
+                        var discoveredSlots = GetComponentsInChildren<UIItemSlot>(true);
+                        var generalSlots = new List<UIItemSlot>(discoveredSlots.Length);
+                        UIItemSlot pickaxeSlot = null;
 
-                        for (int i = 0; i < _slots.Length; i++)
+                        for (int i = 0; i < discoveredSlots.Length; i++)
                         {
-                                _slots[i].InitializeSlot(this, i);
+                                var slot = discoveredSlots[i];
+                                if (IsPickaxeUISlot(slot) == true)
+                                {
+                                        pickaxeSlot = slot;
+                                }
+                                else
+                                {
+                                        generalSlots.Add(slot);
+                                }
                         }
+
+                        var orderedSlots = new List<UIItemSlot>(generalSlots.Count + (pickaxeSlot != null ? 1 : 0));
+                        var indices = new List<int>(orderedSlots.Capacity);
+                        _slotLookup = new Dictionary<int, UIItemSlot>(orderedSlots.Capacity);
+
+                        for (int i = 0; i < generalSlots.Count; i++)
+                        {
+                                var slot = generalSlots[i];
+                                slot.InitializeSlot(this, i);
+                                orderedSlots.Add(slot);
+                                indices.Add(i);
+                                _slotLookup[i] = slot;
+                        }
+
+                        if (pickaxeSlot != null)
+                        {
+                                pickaxeSlot.InitializeSlot(this, Inventory.PICKAXE_SLOT_INDEX);
+                                orderedSlots.Add(pickaxeSlot);
+                                indices.Add(Inventory.PICKAXE_SLOT_INDEX);
+                                _slotLookup[Inventory.PICKAXE_SLOT_INDEX] = pickaxeSlot;
+                        }
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                        else
+                        {
+                                Debug.LogWarning($"{nameof(UIInventoryGrid)} is missing a pickaxe inventory slot.");
+                        }
+#endif
+
+                        _slots = orderedSlots.ToArray();
+                        _slotIndices = indices.ToArray();
 
                         UpdateSelectionHighlight();
                 }
@@ -41,6 +84,9 @@ namespace TPSBR.UI
                 protected override void OnDeinitialize()
                 {
                         Bind(null);
+                        _slotLookup = null;
+                        _slotIndices = null;
+                        _slots = null;
                         base.OnDeinitialize();
                 }
 
@@ -58,14 +104,18 @@ namespace TPSBR.UI
 
                         if (_inventory != null)
                         {
-                                for (int i = 0; i < _slots.Length; i++)
+                                if (_slotIndices != null)
                                 {
-                                        UpdateSlot(i, _inventory.GetItemSlot(i));
+                                        for (int i = 0; i < _slotIndices.Length; i++)
+                                        {
+                                                int index = _slotIndices[i];
+                                                UpdateSlot(index, _inventory.GetItemSlot(index));
+                                        }
                                 }
 
                                 _inventory.ItemSlotChanged += OnItemSlotChanged;
                         }
-                        else
+                        else if (_slots != null)
                         {
                                 for (int i = 0; i < _slots.Length; i++)
                                 {
@@ -129,6 +179,9 @@ namespace TPSBR.UI
 
                         if (source.Owner is UIHotbar)
                         {
+                                if (target.Index == Inventory.PICKAXE_SLOT_INDEX)
+                                        return;
+
                                 _inventory.RequestStoreHotbar(source.Index, target.Index);
                         }
                 }
@@ -210,29 +263,32 @@ namespace TPSBR.UI
 
                 private void UpdateSlot(int index, InventorySlot slot)
                 {
-                        if (_slots == null || index < 0 || index >= _slots.Length)
+                        if (_slotLookup == null)
+                                return;
+
+                        if (_slotLookup.TryGetValue(index, out var uiSlot) == false)
                                 return;
 
                         if (slot.IsEmpty)
                         {
-                                _slots[index].Clear();
+                                uiSlot.Clear();
                                 return;
                         }
 
                         var definition = slot.GetDefinition();
                         var sprite = definition != null ? definition.IconSprite : null;
 
-                        _slots[index].SetItem(sprite, slot.Quantity);
+                        uiSlot.SetItem(sprite, slot.Quantity);
                 }
 
                 private void UpdateSelectionHighlight()
                 {
-                        if (_slots == null)
+                        if (_slots == null || _slotIndices == null)
                                 return;
 
                         for (int i = 0; i < _slots.Length; i++)
                         {
-                                bool isSelected = i == _selectedSlotIndex;
+                                bool isSelected = _slotIndices[i] == _selectedSlotIndex;
                                 _slots[i].SetSelectionHighlight(isSelected, _selectedSlotColor);
                         }
                 }
@@ -322,6 +378,22 @@ namespace TPSBR.UI
                         {
                                 _dragCanvasGroup.alpha = visible ? 1f : 0f;
                         }
+                }
+
+                private static bool IsPickaxeUISlot(UIItemSlot slot)
+                {
+                        if (slot == null)
+                                return false;
+
+                        var slotObject = slot.gameObject;
+                        if (slotObject == null)
+                                return false;
+
+                        var slotName = slotObject.name;
+                        if (string.IsNullOrEmpty(slotName))
+                                return false;
+
+                        return slotName.IndexOf("pickaxe", StringComparison.OrdinalIgnoreCase) >= 0;
                 }
         }
 }
