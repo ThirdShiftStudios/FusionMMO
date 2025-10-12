@@ -50,7 +50,6 @@ MonoBehaviour:
   _endOpenChest: {fileID: 1209673589450827304}
   _blendInDuration: 0.1
   _blendOutDuration: 0.1
-  _completionThreshold: 0.164
 --- !u!1 &1116861512055694563
 GameObject:
   m_ObjectHideFlags: 0
@@ -130,6 +129,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 5086329034549477572}
+  - {fileID: 8580298945777777752}
   m_Father: {fileID: 135246698218916311}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &332447353462035941
@@ -148,6 +148,7 @@ MonoBehaviour:
   _isAdditive: 0
   _initialWeight: 1
   _openChest: {fileID: 0}
+  _mineOre: {fileID: 0}
 --- !u!1 &2607543021013749022
 GameObject:
   m_ObjectHideFlags: 0
@@ -450,6 +451,56 @@ Transform:
   m_Children: []
   m_Father: {fileID: 678607880997112393}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &7444933235370003242
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8580298945777777752}
+  - component: {fileID: 2539961083027717555}
+  m_Layer: 8
+  m_Name: MineOre
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8580298945777777752
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7444933235370003242}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 7923445001256126210}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2539961083027717555
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7444933235370003242}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 223e4e4445cd12d4481d75381684c824, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _node:
+    Clip: {fileID: 8993902097722301239, guid: bb73cd85de29a844a9283908460153ae, type: 3}
+    Speed: 1
+    IsLooping: 1
+  _blendInDuration: 0.1
+  _blendOutDuration: 0.1
 --- !u!1001 &3311395415117308352
 PrefabInstance:
   m_ObjectHideFlags: 0
