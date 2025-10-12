@@ -37,5 +37,6 @@ namespace TPSBR
         }
 
         public PickaxeDefinition DefaultPickaxe => _defaultPickaxe;
+        public WoodAxeDefinition DefaultWoodAxe => _defaultWoodAxe;
     }
 }

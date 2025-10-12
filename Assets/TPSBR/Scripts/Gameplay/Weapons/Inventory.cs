@@ -103,6 +103,7 @@ namespace TPSBR
         public WeaponSize CurrentWeaponSize => CurrentWeapon != null ? CurrentWeapon.Size : WeaponSize.Unarmed;
         public const int INVENTORY_SIZE = 10;
         public const int PICKAXE_SLOT_INDEX = byte.MaxValue;
+        public const int WOOD_AXE_SLOT_INDEX = byte.MaxValue - 1;
         public const int HOTBAR_CAPACITY = 3;
         public const int HOTBAR_VISIBLE_SLOTS = HOTBAR_CAPACITY - 1;
         // PRIVATE MEMBERS
@@ -123,6 +124,7 @@ namespace TPSBR
         [Networked, Capacity(HOTBAR_CAPACITY)] private NetworkArray<Weapon> _hotbar { get; }
         [Networked, Capacity(INVENTORY_SIZE)] private NetworkArray<InventorySlot> _items { get; }
         [Networked] private InventorySlot _pickaxeSlot { get; set; }
+        [Networked] private InventorySlot _woodAxeSlot { get; set; }
         [Networked] private byte _currentWeaponSlot { get; set; }
 
         [Networked] private byte _previousWeaponSlot { get; set; }
@@ -137,6 +139,7 @@ namespace TPSBR
         private Weapon[] _lastHotbarWeapons;
         private InventorySlot[] _localItems;
         private InventorySlot _localPickaxeSlot;
+        private InventorySlot _localWoodAxeSlot;
         private Pickaxe _localPickaxe;
         private bool _localPickaxeEquipped;
         private byte _weaponSlotBeforePickaxe = byte.MaxValue;
@@ -145,6 +148,7 @@ namespace TPSBR
 
         private static readonly Dictionary<int, Weapon> _weaponPrefabsByDefinitionId = new Dictionary<int, Weapon>();
         private static PickaxeDefinition _cachedFallbackPickaxe;
+        private static WoodAxeDefinition _cachedFallbackWoodAxe;
 
         public event Action<int, InventorySlot> ItemSlotChanged;
         public event Action<int, Weapon> HotbarSlotChanged;
@@ -201,6 +205,14 @@ namespace TPSBR
                 ConfigurationHash = string.IsNullOrEmpty(pickaxeConfigurationHash) == false ? pickaxeConfigurationHash : null
             };
 
+            string woodAxeConfigurationHash = _woodAxeSlot.ConfigurationHash.ToString();
+            data.WoodAxeSlot = new PlayerInventoryItemData
+            {
+                ItemDefinitionId = _woodAxeSlot.ItemDefinitionId,
+                Quantity = _woodAxeSlot.Quantity,
+                ConfigurationHash = string.IsNullOrEmpty(woodAxeConfigurationHash) == false ? woodAxeConfigurationHash : null
+            };
+
             return data;
         }
 
@@ -221,6 +233,8 @@ namespace TPSBR
 
             _pickaxeSlot = default;
             RefreshPickaxeSlot();
+            _woodAxeSlot = default;
+            RefreshWoodAxeSlot();
 
             for (int i = 0; i < _items.Length; i++)
             {
@@ -259,6 +273,18 @@ namespace TPSBR
 
                 _pickaxeSlot = new InventorySlot(data.PickaxeSlot.ItemDefinitionId, data.PickaxeSlot.Quantity, pickaxeHash);
                 RefreshPickaxeSlot();
+            }
+
+            if (data.WoodAxeSlot.ItemDefinitionId != 0 && data.WoodAxeSlot.Quantity != 0)
+            {
+                NetworkString<_32> woodAxeHash = default;
+                if (string.IsNullOrEmpty(data.WoodAxeSlot.ConfigurationHash) == false)
+                {
+                    woodAxeHash = data.WoodAxeSlot.ConfigurationHash;
+                }
+
+                _woodAxeSlot = new InventorySlot(data.WoodAxeSlot.ItemDefinitionId, data.WoodAxeSlot.Quantity, woodAxeHash);
+                RefreshWoodAxeSlot();
             }
 
             if (data.HotbarSlots != null)
@@ -305,7 +331,7 @@ namespace TPSBR
 
             SetCurrentWeapon(targetSlot);
             RefreshItems();
-            EnsurePickaxeAvailability();
+            EnsureToolAvailability();
             ArmCurrentWeapon();
         }
 
@@ -313,6 +339,9 @@ namespace TPSBR
         {
             if (index == PICKAXE_SLOT_INDEX)
                 return _pickaxeSlot;
+
+            if (index == WOOD_AXE_SLOT_INDEX)
+                return _woodAxeSlot;
 
             if (index < 0 || index >= _items.Length)
                 return default;
@@ -490,7 +519,7 @@ namespace TPSBR
 
             if (HasStateAuthority == true)
             {
-                EnsurePickaxeAvailability();
+                EnsureToolAvailability();
                 EnsurePickaxeInstance();
 
                 if (_pickaxe == null)
@@ -642,7 +671,7 @@ namespace TPSBR
             ArmCurrentWeapon();
             RefreshWeapons();
             RefreshItems();
-            EnsurePickaxeAvailability();
+            EnsureToolAvailability();
         }
 
         public void OnDespawned()
@@ -695,6 +724,8 @@ namespace TPSBR
 
             _pickaxeSlot = default;
             _localPickaxeSlot = default;
+            _woodAxeSlot = default;
+            _localWoodAxeSlot = default;
 
             ItemSlotChanged = null;
             HotbarSlotChanged = null;
@@ -862,7 +893,7 @@ namespace TPSBR
 
             if (HasStateAuthority == true)
             {
-                EnsurePickaxeAvailability();
+                EnsureToolAvailability();
             }
         }
 
@@ -1022,6 +1053,7 @@ namespace TPSBR
         private byte AddItemInternal(ItemDefinition definition, byte quantity, NetworkString<_32> configurationHash)
         {
             bool isPickaxe = definition is PickaxeDefinition;
+            bool isWoodAxe = definition is WoodAxeDefinition;
 
             ushort maxStack = ItemDefinition.GetMaxStack(definition.ID);
             if (maxStack == 0)
@@ -1037,6 +1069,11 @@ namespace TPSBR
             if (isPickaxe == true && remaining > 0)
             {
                 remaining = AddToPickaxeSlot(definition, remaining, configurationHash);
+            }
+
+            if (isWoodAxe == true && remaining > 0)
+            {
+                remaining = AddToWoodAxeSlot(definition, remaining, configurationHash);
             }
 
             for (int i = 0; i < _items.Length && remaining > 0; i++)
@@ -1092,11 +1129,15 @@ namespace TPSBR
 
             bool fromPickaxe = fromIndex == PICKAXE_SLOT_INDEX;
             bool toPickaxe = toIndex == PICKAXE_SLOT_INDEX;
+            bool fromWoodAxe = fromIndex == WOOD_AXE_SLOT_INDEX;
+            bool toWoodAxe = toIndex == WOOD_AXE_SLOT_INDEX;
+            bool fromSpecial = fromPickaxe || fromWoodAxe;
+            bool toSpecial = toPickaxe || toWoodAxe;
 
-            if (fromPickaxe == false && fromIndex >= _items.Length)
+            if (fromSpecial == false && fromIndex >= _items.Length)
                 return;
 
-            if (toPickaxe == false && toIndex >= _items.Length)
+            if (toSpecial == false && toIndex >= _items.Length)
                 return;
 
             if (fromPickaxe == true)
@@ -1126,7 +1167,7 @@ namespace TPSBR
 
                 RefreshPickaxeSlot();
                 RefreshItems();
-                EnsurePickaxeAvailability();
+                EnsureToolAvailability();
                 return;
             }
 
@@ -1155,7 +1196,67 @@ namespace TPSBR
                 }
 
                 RefreshItems();
-                EnsurePickaxeAvailability();
+                EnsureToolAvailability();
+                return;
+            }
+
+            if (fromWoodAxe == true)
+            {
+                var woodAxeSourceSlot = _woodAxeSlot;
+                if (woodAxeSourceSlot.IsEmpty == true)
+                    return;
+
+                if (toWoodAxe == true)
+                    return;
+
+                var targetSlot = _items[toIndex];
+                if (targetSlot.IsEmpty == false && IsWoodAxeSlotItem(targetSlot) == false)
+                    return;
+
+                _items.Set(toIndex, woodAxeSourceSlot);
+                UpdateWeaponDefinitionMapping(toIndex, woodAxeSourceSlot);
+
+                if (targetSlot.IsEmpty == false && IsWoodAxeSlotItem(targetSlot) == true)
+                {
+                    _woodAxeSlot = targetSlot;
+                }
+                else
+                {
+                    _woodAxeSlot = default;
+                }
+
+                RefreshWoodAxeSlot();
+                RefreshItems();
+                EnsureToolAvailability();
+                return;
+            }
+
+            if (toWoodAxe == true)
+            {
+                var sourceSlot = _items[fromIndex];
+                if (sourceSlot.IsEmpty == true)
+                    return;
+
+                if (IsWoodAxeSlotItem(sourceSlot) == false)
+                    return;
+
+                var previousWoodAxe = _woodAxeSlot;
+                _woodAxeSlot = sourceSlot;
+                RefreshWoodAxeSlot();
+
+                if (previousWoodAxe.IsEmpty == true)
+                {
+                    _items.Set(fromIndex, default);
+                    UpdateWeaponDefinitionMapping(fromIndex, default);
+                }
+                else
+                {
+                    _items.Set(fromIndex, previousWoodAxe);
+                    UpdateWeaponDefinitionMapping(fromIndex, previousWoodAxe);
+                }
+
+                RefreshItems();
+                EnsureToolAvailability();
                 return;
             }
 
@@ -1387,7 +1488,29 @@ namespace TPSBR
                 RefreshPickaxeSlot();
 
                 SpawnInventoryItemPickup(pickaxeDefinition, pickaxeQuantity, pickaxeSlotData.ConfigurationHash);
-                EnsurePickaxeAvailability();
+                EnsureToolAvailability();
+                return;
+            }
+
+            if (index == WOOD_AXE_SLOT_INDEX)
+            {
+                var woodAxeSlotData = _woodAxeSlot;
+                if (woodAxeSlotData.IsEmpty == true)
+                    return;
+
+                var woodAxeDefinition = woodAxeSlotData.GetDefinition();
+                if (woodAxeDefinition == null)
+                    return;
+
+                byte woodAxeQuantity = woodAxeSlotData.Quantity;
+                if (woodAxeQuantity == 0)
+                    return;
+
+                _woodAxeSlot = default;
+                RefreshWoodAxeSlot();
+
+                SpawnInventoryItemPickup(woodAxeDefinition, woodAxeQuantity, woodAxeSlotData.ConfigurationHash);
+                EnsureToolAvailability();
                 return;
             }
 
@@ -1434,7 +1557,31 @@ namespace TPSBR
                 }
 
                 RefreshPickaxeSlot();
-                EnsurePickaxeAvailability();
+                EnsureToolAvailability();
+                return true;
+            }
+
+            if (index == WOOD_AXE_SLOT_INDEX)
+            {
+                if (quantity == 0)
+                    return false;
+
+                var woodAxeSlotData = _woodAxeSlot;
+                if (woodAxeSlotData.IsEmpty == true)
+                    return false;
+
+                if (woodAxeSlotData.Quantity <= quantity)
+                {
+                    _woodAxeSlot = default;
+                }
+                else
+                {
+                    woodAxeSlotData.Remove(quantity);
+                    _woodAxeSlot = woodAxeSlotData;
+                }
+
+                RefreshWoodAxeSlot();
+                EnsureToolAvailability();
                 return true;
             }
 
@@ -1445,7 +1592,7 @@ namespace TPSBR
             if (inventorySlot.IsEmpty == true)
                 return false;
 
-            bool removedPickaxe = IsPickaxeSlotItem(inventorySlot);
+            bool removedSpecialItem = IsPickaxeSlotItem(inventorySlot) || IsWoodAxeSlotItem(inventorySlot);
 
             if (inventorySlot.Quantity <= quantity)
             {
@@ -1461,9 +1608,9 @@ namespace TPSBR
 
             RefreshItems();
 
-            if (removedPickaxe == true)
+            if (removedSpecialItem == true)
             {
-                EnsurePickaxeAvailability();
+                EnsureToolAvailability();
             }
 
             return true;
@@ -1528,6 +1675,7 @@ namespace TPSBR
             }
 
             RefreshPickaxeSlot();
+            RefreshWoodAxeSlot();
         }
 
         private void RefreshWeapons()
@@ -1877,6 +2025,66 @@ namespace TPSBR
             }
         }
 
+        private byte AddToWoodAxeSlot(ItemDefinition definition, byte quantity, NetworkString<_32> configurationHash)
+        {
+            if (quantity == 0)
+                return 0;
+
+            var slot = _woodAxeSlot;
+
+            if (slot.IsEmpty == false && IsWoodAxeSlotItem(slot) == false)
+            {
+                _woodAxeSlot = default;
+                RefreshWoodAxeSlot();
+                slot = default;
+            }
+
+            int clampedMaxStack = Mathf.Clamp((int)ItemDefinition.GetMaxStack(definition.ID), 1, byte.MaxValue);
+
+            if (slot.IsEmpty == true)
+            {
+                byte addAmount = (byte)Mathf.Min(quantity, clampedMaxStack);
+                if (addAmount > 0)
+                {
+                    slot = new InventorySlot(definition.ID, addAmount, configurationHash);
+                    _woodAxeSlot = slot;
+                    RefreshWoodAxeSlot();
+                    quantity -= addAmount;
+                }
+
+                return quantity;
+            }
+
+            if (slot.ItemDefinitionId != definition.ID)
+                return quantity;
+
+            if (slot.ConfigurationHash != configurationHash)
+                return quantity;
+
+            if (slot.Quantity >= clampedMaxStack)
+                return quantity;
+
+            byte space = (byte)Mathf.Min(clampedMaxStack - slot.Quantity, quantity);
+            if (space == 0)
+                return quantity;
+
+            slot.Add(space);
+            _woodAxeSlot = slot;
+            RefreshWoodAxeSlot();
+
+            return (byte)(quantity - space);
+        }
+
+        private void RefreshWoodAxeSlot()
+        {
+            var slot = _woodAxeSlot;
+            if (_localWoodAxeSlot.Equals(slot) == false)
+            {
+                _localWoodAxeSlot = slot;
+                ItemSlotChanged?.Invoke(WOOD_AXE_SLOT_INDEX, slot);
+            }
+        }
+
         private void RefreshPickaxeVisuals()
         {
             var networkPickaxe = _pickaxe;
@@ -1977,7 +2185,13 @@ namespace TPSBR
             _weaponSlotBeforePickaxe = byte.MaxValue;
         }
 
-        private void EnsurePickaxeAvailability()
+        private void EnsureToolAvailability()
+        {
+            EnsurePickaxeAvailabilityInternal();
+            EnsureWoodAxeAvailability();
+        }
+
+        private void EnsurePickaxeAvailabilityInternal()
         {
             if (HasStateAuthority == false)
                 return;
@@ -2026,6 +2240,45 @@ namespace TPSBR
             EnsurePickaxeInstance();
         }
 
+        private void EnsureWoodAxeAvailability()
+        {
+            if (HasStateAuthority == false)
+                return;
+
+            if (_woodAxeSlot.IsEmpty == false && IsWoodAxeSlotItem(_woodAxeSlot) == false)
+            {
+                _woodAxeSlot = default;
+                RefreshWoodAxeSlot();
+            }
+
+            if (IsWoodAxeSlotItem(_woodAxeSlot) == false)
+            {
+                int woodAxeIndex = FindWoodAxeInInventory();
+                if (woodAxeIndex >= 0)
+                {
+                    var slot = _items[woodAxeIndex];
+                    _woodAxeSlot = slot;
+                    _items.Set(woodAxeIndex, default);
+                    UpdateWeaponDefinitionMapping(woodAxeIndex, default);
+                    RefreshWoodAxeSlot();
+                    RefreshItems();
+                    return;
+                }
+            }
+
+            if (HasAnyWoodAxe() == true)
+                return;
+
+            var defaultWoodAxe = ResolveDefaultWoodAxe();
+            if (defaultWoodAxe == null)
+                return;
+
+            ItemDefinition.Get(defaultWoodAxe.ID);
+
+            _woodAxeSlot = new InventorySlot(defaultWoodAxe.ID, 1, default);
+            RefreshWoodAxeSlot();
+        }
+
         private static PickaxeDefinition ResolveDefaultPickaxe()
         {
             var defaultDefinitions = DefaultItemDefinitions.Instance;
@@ -2051,6 +2304,30 @@ namespace TPSBR
             return _cachedFallbackPickaxe;
         }
 
+        private static WoodAxeDefinition ResolveDefaultWoodAxe()
+        {
+            var defaultDefinitions = DefaultItemDefinitions.Instance;
+            if (defaultDefinitions != null && defaultDefinitions.DefaultWoodAxe != null)
+            {
+                return defaultDefinitions.DefaultWoodAxe;
+            }
+
+            if (_cachedFallbackWoodAxe == null)
+            {
+                var woodAxes = Resources.LoadAll<WoodAxeDefinition>(string.Empty);
+                for (int i = 0; i < woodAxes.Length; i++)
+                {
+                    if (woodAxes[i] != null)
+                    {
+                        _cachedFallbackWoodAxe = woodAxes[i];
+                        break;
+                    }
+                }
+            }
+
+            return _cachedFallbackWoodAxe;
+        }
+
         private bool HasAnyPickaxe()
         {
             if (IsPickaxeSlotItem(_pickaxeSlot) == true)
@@ -2059,6 +2336,20 @@ namespace TPSBR
             for (int i = 0; i < _items.Length; i++)
             {
                 if (IsPickaxeSlotItem(_items[i]) == true)
+                    return true;
+            }
+
+            return false;
+        }
+
+        private bool HasAnyWoodAxe()
+        {
+            if (IsWoodAxeSlotItem(_woodAxeSlot) == true)
+                return true;
+
+            for (int i = 0; i < _items.Length; i++)
+            {
+                if (IsWoodAxeSlotItem(_items[i]) == true)
                     return true;
             }
 
@@ -2076,6 +2367,17 @@ namespace TPSBR
             return -1;
         }
 
+        private int FindWoodAxeInInventory()
+        {
+            for (int i = 0; i < _items.Length; i++)
+            {
+                if (IsWoodAxeSlotItem(_items[i]) == true)
+                    return i;
+            }
+
+            return -1;
+        }
+
         private bool IsGeneralInventoryIndex(int index)
         {
             return index >= 0 && index < _items.Length;
@@ -2083,7 +2385,7 @@ namespace TPSBR
 
         private bool IsValidInventoryIndex(int index)
         {
-            return IsGeneralInventoryIndex(index) || index == PICKAXE_SLOT_INDEX;
+            return IsGeneralInventoryIndex(index) || index == PICKAXE_SLOT_INDEX || index == WOOD_AXE_SLOT_INDEX;
         }
 
         private static bool IsPickaxeSlotItem(InventorySlot slot)
@@ -2093,6 +2395,15 @@ namespace TPSBR
 
             var definition = slot.GetDefinition();
             return definition is PickaxeDefinition;
+        }
+
+        private static bool IsWoodAxeSlotItem(InventorySlot slot)
+        {
+            if (slot.IsEmpty == true)
+                return false;
+
+            var definition = slot.GetDefinition();
+            return definition is WoodAxeDefinition;
         }
 
     private void SpawnInventoryItemPickup(ItemDefinition definition, byte quantity, NetworkString<_32> configurationHash = default)
