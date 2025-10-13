@@ -24,11 +24,19 @@ namespace TPSBR
 
         [Networked, HideInInspector] private bool IsDepleted { get; set; }
         [Networked, HideInInspector] private TickTimer RespawnTimer { get; set; }
+        [Networked, HideInInspector] private float SyncedInteractionProgress { get; set; }
 
         private Agent _activeAgent;
         private float _interactionProgress;
 
-        public float InteractionProgressNormalized => _requiredInteractionTime > 0f ? Mathf.Clamp01(_interactionProgress / _requiredInteractionTime) : 0f;
+        public float InteractionProgressNormalized
+        {
+            get
+            {
+                float progress = HasStateAuthority == true ? _interactionProgress : SyncedInteractionProgress;
+                return _requiredInteractionTime > 0f ? Mathf.Clamp01(progress / _requiredInteractionTime) : 0f;
+            }
+        }
 
         public bool IsInteracting(Agent agent)
         {
@@ -92,6 +100,7 @@ namespace TPSBR
 
             _activeAgent = agent;
             _interactionProgress = 0f;
+            UpdateSyncedInteractionProgress();
 
             RefreshInteractionState();
             OnInteractionStarted(agent);
@@ -106,6 +115,7 @@ namespace TPSBR
 
             _activeAgent = null;
             _interactionProgress = 0f;
+            UpdateSyncedInteractionProgress();
 
             RefreshInteractionState();
             OnInteractionCancelled(agent);
@@ -125,6 +135,7 @@ namespace TPSBR
 
             float adjustedDelta = CalculateProgressDelta(deltaTime, agent);
             _interactionProgress += adjustedDelta;
+            UpdateSyncedInteractionProgress();
 
             if (_interactionProgress < _requiredInteractionTime)
                 return false;
@@ -185,6 +196,7 @@ namespace TPSBR
         {
             _activeAgent = null;
             _interactionProgress = 0f;
+            UpdateSyncedInteractionProgress();
 
             if (HasStateAuthority == true)
             {
@@ -198,6 +210,14 @@ namespace TPSBR
 
             RefreshInteractionState();
             OnInteractionCompleted(agent);
+        }
+
+        private void UpdateSyncedInteractionProgress()
+        {
+            if (HasStateAuthority == true)
+            {
+                SyncedInteractionProgress = _interactionProgress;
+            }
         }
     }
 }
