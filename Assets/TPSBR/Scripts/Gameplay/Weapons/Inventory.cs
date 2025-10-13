@@ -2419,7 +2419,9 @@ namespace TPSBR
             // Ensure the pickaxe definition is registered before we assign it so UI lookups succeed.
             ItemDefinition.Get(defaultPickaxe.ID);
 
-            _pickaxeSlot = new InventorySlot(defaultPickaxe.ID, 1, default);
+            var defaultConfiguration = ResolveDefaultPickaxeConfiguration();
+
+            _pickaxeSlot = new InventorySlot(defaultPickaxe.ID, 1, defaultConfiguration);
             RefreshPickaxeSlot();
             EnsurePickaxeInstance();
         }
@@ -2467,7 +2469,9 @@ namespace TPSBR
 
             ItemDefinition.Get(defaultWoodAxe.ID);
 
-            _woodAxeSlot = new InventorySlot(defaultWoodAxe.ID, 1, default);
+            var defaultConfiguration = ResolveDefaultWoodAxeConfiguration();
+
+            _woodAxeSlot = new InventorySlot(defaultWoodAxe.ID, 1, defaultConfiguration);
             RefreshWoodAxeSlot();
             EnsureWoodAxeInstance();
         }
@@ -2519,6 +2523,35 @@ namespace TPSBR
             }
 
             return _cachedFallbackWoodAxe;
+        }
+
+        private static NetworkString<_32> ResolveDefaultPickaxeConfiguration()
+        {
+            var defaultDefinitions = DefaultItemDefinitions.Instance;
+            if (defaultDefinitions == null)
+                return default;
+
+            return ToNetworkConfiguration(defaultDefinitions.DefaultPickaxeConfiguration);
+        }
+
+        private static NetworkString<_32> ResolveDefaultWoodAxeConfiguration()
+        {
+            var defaultDefinitions = DefaultItemDefinitions.Instance;
+            if (defaultDefinitions == null)
+                return default;
+
+            return ToNetworkConfiguration(defaultDefinitions.DefaultWoodAxeConfiguration);
+        }
+
+        private static NetworkString<_32> ToNetworkConfiguration(string configurationHash)
+        {
+            if (string.IsNullOrWhiteSpace(configurationHash) == true)
+            {
+                return default;
+            }
+
+            NetworkString<_32> networkHash = configurationHash;
+            return networkHash;
         }
 
         private bool HasAnyPickaxe()
