@@ -25,6 +25,7 @@ namespace TPSBR
         [Networked, HideInInspector] private bool IsDepleted { get; set; }
         [Networked, HideInInspector] private TickTimer RespawnTimer { get; set; }
         [Networked, HideInInspector] private float SyncedInteractionProgress { get; set; }
+        [Networked, HideInInspector] private NetworkBehaviourRef<Agent> ActiveAgentRef { get; set; }
 
         private Agent _activeAgent;
         private float _interactionProgress;
@@ -40,13 +41,14 @@ namespace TPSBR
 
         public bool IsInteracting(Agent agent)
         {
-            return _activeAgent != null && _activeAgent == agent;
+            Agent activeAgent = GetActiveAgent();
+            return activeAgent != null && activeAgent == agent;
         }
 
         string IInteraction.Name => string.IsNullOrWhiteSpace(_interactionName) ? GetDefaultInteractionName() : _interactionName;
         string IInteraction.Description => string.IsNullOrWhiteSpace(_interactionDescription) ? GetDefaultInteractionDescription() : _interactionDescription;
         Vector3 IInteraction.HUDPosition => _hudPivot != null ? _hudPivot.position : transform.position;
-        bool IInteraction.IsActive => IsDepleted == false && _activeAgent == null;
+        bool IInteraction.IsActive => IsDepleted == false && GetActiveAgent() == null;
 
         protected virtual void Reset()
         {
@@ -99,6 +101,7 @@ namespace TPSBR
                 return false;
 
             _activeAgent = agent;
+            UpdateActiveAgentRef();
             _interactionProgress = 0f;
             UpdateSyncedInteractionProgress();
 
@@ -114,6 +117,7 @@ namespace TPSBR
                 return;
 
             _activeAgent = null;
+            UpdateActiveAgentRef();
             _interactionProgress = 0f;
             UpdateSyncedInteractionProgress();
 
@@ -129,6 +133,7 @@ namespace TPSBR
             if (IsDepleted == true)
             {
                 _activeAgent = null;
+                UpdateActiveAgentRef();
                 RefreshInteractionState();
                 return false;
             }
@@ -188,13 +193,14 @@ namespace TPSBR
         {
             if (_interactionCollider != null)
             {
-                _interactionCollider.enabled = IsDepleted == false && _activeAgent == null;
+                _interactionCollider.enabled = IsDepleted == false && GetActiveAgent() == null;
             }
         }
 
         private void CompleteInteraction(Agent agent)
         {
             _activeAgent = null;
+            UpdateActiveAgentRef();
             _interactionProgress = 0f;
             UpdateSyncedInteractionProgress();
 
@@ -218,6 +224,29 @@ namespace TPSBR
             {
                 SyncedInteractionProgress = _interactionProgress;
             }
+        }
+
+        private void UpdateActiveAgentRef()
+        {
+            if (HasStateAuthority == true)
+            {
+                ActiveAgentRef = _activeAgent;
+            }
+        }
+
+        private Agent GetActiveAgent()
+        {
+            if (HasStateAuthority == true)
+            {
+                return _activeAgent;
+            }
+
+            if (ActiveAgentRef.TryGet(out Agent agent) == true)
+            {
+                return agent;
+            }
+
+            return null;
         }
     }
 }
