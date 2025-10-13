@@ -110,11 +110,21 @@ namespace TPSBR.UI
 
                         if (_harvestProgressGroup != null && _harvestProgressFill != null)
                         {
-                                if (agent != null && _interactionTarget is ResourceNode resourceNode && resourceNode.IsInteracting(agent) == true)
+                                if (agent != null && _interactionTarget is ResourceNode resourceNode)
                                 {
-                                        isHarvesting = true;
-                                        _harvestProgressGroup.SetActive(true);
-                                        _harvestProgressFill.fillAmount = resourceNode.InteractionProgressNormalized;
+                                        bool isNetworkedInteraction = resourceNode.IsInteracting(agent) == true;
+                                        bool hasPredictedInteraction = agent.Interactions != null && agent.Interactions.InteractionTarget == resourceNode;
+
+                                        if (isNetworkedInteraction == true || hasPredictedInteraction == true)
+                                        {
+                                                isHarvesting = true;
+                                                _harvestProgressGroup.SetActive(true);
+                                                _harvestProgressFill.fillAmount = resourceNode.InteractionProgressNormalized;
+                                        }
+                                        else
+                                        {
+                                                HideHarvestProgress();
+                                        }
                                 }
                                 else
                                 {
