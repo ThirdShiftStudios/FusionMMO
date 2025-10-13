@@ -106,17 +106,25 @@ namespace TPSBR.UI
 
                 private void UpdateHarvestProgress(Agent agent)
                 {
-                        if (_harvestProgressGroup == null || _harvestProgressFill == null)
-                                return;
+                        bool isHarvesting = false;
 
-                        if (agent != null && _interactionTarget is ResourceNode resourceNode && resourceNode.IsInteracting(agent) == true)
+                        if (_harvestProgressGroup != null && _harvestProgressFill != null)
                         {
-                                _harvestProgressGroup.SetActive(true);
-                                _harvestProgressFill.fillAmount = resourceNode.InteractionProgressNormalized;
+                                if (agent != null && _interactionTarget is ResourceNode resourceNode && resourceNode.IsInteracting(agent) == true)
+                                {
+                                        isHarvesting = true;
+                                        _harvestProgressGroup.SetActive(true);
+                                        _harvestProgressFill.fillAmount = resourceNode.InteractionProgressNormalized;
+                                }
+                                else
+                                {
+                                        HideHarvestProgress();
+                                }
                         }
-                        else
+
+                        if (_interactGroup != null)
                         {
-                                HideHarvestProgress();
+                                _interactGroup.SetActive(_hasInteractionTarget && isHarvesting == false);
                         }
                 }
 
