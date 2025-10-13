@@ -209,6 +209,16 @@ namespace TPSBR
 
         protected virtual void RefreshInteractionState()
         {
+            if (HasStateAuthority == false && _activeAgent == null && ActiveAgentId.IsValid == true)
+            {
+                Agent resolvedAgent = ResolveActiveAgent(ActiveAgentId);
+
+                if (resolvedAgent != null)
+                {
+                    _activeAgent = resolvedAgent;
+                }
+            }
+
             if (_interactionCollider != null)
             {
                 _interactionCollider.enabled = IsDepleted == false && HasActiveAgent() == false;
@@ -268,12 +278,35 @@ namespace TPSBR
 
         private void OnActiveAgentIdChanged()
         {
-            if (HasStateAuthority == false && ActiveAgentId.IsValid == false)
+            if (HasStateAuthority == true)
+            {
+                RefreshInteractionState();
+                return;
+            }
+
+            if (ActiveAgentId.IsValid == true)
+            {
+                Agent resolvedAgent = ResolveActiveAgent(ActiveAgentId);
+
+                if (resolvedAgent != null)
+                {
+                    _activeAgent = resolvedAgent;
+                }
+            }
+            else
             {
                 _activeAgent = null;
             }
 
             RefreshInteractionState();
+        }
+
+        private Agent ResolveActiveAgent(NetworkBehaviourId agentId)
+        {
+            if (Runner == null || agentId.IsValid == false)
+                return null;
+
+            return NetworkBehaviour.NetworkUnwrap(Runner, agentId) as Agent;
         }
     }
 }
