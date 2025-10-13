@@ -36,7 +36,14 @@ namespace TPSBR
         };
 
         [SerializeField]
-        private int[] _initialValues = new int[Count];
+        private int[] _initialValues =  {
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+        };
 
         [Networked, Capacity(Count)]
         private NetworkArray<byte> _stats { get; }
