@@ -25,7 +25,7 @@ namespace TPSBR
         [Networked, HideInInspector] private bool IsDepleted { get; set; }
         [Networked, HideInInspector] private TickTimer RespawnTimer { get; set; }
         [Networked, HideInInspector] private float SyncedInteractionProgress { get; set; }
-        [Networked, OnChangedRender(nameof(OnActiveAgentObjectChanged)), HideInInspector] private NetworkObjectRef ActiveAgentObject { get; set; }
+        [Networked, OnChangedRender(nameof(OnActiveAgentIdChanged)), HideInInspector] private NetworkBehaviourId ActiveAgentId { get; set; }
 
         private Agent _activeAgent;
         private bool _hasSpeculativeAgent;
@@ -53,26 +53,23 @@ namespace TPSBR
                 return _activeAgent != null && _activeAgent == agent;
             }
 
-            NetworkObjectRef activeObject = ActiveAgentObject;
+            NetworkBehaviourId activeId = ActiveAgentId;
 
-            if (activeObject.IsValid == true)
+            if (activeId.IsValid == true)
             {
-                if (agent.Object != null)
+                NetworkBehaviourId agentId = agent;
+
+                if (agentId.IsValid == true && activeId == agentId)
                 {
-                    NetworkObjectRef agentObjectRef = agent.Object;
-
-                    if (activeObject == agentObjectRef)
+                    if (_activeAgent != agent)
                     {
-                        if (_activeAgent != agent)
-                        {
-                            _activeAgent = agent;
-                        }
-
-                        return true;
+                        _activeAgent = agent;
                     }
+
+                    return true;
                 }
 
-                if (TryResolveActiveAgent(activeObject, out Agent resolvedAgent) == true)
+                if (TryResolveActiveAgent(activeId, out Agent resolvedAgent) == true)
                 {
                     if (_activeAgent != resolvedAgent)
                     {
@@ -103,7 +100,7 @@ namespace TPSBR
         {
             base.Spawned();
             RefreshInteractionState();
-            OnActiveAgentObjectChanged();
+            OnActiveAgentIdChanged();
         }
 
         public override void FixedUpdateNetwork()
@@ -146,7 +143,7 @@ namespace TPSBR
 
             _activeAgent = agent;
             _hasSpeculativeAgent = false;
-            UpdateActiveAgentRef();
+            UpdateActiveAgentId();
             _interactionProgress = 0f;
             UpdateSyncedInteractionProgress();
 
@@ -163,7 +160,7 @@ namespace TPSBR
 
             _activeAgent = null;
             _hasSpeculativeAgent = false;
-            UpdateActiveAgentRef();
+            UpdateActiveAgentId();
             _interactionProgress = 0f;
             UpdateSyncedInteractionProgress();
 
@@ -180,7 +177,7 @@ namespace TPSBR
             {
                 _activeAgent = null;
                 _hasSpeculativeAgent = false;
-                UpdateActiveAgentRef();
+                UpdateActiveAgentId();
                 RefreshInteractionState();
                 return false;
             }
@@ -240,11 +237,11 @@ namespace TPSBR
         {
             if (HasStateAuthority == false)
             {
-                if (ActiveAgentObject.IsValid == true)
+                if (ActiveAgentId.IsValid == true)
                 {
                     _hasSpeculativeAgent = false;
 
-                    if (TryResolveActiveAgent(ActiveAgentObject, out Agent resolvedAgent) == true)
+                    if (TryResolveActiveAgent(ActiveAgentId, out Agent resolvedAgent) == true)
                     {
                         if (_activeAgent != resolvedAgent)
                         {
@@ -272,7 +269,7 @@ namespace TPSBR
         {
             _activeAgent = null;
             _hasSpeculativeAgent = false;
-            UpdateActiveAgentRef();
+            UpdateActiveAgentId();
             _interactionProgress = 0f;
             UpdateSyncedInteractionProgress();
 
@@ -298,11 +295,11 @@ namespace TPSBR
             }
         }
 
-        private void UpdateActiveAgentRef()
+        private void UpdateActiveAgentId()
         {
             if (HasStateAuthority == true)
             {
-                ActiveAgentObject = _activeAgent != null && _activeAgent.Object != null ? _activeAgent.Object : default;
+                ActiveAgentId = _activeAgent != null ? (NetworkBehaviourId)_activeAgent : NetworkBehaviourId.None;
             }
         }
 
@@ -313,13 +310,13 @@ namespace TPSBR
                 return _activeAgent != null;
             }
 
-            NetworkObjectRef activeObject = ActiveAgentObject;
+            NetworkBehaviourId activeId = ActiveAgentId;
 
-            if (activeObject.IsValid == true)
+            if (activeId.IsValid == true)
             {
                 _hasSpeculativeAgent = false;
 
-                if (TryResolveActiveAgent(activeObject, out Agent resolvedAgent) == true)
+                if (TryResolveActiveAgent(activeId, out Agent resolvedAgent) == true)
                 {
                     if (_activeAgent != resolvedAgent)
                     {
@@ -342,7 +339,7 @@ namespace TPSBR
             return false;
         }
 
-        private void OnActiveAgentObjectChanged()
+        private void OnActiveAgentIdChanged()
         {
             if (HasStateAuthority == true)
             {
@@ -350,7 +347,7 @@ namespace TPSBR
                 return;
             }
 
-            if (ActiveAgentObject.IsValid == true && TryResolveActiveAgent(ActiveAgentObject, out Agent resolvedAgent) == true)
+            if (ActiveAgentId.IsValid == true && TryResolveActiveAgent(ActiveAgentId, out Agent resolvedAgent) == true)
             {
                 _activeAgent = resolvedAgent;
                 _hasSpeculativeAgent = false;
@@ -369,7 +366,7 @@ namespace TPSBR
             if (HasStateAuthority == true)
                 return;
 
-            if (ActiveAgentObject.IsValid == true)
+            if (ActiveAgentId.IsValid == true)
                 return;
 
             if (agent == null || agent.Object == null)
@@ -389,18 +386,18 @@ namespace TPSBR
             RefreshInteractionState();
         }
 
-        private bool TryResolveActiveAgent(NetworkObjectRef objectRef, out Agent resolvedAgent)
+        private bool TryResolveActiveAgent(NetworkBehaviourId behaviourId, out Agent resolvedAgent)
         {
             resolvedAgent = null;
 
-            if (Runner == null || objectRef.IsValid == false)
+            if (Runner == null || behaviourId.IsValid == false)
                 return false;
 
-            if (Runner.TryFindObject(objectRef, out NetworkObject networkObject) == false || networkObject == null)
+            if (Runner.TryFindBehaviour(behaviourId, out Agent agent) == false || agent == null)
                 return false;
 
-            resolvedAgent = networkObject.GetComponent<Agent>();
-            return resolvedAgent != null;
+            resolvedAgent = agent;
+            return true;
         }
     }
 }
