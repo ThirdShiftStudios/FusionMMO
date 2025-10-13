@@ -30,9 +30,36 @@ namespace TPSBR
         private Agent _activeAgent;
         private float _interactionProgress;
 
+        private bool IsLocalActiveAgent
+        {
+            get
+            {
+                if (_activeAgent == null)
+                    return false;
+
+                NetworkObject networkObject = _activeAgent.Object;
+                if (networkObject == null)
+                    return false;
+
+                return networkObject.HasInputAuthority;
+            }
+        }
+
         private bool HasActiveAgent => _activeAgent != null || ActivePlayerRef != PlayerRef.None;
 
-        private float CurrentInteractionProgress => HasStateAuthority == true ? _interactionProgress : InteractionProgressState;
+        private float CurrentInteractionProgress
+        {
+            get
+            {
+                if (HasStateAuthority == true)
+                    return _interactionProgress;
+
+                if (IsLocalActiveAgent == true)
+                    return Mathf.Max(_interactionProgress, InteractionProgressState);
+
+                return InteractionProgressState;
+            }
+        }
 
         public float InteractionProgressNormalized => _requiredInteractionTime > 0f ? Mathf.Clamp01(CurrentInteractionProgress / _requiredInteractionTime) : 0f;
 
@@ -198,6 +225,21 @@ namespace TPSBR
 
         protected virtual void RefreshInteractionState()
         {
+            if (HasStateAuthority == false)
+            {
+                if (IsLocalActiveAgent == true)
+                {
+                    if (_interactionProgress < InteractionProgressState)
+                    {
+                        _interactionProgress = InteractionProgressState;
+                    }
+                }
+                else
+                {
+                    _interactionProgress = InteractionProgressState;
+                }
+            }
+
             if (_interactionCollider != null)
             {
                 _interactionCollider.enabled = IsDepleted == false && HasActiveAgent == false;
