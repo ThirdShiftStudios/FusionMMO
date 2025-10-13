@@ -142,7 +142,7 @@ namespace TPSBR
                 return false;
 
             _activeAgent = agent;
-            _hasSpeculativeAgent = false;
+            _hasSpeculativeAgent = HasStateAuthority == false;
             UpdateActiveAgentId();
             _interactionProgress = 0f;
             UpdateSyncedInteractionProgress();
