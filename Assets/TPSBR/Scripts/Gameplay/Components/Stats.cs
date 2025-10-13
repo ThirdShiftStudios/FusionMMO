@@ -48,12 +48,17 @@ namespace TPSBR
         [Networked, Capacity(Count)]
         private NetworkArray<byte> _stats { get; }
 
+        public event Action<StatIndex, int, int> StatChanged;
+
         public int Strength     => GetStat(StatIndex.Strength);
         public int Dexterity    => GetStat(StatIndex.Dexterity);
         public int Intelligence => GetStat(StatIndex.Intelligence);
         public int Luck         => GetStat(StatIndex.Luck);
         public int Looting      => GetStat(StatIndex.Looting);
         public int Mining       => GetStat(StatIndex.Mining);
+
+        private int[] _cachedStats;
+        private bool _cacheInitialized;
 
         public static string GetCode(StatIndex stat)
         {
@@ -102,7 +107,21 @@ namespace TPSBR
                 return;
             }
 
-            _stats.Set(index, (byte)Mathf.Clamp(value, byte.MinValue, byte.MaxValue));
+            EnsureCacheInitialized();
+
+            byte previousValue = (byte)_cachedStats[index];
+            byte newValue = (byte)Mathf.Clamp(value, byte.MinValue, byte.MaxValue);
+
+            if (previousValue == newValue)
+            {
+                return;
+            }
+
+            _stats.Set(index, newValue);
+
+            _cachedStats[index] = newValue;
+
+            OnStatChanged((StatIndex)index, previousValue, newValue);
         }
 
         public override void CopyBackingFieldsToState(bool firstTime)
@@ -122,6 +141,32 @@ namespace TPSBR
 
                 _stats.Set(i, (byte)Mathf.Clamp(value, byte.MinValue, byte.MaxValue));
             }
+
+            _cacheInitialized = false;
+        }
+
+        public override void Spawned()
+        {
+            base.Spawned();
+
+            EnsureCacheInitialized();
+        }
+
+        public override void FixedUpdateNetwork()
+        {
+            base.FixedUpdateNetwork();
+
+            if (HasStateAuthority == false)
+            {
+                CheckForStatUpdates();
+            }
+        }
+
+        public override void Render()
+        {
+            base.Render();
+
+            CheckForStatUpdates();
         }
 
 #if UNITY_EDITOR
@@ -148,5 +193,55 @@ namespace TPSBR
             }
         }
 #endif
+
+        private void EnsureCacheInitialized()
+        {
+            if (_cachedStats == null || _cachedStats.Length != Count)
+            {
+                _cachedStats = new int[Count];
+                _cacheInitialized = false;
+            }
+
+            if (_cacheInitialized == true)
+            {
+                return;
+            }
+
+            for (int i = 0; i < Count; ++i)
+            {
+                _cachedStats[i] = _stats.Get(i);
+            }
+
+            _cacheInitialized = true;
+        }
+
+        private void CheckForStatUpdates()
+        {
+            if (Object == null || Object.IsValid == false)
+            {
+                return;
+            }
+
+            EnsureCacheInitialized();
+
+            for (int i = 0; i < Count; ++i)
+            {
+                int currentValue = _stats.Get(i);
+                int previousValue = _cachedStats[i];
+
+                if (currentValue == previousValue)
+                {
+                    continue;
+                }
+
+                _cachedStats[i] = currentValue;
+                OnStatChanged((StatIndex)i, previousValue, currentValue);
+            }
+        }
+
+        private void OnStatChanged(StatIndex stat, int previousValue, int newValue)
+        {
+            StatChanged?.Invoke(stat, previousValue, newValue);
+        }
     }
 }
