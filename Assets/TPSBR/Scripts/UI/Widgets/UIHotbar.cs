@@ -22,7 +22,7 @@ namespace TPSBR.UI
         private int _lastSelectedSlot = -1;
         [SerializeField]
         private Color _selectedSlotColor = Color.white;
-        internal event Action<Weapon, NetworkString<_32>> ItemSelected;
+        internal event Action<IInventoryItemDetails, NetworkString<_32>> ItemSelected;
 
         private int _selectedSlotIndex = -1;
 

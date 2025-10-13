@@ -23,7 +23,7 @@ namespace TPSBR.UI
                 private CanvasGroup _dragCanvasGroup;
                 [SerializeField]
                 private Color _selectedSlotColor = Color.white;
-                internal event Action<Weapon, NetworkString<_32>> ItemSelected;
+                internal event Action<IInventoryItemDetails, NetworkString<_32>> ItemSelected;
 
                 private int _selectedSlotIndex = -1;
 
@@ -331,8 +331,24 @@ namespace TPSBR.UI
                                 return;
                         }
 
-                        var definition = slot.GetDefinition() as WeaponDefinition;
-                        ItemSelected.Invoke(definition != null ? definition.WeaponPrefab : null, slot.ConfigurationHash);
+                        var definition = slot.GetDefinition();
+
+                        IInventoryItemDetails itemDetails = null;
+
+                        if (definition is WeaponDefinition weaponDefinition && weaponDefinition.WeaponPrefab != null)
+                        {
+                                itemDetails = weaponDefinition.WeaponPrefab;
+                        }
+                        else if (definition is PickaxeDefinition pickaxeDefinition && pickaxeDefinition.PickaxePrefab != null)
+                        {
+                                itemDetails = pickaxeDefinition.PickaxePrefab;
+                        }
+                        else if (definition is WoodAxeDefinition woodAxeDefinition && woodAxeDefinition.WoodAxePrefab != null)
+                        {
+                                itemDetails = woodAxeDefinition.WoodAxePrefab;
+                        }
+
+                        ItemSelected.Invoke(itemDetails, slot.ConfigurationHash);
                 }
 
                 private void EnsureDragVisual()

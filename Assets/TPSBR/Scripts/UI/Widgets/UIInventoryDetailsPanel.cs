@@ -19,9 +19,9 @@ namespace TPSBR.UI
             Hide();
         }
 
-        internal void Show(Weapon weapon, NetworkString<_32> configurationHash)
+        internal void Show(IInventoryItemDetails item, NetworkString<_32> configurationHash)
         {
-            if (weapon == null)
+            if (item == null)
             {
                 Hide();
                 return;
@@ -29,10 +29,10 @@ namespace TPSBR.UI
 
             if (_nameLabel != null)
             {
-                string displayName = weapon.GetDisplayName(configurationHash);
+                string displayName = item.GetDisplayName(configurationHash);
                 if (string.IsNullOrWhiteSpace(displayName) == true)
                 {
-                    displayName = weapon.DisplayName;
+                    displayName = item.DisplayName;
                 }
 
                 _nameLabel.SetTextSafe(displayName);
@@ -40,10 +40,10 @@ namespace TPSBR.UI
 
             if (_descriptionLabel != null)
             {
-                string description = weapon.GetDescription(configurationHash);
+                string description = item.GetDescription(configurationHash);
                 if (string.IsNullOrWhiteSpace(description) == true)
                 {
-                    description = weapon.GetDescription();
+                    description = item.GetDescription();
                 }
 
                 _descriptionLabel.SetTextSafe(description);
@@ -51,7 +51,7 @@ namespace TPSBR.UI
 
             if (_iconImage != null)
             {
-                var sprite = weapon.Icon;
+                var sprite = item.Icon;
                 _iconImage.sprite = sprite;
                 _iconImage.enabled = sprite != null;
             }

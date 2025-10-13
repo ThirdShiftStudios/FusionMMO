@@ -84,6 +84,22 @@ namespace TPSBR
                                                 configurationHash = randomStats;
                                         }
                                 }
+                                else if (definition is PickaxeDefinition pickaxeDefinition && pickaxeDefinition.PickaxePrefab != null)
+                                {
+                                        string randomStats = pickaxeDefinition.PickaxePrefab.GenerateRandomStats();
+                                        if (string.IsNullOrWhiteSpace(randomStats) == false)
+                                        {
+                                                configurationHash = randomStats;
+                                        }
+                                }
+                                else if (definition is WoodAxeDefinition woodAxeDefinition && woodAxeDefinition.WoodAxePrefab != null)
+                                {
+                                        string randomStats = woodAxeDefinition.WoodAxePrefab.GenerateRandomStats();
+                                        if (string.IsNullOrWhiteSpace(randomStats) == false)
+                                        {
+                                                configurationHash = randomStats;
+                                        }
+                                }
 
                                 provider.Initialize(definition, quantity, configurationHash);
                         }

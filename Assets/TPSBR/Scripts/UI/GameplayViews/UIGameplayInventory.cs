@@ -139,38 +139,38 @@ namespace TPSBR.UI
 
         // PRIVATE MEMBERS
 
-        private void OnInventoryItemSelected(Weapon weapon, NetworkString<_32> configurationHash)
+        private void OnInventoryItemSelected(IInventoryItemDetails item, NetworkString<_32> configurationHash)
         {
-            if (weapon != null)
+            if (item != null)
             {
                 _hotbar?.ClearSelection(false);
             }
 
-            ShowItemDetails(weapon, configurationHash);
+            ShowItemDetails(item, configurationHash);
         }
 
-        private void OnHotbarItemSelected(Weapon weapon, NetworkString<_32> configurationHash)
+        private void OnHotbarItemSelected(IInventoryItemDetails item, NetworkString<_32> configurationHash)
         {
-            if (weapon != null)
+            if (item != null)
             {
                 _inventoryGrid?.ClearSelection(false);
             }
 
-            ShowItemDetails(weapon, configurationHash);
+            ShowItemDetails(item, configurationHash);
         }
 
-        private void ShowItemDetails(Weapon weapon, NetworkString<_32> configurationHash)
+        private void ShowItemDetails(IInventoryItemDetails item, NetworkString<_32> configurationHash)
         {
             if (_detailsPanel == null)
                 return;
 
-            if (weapon == null)
+            if (item == null)
             {
                 _detailsPanel.Hide();
                 return;
             }
 
-            _detailsPanel.Show(weapon, configurationHash);
+            _detailsPanel.Show(item, configurationHash);
         }
 
         private void OnLeaveButton()

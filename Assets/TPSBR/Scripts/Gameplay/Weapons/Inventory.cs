@@ -2261,6 +2261,11 @@ namespace TPSBR
                 _pickaxe = pickaxe;
             }
 
+            if (pickaxe != null)
+            {
+                pickaxe.SetConfigurationHash(_pickaxeSlot.ConfigurationHash);
+            }
+
             RefreshPickaxeVisuals();
         }
 
@@ -2325,6 +2330,11 @@ namespace TPSBR
             {
                 woodAxe = Runner.Spawn(definition.WoodAxePrefab, inputAuthority: Object.InputAuthority);
                 _woodAxe = woodAxe;
+            }
+
+            if (woodAxe != null)
+            {
+                woodAxe.SetConfigurationHash(_woodAxeSlot.ConfigurationHash);
             }
 
             RefreshWoodAxeVisuals();

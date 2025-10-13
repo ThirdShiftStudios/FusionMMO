@@ -42,7 +42,7 @@ namespace TPSBR
         }
     }
 
-    public abstract class Weapon : ContextBehaviour
+    public abstract class Weapon : ContextBehaviour, IInventoryItemDetails
     {
         // PUBLIC MEMBERS
 
