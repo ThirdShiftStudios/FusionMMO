@@ -31,7 +31,18 @@ namespace TPSBR
         private float _interactionProgress;
 
         private bool HasActiveAgent => HasStateAuthority == true ? _activeAgent != null : ActivePlayer != PlayerRef.None;
-        private float CurrentInteractionProgress => HasStateAuthority == true ? _interactionProgress : NetworkedInteractionProgress;
+        private float CurrentInteractionProgress
+        {
+            get
+            {
+                if (HasStateAuthority == true || IsLocallyPredictedInteraction() == true)
+                {
+                    return _interactionProgress;
+                }
+
+                return NetworkedInteractionProgress;
+            }
+        }
 
         public float InteractionProgressNormalized => _requiredInteractionTime > 0f ? Mathf.Clamp01(CurrentInteractionProgress / _requiredInteractionTime) : 0f;
 
@@ -66,6 +77,23 @@ namespace TPSBR
         {
             base.Spawned();
             RefreshInteractionState();
+        }
+
+        private bool IsLocallyPredictedInteraction()
+        {
+            if (_activeAgent != null)
+            {
+                var agentObject = _activeAgent.Object;
+                if (agentObject != null && agentObject.HasInputAuthority == true && Runner != null && Runner.LocalPlayer == agentObject.InputAuthority)
+                {
+                    return true;
+                }
+            }
+
+            if (Runner == null || ActivePlayer == PlayerRef.None)
+                return false;
+
+            return Runner.LocalPlayer == ActivePlayer;
         }
 
         public override void FixedUpdateNetwork()
