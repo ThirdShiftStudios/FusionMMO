@@ -25,7 +25,7 @@ namespace TPSBR
         [Networked, HideInInspector] private bool IsDepleted { get; set; }
         [Networked, HideInInspector] private TickTimer RespawnTimer { get; set; }
         [Networked, HideInInspector] private float SyncedInteractionProgress { get; set; }
-        [Networked, HideInInspector] private NetworkBehaviourRef<Agent> ActiveAgentRef { get; set; }
+        [Networked, HideInInspector] private Agent ActiveAgentNetworked { get; set; }
 
         private Agent _activeAgent;
         private float _interactionProgress;
@@ -230,7 +230,7 @@ namespace TPSBR
         {
             if (HasStateAuthority == true)
             {
-                ActiveAgentRef = _activeAgent;
+                ActiveAgentNetworked = _activeAgent;
             }
         }
 
@@ -241,12 +241,7 @@ namespace TPSBR
                 return _activeAgent;
             }
 
-            if (ActiveAgentRef.TryGet(out Agent agent) == true)
-            {
-                return agent;
-            }
-
-            return null;
+            return ActiveAgentNetworked;
         }
     }
 }
