@@ -136,6 +136,7 @@ namespace TPSBR
         [Networked] private NetworkBool _isWoodAxeEquipped { get; set; }
 
         private Health _health;
+        private Stats _stats;
         private Character _character;
         private Interactions _interactions;
         private AudioEffect[] _fireAudioEffects;
@@ -152,6 +153,7 @@ namespace TPSBR
         private byte _weaponSlotBeforeWoodAxe = byte.MaxValue;
         private Dictionary<int, WeaponDefinition> _weaponDefinitionsBySlot = new Dictionary<int, WeaponDefinition>();
         private readonly Dictionary<WeaponSize, int> _weaponSizeToSlotIndex = new Dictionary<WeaponSize, int>();
+        private int[] _aggregatedHotbarStatBonuses;
 
         private static readonly Dictionary<int, Weapon> _weaponPrefabsByDefinitionId = new Dictionary<int, Weapon>();
         private static PickaxeDefinition _cachedFallbackPickaxe;
@@ -799,8 +801,18 @@ namespace TPSBR
 
             if (_lastHotbarWeapons != null)
             {
-                Array.Clear(_lastHotbarWeapons, 0, _lastHotbarWeapons.Length);
+                for (int i = 0; i < _lastHotbarWeapons.Length; ++i)
+                {
+                    if (_lastHotbarWeapons[i] is StaffWeapon staffWeapon)
+                    {
+                        staffWeapon.StatBonusesChanged -= OnHotbarWeaponStatBonusesChanged;
+                    }
+
+                    _lastHotbarWeapons[i] = null;
+                }
             }
+
+            _stats?.ClearAdditiveModifiers(this);
 
             _weaponDefinitionsBySlot.Clear();
 
@@ -986,6 +998,7 @@ namespace TPSBR
         private void Awake()
         {
             _health = GetComponent<Health>();
+            _stats = GetComponent<Stats>();
             _character = GetComponent<Character>();
             _interactions = GetComponent<Interactions>();
             _fireAudioEffects = _fireAudioEffectsRoot.GetComponentsInChildren<AudioEffect>();
@@ -993,6 +1006,11 @@ namespace TPSBR
             _lastHotbarWeapons = new Weapon[_localWeapons.Length];
             _weaponDefinitionsBySlot.Clear();
             _weaponSizeToSlotIndex.Clear();
+
+            if (_aggregatedHotbarStatBonuses == null || _aggregatedHotbarStatBonuses.Length != Stats.Count)
+            {
+                _aggregatedHotbarStatBonuses = new int[Stats.Count];
+            }
 
             if (_weaponSizeSlots != null)
             {
@@ -1849,11 +1867,71 @@ namespace TPSBR
         EnsureHotbarCacheInitialized();
 
         var slotWeapon = _hotbar[slot];
-        if (_lastHotbarWeapons[slot] == slotWeapon)
+        var previousWeapon = _lastHotbarWeapons[slot];
+
+        if (previousWeapon == slotWeapon)
             return;
 
+        if (previousWeapon is StaffWeapon previousStaff)
+        {
+            previousStaff.StatBonusesChanged -= OnHotbarWeaponStatBonusesChanged;
+        }
+
         _lastHotbarWeapons[slot] = slotWeapon;
+
+        if (slotWeapon is StaffWeapon newStaff)
+        {
+            newStaff.StatBonusesChanged -= OnHotbarWeaponStatBonusesChanged;
+            newStaff.StatBonusesChanged += OnHotbarWeaponStatBonusesChanged;
+        }
+
         HotbarSlotChanged?.Invoke(slot, slotWeapon);
+        UpdateHotbarStats();
+    }
+
+    private void OnHotbarWeaponStatBonusesChanged(StaffWeapon weapon)
+    {
+        UpdateHotbarStats();
+    }
+
+    private void UpdateHotbarStats()
+    {
+        if (_stats == null)
+        {
+            return;
+        }
+
+        if (_aggregatedHotbarStatBonuses == null || _aggregatedHotbarStatBonuses.Length != Stats.Count)
+        {
+            _aggregatedHotbarStatBonuses = new int[Stats.Count];
+        }
+        else
+        {
+            Array.Clear(_aggregatedHotbarStatBonuses, 0, _aggregatedHotbarStatBonuses.Length);
+        }
+
+        for (int i = 0; i < _hotbar.Length; ++i)
+        {
+            Weapon weapon = _hotbar[i];
+            if (weapon is not StaffWeapon staffWeapon)
+            {
+                continue;
+            }
+
+            IReadOnlyList<int> bonuses = staffWeapon.StatBonuses;
+            if (bonuses == null)
+            {
+                continue;
+            }
+
+            int length = Math.Min(bonuses.Count, _aggregatedHotbarStatBonuses.Length);
+            for (int j = 0; j < length; ++j)
+            {
+                _aggregatedHotbarStatBonuses[j] += bonuses[j];
+            }
+        }
+
+        _stats.SetAdditiveModifiers(this, _aggregatedHotbarStatBonuses);
     }
 
 

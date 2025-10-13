@@ -33,13 +33,17 @@ namespace TPSBR
 		// PRIVATE MEMBERS
 
 		[SerializeField]
-		private float _maxHealth;
-		[SerializeField]
-		private float _maxShield;
-		[SerializeField]
-		private float _startShield;
-		[SerializeField]
-		private Transform _hitIndicatorPivot;
+                private float _maxHealth;
+                [SerializeField]
+                private float _maxShield;
+                [SerializeField]
+                private float _startShield;
+                [SerializeField]
+                private Transform _hitIndicatorPivot;
+
+                [Header("Attributes")]
+                [SerializeField]
+                private float _healthPerStrength = 20f;
 
 		[Header("Regeneration")]
 		[SerializeField]
@@ -57,24 +61,46 @@ namespace TPSBR
 		private NetworkArray<BodyHitData> _hitData { get; }
 
 		private int _visibleHitCount;
-		private Agent _agent;
+                private Agent _agent;
+                private Stats _stats;
 
-		private TickTimer _regenTickTimer;
-		private float _healthRegenPerTick;
-		private float _regenTickTime;
+                private TickTimer _regenTickTimer;
+                private float _healthRegenPerTick;
+                private float _regenTickTime;
+                private float _baseMaxHealth;
+                private bool _baseMaxHealthInitialized;
 
 		// PUBLIC METHODS
 
-		public void OnSpawned(Agent agent)
-		{
-			_visibleHitCount = _hitCount;
-		}
+                public void OnSpawned(Agent agent)
+                {
+                        _visibleHitCount = _hitCount;
 
-		public void OnDespawned()
-		{
-			HitTaken = null;
-			HitPerformed = null;
-		}
+                        _baseMaxHealthInitialized = false;
+
+                        _stats = agent != null ? agent.GetComponent<Stats>() : GetComponent<Stats>();
+
+                        if (_stats != null)
+                        {
+                                _stats.StatChanged += OnStatChanged;
+                                UpdateMaxHealthFromStrength(_stats.Strength, false, _stats.Strength);
+                        }
+                }
+
+                public void OnDespawned()
+                {
+                        HitTaken = null;
+                        HitPerformed = null;
+
+                        if (_stats != null)
+                        {
+                                _stats.StatChanged -= OnStatChanged;
+                        }
+
+                        _stats = null;
+                        _baseMaxHealthInitialized = false;
+                        _baseMaxHealth = 0f;
+                }
 
 		public void OnFixedUpdate()
 		{
@@ -120,13 +146,21 @@ namespace TPSBR
 
 		// MONOBEHAVIOUR
 
-		private void Awake()
-		{
-			_agent = GetComponent<Agent>();
+                private void Awake()
+                {
+                        _agent = GetComponent<Agent>();
 
-			_regenTickTime      = 1f / _regenTickPerSecond;
-			_healthRegenPerTick = _healthRegenPerSecond / _regenTickPerSecond;
-		}
+                        _regenTickTime      = 1f / _regenTickPerSecond;
+                        _healthRegenPerTick = _healthRegenPerSecond / _regenTickPerSecond;
+                }
+
+                private void OnStatChanged(Stats.StatIndex stat, int previousValue, int newValue)
+                {
+                        if (stat != Stats.StatIndex.Strength)
+                                return;
+
+                        UpdateMaxHealthFromStrength(newValue, true, previousValue);
+                }
 
 		// IHitTarget INTERFACE
 
@@ -234,10 +268,10 @@ namespace TPSBR
 			return CurrentShield - previousShield;
 		}
 
-		private void SetHealth(float health)
-		{
-			CurrentHealth = Mathf.Clamp(health, 0, _maxHealth);
-		}
+                private void SetHealth(float health)
+                {
+                        CurrentHealth = Mathf.Clamp(health, 0, _maxHealth);
+                }
 
 		private void SetShield(float shield)
 		{
@@ -311,9 +345,48 @@ namespace TPSBR
 		}
 
 		[ContextMenu("Remove Health")]
-		private void Debug_RemoveHealth()
-		{
-			CurrentHealth -= 10;
-		}
-	}
+                private void Debug_RemoveHealth()
+                {
+                        CurrentHealth -= 10;
+                }
+
+                private void InitializeBaseMaxHealth(int strength)
+                {
+                        if (_baseMaxHealthInitialized == true)
+                                return;
+
+                        _baseMaxHealth = _maxHealth - strength * _healthPerStrength;
+                        _baseMaxHealthInitialized = true;
+                }
+
+                private void UpdateMaxHealthFromStrength(int newStrength, bool preserveHealthPercentage, int? previousStrengthOverride = null)
+                {
+                        if (_stats == null)
+                                return;
+
+                        InitializeBaseMaxHealth(newStrength);
+
+                        float previousMaxHealth = previousStrengthOverride.HasValue
+                                ? Mathf.Max(0f, _baseMaxHealth + previousStrengthOverride.Value * _healthPerStrength)
+                                : _maxHealth;
+
+                        float targetMaxHealth = Mathf.Max(0f, _baseMaxHealth + newStrength * _healthPerStrength);
+
+                        float healthRatio = preserveHealthPercentage && previousMaxHealth > 0f ? CurrentHealth / previousMaxHealth : 1f;
+                        float regenRatio = previousMaxHealth > 0f ? _maxHealthFromRegen / previousMaxHealth : 1f;
+
+                        _maxHealth = targetMaxHealth;
+
+                        if (preserveHealthPercentage == true)
+                        {
+                                SetHealth(_maxHealth * healthRatio);
+                        }
+                        else
+                        {
+                                SetHealth(_maxHealth);
+                        }
+
+                        _maxHealthFromRegen = _maxHealth * regenRatio;
+                }
+        }
 }

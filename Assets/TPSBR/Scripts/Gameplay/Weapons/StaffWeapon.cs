@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Text;
 using Fusion;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -8,6 +10,7 @@ namespace TPSBR
     public class StaffWeapon : Weapon
     {
         private const string HASH_PREFIX = "STF";
+        private const char HASH_SEPARATOR = ':';
         private const string LogPrefix = "[<color=#FFA500>StaffWeapon</color>]";
 
         [SerializeField]
@@ -27,11 +30,15 @@ namespace TPSBR
         private float _attackButtonDownTime;
         private bool _pendingLightAttack;
         private bool _isChargingHeavy;
+        private readonly int[] _statBonuses = new int[Stats.Count];
 
         public float BaseDamage => _baseDamage;
         public float HealthRegen => _healthRegen;
         public float ManaRegen => _manaRegen;
         public string ConfiguredItemName => _configuredItemName;
+        public IReadOnlyList<int> StatBonuses => _statBonuses;
+
+        public event Action<StaffWeapon> StatBonusesChanged;
 
         // Weapon INTERFACE
 
@@ -187,91 +194,142 @@ namespace TPSBR
             int seed = UnityEngine.Random.Range(int.MinValue, int.MaxValue);
             byte[] payload = BitConverter.GetBytes(seed);
             string encodedSeed = Convert.ToBase64String(payload);
-            return $"{HASH_PREFIX}:{encodedSeed}";
+
+            int[] statBonuses = new int[Stats.Count];
+            PopulateStats(new System.Random(seed), out _, out _, out _, out _, statBonuses);
+            string encodedStats = EncodeStatBonuses(statBonuses);
+
+            return $"{HASH_PREFIX}{HASH_SEPARATOR}{encodedSeed}{HASH_SEPARATOR}{encodedStats}";
         }
 
         protected override void OnConfigurationHashApplied(string configurationHash)
         {
             base.OnConfigurationHashApplied(configurationHash);
 
-            if (TryGetStatsFromConfiguration(configurationHash, out float baseDamage, out float healthRegen, out float manaRegen, out string configuredItemName) == false)
+            int[] statBonuses = new int[Stats.Count];
+
+            if (TryGetStatsFromConfiguration(configurationHash, out float baseDamage, out float healthRegen, out float manaRegen, out string configuredItemName, statBonuses) == false)
             {
                 ResetConfiguration();
                 return;
             }
 
             _lastConfigurationHash = configurationHash;
-            ApplyConfiguration(baseDamage, healthRegen, manaRegen, configuredItemName);
+            ApplyConfiguration(baseDamage, healthRegen, manaRegen, configuredItemName, statBonuses);
         }
 
-        private bool TryParseSeed(string configurationHash, out int seed)
+        private bool TryParseSeed(string configurationHash, out int seed, out byte[] statPayload)
         {
             seed = default;
+            statPayload = null;
 
             if (string.IsNullOrWhiteSpace(configurationHash) == true)
             {
                 return false;
             }
 
-            if (configurationHash.StartsWith(HASH_PREFIX + ":", StringComparison.Ordinal) == false)
+            if (configurationHash.StartsWith(HASH_PREFIX + HASH_SEPARATOR, StringComparison.Ordinal) == false)
             {
                 return false;
             }
 
-            string encodedSeed = configurationHash.Substring(HASH_PREFIX.Length + 1);
+            string payload = configurationHash.Substring(HASH_PREFIX.Length + 1);
+            int statsSeparatorIndex = payload.IndexOf(HASH_SEPARATOR);
+
+            string encodedSeed = statsSeparatorIndex >= 0 ? payload.Substring(0, statsSeparatorIndex) : payload;
 
             try
             {
-                byte[] payload = Convert.FromBase64String(encodedSeed);
-                if (payload.Length != sizeof(int))
+                byte[] seedBytes = Convert.FromBase64String(encodedSeed);
+                if (seedBytes.Length != sizeof(int))
                 {
                     return false;
                 }
 
-                seed = BitConverter.ToInt32(payload, 0);
-                return true;
+                seed = BitConverter.ToInt32(seedBytes, 0);
             }
             catch (FormatException)
             {
                 return false;
             }
+
+            if (statsSeparatorIndex >= 0 && statsSeparatorIndex + 1 < payload.Length)
+            {
+                string encodedStats = payload.Substring(statsSeparatorIndex + 1);
+
+                if (string.IsNullOrWhiteSpace(encodedStats) == false)
+                {
+                    try
+                    {
+                        statPayload = Convert.FromBase64String(encodedStats);
+                    }
+                    catch (FormatException)
+                    {
+                        statPayload = null;
+                    }
+                }
+            }
+
+            return true;
         }
 
-        private void ApplyConfiguration(float baseDamage, float healthRegen, float manaRegen, string configuredItemName)
+        private void ApplyConfiguration(float baseDamage, float healthRegen, float manaRegen, string configuredItemName, int[] statBonuses)
         {
             _baseDamage = baseDamage;
             _healthRegen = healthRegen;
             _manaRegen = manaRegen;
             _configuredItemName = configuredItemName;
 
+            Array.Clear(_statBonuses, 0, _statBonuses.Length);
+
+            if (statBonuses != null)
+            {
+                Array.Copy(statBonuses, _statBonuses, Mathf.Min(_statBonuses.Length, statBonuses.Length));
+            }
+
             SetWeaponSize(WeaponSize.Staff);
             SetDisplayName(_configuredItemName);
             SetNameShortcut(CreateShortcut(_configuredItemName));
+
+            StatBonusesChanged?.Invoke(this);
         }
 
-        private bool TryGetStatsFromConfiguration(string configurationHash, out float baseDamage, out float healthRegen, out float manaRegen, out string configuredItemName)
+        private bool TryGetStatsFromConfiguration(string configurationHash, out float baseDamage, out float healthRegen, out float manaRegen, out string configuredItemName, int[] statBonuses = null)
         {
             baseDamage = default;
             healthRegen = default;
             manaRegen = default;
             configuredItemName = string.Empty;
 
-            if (TryParseSeed(configurationHash, out int seed) == false)
+            if (TryParseSeed(configurationHash, out int seed, out byte[] statPayload) == false)
             {
                 return false;
             }
 
-            PopulateStats(new System.Random(seed), out baseDamage, out healthRegen, out manaRegen, out configuredItemName);
+            PopulateStats(new System.Random(seed), out baseDamage, out healthRegen, out manaRegen, out configuredItemName, statBonuses);
+
+            if (statPayload != null && statBonuses != null)
+            {
+                DecodeStatBonuses(statPayload, statBonuses);
+            }
 
             return true;
         }
 
-        private void PopulateStats(System.Random random, out float baseDamage, out float healthRegen, out float manaRegen, out string configuredItemName)
+        private void PopulateStats(System.Random random, out float baseDamage, out float healthRegen, out float manaRegen, out string configuredItemName, int[] statBonuses = null)
         {
             baseDamage = GenerateStat(random, 18f, 32f, 0.5f);
             healthRegen = GenerateStat(random, 1f, 6f, 0.1f);
             manaRegen = GenerateStat(random, 2f, 9f, 0.1f);
             configuredItemName = GenerateName(random);
+
+            if (statBonuses != null)
+            {
+                for (int i = 0; i < statBonuses.Length; ++i)
+                {
+                    statBonuses[i] = random.Next(0, 6);
+                }
+            }
         }
 
         private void ResetConfiguration()
@@ -282,9 +340,13 @@ namespace TPSBR
             _configuredItemName = string.Empty;
             _lastConfigurationHash = string.Empty;
 
+            Array.Clear(_statBonuses, 0, _statBonuses.Length);
+
             SetWeaponSize(WeaponSize.Unarmed);
             SetDisplayName(string.Empty);
             SetNameShortcut(string.Empty);
+
+            StatBonusesChanged?.Invoke(this);
         }
 
         private float GenerateStat(System.Random random, float min, float max, float step)
@@ -450,21 +512,23 @@ namespace TPSBR
 
         public override string GetDescription()
         {
-            if (TryGetStatsFromConfiguration(_lastConfigurationHash, out float baseDamage, out float healthRegen, out float manaRegen, out _))
+            if (TryGetStatsFromConfiguration(_lastConfigurationHash, out float baseDamage, out float healthRegen, out float manaRegen, out _, statBonuses: null) == true)
             {
-                return BuildDescription(baseDamage, healthRegen, manaRegen);
+                return BuildDescription(baseDamage, healthRegen, manaRegen, _statBonuses);
             }
 
-            return BuildDescription(_baseDamage, _healthRegen, _manaRegen);
+            return BuildDescription(_baseDamage, _healthRegen, _manaRegen, _statBonuses);
         }
 
         public override string GetDescription(NetworkString<_32> configurationHash)
         {
             string hash = configurationHash.ToString();
 
-            if (TryGetStatsFromConfiguration(hash, out float baseDamage, out float healthRegen, out float manaRegen, out _))
+            int[] statBonuses = new int[Stats.Count];
+
+            if (TryGetStatsFromConfiguration(hash, out float baseDamage, out float healthRegen, out float manaRegen, out _, statBonuses) == true)
             {
-                return BuildDescription(baseDamage, healthRegen, manaRegen);
+                return BuildDescription(baseDamage, healthRegen, manaRegen, statBonuses);
             }
 
             return GetDescription();
@@ -487,12 +551,81 @@ namespace TPSBR
             return base.GetDisplayName(configurationHash);
         }
 
-        private string BuildDescription(float baseDamage, float healthRegen, float manaRegen)
+        private string BuildDescription(float baseDamage, float healthRegen, float manaRegen, IReadOnlyList<int> statBonuses)
         {
-            return
-                $"Damage: {baseDamage}\n" +
-                $"Health Regen: {healthRegen}\n" +
-                $"Mana Regen: {manaRegen}";
+            StringBuilder builder = new StringBuilder();
+            builder.AppendLine($"Damage: {baseDamage}");
+            builder.AppendLine($"Health Regen: {healthRegen}");
+            builder.AppendLine($"Mana Regen: {manaRegen}");
+
+            if (statBonuses != null && statBonuses.Count > 0)
+            {
+                bool anyStat = false;
+                int count = Math.Min(statBonuses.Count, Stats.Count);
+
+                for (int i = 0; i < count; ++i)
+                {
+                    int value = statBonuses[i];
+                    if (value == 0)
+                    {
+                        continue;
+                    }
+
+                    if (anyStat == false)
+                    {
+                        builder.AppendLine("Stats:");
+                        anyStat = true;
+                    }
+
+                    builder.AppendLine($"- {Stats.GetCode(i)}: {value}");
+                }
+            }
+
+            return builder.ToString().TrimEnd();
+        }
+
+        private static string EncodeStatBonuses(IReadOnlyList<int> statBonuses)
+        {
+            if (statBonuses == null || statBonuses.Count == 0)
+            {
+                return string.Empty;
+            }
+
+            int count = Math.Min(statBonuses.Count, Stats.Count);
+            byte[] payload = new byte[count * 2];
+
+            for (int i = 0; i < count; ++i)
+            {
+                payload[i * 2] = (byte)i;
+                payload[i * 2 + 1] = (byte)Mathf.Clamp(statBonuses[i], byte.MinValue, byte.MaxValue);
+            }
+
+            return Convert.ToBase64String(payload);
+        }
+
+        private static void DecodeStatBonuses(byte[] payload, int[] statBonuses)
+        {
+            if (payload == null || payload.Length < 2 || statBonuses == null)
+            {
+                return;
+            }
+
+            Array.Clear(statBonuses, 0, statBonuses.Length);
+
+            int pairCount = payload.Length / 2;
+
+            for (int i = 0; i < pairCount; ++i)
+            {
+                int index = payload[i * 2];
+                int value = payload[i * 2 + 1];
+
+                if (index < 0 || index >= statBonuses.Length)
+                {
+                    continue;
+                }
+
+                statBonuses[index] = value;
+            }
         }
     }
 }
