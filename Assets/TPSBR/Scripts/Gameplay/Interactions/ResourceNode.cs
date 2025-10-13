@@ -25,7 +25,7 @@ namespace TPSBR
         [Networked, HideInInspector] private bool IsDepleted { get; set; }
         [Networked, HideInInspector] private TickTimer RespawnTimer { get; set; }
         [Networked, HideInInspector] private float SyncedInteractionProgress { get; set; }
-        [Networked(OnChanged = nameof(OnActiveAgentIdChanged)), HideInInspector] private NetworkBehaviourId ActiveAgentId { get; set; }
+        [Networked, OnChangedRender(nameof(OnActiveAgentIdChanged)), HideInInspector] private NetworkBehaviourId ActiveAgentId { get; set; }
 
         private Agent _activeAgent;
         private float _interactionProgress;
@@ -62,6 +62,7 @@ namespace TPSBR
         {
             base.Spawned();
             RefreshInteractionState();
+            OnActiveAgentIdChanged();
         }
 
         public override void FixedUpdateNetwork()
@@ -272,17 +273,10 @@ namespace TPSBR
             return null;
         }
 
-        private static void OnActiveAgentIdChanged(Changed<ResourceNode> changed)
-        {
-            changed.Behaviour.OnActiveAgentIdChanged();
-        }
-
         private void OnActiveAgentIdChanged()
         {
-            if (HasStateAuthority == false)
-            {
-                ClearResolvedActiveAgent();
-            }
+            ClearResolvedActiveAgent();
+            RefreshInteractionState();
         }
 
         private void ClearResolvedActiveAgent()
