@@ -630,6 +630,16 @@ namespace TPSBR
             RefreshWoodAxeVisuals();
         }
 
+        public int GetPickaxeSpeed()
+        {
+            return GetToolSpeedValue(_pickaxe, _localPickaxe, _pickaxeSlot);
+        }
+
+        public int GetWoodAxeSpeed()
+        {
+            return GetToolSpeedValue(_woodAxe, _localWoodAxe, _woodAxeSlot);
+        }
+
         public void DropCurrentWeapon()
         {
             DropWeapon(_currentWeaponSlot);
@@ -2225,6 +2235,25 @@ namespace TPSBR
             {
                 _localWoodAxeEquipped = false;
             }
+        }
+
+        private int GetToolSpeedValue(Tool networkTool, Tool localTool, InventorySlot slot)
+        {
+            Tool toolInstance = networkTool != null ? networkTool : localTool;
+
+            if (toolInstance != null)
+            {
+                return Mathf.Max(0, toolInstance.Speed);
+            }
+
+            string configurationHash = slot.ConfigurationHash.ToString();
+            if (string.IsNullOrWhiteSpace(configurationHash) == false &&
+                Tool.TryDecodeConfiguration(configurationHash, out ToolConfiguration configuration) == true)
+            {
+                return Mathf.Max(0, configuration.Speed);
+            }
+
+            return 0;
         }
 
         private void EnsurePickaxeInstance()

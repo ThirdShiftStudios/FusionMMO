@@ -4,157 +4,63 @@ using UnityEngine;
 
 namespace TPSBR
 {
-    public sealed class TreeNode : NetworkBehaviour, IInteraction
+    public sealed class TreeNode : ResourceNode
     {
-        [Header("Interaction")]
-        [SerializeField] private string _interactionName = "Chop Tree";
-        [SerializeField, TextArea] private string _interactionDescription = "Hold interact to chop down this tree.";
-        [SerializeField] private Transform _hudPivot;
-        [SerializeField] private Collider _interactionCollider;
-
-        [Header("Chopping")]
-        [SerializeField, Tooltip("Time in seconds the player needs to chop before the tree is felled.")]
-        private float _requiredChopTime = 3f;
-        [SerializeField, Tooltip("Optional respawn time. Set to zero to keep the tree felled once chopped.")]
-        private float _respawnTime;
-
-        [Networked, HideInInspector] private bool IsFelled { get; set; }
-        [Networked, HideInInspector] private TickTimer RespawnTimer { get; set; }
-
-        private Agent _activeChopper;
-        private float _chopProgress;
-
         public event Action<Agent> ChoppingStarted;
         public event Action<Agent> ChoppingCancelled;
         public event Action<Agent> ChoppingCompleted;
 
-        string IInteraction.Name => _interactionName;
-        string IInteraction.Description => _interactionDescription;
-        Vector3 IInteraction.HUDPosition => _hudPivot != null ? _hudPivot.position : transform.position;
-        bool IInteraction.IsActive => IsFelled == false && _activeChopper == null;
-
         public bool TryBeginChopping(Agent agent)
         {
-            if (agent == null)
-                return false;
-
-            if (IsFelled == true)
-                return false;
-
-            if (_activeChopper != null && _activeChopper != agent)
-                return false;
-
-            _activeChopper = agent;
-            _chopProgress = 0f;
-
-            RefreshInteractionState();
-            ChoppingStarted?.Invoke(agent);
-
-            return true;
+            return TryBeginInteraction(agent);
         }
 
         public void CancelChopping(Agent agent)
         {
-            if (_activeChopper != agent)
-                return;
-
-            _activeChopper = null;
-            _chopProgress = 0f;
-
-            RefreshInteractionState();
-            ChoppingCancelled?.Invoke(agent);
+            CancelInteraction(agent);
         }
 
         public bool TickChopping(float deltaTime, Agent agent)
         {
-            if (_activeChopper != agent)
-                return false;
-
-            if (IsFelled == true)
-            {
-                _activeChopper = null;
-                RefreshInteractionState();
-                return false;
-            }
-
-            _chopProgress += Mathf.Max(0f, deltaTime);
-
-            if (_chopProgress < _requiredChopTime)
-                return false;
-
-            CompleteChopping(agent);
-            return true;
+            return TickInteraction(deltaTime, agent);
         }
 
         public void ResetTree()
         {
-            if (HasStateAuthority == false)
-                return;
-
-            IsFelled = false;
-            RespawnTimer = default;
-            RefreshInteractionState();
+            ResetResource();
         }
 
-        public override void Spawned()
+        protected override string GetDefaultInteractionName()
         {
-            base.Spawned();
-
-            RefreshInteractionState();
+            return "Chop Tree";
         }
 
-        public override void FixedUpdateNetwork()
+        protected override string GetDefaultInteractionDescription()
         {
-            if (HasStateAuthority == false)
-                return;
-
-            if (IsFelled == false)
-                return;
-
-            if (_respawnTime <= 0f)
-                return;
-
-            if (RespawnTimer.IsRunning == false)
-                return;
-
-            if (RespawnTimer.Expired(Runner) == false)
-                return;
-
-            IsFelled = false;
-            RespawnTimer = default;
-            RefreshInteractionState();
+            return "Hold interact to chop down this tree.";
         }
 
-        public override void Render()
+        protected override int GetToolSpeed(Agent agent)
         {
-            RefreshInteractionState();
+            return agent?.Inventory?.GetWoodAxeSpeed() ?? 0;
         }
 
-        private void CompleteChopping(Agent agent)
+        protected override void OnInteractionStarted(Agent agent)
         {
-            _activeChopper = null;
-            _chopProgress = 0f;
+            base.OnInteractionStarted(agent);
+            ChoppingStarted?.Invoke(agent);
+        }
 
-            if (HasStateAuthority == true)
-            {
-                IsFelled = true;
+        protected override void OnInteractionCancelled(Agent agent)
+        {
+            base.OnInteractionCancelled(agent);
+            ChoppingCancelled?.Invoke(agent);
+        }
 
-                if (_respawnTime > 0f)
-                {
-                    RespawnTimer = TickTimer.CreateFromSeconds(Runner, _respawnTime);
-                }
-            }
-
-            RefreshInteractionState();
+        protected override void OnInteractionCompleted(Agent agent)
+        {
+            base.OnInteractionCompleted(agent);
             ChoppingCompleted?.Invoke(agent);
-        }
-
-        private void RefreshInteractionState()
-        {
-            if (_interactionCollider != null)
-            {
-                _interactionCollider.enabled = IsFelled == false && _activeChopper == null;
-            }
         }
     }
 }
