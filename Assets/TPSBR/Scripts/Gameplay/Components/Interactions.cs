@@ -295,7 +295,7 @@
                 return;
             }
 
-            if (_activeResourceNode.IsInteracting(agent) == false)
+            if (_activeResourceNode.ShouldReleaseLocalAgent(agent) == true)
             {
                 _activeResourceNode.LatchLocalAgent(null);
                 _activeResourceNode = null;

@@ -85,6 +85,38 @@ namespace TPSBR
             return _activeAgent != null && _activeAgent == agent;
         }
 
+        public bool ShouldReleaseLocalAgent(Agent agent)
+        {
+            if (agent == null)
+                return true;
+
+            if (HasStateAuthority == true)
+                return IsInteracting(agent) == false;
+
+            NetworkBehaviourId activeId = ActiveAgentId;
+
+            if (activeId.IsValid == true)
+            {
+                if (TryResolveActiveAgent(activeId, out Agent resolvedAgent) == true)
+                {
+                    if (_activeAgent != resolvedAgent)
+                    {
+                        _activeAgent = resolvedAgent;
+                    }
+
+                    return resolvedAgent != agent;
+                }
+
+                // Keep the speculative latch until the authoritative agent can be resolved.
+                return false;
+            }
+
+            if (_hasSpeculativeAgent == true && _activeAgent == agent)
+                return false;
+
+            return true;
+        }
+
         string IInteraction.Name => string.IsNullOrWhiteSpace(_interactionName) ? GetDefaultInteractionName() : _interactionName;
         string IInteraction.Description => string.IsNullOrWhiteSpace(_interactionDescription) ? GetDefaultInteractionDescription() : _interactionDescription;
         Vector3 IInteraction.HUDPosition => _hudPivot != null ? _hudPivot.position : transform.position;
