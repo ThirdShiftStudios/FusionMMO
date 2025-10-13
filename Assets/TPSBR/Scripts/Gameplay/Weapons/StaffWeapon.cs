@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Fusion;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -27,11 +28,13 @@ namespace TPSBR
         private float _attackButtonDownTime;
         private bool _pendingLightAttack;
         private bool _isChargingHeavy;
+        private readonly int[] _statBonuses = new int[Stats.Count];
 
         public float BaseDamage => _baseDamage;
         public float HealthRegen => _healthRegen;
         public float ManaRegen => _manaRegen;
         public string ConfiguredItemName => _configuredItemName;
+        public IReadOnlyList<int> StatBonuses => _statBonuses;
 
         // Weapon INTERFACE
 
@@ -187,38 +190,76 @@ namespace TPSBR
             int seed = UnityEngine.Random.Range(int.MinValue, int.MaxValue);
             byte[] payload = BitConverter.GetBytes(seed);
             string encodedSeed = Convert.ToBase64String(payload);
-            return $"{HASH_PREFIX}:{encodedSeed}";
+
+            var random = new System.Random(seed);
+
+            // Advance the random state to match the deterministic roll order used when applying the configuration.
+            PopulatePrimaryStats(random, out _, out _, out _, out _);
+
+            int[] statBonuses = new int[Stats.Count];
+            PopulateStatBonuses(random, statBonuses);
+            string encodedStats = EncodeStatBonuses(statBonuses);
+
+            return $"{HASH_PREFIX}:{encodedSeed}:{encodedStats}";
         }
 
         protected override void OnConfigurationHashApplied(string configurationHash)
         {
             base.OnConfigurationHashApplied(configurationHash);
 
-            if (TryGetStatsFromConfiguration(configurationHash, out float baseDamage, out float healthRegen, out float manaRegen, out string configuredItemName) == false)
+            if (TryGetStatsFromConfiguration(configurationHash, out float baseDamage, out float healthRegen, out float manaRegen, out string configuredItemName, out int[] statBonuses) == false)
             {
                 ResetConfiguration();
+                NotifyInventoryAboutStatChange();
                 return;
             }
 
             _lastConfigurationHash = configurationHash;
-            ApplyConfiguration(baseDamage, healthRegen, manaRegen, configuredItemName);
+            ApplyConfiguration(baseDamage, healthRegen, manaRegen, statBonuses, configuredItemName);
+            NotifyInventoryAboutStatChange();
         }
 
-        private bool TryParseSeed(string configurationHash, out int seed)
+        private bool TryParseConfiguration(string configurationHash, out int seed, out int[] statBonuses)
         {
             seed = default;
+            statBonuses = null;
 
             if (string.IsNullOrWhiteSpace(configurationHash) == true)
             {
                 return false;
             }
 
-            if (configurationHash.StartsWith(HASH_PREFIX + ":", StringComparison.Ordinal) == false)
+            string[] parts = configurationHash.Split(':');
+
+            if (parts.Length < 2)
             {
                 return false;
             }
 
-            string encodedSeed = configurationHash.Substring(HASH_PREFIX.Length + 1);
+            if (string.Equals(parts[0], HASH_PREFIX, StringComparison.Ordinal) == false)
+            {
+                return false;
+            }
+
+            if (TryDecodeSeed(parts[1], out seed) == false)
+            {
+                return false;
+            }
+
+            if (parts.Length > 2 && string.IsNullOrWhiteSpace(parts[2]) == false)
+            {
+                if (TryDecodeStatBonuses(parts[2], out int[] decodedBonuses) == true)
+                {
+                    statBonuses = decodedBonuses;
+                }
+            }
+
+            return true;
+        }
+
+        private bool TryDecodeSeed(string encodedSeed, out int seed)
+        {
+            seed = default;
 
             try
             {
@@ -237,41 +278,132 @@ namespace TPSBR
             }
         }
 
-        private void ApplyConfiguration(float baseDamage, float healthRegen, float manaRegen, string configuredItemName)
+        private void ApplyConfiguration(float baseDamage, float healthRegen, float manaRegen, IReadOnlyList<int> statBonuses, string configuredItemName)
         {
             _baseDamage = baseDamage;
             _healthRegen = healthRegen;
             _manaRegen = manaRegen;
             _configuredItemName = configuredItemName;
 
+            for (int i = 0; i < _statBonuses.Length; ++i)
+            {
+                if (statBonuses != null && i < statBonuses.Count)
+                {
+                    _statBonuses[i] = statBonuses[i];
+                }
+                else
+                {
+                    _statBonuses[i] = 0;
+                }
+            }
+
             SetWeaponSize(WeaponSize.Staff);
             SetDisplayName(_configuredItemName);
             SetNameShortcut(CreateShortcut(_configuredItemName));
         }
 
-        private bool TryGetStatsFromConfiguration(string configurationHash, out float baseDamage, out float healthRegen, out float manaRegen, out string configuredItemName)
+        private bool TryGetStatsFromConfiguration(string configurationHash, out float baseDamage, out float healthRegen, out float manaRegen, out string configuredItemName, out int[] statBonuses)
         {
             baseDamage = default;
             healthRegen = default;
             manaRegen = default;
             configuredItemName = string.Empty;
+            statBonuses = null;
 
-            if (TryParseSeed(configurationHash, out int seed) == false)
+            if (TryParseConfiguration(configurationHash, out int seed, out int[] explicitBonuses) == false)
             {
                 return false;
             }
 
-            PopulateStats(new System.Random(seed), out baseDamage, out healthRegen, out manaRegen, out configuredItemName);
+            System.Random random = new System.Random(seed);
+
+            PopulatePrimaryStats(random, out baseDamage, out healthRegen, out manaRegen, out configuredItemName);
+
+            if (explicitBonuses != null)
+            {
+                statBonuses = explicitBonuses;
+            }
+            else
+            {
+                int[] generatedBonuses = new int[Stats.Count];
+                PopulateStatBonuses(random, generatedBonuses);
+                statBonuses = generatedBonuses;
+            }
 
             return true;
         }
 
-        private void PopulateStats(System.Random random, out float baseDamage, out float healthRegen, out float manaRegen, out string configuredItemName)
+        private void PopulatePrimaryStats(System.Random random, out float baseDamage, out float healthRegen, out float manaRegen, out string configuredItemName)
         {
             baseDamage = GenerateStat(random, 18f, 32f, 0.5f);
             healthRegen = GenerateStat(random, 1f, 6f, 0.1f);
             manaRegen = GenerateStat(random, 2f, 9f, 0.1f);
             configuredItemName = GenerateName(random);
+        }
+
+        private void PopulateStatBonuses(System.Random random, int[] statBonuses)
+        {
+            if (statBonuses == null)
+            {
+                return;
+            }
+
+            int count = Mathf.Min(statBonuses.Length, Stats.Count);
+            for (int i = 0; i < count; ++i)
+            {
+                statBonuses[i] = random.Next(0, 6);
+            }
+
+            for (int i = count; i < statBonuses.Length; ++i)
+            {
+                statBonuses[i] = 0;
+            }
+        }
+
+        private static string EncodeStatBonuses(IReadOnlyList<int> statBonuses)
+        {
+            if (statBonuses == null || statBonuses.Count == 0)
+            {
+                return string.Empty;
+            }
+
+            byte[] payload = new byte[Stats.Count];
+
+            int count = Mathf.Min(statBonuses.Count, Stats.Count);
+            for (int i = 0; i < count; ++i)
+            {
+                payload[i] = (byte)Mathf.Clamp(statBonuses[i], byte.MinValue, byte.MaxValue);
+            }
+
+            return Convert.ToBase64String(payload);
+        }
+
+        private bool TryDecodeStatBonuses(string encodedStats, out int[] statBonuses)
+        {
+            statBonuses = null;
+
+            try
+            {
+                byte[] payload = Convert.FromBase64String(encodedStats);
+
+                int[] decoded = new int[Stats.Count];
+
+                if (payload != null)
+                {
+                    int count = Mathf.Min(payload.Length, decoded.Length);
+                    for (int i = 0; i < count; ++i)
+                    {
+                        decoded[i] = payload[i];
+                    }
+                }
+
+                statBonuses = decoded;
+                return true;
+            }
+            catch (FormatException)
+            {
+                return false;
+            }
         }
 
         private void ResetConfiguration()
@@ -281,6 +413,11 @@ namespace TPSBR
             _manaRegen = 0f;
             _configuredItemName = string.Empty;
             _lastConfigurationHash = string.Empty;
+
+            for (int i = 0; i < _statBonuses.Length; ++i)
+            {
+                _statBonuses[i] = 0;
+            }
 
             SetWeaponSize(WeaponSize.Unarmed);
             SetDisplayName(string.Empty);
@@ -450,7 +587,7 @@ namespace TPSBR
 
         public override string GetDescription()
         {
-            if (TryGetStatsFromConfiguration(_lastConfigurationHash, out float baseDamage, out float healthRegen, out float manaRegen, out _))
+            if (TryGetStatsFromConfiguration(_lastConfigurationHash, out float baseDamage, out float healthRegen, out float manaRegen, out _, out _))
             {
                 return BuildDescription(baseDamage, healthRegen, manaRegen);
             }
@@ -462,7 +599,7 @@ namespace TPSBR
         {
             string hash = configurationHash.ToString();
 
-            if (TryGetStatsFromConfiguration(hash, out float baseDamage, out float healthRegen, out float manaRegen, out _))
+            if (TryGetStatsFromConfiguration(hash, out float baseDamage, out float healthRegen, out float manaRegen, out _, out _))
             {
                 return BuildDescription(baseDamage, healthRegen, manaRegen);
             }
@@ -474,7 +611,7 @@ namespace TPSBR
         {
             string hash = configurationHash.ToString();
 
-            if (TryGetStatsFromConfiguration(hash, out _, out _, out _, out string configuredItemName) == true && string.IsNullOrWhiteSpace(configuredItemName) == false)
+            if (TryGetStatsFromConfiguration(hash, out _, out _, out _, out string configuredItemName, out _) == true && string.IsNullOrWhiteSpace(configuredItemName) == false)
             {
                 return configuredItemName;
             }
@@ -493,6 +630,13 @@ namespace TPSBR
                 $"Damage: {baseDamage}\n" +
                 $"Health Regen: {healthRegen}\n" +
                 $"Mana Regen: {manaRegen}";
+        }
+
+        private void NotifyInventoryAboutStatChange()
+        {
+            var inventory = Character != null ? Character.Agent?.Inventory : null;
+
+            inventory?.RecalculateHotbarStats();
         }
     }
 }

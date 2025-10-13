@@ -138,6 +138,10 @@ namespace TPSBR
         private Health _health;
         private Character _character;
         private Interactions _interactions;
+        private Stats _stats;
+        private int[] _statBaseValues;
+        private int[] _appliedHotbarBonuses;
+        private int[] _hotbarStatBuffer;
         private AudioEffect[] _fireAudioEffects;
         private Weapon[] _localWeapons = new Weapon[HOTBAR_CAPACITY];
         private Weapon[] _lastHotbarWeapons;
@@ -759,6 +763,8 @@ namespace TPSBR
         {
             Global.PlayerCloudSaveService?.UnregisterInventory(this);
 
+            ResetHotbarStatBonuses();
+
             DespawnPickaxe();
             DespawnWoodAxe();
 
@@ -988,6 +994,7 @@ namespace TPSBR
             _health = GetComponent<Health>();
             _character = GetComponent<Character>();
             _interactions = GetComponent<Interactions>();
+            _stats = GetComponent<Stats>();
             _fireAudioEffects = _fireAudioEffectsRoot.GetComponentsInChildren<AudioEffect>();
             _localItems = new InventorySlot[INVENTORY_SIZE];
             _lastHotbarWeapons = new Weapon[_localWeapons.Length];
@@ -1841,20 +1848,126 @@ namespace TPSBR
         }
     }
 
-    private void NotifyHotbarSlotChanged(int slot)
-    {
-        if (slot < 0 || slot >= _hotbar.Length)
-            return;
+        private void NotifyHotbarSlotChanged(int slot)
+        {
+            if (slot < 0 || slot >= _hotbar.Length)
+                return;
 
-        EnsureHotbarCacheInitialized();
+            EnsureHotbarCacheInitialized();
 
-        var slotWeapon = _hotbar[slot];
-        if (_lastHotbarWeapons[slot] == slotWeapon)
-            return;
+            var slotWeapon = _hotbar[slot];
+            if (_lastHotbarWeapons[slot] == slotWeapon)
+                return;
 
-        _lastHotbarWeapons[slot] = slotWeapon;
-        HotbarSlotChanged?.Invoke(slot, slotWeapon);
-    }
+            _lastHotbarWeapons[slot] = slotWeapon;
+            HotbarSlotChanged?.Invoke(slot, slotWeapon);
+
+            RecalculateHotbarStats();
+        }
+
+        internal void RecalculateHotbarStats()
+        {
+            if (HasStateAuthority == false)
+                return;
+
+            if (_stats == null)
+            {
+                _stats = GetComponent<Stats>();
+
+                if (_stats == null)
+                    return;
+            }
+
+            EnsureHotbarStatCaches();
+
+            for (int i = 0; i < Stats.Count; ++i)
+            {
+                int currentValue = _stats.GetStat(i);
+                int previousBonus = _appliedHotbarBonuses[i];
+                int baseValue = Mathf.Max(0, currentValue - previousBonus);
+
+                _statBaseValues[i] = baseValue;
+                _hotbarStatBuffer[i] = 0;
+            }
+
+            for (int slot = 1; slot < _hotbar.Length; ++slot)
+            {
+                Weapon weapon = _hotbar[slot];
+                StaffWeapon staffWeapon = weapon as StaffWeapon;
+                if (staffWeapon == null)
+                    continue;
+
+                IReadOnlyList<int> bonuses = staffWeapon.StatBonuses;
+                if (bonuses == null)
+                    continue;
+
+                int limit = Mathf.Min(bonuses.Count, _hotbarStatBuffer.Length);
+                for (int statIndex = 0; statIndex < limit; ++statIndex)
+                {
+                    _hotbarStatBuffer[statIndex] += bonuses[statIndex];
+                }
+            }
+
+            for (int i = 0; i < _hotbarStatBuffer.Length; ++i)
+            {
+                int targetValue = Mathf.Max(0, _statBaseValues[i] + _hotbarStatBuffer[i]);
+                _appliedHotbarBonuses[i] = _hotbarStatBuffer[i];
+                _stats.SetStat(i, targetValue);
+            }
+        }
+
+        private void EnsureHotbarStatCaches()
+        {
+            if (_statBaseValues == null || _statBaseValues.Length != Stats.Count)
+            {
+                _statBaseValues = new int[Stats.Count];
+            }
+
+            if (_appliedHotbarBonuses == null || _appliedHotbarBonuses.Length != Stats.Count)
+            {
+                _appliedHotbarBonuses = new int[Stats.Count];
+            }
+
+            if (_hotbarStatBuffer == null || _hotbarStatBuffer.Length != Stats.Count)
+            {
+                _hotbarStatBuffer = new int[Stats.Count];
+            }
+        }
+
+        private void ResetHotbarStatBonuses()
+        {
+            if (HasStateAuthority == false)
+                return;
+
+            if (_stats == null)
+            {
+                _stats = GetComponent<Stats>();
+            }
+
+            if (_stats == null || _appliedHotbarBonuses == null)
+                return;
+
+            EnsureHotbarStatCaches();
+
+            for (int i = 0; i < _appliedHotbarBonuses.Length; ++i)
+            {
+                int appliedBonus = _appliedHotbarBonuses[i];
+                if (appliedBonus == 0)
+                {
+                    _statBaseValues[i] = Mathf.Max(0, _stats.GetStat(i));
+                    _hotbarStatBuffer[i] = 0;
+                    continue;
+                }
+
+                int currentValue = _stats.GetStat(i);
+                int targetValue = Mathf.Max(0, currentValue - appliedBonus);
+                _stats.SetStat(i, targetValue);
+
+                _statBaseValues[i] = targetValue;
+                _appliedHotbarBonuses[i] = 0;
+                _hotbarStatBuffer[i] = 0;
+            }
+        }
 
 
     private void DropAllWeapons()
