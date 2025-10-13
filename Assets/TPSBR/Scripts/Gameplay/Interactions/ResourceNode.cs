@@ -56,6 +56,16 @@ namespace TPSBR
 
             if (activeAgentId.IsValid == true)
             {
+                if (TryResolveActiveAgent(activeAgentId, out Agent resolvedAgent) == true)
+                {
+                    if (_activeAgent != resolvedAgent)
+                    {
+                        _activeAgent = resolvedAgent;
+                    }
+
+                    return resolvedAgent == agent;
+                }
+
                 return activeAgentId == (NetworkBehaviourId)agent;
             }
 
@@ -209,13 +219,21 @@ namespace TPSBR
 
         protected virtual void RefreshInteractionState()
         {
-            if (HasStateAuthority == false && _activeAgent == null && ActiveAgentId.IsValid == true)
+            if (HasStateAuthority == false)
             {
-                Agent resolvedAgent = ResolveActiveAgent(ActiveAgentId);
-
-                if (resolvedAgent != null)
+                if (ActiveAgentId.IsValid == true)
                 {
-                    _activeAgent = resolvedAgent;
+                    if (TryResolveActiveAgent(ActiveAgentId, out Agent resolvedAgent) == true)
+                    {
+                        if (_activeAgent != resolvedAgent)
+                        {
+                            _activeAgent = resolvedAgent;
+                        }
+                    }
+                }
+                else if (_activeAgent != null)
+                {
+                    _activeAgent = null;
                 }
             }
 
@@ -270,10 +288,26 @@ namespace TPSBR
             }
 
             NetworkBehaviourId activeAgentId = ActiveAgentId;
-            if (activeAgentId.IsValid == true)
-                return true;
 
-            return _activeAgent != null;
+            if (activeAgentId.IsValid == true)
+            {
+                if (TryResolveActiveAgent(activeAgentId, out Agent resolvedAgent) == true)
+                {
+                    if (_activeAgent != resolvedAgent)
+                    {
+                        _activeAgent = resolvedAgent;
+                    }
+                }
+
+                return true;
+            }
+
+            if (_activeAgent != null)
+            {
+                return true;
+            }
+
+            return false;
         }
 
         private void OnActiveAgentIdChanged()
@@ -286,11 +320,13 @@ namespace TPSBR
 
             if (ActiveAgentId.IsValid == true)
             {
-                Agent resolvedAgent = ResolveActiveAgent(ActiveAgentId);
-
-                if (resolvedAgent != null)
+                if (TryResolveActiveAgent(ActiveAgentId, out Agent resolvedAgent) == true)
                 {
                     _activeAgent = resolvedAgent;
+                }
+                else
+                {
+                    _activeAgent = null;
                 }
             }
             else
@@ -301,12 +337,24 @@ namespace TPSBR
             RefreshInteractionState();
         }
 
-        private Agent ResolveActiveAgent(NetworkBehaviourId agentId)
+        private bool TryResolveActiveAgent(NetworkBehaviourId agentId, out Agent resolvedAgent)
         {
-            if (Runner == null || agentId.IsValid == false)
-                return null;
+            resolvedAgent = null;
 
-            return NetworkBehaviour.NetworkUnwrap(Runner, agentId) as Agent;
+            if (Runner == null || agentId.IsValid == false)
+                return false;
+
+            if (Runner.TryFindBehaviour(agentId, out NetworkBehaviour resolvedBehaviour) == true)
+            {
+                resolvedAgent = resolvedBehaviour as Agent;
+
+                if (resolvedAgent != null)
+                    return true;
+            }
+
+            resolvedAgent = NetworkBehaviour.NetworkUnwrap(Runner, agentId) as Agent;
+
+            return resolvedAgent != null;
         }
     }
 }
