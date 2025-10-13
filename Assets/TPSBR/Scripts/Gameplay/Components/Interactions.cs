@@ -176,20 +176,22 @@
                 return;
             }
 
+            Agent agent = _character != null ? _character.Agent : null;
+
             if (_activeResourceNode == null && _animationController != null)
             {
                 if (_animationController.ActiveInteraction is ResourceNode activeResource)
                 {
                     _activeResourceNode = activeResource;
+                    _activeResourceNode?.LatchLocalAgent(agent);
                 }
             }
 
             UpdateActiveResourceNode();
 
-            Agent agent = _character != null ? _character.Agent : null;
-
             if (_activeResourceNode != null)
             {
+                _activeResourceNode.LatchLocalAgent(agent);
                 InteractionTarget = _activeResourceNode;
             }
             else
@@ -199,6 +201,7 @@
                 if (agent != null && InteractionTarget is ResourceNode detectedNode && detectedNode.IsInteracting(agent) == true)
                 {
                     _activeResourceNode = detectedNode;
+                    _activeResourceNode.LatchLocalAgent(agent);
                     InteractionTarget = _activeResourceNode;
                 }
             }
@@ -285,8 +288,16 @@
             if (_activeResourceNode == null)
                 return;
 
-            if (agent == null || _activeResourceNode.IsInteracting(agent) == false)
+            if (agent == null)
             {
+                _activeResourceNode.LatchLocalAgent(null);
+                _activeResourceNode = null;
+                return;
+            }
+
+            if (_activeResourceNode.IsInteracting(agent) == false)
+            {
+                _activeResourceNode.LatchLocalAgent(null);
                 _activeResourceNode = null;
             }
         }
