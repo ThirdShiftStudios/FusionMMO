@@ -25,14 +25,40 @@ namespace TPSBR
         [Networked, HideInInspector] private bool IsDepleted { get; set; }
         [Networked, HideInInspector] private TickTimer RespawnTimer { get; set; }
         [Networked, HideInInspector] private float InteractionProgress { get; set; }
+        [Networked, HideInInspector] private float InteractionProgressRate { get; set; }
+        [Networked, HideInInspector] private float LastProgressUpdateTime { get; set; }
+        [Networked, HideInInspector] private PlayerRef ActiveInteractor { get; set; }
 
         private Agent _activeAgent;
 
-        public float InteractionProgressNormalized => _requiredInteractionTime > 0f ? Mathf.Clamp01(InteractionProgress / _requiredInteractionTime) : 0f;
+        public float InteractionProgressNormalized
+        {
+            get
+            {
+                if (_requiredInteractionTime <= 0f)
+                    return 0f;
+
+                float predictedProgress = GetPredictedInteractionProgress();
+                return Mathf.Clamp01(predictedProgress / _requiredInteractionTime);
+            }
+        }
 
         public bool IsInteracting(Agent agent)
         {
-            return _activeAgent != null && _activeAgent == agent;
+            if (agent == null)
+                return false;
+
+            if (_activeAgent != null)
+                return _activeAgent == agent;
+
+            if (ActiveInteractor == PlayerRef.None)
+                return false;
+
+            NetworkObject agentObject = agent.Object;
+            if (agentObject == null)
+                return false;
+
+            return agentObject.InputAuthority == ActiveInteractor;
         }
 
         string IInteraction.Name => string.IsNullOrWhiteSpace(_interactionName) ? GetDefaultInteractionName() : _interactionName;
@@ -92,6 +118,9 @@ namespace TPSBR
 
             _activeAgent = agent;
             InteractionProgress = 0f;
+            InteractionProgressRate = 0f;
+            ActiveInteractor = GetPlayerRef(agent);
+            LastProgressUpdateTime = GetCurrentSimulationTime();
 
             RefreshInteractionState();
             OnInteractionStarted(agent);
@@ -106,6 +135,9 @@ namespace TPSBR
 
             _activeAgent = null;
             InteractionProgress = 0f;
+            InteractionProgressRate = 0f;
+            ActiveInteractor = PlayerRef.None;
+            LastProgressUpdateTime = GetCurrentSimulationTime();
 
             RefreshInteractionState();
             OnInteractionCancelled(agent);
@@ -128,6 +160,8 @@ namespace TPSBR
 
             float adjustedDelta = CalculateProgressDelta(deltaTime, agent);
             InteractionProgress += adjustedDelta;
+            InteractionProgressRate = deltaTime > 0f ? adjustedDelta / deltaTime : 0f;
+            LastProgressUpdateTime = GetCurrentSimulationTime();
 
             if (InteractionProgress < _requiredInteractionTime)
                 return false;
@@ -144,6 +178,9 @@ namespace TPSBR
             IsDepleted = false;
             RespawnTimer = default;
             InteractionProgress = 0f;
+            InteractionProgressRate = 0f;
+            ActiveInteractor = PlayerRef.None;
+            LastProgressUpdateTime = GetCurrentSimulationTime();
             RefreshInteractionState();
         }
 
@@ -181,7 +218,8 @@ namespace TPSBR
         {
             if (_interactionCollider != null)
             {
-                _interactionCollider.enabled = IsDepleted == false && _activeAgent == null;
+                bool hasInteractor = _activeAgent != null || ActiveInteractor != PlayerRef.None;
+                _interactionCollider.enabled = IsDepleted == false && hasInteractor == false;
             }
         }
 
@@ -189,6 +227,9 @@ namespace TPSBR
         {
             _activeAgent = null;
             InteractionProgress = 0f;
+            InteractionProgressRate = 0f;
+            ActiveInteractor = PlayerRef.None;
+            LastProgressUpdateTime = GetCurrentSimulationTime();
 
             if (HasStateAuthority == true)
             {
@@ -202,6 +243,50 @@ namespace TPSBR
 
             RefreshInteractionState();
             OnInteractionCompleted(agent);
+        }
+
+        private float GetPredictedInteractionProgress()
+        {
+            float progress = InteractionProgress;
+
+            if (InteractionProgressRate > 0f)
+            {
+                float currentTime = GetCurrentSimulationTime();
+                float deltaTime = Mathf.Max(0f, currentTime - LastProgressUpdateTime);
+                if (deltaTime > 0f)
+                {
+                    progress += InteractionProgressRate * deltaTime;
+                }
+            }
+
+            if (_requiredInteractionTime > 0f)
+            {
+                progress = Mathf.Min(progress, _requiredInteractionTime);
+            }
+
+            return progress;
+        }
+
+        private float GetCurrentSimulationTime()
+        {
+            if (Runner != null && Runner.IsRunning == true)
+            {
+                return (float)Runner.SimulationTime;
+            }
+
+            return Time.time;
+        }
+
+        private PlayerRef GetPlayerRef(Agent agent)
+        {
+            if (agent == null)
+                return PlayerRef.None;
+
+            NetworkObject agentObject = agent.Object;
+            if (agentObject == null)
+                return PlayerRef.None;
+
+            return agentObject.InputAuthority;
         }
     }
 }
