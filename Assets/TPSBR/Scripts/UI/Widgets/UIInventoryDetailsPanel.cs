@@ -12,10 +12,12 @@ namespace TPSBR.UI
         [SerializeField] private TextMeshProUGUI _descriptionLabel;
         [SerializeField] private Image _iconImage;
 
+        private UIStatDetails _statDetails;
         protected override void OnInitialize()
         {
             base.OnInitialize();
 
+            _statDetails = GetComponentInChildren<UIStatDetails>();
             Hide();
         }
 
