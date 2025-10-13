@@ -25,10 +25,12 @@ namespace TPSBR
         [Networked, HideInInspector] private bool IsDepleted { get; set; }
         [Networked, HideInInspector] private TickTimer RespawnTimer { get; set; }
         [Networked, HideInInspector] private float SyncedInteractionProgress { get; set; }
-        [Networked, HideInInspector] private Agent ActiveAgentNetworked { get; set; }
+        [Networked(OnChanged = nameof(OnActiveAgentIdChanged)), HideInInspector] private NetworkBehaviourId ActiveAgentId { get; set; }
 
         private Agent _activeAgent;
         private float _interactionProgress;
+        private Agent _resolvedActiveAgent;
+        private NetworkBehaviourId _resolvedActiveAgentId;
 
         public float InteractionProgressNormalized
         {
@@ -230,7 +232,11 @@ namespace TPSBR
         {
             if (HasStateAuthority == true)
             {
-                ActiveAgentNetworked = _activeAgent;
+                ActiveAgentId = _activeAgent != null ? (NetworkBehaviourId)_activeAgent : default;
+            }
+            else
+            {
+                ClearResolvedActiveAgent();
             }
         }
 
@@ -241,7 +247,48 @@ namespace TPSBR
                 return _activeAgent;
             }
 
-            return ActiveAgentNetworked;
+            NetworkBehaviourId activeAgentId = ActiveAgentId;
+
+            if (activeAgentId.IsValid == false)
+            {
+                ClearResolvedActiveAgent();
+                return null;
+            }
+
+            if (_resolvedActiveAgent != null && _resolvedActiveAgent.Object != null && _resolvedActiveAgentId == activeAgentId)
+            {
+                return _resolvedActiveAgent;
+            }
+
+            if (Runner != null && Runner.TryFindBehaviour(activeAgentId, out Agent resolvedAgent) == true &&
+                resolvedAgent != null && resolvedAgent.Object != null)
+            {
+                _resolvedActiveAgent = resolvedAgent;
+                _resolvedActiveAgentId = activeAgentId;
+                return _resolvedActiveAgent;
+            }
+
+            ClearResolvedActiveAgent();
+            return null;
+        }
+
+        private static void OnActiveAgentIdChanged(Changed<ResourceNode> changed)
+        {
+            changed.Behaviour.OnActiveAgentIdChanged();
+        }
+
+        private void OnActiveAgentIdChanged()
+        {
+            if (HasStateAuthority == false)
+            {
+                ClearResolvedActiveAgent();
+            }
+        }
+
+        private void ClearResolvedActiveAgent()
+        {
+            _resolvedActiveAgent = null;
+            _resolvedActiveAgentId = default;
         }
     }
 }
