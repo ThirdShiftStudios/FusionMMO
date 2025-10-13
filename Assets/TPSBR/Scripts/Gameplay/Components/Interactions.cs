@@ -38,6 +38,7 @@
         private Inventory _inventory;
         private Character _character;
         private CharacterAnimationController _animationController;
+        private ResourceNode _activeResourceNode;
         private RaycastHit[] _interactionHits = new RaycastHit[10];
 
         // PUBLIC METHODS
@@ -47,6 +48,10 @@
             if (_animationController != null && _animationController.HasActiveInteraction == true)
             {
                 InteractionTarget = _animationController.ActiveInteraction;
+                if (InteractionTarget is ResourceNode resourceNode)
+                {
+                    _activeResourceNode = resourceNode;
+                }
                 return;
             }
 
@@ -160,16 +165,35 @@
             if (_character.HasInputAuthority == false)
             {
                 InteractionTarget = null;
+                _activeResourceNode = null;
                 return;
             }
 
             if (_health.IsAlive == false)
             {
                 InteractionTarget = null;
+                _activeResourceNode = null;
                 return;
             }
 
-            UpdateInteractionTarget();
+            if (_activeResourceNode == null && _animationController != null)
+            {
+                if (_animationController.ActiveInteraction is ResourceNode activeResource)
+                {
+                    _activeResourceNode = activeResource;
+                }
+            }
+
+            UpdateActiveResourceNode();
+
+            if (_activeResourceNode != null)
+            {
+                InteractionTarget = _activeResourceNode;
+            }
+            else
+            {
+                UpdateInteractionTarget();
+            }
 
             TargetPoint = GetTargetPoint(true, false);
         }
@@ -246,6 +270,18 @@
             }
         }
 
+        private void UpdateActiveResourceNode()
+        {
+            if (_activeResourceNode == null)
+                return;
+
+            Agent agent = _character != null ? _character.Agent : null;
+            if (agent == null || _activeResourceNode.IsInteracting(agent) == false)
+            {
+                _activeResourceNode = null;
+            }
+        }
+
         private void TryOpenItemBox(ItemBox itemBox)
         {
             if (itemBox == null)
@@ -267,14 +303,17 @@
             if (_animationController != null &&
                 _animationController.TryStartOreInteraction(oreNode, _oreCancelMoveDistance, _oreCancelInputThreshold) == true)
             {
+                _activeResourceNode = oreNode;
+                InteractionTarget = oreNode;
                 return;
             }
 
             Agent agent = _character != null ? _character.Agent : null;
 
-            if (agent != null)
+            if (agent != null && oreNode.TryBeginMining(agent) == true)
             {
-                oreNode.TryBeginMining(agent);
+                _activeResourceNode = oreNode;
+                InteractionTarget = oreNode;
             }
         }
 
@@ -286,14 +325,17 @@
             if (_animationController != null &&
                 _animationController.TryStartTreeInteraction(treeNode, _treeCancelMoveDistance, _treeCancelInputThreshold) == true)
             {
+                _activeResourceNode = treeNode;
+                InteractionTarget = treeNode;
                 return;
             }
 
             Agent agent = _character != null ? _character.Agent : null;
 
-            if (agent != null)
+            if (agent != null && treeNode.TryBeginChopping(agent) == true)
             {
-                treeNode.TryBeginChopping(agent);
+                _activeResourceNode = treeNode;
+                InteractionTarget = treeNode;
             }
         }
 

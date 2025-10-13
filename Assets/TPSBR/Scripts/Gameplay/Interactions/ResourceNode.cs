@@ -28,6 +28,13 @@ namespace TPSBR
         private Agent _activeAgent;
         private float _interactionProgress;
 
+        public float InteractionProgressNormalized => _requiredInteractionTime > 0f ? Mathf.Clamp01(_interactionProgress / _requiredInteractionTime) : 0f;
+
+        public bool IsInteracting(Agent agent)
+        {
+            return _activeAgent != null && _activeAgent == agent;
+        }
+
         string IInteraction.Name => string.IsNullOrWhiteSpace(_interactionName) ? GetDefaultInteractionName() : _interactionName;
         string IInteraction.Description => string.IsNullOrWhiteSpace(_interactionDescription) ? GetDefaultInteractionDescription() : _interactionDescription;
         Vector3 IInteraction.HUDPosition => _hudPivot != null ? _hudPivot.position : transform.position;
