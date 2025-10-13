@@ -58,6 +58,21 @@ namespace TPSBR
             {
                 if (agent.Object != null && agent.Object.InputAuthority == activePlayer)
                 {
+                    if (_activeAgent != agent)
+                    {
+                        _activeAgent = agent;
+                    }
+
+                    return true;
+                }
+
+                if (Runner != null && Runner.LocalPlayer == activePlayer && agent.HasInputAuthority == true)
+                {
+                    if (_activeAgent != agent)
+                    {
+                        _activeAgent = agent;
+                    }
+
                     return true;
                 }
 

@@ -186,6 +186,8 @@
 
             UpdateActiveResourceNode();
 
+            Agent agent = _character != null ? _character.Agent : null;
+
             if (_activeResourceNode != null)
             {
                 InteractionTarget = _activeResourceNode;
@@ -193,6 +195,12 @@
             else
             {
                 UpdateInteractionTarget();
+
+                if (agent != null && InteractionTarget is ResourceNode detectedNode && detectedNode.IsInteracting(agent) == true)
+                {
+                    _activeResourceNode = detectedNode;
+                    InteractionTarget = _activeResourceNode;
+                }
             }
 
             TargetPoint = GetTargetPoint(true, false);
@@ -272,10 +280,11 @@
 
         private void UpdateActiveResourceNode()
         {
+            Agent agent = _character != null ? _character.Agent : null;
+
             if (_activeResourceNode == null)
                 return;
 
-            Agent agent = _character != null ? _character.Agent : null;
             if (agent == null || _activeResourceNode.IsInteracting(agent) == false)
             {
                 _activeResourceNode = null;
