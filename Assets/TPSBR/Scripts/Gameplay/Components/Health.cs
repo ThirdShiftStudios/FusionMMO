@@ -41,9 +41,7 @@ namespace TPSBR
                 [SerializeField]
                 private Transform _hitIndicatorPivot;
 
-                [Header("Attributes")]
-                [SerializeField]
-                private float _healthPerStrength = 20f;
+                private const float HEALTH_PER_STRENGTH = 20f;
 
 		[Header("Regeneration")]
 		[SerializeField]
@@ -355,7 +353,7 @@ namespace TPSBR
                         if (_baseMaxHealthInitialized == true)
                                 return;
 
-                        _baseMaxHealth = _maxHealth - strength * _healthPerStrength;
+                        _baseMaxHealth = _maxHealth - strength * HEALTH_PER_STRENGTH;
                         _baseMaxHealthInitialized = true;
                 }
 
@@ -367,10 +365,10 @@ namespace TPSBR
                         InitializeBaseMaxHealth(newStrength);
 
                         float previousMaxHealth = previousStrengthOverride.HasValue
-                                ? Mathf.Max(0f, _baseMaxHealth + previousStrengthOverride.Value * _healthPerStrength)
+                                ? Mathf.Max(0f, _baseMaxHealth + previousStrengthOverride.Value * HEALTH_PER_STRENGTH)
                                 : _maxHealth;
 
-                        float targetMaxHealth = Mathf.Max(0f, _baseMaxHealth + newStrength * _healthPerStrength);
+                        float targetMaxHealth = Mathf.Max(0f, _baseMaxHealth + newStrength * HEALTH_PER_STRENGTH);
 
                         float healthRatio = preserveHealthPercentage && previousMaxHealth > 0f ? CurrentHealth / previousMaxHealth : 1f;
                         float regenRatio = previousMaxHealth > 0f ? _maxHealthFromRegen / previousMaxHealth : 1f;
