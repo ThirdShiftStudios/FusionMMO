@@ -24,21 +24,37 @@ namespace TPSBR
 
         [Networked, HideInInspector] private bool IsDepleted { get; set; }
         [Networked, HideInInspector] private TickTimer RespawnTimer { get; set; }
+        [Networked, HideInInspector] private PlayerRef ActivePlayer { get; set; }
+        [Networked, HideInInspector] private float NetworkedInteractionProgress { get; set; }
 
         private Agent _activeAgent;
         private float _interactionProgress;
 
-        public float InteractionProgressNormalized => _requiredInteractionTime > 0f ? Mathf.Clamp01(_interactionProgress / _requiredInteractionTime) : 0f;
+        private bool HasActiveAgent => HasStateAuthority == true ? _activeAgent != null : ActivePlayer != PlayerRef.None;
+        private float CurrentInteractionProgress => HasStateAuthority == true ? _interactionProgress : NetworkedInteractionProgress;
+
+        public float InteractionProgressNormalized => _requiredInteractionTime > 0f ? Mathf.Clamp01(CurrentInteractionProgress / _requiredInteractionTime) : 0f;
 
         public bool IsInteracting(Agent agent)
         {
-            return _activeAgent != null && _activeAgent == agent;
+            if (agent == null)
+                return false;
+
+            if (HasStateAuthority == true)
+            {
+                return _activeAgent != null && _activeAgent == agent;
+            }
+
+            if (ActivePlayer == PlayerRef.None)
+                return false;
+
+            return ActivePlayer == agent.Object.InputAuthority;
         }
 
         string IInteraction.Name => string.IsNullOrWhiteSpace(_interactionName) ? GetDefaultInteractionName() : _interactionName;
         string IInteraction.Description => string.IsNullOrWhiteSpace(_interactionDescription) ? GetDefaultInteractionDescription() : _interactionDescription;
         Vector3 IInteraction.HUDPosition => _hudPivot != null ? _hudPivot.position : transform.position;
-        bool IInteraction.IsActive => IsDepleted == false && _activeAgent == null;
+        bool IInteraction.IsActive => IsDepleted == false && HasActiveAgent == false;
 
         protected virtual void Reset()
         {
@@ -93,6 +109,12 @@ namespace TPSBR
             _activeAgent = agent;
             _interactionProgress = 0f;
 
+            if (HasStateAuthority == true)
+            {
+                ActivePlayer = agent != null ? agent.Object.InputAuthority : PlayerRef.None;
+                NetworkedInteractionProgress = 0f;
+            }
+
             RefreshInteractionState();
             OnInteractionStarted(agent);
 
@@ -106,6 +128,12 @@ namespace TPSBR
 
             _activeAgent = null;
             _interactionProgress = 0f;
+
+            if (HasStateAuthority == true)
+            {
+                ActivePlayer = PlayerRef.None;
+                NetworkedInteractionProgress = 0f;
+            }
 
             RefreshInteractionState();
             OnInteractionCancelled(agent);
@@ -126,6 +154,11 @@ namespace TPSBR
             float adjustedDelta = CalculateProgressDelta(deltaTime, agent);
             _interactionProgress += adjustedDelta;
 
+            if (HasStateAuthority == true)
+            {
+                NetworkedInteractionProgress = _interactionProgress;
+            }
+
             if (_interactionProgress < _requiredInteractionTime)
                 return false;
 
@@ -140,6 +173,9 @@ namespace TPSBR
 
             IsDepleted = false;
             RespawnTimer = default;
+
+            ActivePlayer = PlayerRef.None;
+            NetworkedInteractionProgress = 0f;
             RefreshInteractionState();
         }
 
@@ -177,7 +213,7 @@ namespace TPSBR
         {
             if (_interactionCollider != null)
             {
-                _interactionCollider.enabled = IsDepleted == false && _activeAgent == null;
+                _interactionCollider.enabled = IsDepleted == false && HasActiveAgent == false;
             }
         }
 
@@ -185,6 +221,12 @@ namespace TPSBR
         {
             _activeAgent = null;
             _interactionProgress = 0f;
+
+            if (HasStateAuthority == true)
+            {
+                ActivePlayer = PlayerRef.None;
+                NetworkedInteractionProgress = 0f;
+            }
 
             if (HasStateAuthority == true)
             {
