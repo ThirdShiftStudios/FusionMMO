@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Fusion;
 using TMPro;
 using UnityEngine;
@@ -28,6 +29,8 @@ namespace TPSBR.UI
                 Hide();
                 return;
             }
+
+            UpdateStatDetails(item, configurationHash);
 
             if (_nameLabel != null)
             {
@@ -63,6 +66,11 @@ namespace TPSBR.UI
 
         internal void Hide()
         {
+            if (_statDetails != null)
+            {
+                _statDetails.SetStats(null);
+            }
+
             if (_nameLabel != null)
             {
                 _nameLabel.SetTextSafe(string.Empty);
@@ -100,6 +108,30 @@ namespace TPSBR.UI
             {
                 gameObject.SetActive(visible);
             }
+        }
+
+        private void UpdateStatDetails(IInventoryItemDetails item, NetworkString<_32> configurationHash)
+        {
+            if (_statDetails == null)
+            {
+                return;
+            }
+
+            IReadOnlyList<int> stats = null;
+
+            if (item is StaffWeapon staffWeapon)
+            {
+                if (staffWeapon.TryGetStatBonuses(configurationHash, out IReadOnlyList<int> configuredStats) == true)
+                {
+                    stats = configuredStats;
+                }
+                else
+                {
+                    stats = staffWeapon.StatBonuses;
+                }
+            }
+
+            _statDetails.SetStats(stats);
         }
 
     }

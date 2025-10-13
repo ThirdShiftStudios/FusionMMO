@@ -36,6 +36,20 @@ namespace TPSBR
         public string ConfiguredItemName => _configuredItemName;
         public IReadOnlyList<int> StatBonuses => _statBonuses;
 
+        public bool TryGetStatBonuses(NetworkString<_32> configurationHash, out IReadOnlyList<int> statBonuses)
+        {
+            string hash = configurationHash.ToString();
+
+            if (TryGetStatsFromConfiguration(hash, out _, out _, out _, out _, out int[] configuredBonuses) == true)
+            {
+                statBonuses = configuredBonuses;
+                return true;
+            }
+
+            statBonuses = StatBonuses;
+            return false;
+        }
+
         // Weapon INTERFACE
 
         public override bool CanFire(bool keyDown)
