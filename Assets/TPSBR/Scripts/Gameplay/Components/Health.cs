@@ -18,8 +18,8 @@ namespace TPSBR
 	{
 		// PUBLIC MEMBERS
 
-		public bool  IsAlive   => CurrentHealth > 0f;
-		public float MaxHealth => _maxHealth;
+                public bool  IsAlive   => CurrentHealth > 0f;
+                public float MaxHealth => Mathf.Clamp(_currentMaxHealth, 0f, Mathf.Max(0f, _maxHealth));
 		public float MaxShield => _maxShield;
 
 		[Networked, HideInInspector]
@@ -65,16 +65,13 @@ namespace TPSBR
                 private TickTimer _regenTickTimer;
                 private float _healthRegenPerTick;
                 private float _regenTickTime;
-                private float _baseMaxHealth;
-                private bool _baseMaxHealthInitialized;
+                private float _currentMaxHealth;
 
 		// PUBLIC METHODS
 
                 public void OnSpawned(Agent agent)
                 {
                         _visibleHitCount = _hitCount;
-
-                        _baseMaxHealthInitialized = false;
 
                         _stats = agent != null ? agent.GetComponent<Stats>() : GetComponent<Stats>();
 
@@ -96,8 +93,7 @@ namespace TPSBR
                         }
 
                         _stats = null;
-                        _baseMaxHealthInitialized = false;
-                        _baseMaxHealth = 0f;
+                        _currentMaxHealth = Mathf.Max(0f, _maxHealth);
                 }
 
 		public void OnFixedUpdate()
@@ -128,7 +124,9 @@ namespace TPSBR
 
 			InvokeWeavedCode();
 
-			CurrentHealth = _maxHealth;
+                        float clampedCap    = Mathf.Max(0f, _maxHealth);
+                        _currentMaxHealth = Mathf.Clamp(_currentMaxHealth > 0f ? _currentMaxHealth : clampedCap, 0f, clampedCap);
+                        SetHealth(_currentMaxHealth);
 			CurrentShield = _startShield;
 		}
 
@@ -150,6 +148,7 @@ namespace TPSBR
 
                         _regenTickTime      = 1f / _regenTickPerSecond;
                         _healthRegenPerTick = _healthRegenPerSecond / _regenTickPerSecond;
+                        _currentMaxHealth   = Mathf.Max(0f, _maxHealth);
                 }
 
                 private void OnStatChanged(Stats.StatIndex stat, int previousValue, int newValue)
@@ -268,7 +267,8 @@ namespace TPSBR
 
                 private void SetHealth(float health)
                 {
-                        CurrentHealth = Mathf.Clamp(health, 0, _maxHealth);
+                        float cappedMaxHealth = Mathf.Min(Mathf.Max(0f, _currentMaxHealth), Mathf.Max(0f, _maxHealth));
+                        CurrentHealth = Mathf.Clamp(health, 0f, cappedMaxHealth);
                 }
 
 		private void SetShield(float shield)
@@ -348,43 +348,30 @@ namespace TPSBR
                         CurrentHealth -= 10;
                 }
 
-                private void InitializeBaseMaxHealth(int strength)
-                {
-                        if (_baseMaxHealthInitialized == true)
-                                return;
-
-                        _baseMaxHealth = _maxHealth - strength * HEALTH_PER_STRENGTH;
-                        _baseMaxHealthInitialized = true;
-                }
-
-                private void UpdateMaxHealthFromStrength(int newStrength, bool preserveHealthPercentage, int? previousStrengthOverride = null)
+                private void UpdateMaxHealthFromStrength(int newStrength, bool preserveHealthPercentage, int previousStrength)
                 {
                         if (_stats == null)
                                 return;
 
-                        InitializeBaseMaxHealth(newStrength);
-
-                        float previousMaxHealth = previousStrengthOverride.HasValue
-                                ? Mathf.Max(0f, _baseMaxHealth + previousStrengthOverride.Value * HEALTH_PER_STRENGTH)
-                                : _maxHealth;
-
-                        float targetMaxHealth = Mathf.Max(0f, _baseMaxHealth + newStrength * HEALTH_PER_STRENGTH);
+                        float healthCap         = Mathf.Max(0f, _maxHealth);
+                        float previousMaxHealth = Mathf.Clamp(previousStrength * HEALTH_PER_STRENGTH, 0f, healthCap);
+                        float targetMaxHealth   = Mathf.Clamp(newStrength * HEALTH_PER_STRENGTH, 0f, healthCap);
 
                         float healthRatio = preserveHealthPercentage && previousMaxHealth > 0f ? CurrentHealth / previousMaxHealth : 1f;
-                        float regenRatio = previousMaxHealth > 0f ? _maxHealthFromRegen / previousMaxHealth : 1f;
+                        float regenRatio  = previousMaxHealth > 0f ? _maxHealthFromRegen / previousMaxHealth : 1f;
 
-                        _maxHealth = targetMaxHealth;
+                        _currentMaxHealth = targetMaxHealth;
 
                         if (preserveHealthPercentage == true)
                         {
-                                SetHealth(_maxHealth * healthRatio);
+                                SetHealth(_currentMaxHealth * healthRatio);
                         }
                         else
                         {
-                                SetHealth(_maxHealth);
+                                SetHealth(_currentMaxHealth);
                         }
 
-                        _maxHealthFromRegen = _maxHealth * regenRatio;
+                        _maxHealthFromRegen = _currentMaxHealth * regenRatio;
                 }
         }
 }
