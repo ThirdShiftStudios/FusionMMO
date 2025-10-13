@@ -2543,14 +2543,15 @@ namespace TPSBR
             return ToNetworkConfiguration(defaultDefinitions.DefaultWoodAxeConfiguration);
         }
 
-        private static NetworkString<_32> ToNetworkConfiguration(string configurationHash)
+        private static NetworkString<_32> ToNetworkConfiguration(ToolConfiguration configuration)
         {
-            if (string.IsNullOrWhiteSpace(configurationHash) == true)
+            string encodedConfiguration = Tool.EncodeConfiguration(configuration);
+            if (string.IsNullOrEmpty(encodedConfiguration) == true)
             {
                 return default;
             }
 
-            NetworkString<_32> networkHash = configurationHash;
+            NetworkString<_32> networkHash = encodedConfiguration;
             return networkHash;
         }
 

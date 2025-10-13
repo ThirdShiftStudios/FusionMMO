@@ -13,9 +13,27 @@ namespace TPSBR
         Tier5
     }
 
+    [Serializable]
+    public struct ToolConfiguration
+    {
+        public ToolTier Tier;
+        public int Speed;
+        public int Yield;
+        public int Luck;
+        public string Name;
+
+        public bool IsConfigured()
+        {
+            return Tier != ToolTier.Tier1 || Speed != 0 || Yield != 0 || Luck != 0 || string.IsNullOrWhiteSpace(Name) == false;
+        }
+    }
+
     public abstract class Tool : ContextBehaviour, IInventoryItemDetails
     {
         private const string HASH_PREFIX = "TOL";
+        private const string CONFIG_PREFIX = "TOLCFG";
+        private const char CONFIG_SEPARATOR = ':';
+        private const int MAX_CONFIGURATION_LENGTH = 32;
 
         private static readonly string[] NAME_PREFIXES =
         {
@@ -68,6 +86,129 @@ namespace TPSBR
         public string DisplayName => string.IsNullOrWhiteSpace(_configuredName) == false ? _configuredName : GetDefaultDisplayName();
         public Sprite Icon => GetIcon();
         public bool IsEquipped => _isEquipped;
+
+        public static NetworkString<_32> CreateConfiguration(ToolConfiguration configuration)
+        {
+            string encodedConfiguration = EncodeConfiguration(configuration);
+            if (string.IsNullOrEmpty(encodedConfiguration) == true)
+            {
+                return default;
+            }
+
+            NetworkString<_32> networkConfiguration = encodedConfiguration;
+            return networkConfiguration;
+        }
+
+        public static string EncodeConfiguration(ToolConfiguration configuration)
+        {
+            string sanitizedName = SanitizeName(configuration.Name);
+
+            string baseString = string.Join(CONFIG_SEPARATOR.ToString(), new[]
+            {
+                CONFIG_PREFIX,
+                ((int)configuration.Tier).ToString(),
+                configuration.Speed.ToString(),
+                configuration.Yield.ToString(),
+                configuration.Luck.ToString()
+            });
+
+            if (baseString.Length > MAX_CONFIGURATION_LENGTH)
+            {
+                return string.Empty;
+            }
+
+            if (string.IsNullOrEmpty(sanitizedName) == false)
+            {
+                int remaining = MAX_CONFIGURATION_LENGTH - (baseString.Length + 1);
+                if (remaining > 0)
+                {
+                    if (sanitizedName.Length > remaining)
+                    {
+                        sanitizedName = sanitizedName.Substring(0, remaining);
+                    }
+
+                    baseString = $"{baseString}{CONFIG_SEPARATOR}{sanitizedName}";
+                }
+            }
+
+            return baseString;
+        }
+
+        public static bool TryDecodeConfiguration(string configurationHash, out ToolConfiguration configuration)
+        {
+            configuration = default;
+
+            if (string.IsNullOrWhiteSpace(configurationHash) == true)
+            {
+                return false;
+            }
+
+            if (configurationHash.StartsWith(CONFIG_PREFIX + CONFIG_SEPARATOR, StringComparison.Ordinal) == false)
+            {
+                return false;
+            }
+
+            string payload = configurationHash.Substring(CONFIG_PREFIX.Length + 1);
+            string[] parts = payload.Split(CONFIG_SEPARATOR);
+            if (parts.Length < 4)
+            {
+                return false;
+            }
+
+            if (int.TryParse(parts[0], out int tierIndex) == false)
+            {
+                return false;
+            }
+
+            if (Enum.IsDefined(typeof(ToolTier), tierIndex) == false)
+            {
+                return false;
+            }
+
+            if (int.TryParse(parts[1], out int speed) == false)
+            {
+                return false;
+            }
+
+            if (int.TryParse(parts[2], out int itemYield) == false)
+            {
+                return false;
+            }
+
+            if (int.TryParse(parts[3], out int luck) == false)
+            {
+                return false;
+            }
+
+            string configuredName = string.Empty;
+            if (parts.Length > 4)
+            {
+                configuredName = string.Join(CONFIG_SEPARATOR.ToString(), parts, 4, parts.Length - 4).Trim();
+            }
+
+            configuration = new ToolConfiguration
+            {
+                Tier = (ToolTier)tierIndex,
+                Speed = speed,
+                Yield = itemYield,
+                Luck = luck,
+                Name = configuredName
+            };
+
+            return true;
+        }
+
+        private static string SanitizeName(string name)
+        {
+            if (string.IsNullOrWhiteSpace(name) == true)
+            {
+                return string.Empty;
+            }
+
+            string sanitized = name.Replace(CONFIG_SEPARATOR, ' ');
+            sanitized = sanitized.Replace('\r', ' ').Replace('\n', ' ');
+            return sanitized.Trim();
+        }
 
         public override void Spawned()
         {
@@ -226,6 +367,16 @@ namespace TPSBR
             itemYield = default;
             luck = default;
             configuredName = string.Empty;
+
+            if (TryDecodeConfiguration(configurationHash, out ToolConfiguration configuration) == true)
+            {
+                tier = configuration.Tier;
+                speed = configuration.Speed;
+                itemYield = configuration.Yield;
+                luck = configuration.Luck;
+                configuredName = configuration.Name;
+                return true;
+            }
 
             if (TryParseSeed(configurationHash, out int seed) == false)
             {
