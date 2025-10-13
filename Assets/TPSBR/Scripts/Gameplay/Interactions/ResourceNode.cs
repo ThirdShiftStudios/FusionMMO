@@ -25,10 +25,14 @@ namespace TPSBR
         [Networked, HideInInspector] private bool IsDepleted { get; set; }
         [Networked, HideInInspector] private TickTimer RespawnTimer { get; set; }
 
+        [Networked, HideInInspector] private float InteractionProgressState { get; set; }
+
         private Agent _activeAgent;
         private float _interactionProgress;
 
-        public float InteractionProgressNormalized => _requiredInteractionTime > 0f ? Mathf.Clamp01(_interactionProgress / _requiredInteractionTime) : 0f;
+        private float CurrentInteractionProgress => HasStateAuthority == true ? _interactionProgress : InteractionProgressState;
+
+        public float InteractionProgressNormalized => _requiredInteractionTime > 0f ? Mathf.Clamp01(CurrentInteractionProgress / _requiredInteractionTime) : 0f;
 
         public bool IsInteracting(Agent agent)
         {
@@ -92,6 +96,10 @@ namespace TPSBR
 
             _activeAgent = agent;
             _interactionProgress = 0f;
+            if (HasStateAuthority == true)
+            {
+                InteractionProgressState = _interactionProgress;
+            }
 
             RefreshInteractionState();
             OnInteractionStarted(agent);
@@ -106,6 +114,10 @@ namespace TPSBR
 
             _activeAgent = null;
             _interactionProgress = 0f;
+            if (HasStateAuthority == true)
+            {
+                InteractionProgressState = _interactionProgress;
+            }
 
             RefreshInteractionState();
             OnInteractionCancelled(agent);
@@ -125,6 +137,10 @@ namespace TPSBR
 
             float adjustedDelta = CalculateProgressDelta(deltaTime, agent);
             _interactionProgress += adjustedDelta;
+            if (HasStateAuthority == true)
+            {
+                InteractionProgressState = _interactionProgress;
+            }
 
             if (_interactionProgress < _requiredInteractionTime)
                 return false;
@@ -140,6 +156,7 @@ namespace TPSBR
 
             IsDepleted = false;
             RespawnTimer = default;
+            InteractionProgressState = 0f;
             RefreshInteractionState();
         }
 
@@ -185,6 +202,10 @@ namespace TPSBR
         {
             _activeAgent = null;
             _interactionProgress = 0f;
+            if (HasStateAuthority == true)
+            {
+                InteractionProgressState = _interactionProgress;
+            }
 
             if (HasStateAuthority == true)
             {
