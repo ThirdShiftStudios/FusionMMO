@@ -29,8 +29,6 @@ namespace TPSBR
 
         private Agent _activeAgent;
         private float _interactionProgress;
-        private Agent _resolvedActiveAgent;
-        private NetworkBehaviourId _resolvedActiveAgentId;
 
         public float InteractionProgressNormalized
         {
@@ -43,14 +41,31 @@ namespace TPSBR
 
         public bool IsInteracting(Agent agent)
         {
-            Agent activeAgent = GetActiveAgent();
-            return activeAgent != null && activeAgent == agent;
+            if (agent == null)
+                return false;
+
+            if (agent.Object == null)
+                return false;
+
+            if (HasStateAuthority == true)
+            {
+                return _activeAgent != null && _activeAgent == agent;
+            }
+
+            NetworkBehaviourId activeAgentId = ActiveAgentId;
+
+            if (activeAgentId.IsValid == true)
+            {
+                return activeAgentId == (NetworkBehaviourId)agent;
+            }
+
+            return _activeAgent != null && _activeAgent == agent;
         }
 
         string IInteraction.Name => string.IsNullOrWhiteSpace(_interactionName) ? GetDefaultInteractionName() : _interactionName;
         string IInteraction.Description => string.IsNullOrWhiteSpace(_interactionDescription) ? GetDefaultInteractionDescription() : _interactionDescription;
         Vector3 IInteraction.HUDPosition => _hudPivot != null ? _hudPivot.position : transform.position;
-        bool IInteraction.IsActive => IsDepleted == false && GetActiveAgent() == null;
+        bool IInteraction.IsActive => IsDepleted == false && HasActiveAgent() == false;
 
         protected virtual void Reset()
         {
@@ -196,7 +211,7 @@ namespace TPSBR
         {
             if (_interactionCollider != null)
             {
-                _interactionCollider.enabled = IsDepleted == false && GetActiveAgent() == null;
+                _interactionCollider.enabled = IsDepleted == false && HasActiveAgent() == false;
             }
         }
 
@@ -235,54 +250,30 @@ namespace TPSBR
             {
                 ActiveAgentId = _activeAgent != null ? (NetworkBehaviourId)_activeAgent : default;
             }
-            else
-            {
-                ClearResolvedActiveAgent();
-            }
         }
 
-        private Agent GetActiveAgent()
+        private bool HasActiveAgent()
         {
             if (HasStateAuthority == true)
             {
-                return _activeAgent;
+                return _activeAgent != null;
             }
 
             NetworkBehaviourId activeAgentId = ActiveAgentId;
+            if (activeAgentId.IsValid == true)
+                return true;
 
-            if (activeAgentId.IsValid == false)
-            {
-                ClearResolvedActiveAgent();
-                return null;
-            }
-
-            if (_resolvedActiveAgent != null && _resolvedActiveAgent.Object != null && _resolvedActiveAgentId == activeAgentId)
-            {
-                return _resolvedActiveAgent;
-            }
-
-            if (Runner != null && Runner.TryFindBehaviour(activeAgentId, out Agent resolvedAgent) == true &&
-                resolvedAgent != null && resolvedAgent.Object != null)
-            {
-                _resolvedActiveAgent = resolvedAgent;
-                _resolvedActiveAgentId = activeAgentId;
-                return _resolvedActiveAgent;
-            }
-
-            ClearResolvedActiveAgent();
-            return null;
+            return _activeAgent != null;
         }
 
         private void OnActiveAgentIdChanged()
         {
-            ClearResolvedActiveAgent();
-            RefreshInteractionState();
-        }
+            if (HasStateAuthority == false && ActiveAgentId.IsValid == false)
+            {
+                _activeAgent = null;
+            }
 
-        private void ClearResolvedActiveAgent()
-        {
-            _resolvedActiveAgent = null;
-            _resolvedActiveAgentId = default;
+            RefreshInteractionState();
         }
     }
 }
