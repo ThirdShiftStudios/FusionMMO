@@ -167,6 +167,26 @@ namespace TPSBR
         // PUBLIC METHODS
 
         public int InventorySize => _items.Length;
+        public int HotbarSize => _hotbar.Length;
+
+        public Weapon GetHotbarWeapon(int index)
+        {
+            if (index < 0 || index >= _hotbar.Length)
+            {
+                return null;
+            }
+
+            if (_localWeapons != null && index < _localWeapons.Length)
+            {
+                Weapon localWeapon = _localWeapons[index];
+                if (localWeapon != null)
+                {
+                    return localWeapon;
+                }
+            }
+
+            return _hotbar[index];
+        }
 
         internal PlayerInventorySaveData CreateSaveData()
         {

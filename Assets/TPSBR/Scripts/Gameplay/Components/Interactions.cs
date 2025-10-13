@@ -112,6 +112,11 @@
                     RPC_InteractionFailed(result);
                 }
             }
+            else if (InteractionTarget is ArcaneConduit arcaneConduit)
+            {
+                Agent agent = _character != null ? _character.Agent : null;
+                arcaneConduit.Interact(agent);
+            }
             else if (InteractionTarget is OreNode oreNode)
             {
                 TryMineOreNode(oreNode);
