@@ -43,6 +43,11 @@
 
         // PUBLIC METHODS
 
+        public void SetInventory(Inventory inventory)
+        {
+            _inventory = inventory;
+        }
+
         public void TryInteract(bool interact, bool hold)
         {
             if (_animationController != null && _animationController.HasActiveInteraction == true)

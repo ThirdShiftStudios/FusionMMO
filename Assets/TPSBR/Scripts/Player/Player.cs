@@ -53,21 +53,44 @@ namespace TPSBR
 
 		private byte      _syncToken;
 		private Agent     _activeAgent;
-		private PlayerRef _observePlayer;
-		private Vector3   _lastViewPosition;
-		private Vector3   _lastViewDirection;
-		private Agent     _platformAgent;
-		private bool      _playerDataSent;
-		private int       _initCounter;
+                private PlayerRef _observePlayer;
+                private Vector3   _lastViewPosition;
+                private Vector3   _lastViewDirection;
+                private Agent     _platformAgent;
+                private bool      _playerDataSent;
+                private int       _initCounter;
+                private Inventory _inventory;
 
-		// PUBLIC METHODS
+                // PUBLIC METHODS
 
-		public void SetActiveAgent(Agent agent)
-		{
-			ActiveAgent = agent;
+                public void SetActiveAgent(Agent agent)
+                {
+                        if (_inventory == null)
+                        {
+                                _inventory = GetComponent<Inventory>();
+                        }
 
-			UpdateLocalState();
-		}
+                        if (_activeAgent != null && _activeAgent != agent)
+                        {
+                                _activeAgent.SetInventory(null);
+                        }
+
+                        ActiveAgent = agent;
+                        _activeAgent = agent;
+
+                        if (_inventory != null)
+                        {
+                                var setup = agent != null ? agent.InventorySetup : null;
+                                _inventory.BindAgent(agent, setup);
+                        }
+
+                        if (agent != null)
+                        {
+                                agent.SetInventory(_inventory);
+                        }
+
+                        UpdateLocalState();
+                }
 
 		public void DespawnAgent()
 		{
@@ -120,28 +143,36 @@ namespace TPSBR
 
 		// PlayerInterestManager INTERFACE
 
-		protected override void OnSpawned()
-		{
-			_syncToken      = default;
-			_activeAgent    = ActiveAgent;
-			_observePlayer  = Object.InputAuthority;
-			_playerDataSent = false;
-			_initCounter    = 10;
+                protected override void OnSpawned()
+                {
+                        _syncToken      = default;
+                        _activeAgent    = ActiveAgent;
+                        _observePlayer  = Object.InputAuthority;
+                        _playerDataSent = false;
+                        _initCounter    = 10;
+                        _inventory      = GetComponent<Inventory>();
 
-			if (HasInputAuthority == true)
-			{
-				Context.LocalPlayerRef = Object.InputAuthority;
-			}
+                        if (ActiveAgent != null && _inventory != null)
+                        {
+                                _inventory.BindAgent(ActiveAgent, ActiveAgent.InventorySetup);
+                                ActiveAgent.SetInventory(_inventory);
+                        }
+
+                        if (HasInputAuthority == true)
+                        {
+                                Context.LocalPlayerRef = Object.InputAuthority;
+                        }
 
 			UpdateLocalState();
 
 			Runner.SetIsSimulated(Object, true);
 		}
 
-		protected override void OnDespawned(NetworkRunner runner, bool hasState)
-		{
-			DespawnAgent();
-		}
+                protected override void OnDespawned(NetworkRunner runner, bool hasState)
+                {
+                        DespawnAgent();
+                        _inventory?.OnDespawned();
+                }
 
 		protected override void OnFixedUpdateNetwork()
 		{

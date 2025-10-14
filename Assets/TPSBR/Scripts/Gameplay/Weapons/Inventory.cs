@@ -108,9 +108,9 @@ namespace TPSBR
         public const int HOTBAR_VISIBLE_SLOTS = HOTBAR_CAPACITY - 1;
         // PRIVATE MEMBERS
 
-        [SerializeField] private WeaponSlot[] _slots;
-        [SerializeField] private WeaponSizeSlot[] _weaponSizeSlots;
-        [SerializeField] private Weapon[] _initialWeapons;
+        [SerializeField] private WeaponSlot[] _slots = System.Array.Empty<WeaponSlot>();
+        [SerializeField] private WeaponSizeSlot[] _weaponSizeSlots = System.Array.Empty<WeaponSizeSlot>();
+        [SerializeField] private Weapon[] _initialWeapons = System.Array.Empty<Weapon>();
         [SerializeField] private LayerMask _hitMask;
         [SerializeField] private InventoryItemPickupProvider _inventoryItemPickupPrefab;
         [SerializeField] private float _itemDropForwardOffset = 1.5f;
@@ -156,6 +156,10 @@ namespace TPSBR
         private byte _weaponSlotBeforeWoodAxe = byte.MaxValue;
         private Dictionary<int, WeaponDefinition> _weaponDefinitionsBySlot = new Dictionary<int, WeaponDefinition>();
         private readonly Dictionary<WeaponSize, int> _weaponSizeToSlotIndex = new Dictionary<WeaponSize, int>();
+
+        private Agent _agent;
+        private AgentInventorySetup _agentSetup;
+        private bool _initialWeaponsSpawned;
 
         private static readonly Dictionary<int, Weapon> _weaponPrefabsByDefinitionId = new Dictionary<int, Weapon>();
         private static PickaxeDefinition _cachedFallbackPickaxe;
@@ -730,6 +734,7 @@ namespace TPSBR
                 RefreshItems();
                 RefreshPickaxeVisuals();
                 RefreshWoodAxeVisuals();
+                _initialWeaponsSpawned = true;
                 return;
             }
 
@@ -739,48 +744,17 @@ namespace TPSBR
                 RefreshItems();
                 RefreshPickaxeVisuals();
                 RefreshWoodAxeVisuals();
+                _initialWeaponsSpawned = true;
                 return;
             }
 
-            _currentWeaponSlot = 0;
-            _previousWeaponSlot = 0;
-
-            byte bestWeaponSlot = 0;
-            int bestPriority = -1;
-
-            // Spawn initial weapons
-            for (byte i = 0; i < _initialWeapons.Length; i++)
-            {
-                var weaponPrefab = _initialWeapons[i];
-                if (weaponPrefab == null)
-                    continue;
-
-                EnsureWeaponPrefabRegistered(weaponPrefab.Definition, weaponPrefab);
-
-                var weapon = Runner.Spawn(weaponPrefab, inputAuthority: Object.InputAuthority);
-                AddWeapon(weapon);
-
-                int weaponSlot = ClampToValidSlot(GetSlotIndex(weapon.Size));
-                int priority = GetWeaponPriority(weapon.Size);
-                if (priority > bestPriority)
-                {
-                    bestPriority = priority;
-                    bestWeaponSlot = (byte)weaponSlot;
-                }
-            }
-
-
-            SetCurrentWeapon(bestWeaponSlot);
-            ArmCurrentWeapon();
-            RefreshWeapons();
-            RefreshItems();
-            EnsureToolAvailability();
-            RefreshPickaxeVisuals();
-            RefreshWoodAxeVisuals();
+            InitializeInventoryFromSetup();
         }
 
         public void OnDespawned()
         {
+            DetachFromAgent();
+
             Global.PlayerCloudSaveService?.UnregisterInventory(this);
 
             ResetHotbarStatBonuses();
@@ -838,6 +812,7 @@ namespace TPSBR
 
             ItemSlotChanged = null;
             HotbarSlotChanged = null;
+            _initialWeaponsSpawned = false;
         }
 
         public void OnFixedUpdate()
@@ -1009,37 +984,227 @@ namespace TPSBR
 
         // MONOBEHAVIOUR
 
+        public void BindAgent(Agent agent, AgentInventorySetup setup)
+        {
+            if (_agent == agent && ReferenceEquals(_agentSetup, setup) == true)
+            {
+                return;
+            }
+
+            if (_agent != null && _agent != agent)
+            {
+                DetachFromAgent();
+            }
+
+            _agent = agent;
+            _agentSetup = setup;
+
+            if (agent != null)
+            {
+                _health = agent.Health;
+                _character = agent.Character;
+                _interactions = agent.Interactions;
+                _stats = agent.GetComponent<Stats>();
+            }
+            else
+            {
+                _health = null;
+                _character = null;
+                _interactions = null;
+                _stats = null;
+            }
+
+            ApplyAgentSetup(setup);
+
+            if (setup != null)
+            {
+                bool initialized = InitializeInventoryFromSetup();
+
+                if (initialized == false)
+                {
+                    if (HasStateAuthority == true)
+                    {
+                        EnsureToolAvailability();
+                    }
+
+                    RefreshWeapons();
+                    RefreshItems();
+                    RefreshPickaxeVisuals();
+                    RefreshWoodAxeVisuals();
+                }
+            }
+        }
+
+        public void OnAgentDespawned(Agent agent)
+        {
+            if (_agent != agent)
+                return;
+
+            DetachFromAgent();
+        }
+
         private void Awake()
         {
-            _health = GetComponent<Health>();
-            _character = GetComponent<Character>();
-            _interactions = GetComponent<Interactions>();
-            _stats = GetComponent<Stats>();
-            _fireAudioEffects = _fireAudioEffectsRoot.GetComponentsInChildren<AudioEffect>();
+            _fireAudioEffects = System.Array.Empty<AudioEffect>();
             _localItems = new InventorySlot[INVENTORY_SIZE];
             _lastHotbarWeapons = new Weapon[_localWeapons.Length];
             _weaponDefinitionsBySlot.Clear();
             _weaponSizeToSlotIndex.Clear();
 
-            if (_weaponSizeSlots != null)
-            {
-                foreach (var sizeSlot in _weaponSizeSlots)
-                {
-                    if (sizeSlot.SlotIndex < 0)
-                    {
-                        continue;
-                    }
+            RebuildWeaponSizeLookup();
+            CacheSlotBaseRotations();
+            CacheFireAudioEffects();
+        }
 
-                    _weaponSizeToSlotIndex[sizeSlot.Size] = sizeSlot.SlotIndex;
-                }
+        private void DetachFromAgent()
+        {
+            _agent = null;
+            _agentSetup = null;
+            _health = null;
+            _character = null;
+            _interactions = null;
+            _stats = null;
+
+            ApplyAgentSetup(null);
+        }
+
+        private void ApplyAgentSetup(AgentInventorySetup setup)
+        {
+            if (setup == null)
+            {
+                _slots = System.Array.Empty<WeaponSlot>();
+                _weaponSizeSlots = System.Array.Empty<WeaponSizeSlot>();
+                _initialWeapons = System.Array.Empty<Weapon>();
+                _hitMask = default;
+                _inventoryItemPickupPrefab = null;
+                _itemDropForwardOffset = 1.5f;
+                _itemDropUpOffset = 0.35f;
+                _itemDropImpulse = 3f;
+                _pickaxeEquippedParent = null;
+                _pickaxeUnequippedParent = null;
+                _woodAxeEquippedParent = null;
+                _woodAxeUnequippedParent = null;
+                _fireAudioEffectsRoot = null;
+
+                CacheFireAudioEffects();
+                RebuildWeaponSizeLookup();
+                CacheSlotBaseRotations();
+                return;
             }
+
+            _slots = setup.Slots ?? System.Array.Empty<WeaponSlot>();
+            _weaponSizeSlots = setup.WeaponSizeSlots ?? System.Array.Empty<WeaponSizeSlot>();
+            _initialWeapons = setup.InitialWeapons ?? System.Array.Empty<Weapon>();
+            _hitMask = setup.HitMask;
+            _inventoryItemPickupPrefab = setup.InventoryItemPickupPrefab;
+            _itemDropForwardOffset = setup.ItemDropForwardOffset;
+            _itemDropUpOffset = setup.ItemDropUpOffset;
+            _itemDropImpulse = setup.ItemDropImpulse;
+            _pickaxeEquippedParent = setup.PickaxeEquippedParent;
+            _pickaxeUnequippedParent = setup.PickaxeUnequippedParent;
+            _woodAxeEquippedParent = setup.WoodAxeEquippedParent;
+            _woodAxeUnequippedParent = setup.WoodAxeUnequippedParent;
+            _fireAudioEffectsRoot = setup.FireAudioEffectsRoot;
+
+            CacheFireAudioEffects();
+            RebuildWeaponSizeLookup();
+            CacheSlotBaseRotations();
+        }
+
+        private bool InitializeInventoryFromSetup()
+        {
+            if (_initialWeaponsSpawned == true)
+                return false;
+
+            if (HasStateAuthority == false)
+                return false;
+
+            if (_initialWeapons == null || _initialWeapons.Length == 0)
+                return false;
+
+            _currentWeaponSlot = 0;
+            _previousWeaponSlot = 0;
+
+            byte bestWeaponSlot = 0;
+            int bestPriority = -1;
+            bool spawnedAnyWeapon = false;
+
+            for (byte i = 0; i < _initialWeapons.Length; i++)
+            {
+                var weaponPrefab = _initialWeapons[i];
+                if (weaponPrefab == null)
+                    continue;
+
+                EnsureWeaponPrefabRegistered(weaponPrefab.Definition, weaponPrefab);
+
+                var weapon = Runner.Spawn(weaponPrefab, inputAuthority: Object.InputAuthority);
+                AddWeapon(weapon);
+
+                int weaponSlot = ClampToValidSlot(GetSlotIndex(weapon.Size));
+                int priority = GetWeaponPriority(weapon.Size);
+                if (priority > bestPriority)
+                {
+                    bestPriority = priority;
+                    bestWeaponSlot = (byte)weaponSlot;
+                }
+
+                spawnedAnyWeapon = true;
+            }
+
+            if (spawnedAnyWeapon == true)
+            {
+                SetCurrentWeapon(bestWeaponSlot);
+                ArmCurrentWeapon();
+            }
+
+            _initialWeaponsSpawned = true;
+
+            EnsureToolAvailability();
+            RefreshWeapons();
+            RefreshItems();
+            RefreshPickaxeVisuals();
+            RefreshWoodAxeVisuals();
+            return true;
+        }
+
+        private void CacheFireAudioEffects()
+        {
+            _fireAudioEffects = _fireAudioEffectsRoot != null
+                ? _fireAudioEffectsRoot.GetComponentsInChildren<AudioEffect>()
+                : System.Array.Empty<AudioEffect>();
+        }
+
+        private void RebuildWeaponSizeLookup()
+        {
+            _weaponSizeToSlotIndex.Clear();
+
+            if (_weaponSizeSlots == null)
+                return;
+
+            foreach (var sizeSlot in _weaponSizeSlots)
+            {
+                if (sizeSlot.SlotIndex < 0)
+                {
+                    continue;
+                }
+
+                _weaponSizeToSlotIndex[sizeSlot.Size] = sizeSlot.SlotIndex;
+            }
+        }
+
+        private void CacheSlotBaseRotations()
+        {
+            if (_slots == null)
+                return;
 
             foreach (WeaponSlot slot in _slots)
             {
-                if (slot.Active != null)
+                if (slot == null || slot.Active == null)
                 {
-                    slot.BaseRotation = slot.Active.localRotation;
+                    continue;
                 }
+
+                slot.BaseRotation = slot.Active.localRotation;
             }
         }
 
@@ -1841,8 +2006,18 @@ namespace TPSBR
                 }
 
                 CurrentWeapon = nextWeapon;
-                CurrentWeaponHandle = _slots[_currentWeaponSlot].Active;
-                CurrentWeaponBaseRotation = _slots[_currentWeaponSlot].BaseRotation;
+
+                if (_currentWeaponSlot < _slots.Length && _slots[_currentWeaponSlot] != null)
+                {
+                    var currentSlot = _slots[_currentWeaponSlot];
+                    CurrentWeaponHandle = currentSlot.Active;
+                    CurrentWeaponBaseRotation = currentSlot.BaseRotation;
+                }
+                else
+                {
+                    CurrentWeaponHandle = null;
+                    CurrentWeaponBaseRotation = default;
+                }
 
                 if (CurrentWeapon != null)
                 {
@@ -1860,13 +2035,13 @@ namespace TPSBR
             }
         }
 
-    private void EnsureHotbarCacheInitialized()
-    {
-        if (_lastHotbarWeapons == null || _lastHotbarWeapons.Length != _hotbar.Length)
+        private void EnsureHotbarCacheInitialized()
         {
-            _lastHotbarWeapons = new Weapon[_hotbar.Length];
+            if (_lastHotbarWeapons == null || _lastHotbarWeapons.Length != _hotbar.Length)
+            {
+                _lastHotbarWeapons = new Weapon[_hotbar.Length];
+            }
         }
-    }
 
         private void NotifyHotbarSlotChanged(int slot)
         {
@@ -1890,13 +2065,13 @@ namespace TPSBR
             if (HasStateAuthority == false)
                 return;
 
-            if (_stats == null)
+            if (_stats == null && _agent != null)
             {
-                _stats = GetComponent<Stats>();
-
-                if (_stats == null)
-                    return;
+                _stats = _agent.GetComponent<Stats>();
             }
+
+            if (_stats == null)
+                return;
 
             EnsureHotbarStatCaches();
 
@@ -1959,9 +2134,9 @@ namespace TPSBR
             if (HasStateAuthority == false)
                 return;
 
-            if (_stats == null)
+            if (_stats == null && _agent != null)
             {
-                _stats = GetComponent<Stats>();
+                _stats = _agent.GetComponent<Stats>();
             }
 
             if (_stats == null || _appliedHotbarBonuses == null)

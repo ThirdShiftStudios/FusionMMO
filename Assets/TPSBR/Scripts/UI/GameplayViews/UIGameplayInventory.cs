@@ -222,11 +222,13 @@ namespace TPSBR.UI
             }
 
             var agent = Context.ObservedAgent;
-            if (_boundAgent == agent)
+            var inventory = agent != null ? agent.Inventory : null;
+
+            if (_boundAgent == agent && ReferenceEquals(_boundInventory, inventory) == true)
                 return;
 
             _boundAgent = agent;
-            _boundInventory = agent != null ? agent.Inventory : null;
+            _boundInventory = inventory;
             _inventoryGrid?.Bind(_boundInventory);
             _hotbar?.Bind(_boundInventory);
         }

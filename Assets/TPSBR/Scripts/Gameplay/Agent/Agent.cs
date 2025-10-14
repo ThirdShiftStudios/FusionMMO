@@ -20,6 +20,7 @@ namespace TPSBR
         public AgentSenses Senses => _senses;
         public AgentVFX Effects => _agentVFX;
         public AgentInterestView InterestView => _interestView;
+        public AgentInventorySetup InventorySetup => _inventorySetup;
 
         // PRIVATE MEMBERS
 
@@ -47,6 +48,7 @@ namespace TPSBR
         private SortedUpdateInvoker _sortedUpdateInvoker;
         private Quaternion _cachedLookRotation;
         private Quaternion _cachedPitchRotation;
+        private AgentInventorySetup _inventorySetup;
 
         // NetworkBehaviour INTERFACE
 
@@ -97,10 +99,8 @@ namespace TPSBR
 
         public override void Despawned(NetworkRunner runner, bool hasState)
         {
-            if (_inventory != null)
-            {
-                _inventory.OnDespawned();
-            }
+            _inventory?.OnAgentDespawned(this);
+            _inventory = null;
 
             if (_health != null)
             {
@@ -119,7 +119,7 @@ namespace TPSBR
 
             ProcessFixedInput();
 
-            _inventory.OnFixedUpdate();
+            _inventory?.OnFixedUpdate();
             _character.OnFixedUpdate();
 
             Profiler.EndSample();
@@ -216,11 +216,21 @@ namespace TPSBR
             _interactions = GetComponent<Interactions>();
             _footsteps = GetComponent<AgentFootsteps>();
             _character = GetComponent<Character>();
-            _inventory = GetComponent<Inventory>();
             _health = GetComponent<Health>();
             _agentVFX = GetComponent<AgentVFX>();
             _senses = GetComponent<AgentSenses>();
             _interestView = GetComponent<AgentInterestView>();
+            _inventorySetup = GetComponent<AgentInventorySetup>();
+        }
+
+        public void SetInventory(Inventory inventory)
+        {
+            _inventory = inventory;
+
+            if (_interactions != null)
+            {
+                _interactions.SetInventory(inventory);
+            }
         }
 
         // PRIVATE METHODS
@@ -235,6 +245,12 @@ namespace TPSBR
             if (_health.IsAlive == true)
             {
                 input = _agentInput.FixedInput;
+            }
+
+            if (_inventory == null)
+            {
+                _agentInput.SetFixedInput(input, false);
+                return;
             }
 
 
@@ -301,6 +317,9 @@ namespace TPSBR
 
         private void TryUseItem(bool attack, bool hold)
         {
+            if (_inventory == null)
+                return;
+
             Weapon currentWeapon = _inventory.CurrentWeapon;
 
             if (currentWeapon != null)
@@ -347,7 +366,7 @@ namespace TPSBR
             if (kccData.IsGrounded == false)
                 return false;
 
-            return _inventory.CanAim();
+            return _inventory != null && _inventory.CanAim();
         }
 
         private void SetLookRotation(KCCData kccData, Vector2 lookRotationDelta)

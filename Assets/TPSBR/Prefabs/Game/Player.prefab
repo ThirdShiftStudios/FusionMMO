@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 9017324200335540089}
   - component: {fileID: 9017324200335540095}
   - component: {fileID: 9017324200335540094}
+  - component: {fileID: 6392817451234567890}
   - component: {fileID: 7841667202884751935}
   m_Layer: 0
   m_Name: Player
@@ -52,6 +53,7 @@ MonoBehaviour:
   NestedObjects: []
   NetworkedBehaviours:
   - {fileID: 9017324200335540094}
+  - {fileID: 6392817451234567890}
   - {fileID: 7841667202884751935}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &9017324200335540094
@@ -70,6 +72,33 @@ MonoBehaviour:
   _ActiveAgent: {fileID: 0}
   _AgentPrefab:
     RawGuidValue: 00000000000000000000000000000000
+--- !u!114 &6392817451234567890
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9017324200335540092}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a2d1084287719da47a9eb54c1cb61234, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  _slots: []
+  _weaponSizeSlots: []
+  _initialWeapons: []
+  _hitMask:
+    serializedVersion: 2
+    m_Bits: 0
+  _inventoryItemPickupPrefab: {fileID: 0}
+  _itemDropForwardOffset: 1.5
+  _itemDropUpOffset: 0.35
+  _itemDropImpulse: 3
+  _pickaxeEquippedParent: {fileID: 0}
+  _pickaxeUnequippedParent: {fileID: 0}
+  _woodAxeEquippedParent: {fileID: 0}
+  _woodAxeUnequippedParent: {fileID: 0}
+  _fireAudioEffectsRoot: {fileID: 0}
 --- !u!114 &7841667202884751935
 MonoBehaviour:
   m_ObjectHideFlags: 0
