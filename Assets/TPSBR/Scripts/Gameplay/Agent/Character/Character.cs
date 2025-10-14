@@ -87,11 +87,7 @@ namespace TPSBR
 		private float                        _cameraChangeTime;
 		private float                        _cameraDistance;
 
-                private Vector3                      _defaultFireTransformPosition;
-
-                private bool                         _cameraOverrideActive;
-                private Vector3                      _cameraOverridePosition;
-                private Quaternion                   _cameraOverrideRotation;
+		private Vector3                      _defaultFireTransformPosition;
 
 		private ECameraState                 _previousCameraState;
 		private ECameraState                 _currentCameraState;
@@ -218,10 +214,10 @@ namespace TPSBR
 			_cameraTransformSampler.Sample(_characterController, cameraTransformData.Position, cameraTransformData.Rotation);
 		}
 
-                public void OnAgentRender()
-                {
-                        if (_agent.IsObserved == false)
-                                return;
+		public void OnAgentRender()
+		{
+			if (_agent.IsObserved == false)
+				return;
 
 			float aimFOV = _aimFOV;
 			if (_agent.Inventory.CurrentWeapon != null && _agent.Inventory.CurrentWeapon.AimFOV > 1.0f)
@@ -242,86 +238,67 @@ namespace TPSBR
 				}
 			}
 
-                        if (_cameraOverrideActive == false)
-                        {
-                                if (_previousCameraState != _currentCameraState)
-                                {
-                                        var previousCameraTransform = GetCameraTransform(_previousCameraState);
-                                        var currentCameraTransform = GetCameraTransform(_currentCameraState);
+			if (_previousCameraState != _currentCameraState)
+			{
+				var previousCameraTransform = GetCameraTransform(_previousCameraState);
+				var currentCameraTransform = GetCameraTransform(_currentCameraState);
 
-                                        float progress = _cameraChangeTime / _cameraChangeDuration;
+				float progress = _cameraChangeTime / _cameraChangeDuration;
 
-                                        float maxCameraDistance = currentCameraTransform.LocalPosition.magnitude;
-                                        _cameraDistance = Mathf.Clamp(_cameraDistance + maxCameraDistance * 8.0f * Time.deltaTime, 0.0f, maxCameraDistance);
+				float maxCameraDistance = currentCameraTransform.LocalPosition.magnitude;
+				_cameraDistance = Mathf.Clamp(_cameraDistance + maxCameraDistance * 8.0f * Time.deltaTime, 0.0f, maxCameraDistance);
 
-                                        Vector3 raycastDirection = Vector3.Normalize(currentCameraTransform.LocalPosition);
-                                        Vector3 raycastStart     = Vector3.Lerp(previousCameraTransform.Position, currentCameraTransform.Position, progress) - raycastDirection * maxCameraDistance;
-                                        if (_agent.Runner.GetPhysicsScene().Raycast(raycastStart, raycastDirection, out RaycastHit hitInfo, maxCameraDistance + 0.25f, -5, QueryTriggerInteraction.Ignore) == true)
-                                        {
-                                                Agent agent = hitInfo.transform.GetComponentInParent<Agent>();
-                                                if (agent == null || agent != _agent)
-                                                {
-                                                        hitInfo.distance = Mathf.Clamp(hitInfo.distance - 0.25f, 0.0f, maxCameraDistance);
+				Vector3 raycastDirection = Vector3.Normalize(currentCameraTransform.LocalPosition);
+				Vector3 raycastStart     = Vector3.Lerp(previousCameraTransform.Position, currentCameraTransform.Position, progress) - raycastDirection * maxCameraDistance;
+				if (_agent.Runner.GetPhysicsScene().Raycast(raycastStart, raycastDirection, out RaycastHit hitInfo, maxCameraDistance + 0.25f, -5, QueryTriggerInteraction.Ignore) == true)
+				{
+					Agent agent = hitInfo.transform.GetComponentInParent<Agent>();
+					if (agent == null || agent != _agent)
+					{
+						hitInfo.distance = Mathf.Clamp(hitInfo.distance - 0.25f, 0.0f, maxCameraDistance);
 
-                                                        if (hitInfo.distance < _cameraDistance)
-                                                        {
-                                                                _cameraDistance = hitInfo.distance;
-                                                        }
-                                                }
-                                        }
+						if (hitInfo.distance < _cameraDistance)
+						{
+							_cameraDistance = hitInfo.distance;
+						}
+					}
+				}
 
-                                        _camera.transform.position = raycastStart + raycastDirection * _cameraDistance;
-                                        _camera.transform.rotation = Quaternion.Slerp(previousCameraTransform.Rotation, currentCameraTransform.Rotation, progress);
-                                }
-                                else
-                                {
-                                        var cameraTransform = GetCameraTransform(_currentCameraState);
+				_camera.transform.position = raycastStart + raycastDirection * _cameraDistance;
+				_camera.transform.rotation = Quaternion.Slerp(previousCameraTransform.Rotation, currentCameraTransform.Rotation, progress);
+			}
+			else
+			{
+				var cameraTransform = GetCameraTransform(_currentCameraState);
 
-                                        float maxCameraDistance = cameraTransform.LocalPosition.magnitude;
-                                        _cameraDistance = Mathf.Clamp(_cameraDistance + maxCameraDistance * 8.0f * Time.deltaTime, 0.0f, maxCameraDistance);
+				float maxCameraDistance = cameraTransform.LocalPosition.magnitude;
+				_cameraDistance = Mathf.Clamp(_cameraDistance + maxCameraDistance * 8.0f * Time.deltaTime, 0.0f, maxCameraDistance);
 
-                                        Vector3 raycastDirection = Vector3.Normalize(cameraTransform.LocalPosition);
-                                        Vector3 raycastStart     = cameraTransform.Position - raycastDirection * maxCameraDistance;
-                                        if (_agent.Runner.GetPhysicsScene().Raycast(raycastStart, raycastDirection, out RaycastHit hitInfo, maxCameraDistance + 0.25f, -5, QueryTriggerInteraction.Ignore) == true)
-                                        {
-                                                Agent agent = hitInfo.transform.GetComponentInParent<Agent>();
-                                                if (agent == null || agent != _agent)
-                                                {
-                                                        hitInfo.distance = Mathf.Clamp(hitInfo.distance - 0.25f, 0.0f, maxCameraDistance);
+				Vector3 raycastDirection = Vector3.Normalize(cameraTransform.LocalPosition);
+				Vector3 raycastStart     = cameraTransform.Position - raycastDirection * maxCameraDistance;
+				if (_agent.Runner.GetPhysicsScene().Raycast(raycastStart, raycastDirection, out RaycastHit hitInfo, maxCameraDistance + 0.25f, -5, QueryTriggerInteraction.Ignore) == true)
+				{
+					Agent agent = hitInfo.transform.GetComponentInParent<Agent>();
+					if (agent == null || agent != _agent)
+					{
+						hitInfo.distance = Mathf.Clamp(hitInfo.distance - 0.25f, 0.0f, maxCameraDistance);
 
-                                                        if (hitInfo.distance < _cameraDistance)
-                                                        {
-                                                                _cameraDistance = hitInfo.distance;
-                                                        }
-                                                }
-                                        }
+						if (hitInfo.distance < _cameraDistance)
+						{
+							_cameraDistance = hitInfo.distance;
+						}
+					}
+				}
 
-                                        _camera.transform.position = raycastStart + raycastDirection * _cameraDistance;
-                                        _camera.transform.rotation = cameraTransform.Rotation;
-                                }
-                        }
-                        else
-                        {
-                                _camera.transform.SetPositionAndRotation(_cameraOverridePosition, _cameraOverrideRotation);
-                        }
+				_camera.transform.position = raycastStart + raycastDirection * _cameraDistance;
+				_camera.transform.rotation = cameraTransform.Rotation;
+			}
 
-                        if (_agent.HasInputAuthority == true)
-                        {
-                                _animationController.RefreshSnapping();
-                        }
-                }
-
-                public void SetCameraOverride(Vector3 position, Quaternion rotation)
-                {
-                        _cameraOverrideActive   = true;
-                        _cameraOverridePosition = position;
-                        _cameraOverrideRotation = rotation;
-                }
-
-                public void ClearCameraOverride()
-                {
-                        _cameraOverrideActive = false;
-                }
+			if (_agent.HasInputAuthority == true)
+			{
+				_animationController.RefreshSnapping();
+			}
+		}
 
 		// MonoBehaviour INTERFACE
 
