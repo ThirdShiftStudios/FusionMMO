@@ -18,6 +18,16 @@ namespace TPSBR
                 private Transform _hudPivot;
                 [SerializeField]
                 private Collider _interactionCollider;
+                [SerializeField]
+                private Transform _cameraViewTransform;
+                [SerializeField]
+                private Transform _weaponViewTransform;
+
+                private UIItemContextView _activeItemContextView;
+                private Weapon _weaponPreviewInstance;
+                private bool _cameraViewActive;
+                private Vector3 _originalCameraPosition;
+                private Quaternion _originalCameraRotation;
 
                 string  IInteraction.Name        => _interactionName;
                 string  IInteraction.Description => _interactionDescription;
@@ -76,6 +86,17 @@ namespace TPSBR
                         }
 
                         view.Configure(agent, destination => PopulateStaffItems(agent, destination));
+
+                        if (_activeItemContextView != null)
+                        {
+                                _activeItemContextView.StaffItemSelected -= HandleStaffItemSelected;
+                                _activeItemContextView.HasClosed         -= HandleItemContextViewClosed;
+                        }
+
+                        _activeItemContextView = view;
+                        _activeItemContextView.StaffItemSelected += HandleStaffItemSelected;
+                        _activeItemContextView.HasClosed         += HandleItemContextViewClosed;
+
                         Context.UI.Open(view);
                 }
 
@@ -204,5 +225,125 @@ namespace TPSBR
                         }
                 }
 #endif
+
+                private void OnDisable()
+                {
+                        if (_activeItemContextView != null)
+                        {
+                                _activeItemContextView.StaffItemSelected -= HandleStaffItemSelected;
+                                _activeItemContextView.HasClosed         -= HandleItemContextViewClosed;
+                                _activeItemContextView = null;
+                        }
+
+                        ClearWeaponPreview();
+                        RestoreCameraView();
+                }
+
+                private void HandleStaffItemSelected(StaffItemData data)
+                {
+                        if (data.Definition == null)
+                        {
+                                ClearWeaponPreview();
+                        }
+                        else
+                        {
+                                ShowWeaponPreview(data.Definition);
+                        }
+
+                        ApplyCameraView();
+                }
+
+                private void HandleItemContextViewClosed()
+                {
+                        if (_activeItemContextView != null)
+                        {
+                                _activeItemContextView.StaffItemSelected -= HandleStaffItemSelected;
+                                _activeItemContextView.HasClosed         -= HandleItemContextViewClosed;
+                                _activeItemContextView = null;
+                        }
+
+                        ClearWeaponPreview();
+                        RestoreCameraView();
+                }
+
+                private void ApplyCameraView()
+                {
+                        if (_cameraViewTransform == null || Context == null || Context.Camera == null || Context.Camera.Camera == null)
+                                return;
+
+                        Transform cameraTransform = Context.Camera.Camera.transform;
+
+                        if (_cameraViewActive == false)
+                        {
+                                _cameraViewActive = true;
+                                _originalCameraPosition = cameraTransform.position;
+                                _originalCameraRotation = cameraTransform.rotation;
+                        }
+
+                        cameraTransform.SetPositionAndRotation(_cameraViewTransform.position, _cameraViewTransform.rotation);
+                }
+
+                private void RestoreCameraView()
+                {
+                        if (_cameraViewActive == false)
+                                return;
+
+                        if (Context != null && Context.Camera != null && Context.Camera.Camera != null)
+                        {
+                                Transform cameraTransform = Context.Camera.Camera.transform;
+                                cameraTransform.SetPositionAndRotation(_originalCameraPosition, _originalCameraRotation);
+                        }
+
+                        _cameraViewActive = false;
+                }
+
+                private void ShowWeaponPreview(WeaponDefinition definition)
+                {
+                        if (_weaponViewTransform == null || definition == null || definition.WeaponPrefab == null)
+                        {
+                                ClearWeaponPreview();
+                                return;
+                        }
+
+                        ClearWeaponPreview();
+
+                        _weaponPreviewInstance = Instantiate(definition.WeaponPrefab, _weaponViewTransform);
+
+                        DisableNetworkingForPreview(_weaponPreviewInstance);
+
+                        Transform previewTransform = _weaponPreviewInstance.transform;
+                        previewTransform.localPosition = Vector3.zero;
+                        previewTransform.localRotation = Quaternion.identity;
+                        previewTransform.localScale = Vector3.one;
+                }
+
+                private void ClearWeaponPreview()
+                {
+                        if (_weaponPreviewInstance == null)
+                                return;
+
+                        Destroy(_weaponPreviewInstance.gameObject);
+                        _weaponPreviewInstance = null;
+                }
+
+                private void DisableNetworkingForPreview(Weapon previewWeapon)
+                {
+                        if (previewWeapon == null)
+                                return;
+
+                        NetworkBehaviour[] networkBehaviours = previewWeapon.GetComponentsInChildren<NetworkBehaviour>(true);
+                        for (int i = 0; i < networkBehaviours.Length; ++i)
+                        {
+                                NetworkBehaviour behaviour = networkBehaviours[i];
+                                behaviour.enabled = false;
+                        }
+
+                        NetworkObject[] networkObjects = previewWeapon.GetComponentsInChildren<NetworkObject>(true);
+                        for (int i = 0; i < networkObjects.Length; ++i)
+                        {
+                                NetworkObject networkObject = networkObjects[i];
+                                Destroy(networkObject);
+                        }
+                }
         }
 }
