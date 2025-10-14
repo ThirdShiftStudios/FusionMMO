@@ -87,6 +87,11 @@ namespace TPSBR
 
                         UIVendorView view = Context.UI.Get<UIVendorView>();
 
+                        if (view == null && Context.UI is GameplayUI gameplayUI)
+                        {
+                                view = gameplayUI.EnsureVendorView();
+                        }
+
                         if (view == null)
                         {
                                 Debug.LogWarning($"{nameof(UIVendorView)} is not available in the current UI setup.");
@@ -133,6 +138,7 @@ namespace TPSBR
                 private void HandleItemSelected(VendorItemData data)
                 {
                         _currentSelection = data;
+                        ApplyCameraView();
                 }
 
                 private void HandleVendorViewClosed()

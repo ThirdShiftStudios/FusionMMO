@@ -13,7 +13,7 @@ namespace TPSBR.UI
 		
 		private UIDeathView _deathView;
 		private UIGameplayInventory _inventoryView;
-		private const string _vendorViewResourcePath = "UI/GameplayViews/UIVendorView";
+                private const string _vendorViewResourcePath = "UI/GameplayViews/UIVendorView";
 		
 		private bool _gameOverShown;
 		private Coroutine _gameOverCoroutine;
@@ -45,7 +45,7 @@ namespace TPSBR.UI
 		{
 			base.OnInitializeInternal();
 
-			EnsureVendorView();
+                        _ = EnsureVendorView();
 
 			_deathView = Get<UIDeathView>();
 			_inventoryView = Get<UIGameplayInventory>();
@@ -136,30 +136,34 @@ namespace TPSBR.UI
 			_gameOverCoroutine = null;
 		}
 
-		private void EnsureVendorView()
-		{
-			if (Get<UIVendorView>() != null)
-				return;
+                public UIVendorView EnsureVendorView()
+                {
+                        UIVendorView existing = Get<UIVendorView>();
+                        if (existing != null)
+                                return existing;
 
-			if (Canvas == null)
-				return;
+                        if (Canvas == null)
+                                return null;
 
-			var vendorPrefab = Resources.Load<UIVendorView>(_vendorViewResourcePath);
+                        var vendorPrefab = Resources.Load<UIVendorView>(_vendorViewResourcePath);
 
-			if (vendorPrefab == null)
-			{
-				Debug.LogWarning($"Unable to locate {nameof(UIVendorView)} prefab at Resources/{_vendorViewResourcePath}.");
-				return;
-			}
+                        if (vendorPrefab == null)
+                        {
+                                Debug.LogWarning($"Unable to locate {nameof(UIVendorView)} prefab at Resources/{_vendorViewResourcePath}.");
+                                return null;
+                        }
 
-			var vendorView = Instantiate(vendorPrefab, Canvas.transform, false);
-			vendorView.gameObject.name = vendorPrefab.gameObject.name;
+                        var vendorView = Instantiate(vendorPrefab, Canvas.transform, false);
+                        vendorView.gameObject.name = vendorPrefab.gameObject.name;
 
-			if (RegisterView(vendorView) == false)
-			{
-				Destroy(vendorView.gameObject);
-			}
-		}
+                        if (RegisterView(vendorView) == false)
+                        {
+                                Destroy(vendorView.gameObject);
+                                return null;
+                        }
+
+                        return vendorView;
+                }
 
 	}
 }
