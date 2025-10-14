@@ -6,22 +6,21 @@ namespace TPSBR
 	using Fusion.Addons.AnimationController;
 
 	
-	public class JumpState : ClipState
-	{
-		// PRIVATE MEMBERS
+        public class JumpState : ClipState
+        {
+                // PRIVATE MEMBERS
 
-                private Agent   _agent;
+                private Agent     _agent;
                 private Inventory _inventory;
-		private KCC     _kcc;
-		private Agent   _agent;
-		
-		// AnimationState INTERFACE
+                private KCC       _kcc;
 
-		protected override void OnInitialize()
-		{
-			base.OnInitialize();
+                // AnimationState INTERFACE
 
-                        _agent = Controller.GetComponentNoAlloc<Agent>();
+                protected override void OnInitialize()
+                {
+                        base.OnInitialize();
+
+                        _agent     = Controller.GetComponentNoAlloc<Agent>();
                         _inventory = _agent != null ? _agent.Inventory : null;
                 }
         }
