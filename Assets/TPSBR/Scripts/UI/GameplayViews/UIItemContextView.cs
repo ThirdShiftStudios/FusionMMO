@@ -1,180 +1,268 @@
 using System;
-using System.Text;
+using System.Collections.Generic;
 using TMPro;
-using Unity.Template.CompetitiveActionMultiplayer;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 namespace TPSBR.UI
 {
-        public sealed class UIItemContextView : UICloseView
+        public sealed class UIItemContextView : UICloseView, IUIItemSlotOwner
         {
                 [SerializeField]
-                private TextMeshProUGUI _staffListLabel;
+                private TextMeshProUGUI _emptyStateLabel;
                 [SerializeField]
                 private string _noAgentText = "No agent available.";
                 [SerializeField]
                 private string _noInventoryText = "Inventory unavailable.";
                 [SerializeField]
                 private string _noStaffText = "No staffs available.";
-                [SerializeField] 
+                [SerializeField]
+                private RectTransform _slotContainer;
+                [SerializeField]
                 private UIItemSlot _itemSlotPrefab;
+                [SerializeField]
+                private Color _selectedSlotColor = Color.white;
 
-                private Agent _sourceAgent;
-                private readonly StringBuilder _builder = new StringBuilder(256);
-                private string _lastRenderedList;
+                private readonly List<UIItemSlot> _spawnedSlots = new List<UIItemSlot>();
+                private readonly List<ArcaneConduit.StaffItemData> _currentItems = new List<ArcaneConduit.StaffItemData>();
+                private readonly List<ArcaneConduit.StaffItemData> _lastItems = new List<ArcaneConduit.StaffItemData>();
+                private Func<List<ArcaneConduit.StaffItemData>, ArcaneConduit.StaffItemStatus> _staffItemProvider;
+                private ArcaneConduit.StaffItemStatus _lastStatus = ArcaneConduit.StaffItemStatus.NoAgent;
+                private int _selectedIndex = -1;
 
-                public void SetSourceAgent(Agent agent)
+                public event Action<ArcaneConduit.StaffItemData> StaffItemSelected;
+
+                public void Configure(Agent agent, Func<List<ArcaneConduit.StaffItemData>, ArcaneConduit.StaffItemStatus> staffItemProvider)
                 {
-                        _sourceAgent = agent;
-                        RefreshStaffList(true);
+                        _ = agent;
+                        _staffItemProvider = staffItemProvider;
+                        _selectedIndex = -1;
+                        RefreshStaffSlots(true);
                 }
 
                 protected override void OnOpen()
                 {
                         base.OnOpen();
 
-                        RefreshStaffList(true);
+                        RefreshStaffSlots(true);
                 }
 
                 protected override void OnClose()
                 {
                         base.OnClose();
 
-                        _lastRenderedList = null;
-
-                        if (_staffListLabel != null)
-                        {
-                                UIExtensions.SetTextSafe(_staffListLabel, string.Empty);
-                        }
+                        _staffItemProvider = null;
+                        _currentItems.Clear();
+                        _lastItems.Clear();
+                        _lastStatus = ArcaneConduit.StaffItemStatus.NoAgent;
+                        _selectedIndex = -1;
+                        ClearSlots();
+                        SetEmptyState(string.Empty);
                 }
 
                 protected override void OnTick()
                 {
                         base.OnTick();
 
-                        RefreshStaffList(false);
+                        RefreshStaffSlots(false);
                 }
 
-                private void RefreshStaffList(bool force)
+                private void RefreshStaffSlots(bool force)
                 {
-                        if (_staffListLabel == null)
+                        if (_itemSlotPrefab == null || _slotContainer == null)
                                 return;
 
-                        string listText = BuildStaffList();
+                        ArcaneConduit.StaffItemStatus status = ArcaneConduit.StaffItemStatus.NoAgent;
 
-                        if (force == false && string.Equals(_lastRenderedList, listText, StringComparison.Ordinal) == true)
+                        if (_staffItemProvider != null)
+                        {
+                                _currentItems.Clear();
+                                status = _staffItemProvider.Invoke(_currentItems);
+                        }
+
+                        if (force == false && status == _lastStatus && AreItemListsEqual(_currentItems, _lastItems) == true)
                                 return;
 
-                        _lastRenderedList = listText;
-                        UIExtensions.SetTextSafe(_staffListLabel, listText);
-                }
+                        _lastStatus = status;
 
-                private string BuildStaffList()
-                {
-                        if (_sourceAgent == null)
-                                return _noAgentText;
-
-                        Inventory inventory = _sourceAgent.Inventory;
-                        if (inventory == null)
-                                return _noInventoryText;
-
-                        _builder.Clear();
-
-                        bool hasAny = AppendInventoryStaffs(inventory);
-                        hasAny = AppendHotbarStaffs(inventory) || hasAny;
-
-                        if (hasAny == false)
-                                return _noStaffText;
-
-                        return _builder.ToString();
-                }
-
-                private bool AppendInventoryStaffs(Inventory inventory)
-                {
-                        bool hasAny = false;
-                        int inventorySize = inventory.InventorySize;
-
-                        for (int i = 0; i < inventorySize; ++i)
+                        if (status != ArcaneConduit.StaffItemStatus.Success || _currentItems.Count == 0)
                         {
-                                InventorySlot slot = inventory.GetItemSlot(i);
-                                if (slot.IsEmpty == true)
-                                        continue;
-
-                                if (slot.GetDefinition() is WeaponDefinition weaponDefinition && IsStaffDefinition(weaponDefinition) == true)
-                                {
-                                        AppendLine($"Inventory Slot {i + 1}: {GetWeaponDefinitionName(weaponDefinition)}");
-                                        hasAny = true;
-                                }
+                                ClearSlots();
+                                HandleEmptyState(status);
+                                return;
                         }
 
-                        return hasAny;
-                }
+                        EnsureSlotCapacity(_currentItems.Count);
 
-                private bool AppendHotbarStaffs(Inventory inventory)
-                {
-                        bool hasAny = false;
-                        int hotbarSize = inventory.HotbarSize;
-
-                        for (int i = 0; i < hotbarSize; ++i)
+                        for (int i = 0; i < _currentItems.Count; ++i)
                         {
-                                Weapon weapon = inventory.GetHotbarWeapon(i);
-                                if (weapon == null)
-                                        continue;
+                                UIItemSlot slot = _spawnedSlots[i];
+                                ArcaneConduit.StaffItemData data = _currentItems[i];
 
-                                if (weapon.Size != WeaponSize.Staff)
-                                        continue;
-
-                                AppendLine($"Hotbar Slot {i + 1}: {GetWeaponName(weapon)}");
-                                hasAny = true;
+                                slot.InitializeSlot(this, i);
+                                slot.SetItem(data.Icon, data.Quantity);
+                                slot.gameObject.SetActive(true);
                         }
 
-                        return hasAny;
-                }
-
-                private void AppendLine(string value)
-                {
-                        if (_builder.Length > 0)
+                        for (int i = _currentItems.Count; i < _spawnedSlots.Count; ++i)
                         {
-                                _builder.AppendLine();
+                                UIItemSlot slot = _spawnedSlots[i];
+                                slot.Clear();
+                                slot.gameObject.SetActive(false);
                         }
 
-                        _builder.Append(value);
+                        CopyItems(_currentItems, _lastItems);
+                        SetEmptyState(string.Empty);
+
+                        if (_selectedIndex >= _currentItems.Count)
+                        {
+                                _selectedIndex = -1;
+                        }
+
+                        UpdateSelectionVisuals();
                 }
 
-                private static string GetWeaponDefinitionName(WeaponDefinition definition)
+                private void EnsureSlotCapacity(int required)
                 {
-                        if (definition == null)
-                                return string.Empty;
-
-                        string name = definition.Name;
-                        if (string.IsNullOrWhiteSpace(name) == false)
-                                return name;
-
-                        return definition.name;
+                        while (_spawnedSlots.Count < required)
+                        {
+                                UIItemSlot newSlot = Instantiate(_itemSlotPrefab, _slotContainer);
+                                newSlot.InitializeSlot(this, _spawnedSlots.Count);
+                                newSlot.gameObject.SetActive(false);
+                                _spawnedSlots.Add(newSlot);
+                        }
                 }
 
-                private static string GetWeaponName(Weapon weapon)
+                private void ClearSlots()
                 {
-                        if (weapon == null)
-                                return string.Empty;
+                        for (int i = 0; i < _spawnedSlots.Count; ++i)
+                        {
+                                UIItemSlot slot = _spawnedSlots[i];
+                                if (slot == null)
+                                        continue;
 
-                        string name = weapon.DisplayName;
-                        if (string.IsNullOrWhiteSpace(name) == false)
-                                return name;
+                                slot.Clear();
+                                slot.gameObject.SetActive(false);
+                        }
 
-                        return weapon.name;
+                        _selectedIndex = -1;
+                        UpdateSelectionVisuals();
                 }
 
-                private static bool IsStaffDefinition(WeaponDefinition definition)
+                private void HandleEmptyState(ArcaneConduit.StaffItemStatus status)
                 {
-                        if (definition == null)
+                        switch (status)
+                        {
+                                case ArcaneConduit.StaffItemStatus.NoAgent:
+                                        SetEmptyState(_noAgentText);
+                                        break;
+                                case ArcaneConduit.StaffItemStatus.NoInventory:
+                                        SetEmptyState(_noInventoryText);
+                                        break;
+                                case ArcaneConduit.StaffItemStatus.NoStaff:
+                                default:
+                                        SetEmptyState(_noStaffText);
+                                        break;
+                        }
+                }
+
+                private void SetEmptyState(string message)
+                {
+                        if (_emptyStateLabel == null)
+                                return;
+
+                        UIExtensions.SetTextSafe(_emptyStateLabel, message);
+                        _emptyStateLabel.gameObject.SetActive(string.IsNullOrWhiteSpace(message) == false);
+                }
+
+                private static bool AreItemListsEqual(List<ArcaneConduit.StaffItemData> current, List<ArcaneConduit.StaffItemData> previous)
+                {
+                        if (current == null || previous == null)
                                 return false;
 
-                        Weapon prefab = definition.WeaponPrefab;
-                        if (prefab == null)
+                        if (current.Count != previous.Count)
                                 return false;
 
-                        return prefab.Size == WeaponSize.Staff;
+                        for (int i = 0; i < current.Count; ++i)
+                        {
+                                if (current[i].Equals(previous[i]) == false)
+                                        return false;
+                        }
+
+                        return true;
+                }
+
+                private static void CopyItems(List<ArcaneConduit.StaffItemData> source, List<ArcaneConduit.StaffItemData> destination)
+                {
+                        destination.Clear();
+
+                        if (source == null)
+                                return;
+
+                        destination.AddRange(source);
+                }
+
+                private void UpdateSelectionVisuals()
+                {
+                        for (int i = 0; i < _spawnedSlots.Count; ++i)
+                        {
+                                UIItemSlot slot = _spawnedSlots[i];
+                                if (slot == null || slot.gameObject.activeSelf == false)
+                                        continue;
+
+                                bool isSelected = i == _selectedIndex;
+                                slot.SetSelectionHighlight(isSelected, _selectedSlotColor);
+                        }
+                }
+
+                void IUIItemSlotOwner.BeginSlotDrag(UIItemSlot slot, PointerEventData eventData)
+                {
+                        // Drag & drop is not supported within the conduit view yet.
+                }
+
+                void IUIItemSlotOwner.UpdateSlotDrag(PointerEventData eventData)
+                {
+                        // Drag & drop is not supported within the conduit view yet.
+                }
+
+                void IUIItemSlotOwner.EndSlotDrag(UIItemSlot slot, PointerEventData eventData)
+                {
+                        // Drag & drop is not supported within the conduit view yet.
+                }
+
+                void IUIItemSlotOwner.HandleSlotDrop(UIItemSlot source, UIItemSlot target)
+                {
+                        // Drag & drop is not supported within the conduit view yet.
+                }
+
+                void IUIItemSlotOwner.HandleSlotDropOutside(UIItemSlot slot, PointerEventData eventData)
+                {
+                        // Drag & drop is not supported within the conduit view yet.
+                }
+
+                void IUIItemSlotOwner.HandleSlotSelected(UIItemSlot slot)
+                {
+                        if (slot == null)
+                        {
+                                return;
+                        }
+
+                        if (slot.Index < 0 || slot.Index >= _lastItems.Count)
+                        {
+                                _selectedIndex = -1;
+                                UpdateSelectionVisuals();
+                                return;
+                        }
+
+                        if (_selectedIndex == slot.Index)
+                        {
+                                StaffItemSelected?.Invoke(_lastItems[slot.Index]);
+                                return;
+                        }
+
+                        _selectedIndex = slot.Index;
+                        UpdateSelectionVisuals();
+                        StaffItemSelected?.Invoke(_lastItems[slot.Index]);
                 }
         }
 }
