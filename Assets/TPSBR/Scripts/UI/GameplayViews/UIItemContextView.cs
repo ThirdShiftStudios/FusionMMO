@@ -15,7 +15,7 @@ namespace TPSBR.UI
                 [SerializeField]
                 private string _noInventoryText = "Inventory unavailable.";
                 [SerializeField]
-                private string _noStaffText = "No staffs available.";
+                private string _noItemsText = "No items available.";
                 [SerializeField]
                 private RectTransform _slotContainer;
                 [SerializeField]
@@ -24,37 +24,37 @@ namespace TPSBR.UI
                 private Color _selectedSlotColor = Color.white;
 
                 private readonly List<UIItemSlot> _spawnedSlots = new List<UIItemSlot>();
-                private readonly List<ArcaneConduit.StaffItemData> _currentItems = new List<ArcaneConduit.StaffItemData>();
-                private readonly List<ArcaneConduit.StaffItemData> _lastItems = new List<ArcaneConduit.StaffItemData>();
-                private Func<List<ArcaneConduit.StaffItemData>, ArcaneConduit.StaffItemStatus> _staffItemProvider;
-                private ArcaneConduit.StaffItemStatus _lastStatus = ArcaneConduit.StaffItemStatus.NoAgent;
+                private readonly List<CraftingStation.ItemData> _currentItems = new List<CraftingStation.ItemData>();
+                private readonly List<CraftingStation.ItemData> _lastItems = new List<CraftingStation.ItemData>();
+                private Func<List<CraftingStation.ItemData>, CraftingStation.ItemStatus> _itemProvider;
+                private CraftingStation.ItemStatus _lastStatus = CraftingStation.ItemStatus.NoAgent;
                 private int _selectedIndex = -1;
 
-                public event Action<ArcaneConduit.StaffItemData> StaffItemSelected;
+                public event Action<CraftingStation.ItemData> ItemSelected;
 
-                public void Configure(Agent agent, Func<List<ArcaneConduit.StaffItemData>, ArcaneConduit.StaffItemStatus> staffItemProvider)
+                public void Configure(Agent agent, Func<List<CraftingStation.ItemData>, CraftingStation.ItemStatus> itemProvider)
                 {
                         _ = agent;
-                        _staffItemProvider = staffItemProvider;
+                        _itemProvider = itemProvider;
                         _selectedIndex = -1;
-                        RefreshStaffSlots(true);
+                        RefreshItemSlots(true);
                 }
 
                 protected override void OnOpen()
                 {
                         base.OnOpen();
 
-                        RefreshStaffSlots(true);
+                        RefreshItemSlots(true);
                 }
 
                 protected override void OnClose()
                 {
                         base.OnClose();
 
-                        _staffItemProvider = null;
+                        _itemProvider = null;
                         _currentItems.Clear();
                         _lastItems.Clear();
-                        _lastStatus = ArcaneConduit.StaffItemStatus.NoAgent;
+                        _lastStatus = CraftingStation.ItemStatus.NoAgent;
                         _selectedIndex = -1;
                         ClearSlots();
                         SetEmptyState(string.Empty);
@@ -64,20 +64,20 @@ namespace TPSBR.UI
                 {
                         base.OnTick();
 
-                        RefreshStaffSlots(false);
+                        RefreshItemSlots(false);
                 }
 
-                private void RefreshStaffSlots(bool force)
+                private void RefreshItemSlots(bool force)
                 {
                         if (_itemSlotPrefab == null || _slotContainer == null)
                                 return;
 
-                        ArcaneConduit.StaffItemStatus status = ArcaneConduit.StaffItemStatus.NoAgent;
+                        CraftingStation.ItemStatus status = CraftingStation.ItemStatus.NoAgent;
 
-                        if (_staffItemProvider != null)
+                        if (_itemProvider != null)
                         {
                                 _currentItems.Clear();
-                                status = _staffItemProvider.Invoke(_currentItems);
+                                status = _itemProvider.Invoke(_currentItems);
                         }
 
                         if (force == false && status == _lastStatus && AreItemListsEqual(_currentItems, _lastItems) == true)
@@ -85,7 +85,7 @@ namespace TPSBR.UI
 
                         _lastStatus = status;
 
-                        if (status != ArcaneConduit.StaffItemStatus.Success || _currentItems.Count == 0)
+                        if (status != CraftingStation.ItemStatus.Success || _currentItems.Count == 0)
                         {
                                 ClearSlots();
                                 HandleEmptyState(status);
@@ -97,7 +97,7 @@ namespace TPSBR.UI
                         for (int i = 0; i < _currentItems.Count; ++i)
                         {
                                 UIItemSlot slot = _spawnedSlots[i];
-                                ArcaneConduit.StaffItemData data = _currentItems[i];
+                                CraftingStation.ItemData data = _currentItems[i];
 
                                 slot.InitializeSlot(this, i);
                                 slot.SetItem(data.Icon, data.Quantity);
@@ -149,19 +149,19 @@ namespace TPSBR.UI
                         UpdateSelectionVisuals();
                 }
 
-                private void HandleEmptyState(ArcaneConduit.StaffItemStatus status)
+                private void HandleEmptyState(CraftingStation.ItemStatus status)
                 {
                         switch (status)
                         {
-                                case ArcaneConduit.StaffItemStatus.NoAgent:
+                                case CraftingStation.ItemStatus.NoAgent:
                                         SetEmptyState(_noAgentText);
                                         break;
-                                case ArcaneConduit.StaffItemStatus.NoInventory:
+                                case CraftingStation.ItemStatus.NoInventory:
                                         SetEmptyState(_noInventoryText);
                                         break;
-                                case ArcaneConduit.StaffItemStatus.NoStaff:
+                                case CraftingStation.ItemStatus.NoItems:
                                 default:
-                                        SetEmptyState(_noStaffText);
+                                        SetEmptyState(_noItemsText);
                                         break;
                         }
                 }
@@ -175,7 +175,7 @@ namespace TPSBR.UI
                         _emptyStateLabel.gameObject.SetActive(string.IsNullOrWhiteSpace(message) == false);
                 }
 
-                private static bool AreItemListsEqual(List<ArcaneConduit.StaffItemData> current, List<ArcaneConduit.StaffItemData> previous)
+                private static bool AreItemListsEqual(List<CraftingStation.ItemData> current, List<CraftingStation.ItemData> previous)
                 {
                         if (current == null || previous == null)
                                 return false;
@@ -192,7 +192,7 @@ namespace TPSBR.UI
                         return true;
                 }
 
-                private static void CopyItems(List<ArcaneConduit.StaffItemData> source, List<ArcaneConduit.StaffItemData> destination)
+                private static void CopyItems(List<CraftingStation.ItemData> source, List<CraftingStation.ItemData> destination)
                 {
                         destination.Clear();
 
@@ -256,13 +256,13 @@ namespace TPSBR.UI
 
                         if (_selectedIndex == slot.Index)
                         {
-                                StaffItemSelected?.Invoke(_lastItems[slot.Index]);
+                                ItemSelected?.Invoke(_lastItems[slot.Index]);
                                 return;
                         }
 
                         _selectedIndex = slot.Index;
                         UpdateSelectionVisuals();
-                        StaffItemSelected?.Invoke(_lastItems[slot.Index]);
+                        ItemSelected?.Invoke(_lastItems[slot.Index]);
                 }
         }
 }
