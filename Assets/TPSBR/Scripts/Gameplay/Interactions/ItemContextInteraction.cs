@@ -47,10 +47,16 @@ namespace TPSBR
                         if (agent == null)
                                 return;
 
-                        if (HasStateAuthority == false)
+                        if (HasStateAuthority == true)
+                        {
+                                RPC_RequestOpen(agent.Object.InputAuthority, agent.Object.Id);
                                 return;
+                        }
 
-                        RPC_RequestOpen(agent.Object.InputAuthority, agent.Object.Id);
+                        if ((Object != null && Object.HasInputAuthority == true) || Runner == null)
+                        {
+                                OpenItemContextView(agent);
+                        }
                 }
 
                 [Rpc(RpcSources.StateAuthority, RpcTargets.All, Channel = RpcChannel.Reliable)]

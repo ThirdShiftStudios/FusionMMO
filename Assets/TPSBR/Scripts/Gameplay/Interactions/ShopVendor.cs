@@ -6,7 +6,7 @@ using TSS.Data;
 
 namespace TPSBR
 {
-        public abstract class ShopVendor : ItemContextInteraction
+        public class ShopVendor : ItemContextInteraction
         {
                 [Header("Vendor Stock")]
                 [SerializeField, Min(1)]
