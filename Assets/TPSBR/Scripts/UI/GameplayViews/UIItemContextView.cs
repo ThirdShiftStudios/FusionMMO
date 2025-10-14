@@ -24,15 +24,15 @@ namespace TPSBR.UI
                 private Color _selectedSlotColor = Color.white;
 
                 private readonly List<UIItemSlot> _spawnedSlots = new List<UIItemSlot>();
-                private readonly List<CraftingStation.ItemData> _currentItems = new List<CraftingStation.ItemData>();
-                private readonly List<CraftingStation.ItemData> _lastItems = new List<CraftingStation.ItemData>();
-                private Func<List<CraftingStation.ItemData>, CraftingStation.ItemStatus> _itemProvider;
-                private CraftingStation.ItemStatus _lastStatus = CraftingStation.ItemStatus.NoAgent;
+                private readonly List<ItemData> _currentItems = new List<ItemData>();
+                private readonly List<ItemData> _lastItems = new List<ItemData>();
+                private Func<List<ItemData>, ItemStatus> _itemProvider;
+                private ItemStatus _lastStatus = ItemStatus.NoAgent;
                 private int _selectedIndex = -1;
 
-                public event Action<CraftingStation.ItemData> ItemSelected;
+                public event Action<ItemData> ItemSelected;
 
-                public void Configure(Agent agent, Func<List<CraftingStation.ItemData>, CraftingStation.ItemStatus> itemProvider)
+                public void Configure(Agent agent, Func<List<ItemData>, ItemStatus> itemProvider)
                 {
                         _ = agent;
                         _itemProvider = itemProvider;
@@ -54,7 +54,7 @@ namespace TPSBR.UI
                         _itemProvider = null;
                         _currentItems.Clear();
                         _lastItems.Clear();
-                        _lastStatus = CraftingStation.ItemStatus.NoAgent;
+                        _lastStatus = ItemStatus.NoAgent;
                         _selectedIndex = -1;
                         ClearSlots();
                         SetEmptyState(string.Empty);
@@ -72,7 +72,7 @@ namespace TPSBR.UI
                         if (_itemSlotPrefab == null || _slotContainer == null)
                                 return;
 
-                        CraftingStation.ItemStatus status = CraftingStation.ItemStatus.NoAgent;
+                        ItemStatus status = ItemStatus.NoAgent;
 
                         if (_itemProvider != null)
                         {
@@ -85,7 +85,7 @@ namespace TPSBR.UI
 
                         _lastStatus = status;
 
-                        if (status != CraftingStation.ItemStatus.Success || _currentItems.Count == 0)
+                        if (status != ItemStatus.Success || _currentItems.Count == 0)
                         {
                                 ClearSlots();
                                 HandleEmptyState(status);
@@ -97,7 +97,7 @@ namespace TPSBR.UI
                         for (int i = 0; i < _currentItems.Count; ++i)
                         {
                                 UIItemSlot slot = _spawnedSlots[i];
-                                CraftingStation.ItemData data = _currentItems[i];
+                                ItemData data = _currentItems[i];
 
                                 slot.InitializeSlot(this, i);
                                 slot.SetItem(data.Icon, data.Quantity);
@@ -149,17 +149,17 @@ namespace TPSBR.UI
                         UpdateSelectionVisuals();
                 }
 
-                private void HandleEmptyState(CraftingStation.ItemStatus status)
+                private void HandleEmptyState(ItemStatus status)
                 {
                         switch (status)
                         {
-                                case CraftingStation.ItemStatus.NoAgent:
+                                case ItemStatus.NoAgent:
                                         SetEmptyState(_noAgentText);
                                         break;
-                                case CraftingStation.ItemStatus.NoInventory:
+                                case ItemStatus.NoInventory:
                                         SetEmptyState(_noInventoryText);
                                         break;
-                                case CraftingStation.ItemStatus.NoItems:
+                                case ItemStatus.NoItems:
                                 default:
                                         SetEmptyState(_noItemsText);
                                         break;
@@ -175,7 +175,7 @@ namespace TPSBR.UI
                         _emptyStateLabel.gameObject.SetActive(string.IsNullOrWhiteSpace(message) == false);
                 }
 
-                private static bool AreItemListsEqual(List<CraftingStation.ItemData> current, List<CraftingStation.ItemData> previous)
+                private static bool AreItemListsEqual(List<ItemData> current, List<ItemData> previous)
                 {
                         if (current == null || previous == null)
                                 return false;
@@ -192,7 +192,7 @@ namespace TPSBR.UI
                         return true;
                 }
 
-                private static void CopyItems(List<CraftingStation.ItemData> source, List<CraftingStation.ItemData> destination)
+                private static void CopyItems(List<ItemData> source, List<ItemData> destination)
                 {
                         destination.Clear();
 

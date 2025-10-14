@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using Unity.Template.CompetitiveActionMultiplayer;
 using UnityEngine;
@@ -7,7 +6,7 @@ using TSS.Data;
 
 namespace TPSBR
 {
-        public sealed class ShopVendor : CraftingStation
+        public abstract class ShopVendor : ItemContextInteraction
         {
                 [Header("Vendor Stock")]
                 [SerializeField, Min(1)]
@@ -19,6 +18,8 @@ namespace TPSBR
 
                 private readonly List<VendorOffer> _currentStock = new List<VendorOffer>();
                 private bool _stockGenerated;
+
+                protected IReadOnlyList<VendorOffer> CurrentStock => _currentStock;
 
                 protected override ItemStatus PopulateItems(Agent agent, List<ItemData> destination)
                 {
@@ -41,37 +42,49 @@ namespace TPSBR
                         return ItemStatus.Success;
                 }
 
-                protected override void OnItemContextViewClosed()
+                protected override void OnItemSelected(ItemData data)
                 {
-                        base.OnItemContextViewClosed();
+                        base.OnItemSelected(data);
 
-                        if (_refreshStockOnClose == true)
-                        {
-                                _currentStock.Clear();
-                                _stockGenerated = false;
-                        }
+                        if (data.SourceType != ItemSourceType.Vendor)
+                                return;
+
+                        if (TryGetOffer(data.SourceIndex, out VendorOffer offer) == false)
+                                return;
+
+                        OnOfferSelected(CurrentAgent, offer);
                 }
 
-                private void EnsureStock()
+                protected override void OnItemContextViewClosed()
+                {
+                        if (_refreshStockOnClose == true)
+                        {
+                                InvalidateStock();
+                        }
+
+                        base.OnItemContextViewClosed();
+                }
+
+                protected virtual void OnOfferSelected(Agent agent, VendorOffer offer)
+                {
+                        _ = agent;
+                        _ = offer;
+                }
+
+                protected virtual void EnsureStock()
                 {
                         if (_stockGenerated == true)
                                 return;
 
-                        _currentStock.Clear();
+                        InvalidateStock();
 
                         DataDefinition[] definitions = FilterDefinitions;
                         if (definitions == null || definitions.Length == 0)
-                        {
-                                _stockGenerated = true;
                                 return;
-                        }
 
                         int offersPerDefinition = Mathf.Max(0, _itemsPerDefinition);
                         if (offersPerDefinition <= 0)
-                        {
-                                _stockGenerated = true;
                                 return;
-                        }
 
                         for (int i = 0; i < definitions.Length; ++i)
                         {
@@ -91,7 +104,7 @@ namespace TPSBR
                         _stockGenerated = true;
                 }
 
-                private int GetRandomQuantity(ItemDefinition definition)
+                protected virtual int GetRandomQuantity(ItemDefinition definition)
                 {
                         _ = definition;
 
@@ -100,7 +113,7 @@ namespace TPSBR
                         return Random.Range(min, max + 1);
                 }
 
-                private static string GenerateConfiguration(ItemDefinition definition)
+                protected virtual string GenerateConfiguration(ItemDefinition definition)
                 {
                         if (definition is WeaponDefinition weaponDefinition && weaponDefinition.WeaponPrefab != null)
                         {
@@ -124,7 +137,25 @@ namespace TPSBR
                         return null;
                 }
 
-                private readonly struct VendorOffer
+                protected bool TryGetOffer(int index, out VendorOffer offer)
+                {
+                        if (index < 0 || index >= _currentStock.Count)
+                        {
+                                offer = default;
+                                return false;
+                        }
+
+                        offer = _currentStock[index];
+                        return true;
+                }
+
+                protected void InvalidateStock()
+                {
+                        _currentStock.Clear();
+                        _stockGenerated = false;
+                }
+
+                protected readonly struct VendorOffer
                 {
                         public VendorOffer(ItemDefinition definition, Sprite icon, int quantity, string configurationHash)
                         {

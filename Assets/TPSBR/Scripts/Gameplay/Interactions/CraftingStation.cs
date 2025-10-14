@@ -1,32 +1,16 @@
 using System;
 using System.Collections.Generic;
 using Fusion;
-using TPSBR.UI;
 using TSS.Data;
 using Unity.Template.CompetitiveActionMultiplayer;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace TPSBR
 {
-        public abstract class CraftingStation : ContextBehaviour, IInteraction
+        public abstract class CraftingStation : ItemContextInteraction
         {
-                [Header("Interaction")]
-                [SerializeField]
-                private string _interactionName = "Arcane Conduit";
-                [SerializeField, TextArea]
-                private string _interactionDescription = "Channel mystical energies to enhance your weapons.";
-                [SerializeField]
-                private Transform _hudPivot;
-                [SerializeField]
-                private Collider _interactionCollider;
-                [FormerlySerializedAs("_cameraViewTransform")]
-                [SerializeField]
-                private Transform _cameraTransform;
                 [SerializeField]
                 private Transform _weaponViewTransform;
-                [Header("Filtering")]
-                public DataDefinition[] FilterDefinitions; // items must match any of these to be shown
 
                 [Networked]
                 private int SelectedItemDefinitionId { get; set; }
@@ -35,89 +19,33 @@ namespace TPSBR
                 [Networked]
                 private int SelectedItemSourceIndex { get; set; }
 
-                private UIItemContextView _activeItemContextView;
                 private Weapon _weaponPreviewInstance;
-                private bool _cameraViewActive;
-                private Vector3 _originalCameraPosition;
-                private Quaternion _originalCameraRotation;
-                private float _cameraViewDistance;
                 private int _currentPreviewDefinitionId;
                 private ItemSourceType _currentSelectedSourceType = ItemSourceType.None;
                 private int _currentSelectedSourceIndex = -1;
                 private ChangeDetector _changeDetector;
 
-                string  IInteraction.Name        => _interactionName;
-                string  IInteraction.Description => _interactionDescription;
-                Vector3 IInteraction.HUDPosition => _hudPivot != null ? _hudPivot.position : transform.position;
-                bool    IInteraction.IsActive    => isActiveAndEnabled == true && (_interactionCollider == null || (_interactionCollider.enabled == true && _interactionCollider.gameObject.activeInHierarchy == true));
-
-                public void Interact(Agent agent)
+                public override void Spawned()
                 {
-                        if (agent == null)
-                                return;
+                        base.Spawned();
+
+                        _changeDetector = GetChangeDetector(ChangeDetector.Source.SimulationState);
+                        UpdateSelectedItemSlotCache();
+                        UpdateWeaponPreviewFromDefinitionId(SelectedItemDefinitionId);
+                }
+
+                protected override void OnDisable()
+                {
+                        base.OnDisable();
 
                         if (HasStateAuthority == false)
-                                return;
-
-                        RPC_RequestOpen(agent.Object.InputAuthority, agent.Object.Id);
+                        {
+                                _currentSelectedSourceType = ItemSourceType.None;
+                                _currentSelectedSourceIndex = -1;
+                        }
                 }
 
-                [Rpc(RpcSources.StateAuthority, RpcTargets.All, Channel = RpcChannel.Reliable)]
-                private void RPC_RequestOpen(PlayerRef playerRef, NetworkId agentId)
-                {
-                        if (Runner == null)
-                                return;
-
-                        if (Runner.LocalPlayer != playerRef)
-                                return;
-
-                        Agent agent = null;
-
-                        if (Runner.TryFindObject(agentId, out NetworkObject agentObject) == true)
-                        {
-                                agent = agentObject.GetComponent<Agent>();
-                        }
-
-                        if (agent == null && Context != null)
-                        {
-                                agent = Context.ObservedAgent;
-                        }
-
-                        if (agent == null)
-                                return;
-
-                        OpenItemContextView(agent);
-                }
-
-                private void OpenItemContextView(Agent agent)
-                {
-                        if (Context == null || Context.UI == null)
-                                return;
-
-                        UIItemContextView view = Context.UI.Get<UIItemContextView>();
-
-                        if (view == null)
-                        {
-                                Debug.LogWarning($"{nameof(UIItemContextView)} is not available in the current UI setup.");
-                                return;
-                        }
-
-                        view.Configure(agent, destination => PopulateItems(agent, destination));
-
-                        if (_activeItemContextView != null)
-                        {
-                                _activeItemContextView.ItemSelected -= HandleItemSelected;
-                                _activeItemContextView.HasClosed    -= HandleItemContextViewClosed;
-                        }
-
-                        _activeItemContextView = view;
-                        _activeItemContextView.ItemSelected += HandleItemSelected;
-                        _activeItemContextView.HasClosed    += HandleItemContextViewClosed;
-
-                        Context.UI.Open(view);
-                }
-
-                protected virtual ItemStatus PopulateItems(Agent agent, List<ItemData> destination)
+                protected override ItemStatus PopulateItems(Agent agent, List<ItemData> destination)
                 {
                         if (destination == null)
                                 return ItemStatus.NoItems;
@@ -178,233 +106,18 @@ namespace TPSBR
                         return ItemStatus.Success;
                 }
 
-                public enum ItemStatus
-                {
-                        NoAgent,
-                        NoInventory,
-                        NoItems,
-                        Success
-                }
-
-                public enum ItemSourceType
-                {
-                        None,
-                        Inventory,
-                        Hotbar,
-                        Vendor
-                }
-
-                public readonly struct ItemData : IEquatable<ItemData>
-                {
-                        public ItemData(Sprite icon, int quantity, ItemSourceType sourceType, int sourceIndex, ItemDefinition definition, Weapon weapon, string configurationHash)
-                        {
-                                Icon = icon;
-                                Quantity = quantity;
-                                SourceType = sourceType;
-                                SourceIndex = sourceIndex;
-                                Definition = definition;
-                                Weapon = weapon;
-                                ConfigurationHash = configurationHash;
-                        }
-
-                        public Sprite Icon { get; }
-                        public int Quantity { get; }
-                        public ItemSourceType SourceType { get; }
-                        public int SourceIndex { get; }
-                        public ItemDefinition Definition { get; }
-                        public Weapon Weapon { get; }
-                        public string ConfigurationHash { get; }
-
-                        public bool Equals(ItemData other)
-                        {
-                                return Icon == other.Icon && Quantity == other.Quantity && SourceType == other.SourceType && SourceIndex == other.SourceIndex && Definition == other.Definition && Weapon == other.Weapon && ConfigurationHash == other.ConfigurationHash;
-                        }
-
-                        public override bool Equals(object obj)
-                        {
-                                return obj is ItemData other && Equals(other);
-                        }
-
-                        public override int GetHashCode()
-                        {
-                                unchecked
-                                {
-                                        int hashCode = Icon != null ? Icon.GetHashCode() : 0;
-                                        hashCode = (hashCode * 397) ^ Quantity;
-                                        hashCode = (hashCode * 397) ^ (int)SourceType;
-                                        hashCode = (hashCode * 397) ^ SourceIndex;
-                                        hashCode = (hashCode * 397) ^ (Definition != null ? Definition.GetHashCode() : 0);
-                                        hashCode = (hashCode * 397) ^ (Weapon != null ? Weapon.GetHashCode() : 0);
-                                        hashCode = (hashCode * 397) ^ (ConfigurationHash != null ? ConfigurationHash.GetHashCode() : 0);
-                                        return hashCode;
-                                }
-                        }
-                }
-
-#if UNITY_EDITOR
-                private void OnValidate()
-                {
-                        if (_interactionCollider == null)
-                        {
-                                _interactionCollider = GetComponent<Collider>();
-                        }
-                }
-#endif
-
-                public override void Spawned()
-                {
-                        base.Spawned();
-
-                        _changeDetector = GetChangeDetector(ChangeDetector.Source.SimulationState);
-                        UpdateSelectedItemSlotCache();
-                        UpdateWeaponPreviewFromDefinitionId(SelectedItemDefinitionId);
-                }
-
-                private void OnDisable()
-                {
-                        if (_activeItemContextView != null)
-                        {
-                                _activeItemContextView.ItemSelected -= HandleItemSelected;
-                                _activeItemContextView.HasClosed    -= HandleItemContextViewClosed;
-                                _activeItemContextView = null;
-                        }
-
-                        OnItemContextViewClosed();
-
-                        if (HasStateAuthority == false)
-                        {
-                                _currentSelectedSourceType = ItemSourceType.None;
-                                _currentSelectedSourceIndex = -1;
-                        }
-                }
-
-                private void UpdateLocalItemPreview(ItemDefinition definition)
-                {
-                        if (definition == null)
-                        {
-                                if (_currentPreviewDefinitionId != 0)
-                                {
-                                        ClearWeaponPreview();
-                                }
-
-                                return;
-                        }
-
-                        if (_currentPreviewDefinitionId == definition.ID)
-                                return;
-
-                        if (definition is WeaponDefinition weaponDefinition)
-                        {
-                                ShowWeaponPreview(weaponDefinition);
-                        }
-                        else
-                        {
-                                ClearWeaponPreview();
-                        }
-                }
-
-                private void HandleItemSelected(ItemData data)
-                {
-                        OnItemSelected(data);
-                }
-
-                private void HandleItemContextViewClosed()
-                {
-                        if (_activeItemContextView != null)
-                        {
-                                _activeItemContextView.ItemSelected -= HandleItemSelected;
-                                _activeItemContextView.HasClosed    -= HandleItemContextViewClosed;
-                                _activeItemContextView = null;
-                        }
-
-                        OnItemContextViewClosed();
-                }
-
-                protected virtual void OnItemSelected(ItemData data)
+                protected override void OnItemSelected(ItemData data)
                 {
                         UpdateLocalItemPreview(data.Definition);
                         RequestSetSelectedItem(data.Definition != null ? data.Definition.ID : 0, data.SourceType, data.SourceIndex);
-                        ApplyCameraView();
+                        base.OnItemSelected(data);
                 }
 
-                protected virtual void OnItemContextViewClosed()
+                protected override void OnItemContextViewClosed()
                 {
                         UpdateLocalItemPreview(null);
                         RequestSetSelectedItem(0, ItemSourceType.None, -1);
-                        RestoreCameraView();
-                }
-
-                private void ApplyCameraView()
-                {
-                        if (_cameraTransform == null || Context == null || Context.HasInput == false || Context.Camera == null || Context.Camera.Camera == null)
-                                return;
-
-                        Transform cameraTransform = Context.Camera.Camera.transform;
-
-                        if (_cameraViewActive == false)
-                        {
-                                _cameraViewActive = true;
-                                _originalCameraPosition = cameraTransform.position;
-                                _originalCameraRotation = cameraTransform.rotation;
-
-                                if (TryGetCameraViewData(out _, out _, out float maxDistance, out _) == true)
-                                {
-                                        _cameraViewDistance = maxDistance;
-                                }
-                                else
-                                {
-                                        _cameraViewDistance = 0f;
-                                }
-                        }
-
-                        UpdateCameraView();
-                }
-
-                private void RestoreCameraView()
-                {
-                        if (_cameraViewActive == false)
-                                return;
-
-                        if (Context != null && Context.Camera != null && Context.Camera.Camera != null)
-                        {
-                                Transform cameraTransform = Context.Camera.Camera.transform;
-                                cameraTransform.SetPositionAndRotation(_originalCameraPosition, _originalCameraRotation);
-                        }
-
-                        _cameraViewActive = false;
-                        _cameraViewDistance = 0f;
-                }
-
-                private void ShowWeaponPreview(WeaponDefinition definition)
-                {
-                        if (_weaponViewTransform == null || definition == null || definition.WeaponPrefab == null)
-                        {
-                                ClearWeaponPreview();
-                                return;
-                        }
-
-                        ClearWeaponPreview();
-
-                        _weaponPreviewInstance = Instantiate(definition.WeaponPrefab, _weaponViewTransform);
-
-                        DisableNetworkingForPreview(_weaponPreviewInstance);
-
-                        Transform previewTransform = _weaponPreviewInstance.transform;
-                        previewTransform.localPosition = Vector3.zero;
-                        previewTransform.localRotation = Quaternion.identity;
-                        previewTransform.localScale = Vector3.one;
-                        _currentPreviewDefinitionId = definition.ID;
-                }
-
-                private void ClearWeaponPreview()
-                {
-                        if (_weaponPreviewInstance != null)
-                        {
-                                Destroy(_weaponPreviewInstance.gameObject);
-                                _weaponPreviewInstance = null;
-                        }
-
-                        _currentPreviewDefinitionId = 0;
+                        base.OnItemContextViewClosed();
                 }
 
                 private void RequestSetSelectedItem(int definitionId, ItemSourceType sourceType, int sourceIndex)
@@ -440,6 +153,31 @@ namespace TPSBR
                         UpdateSelectedItemSlotCache();
                 }
 
+                private void UpdateLocalItemPreview(ItemDefinition definition)
+                {
+                        if (definition == null)
+                        {
+                                if (_currentPreviewDefinitionId != 0)
+                                {
+                                        ClearWeaponPreview();
+                                }
+
+                                return;
+                        }
+
+                        if (_currentPreviewDefinitionId == definition.ID)
+                                return;
+
+                        if (definition is WeaponDefinition weaponDefinition)
+                        {
+                                ShowWeaponPreview(weaponDefinition);
+                        }
+                        else
+                        {
+                                ClearWeaponPreview();
+                        }
+                }
+
                 private void UpdateWeaponPreviewFromDefinitionId(int definitionId)
                 {
                         if (definitionId <= 0)
@@ -466,6 +204,38 @@ namespace TPSBR
                         }
                 }
 
+                private void ShowWeaponPreview(WeaponDefinition definition)
+                {
+                        if (_weaponViewTransform == null || definition == null || definition.WeaponPrefab == null)
+                        {
+                                ClearWeaponPreview();
+                                return;
+                        }
+
+                        ClearWeaponPreview();
+
+                        _weaponPreviewInstance = UnityEngine.Object.Instantiate(definition.WeaponPrefab, _weaponViewTransform);
+
+                        DisableNetworkingForPreview(_weaponPreviewInstance);
+
+                        Transform previewTransform = _weaponPreviewInstance.transform;
+                        previewTransform.localPosition = Vector3.zero;
+                        previewTransform.localRotation = Quaternion.identity;
+                        previewTransform.localScale = Vector3.one;
+                        _currentPreviewDefinitionId = definition.ID;
+                }
+
+                private void ClearWeaponPreview()
+                {
+                        if (_weaponPreviewInstance != null)
+                        {
+                                UnityEngine.Object.Destroy(_weaponPreviewInstance.gameObject);
+                                _weaponPreviewInstance = null;
+                        }
+
+                        _currentPreviewDefinitionId = 0;
+                }
+
                 private void DisableNetworkingForPreview(Weapon previewWeapon)
                 {
                         if (previewWeapon == null)
@@ -482,7 +252,7 @@ namespace TPSBR
                         for (int i = 0; i < networkObjects.Length; ++i)
                         {
                                 NetworkObject networkObject = networkObjects[i];
-                                Destroy(networkObject);
+                                UnityEngine.Object.Destroy(networkObject);
                         }
                 }
 
@@ -506,121 +276,12 @@ namespace TPSBR
                                         }
                                 }
                         }
-
-                        if (_cameraViewActive == false)
-                                return;
-
-                        UpdateCameraView();
                 }
 
                 private void UpdateSelectedItemSlotCache()
                 {
                         _currentSelectedSourceType = SelectedItemSourceType;
                         _currentSelectedSourceIndex = SelectedItemSourceIndex;
-                }
-
-                private void UpdateCameraView()
-                {
-                        if (_cameraViewActive == false || Context == null || Context.HasInput == false)
-                                return;
-
-                        SceneCamera sceneCamera = Context.Camera;
-                        if (sceneCamera == null || sceneCamera.Camera == null)
-                                return;
-
-                        if (TryGetCameraViewData(out Vector3 raycastStart, out Vector3 raycastDirection, out float maxCameraDistance, out Quaternion targetRotation) == false)
-                                return;
-
-                        Transform cameraTransform = sceneCamera.Camera.transform;
-
-                        if (maxCameraDistance > 0.0001f)
-                        {
-                                _cameraViewDistance = Mathf.Clamp(_cameraViewDistance + maxCameraDistance * 8.0f * Time.deltaTime, 0.0f, maxCameraDistance);
-
-                                if (Runner != null)
-                                {
-                                        PhysicsScene physicsScene = Runner.GetPhysicsScene();
-                                        if (physicsScene.Raycast(raycastStart, raycastDirection, out RaycastHit hitInfo, maxCameraDistance + 0.25f, -5, QueryTriggerInteraction.Ignore) == true)
-                                        {
-                                                Agent observedAgent = Context != null ? Context.ObservedAgent : null;
-                                                Agent hitAgent = hitInfo.transform.GetComponentInParent<Agent>();
-
-                                                if (hitAgent == null || hitAgent != observedAgent)
-                                                {
-                                                        float adjustedDistance = Mathf.Clamp(hitInfo.distance - 0.25f, 0.0f, maxCameraDistance);
-                                                        if (adjustedDistance < _cameraViewDistance)
-                                                        {
-                                                                _cameraViewDistance = adjustedDistance;
-                                                        }
-                                                }
-                                        }
-                                }
-
-                                cameraTransform.position = raycastStart + raycastDirection * _cameraViewDistance;
-                        }
-                        else
-                        {
-                                _cameraViewDistance = 0f;
-                                cameraTransform.position = raycastStart;
-                        }
-
-                        cameraTransform.rotation = targetRotation;
-                }
-
-                private bool TryGetCameraViewData(out Vector3 raycastStart, out Vector3 raycastDirection, out float maxCameraDistance, out Quaternion targetRotation)
-                {
-                        raycastStart = default;
-                        raycastDirection = default;
-                        maxCameraDistance = 0f;
-                        targetRotation = Quaternion.identity;
-
-                        if (_cameraTransform == null)
-                                return false;
-
-                        Transform referenceTransform = _cameraTransform.parent != null ? _cameraTransform.parent : transform;
-                        Vector3 targetPosition = _cameraTransform.position;
-                        Vector3 referencePosition = referenceTransform != null ? referenceTransform.position : Vector3.zero;
-                        Vector3 offset = targetPosition - referencePosition;
-
-                        targetRotation = _cameraTransform.rotation;
-
-                        if (offset.sqrMagnitude > 0.0001f)
-                        {
-                                maxCameraDistance = offset.magnitude;
-                                raycastDirection = offset / maxCameraDistance;
-                                raycastStart = targetPosition - raycastDirection * maxCameraDistance;
-                        }
-                        else
-                        {
-                                raycastDirection = _cameraTransform.forward.sqrMagnitude > 0.0001f ? _cameraTransform.forward.normalized : Vector3.forward;
-                                raycastStart = targetPosition;
-                                maxCameraDistance = 0f;
-                        }
-
-                        return true;
-                }
-
-                protected bool MatchesFilter(DataDefinition definition)
-                {
-                        if (FilterDefinitions == null || FilterDefinitions.Length == 0)
-                                return true;
-
-                        if (definition == null)
-                                return false;
-
-                        int definitionId = definition.ID;
-
-                        for (int i = 0; i < FilterDefinitions.Length; ++i)
-                        {
-                                DataDefinition filter = FilterDefinitions[i];
-                                if (filter == null)
-                                        continue;
-
-                                if (filter.ID == definitionId)
-                                        return true;
-                        }
-
-                        return false;
                 }
         }
 }
