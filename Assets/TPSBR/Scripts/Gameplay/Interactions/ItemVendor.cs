@@ -5,6 +5,7 @@ using TPSBR.UI;
 using TSS.Data;
 using Unity.Template.CompetitiveActionMultiplayer;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace TPSBR
 {
@@ -22,8 +23,9 @@ namespace TPSBR
                 [SerializeField]
                 private Transform _cameraTransform;
 
-                [Header("Inventory")] 
-                public DataDefinition[] ItemDefinitions;
+                [Header("Filtering")]
+                [FormerlySerializedAs("ItemDefinitions")]
+                public DataDefinition[] FilterDefinitions;
                 [SerializeField]
                 private int _itemsPerDefinition = 3;
 
@@ -35,6 +37,10 @@ namespace TPSBR
                 private Vector3 _originalCameraPosition;
                 private Quaternion _originalCameraRotation;
                 private float _cameraViewDistance;
+
+                private static WeaponDefinition[] _cachedWeaponDefinitions;
+                private static PickaxeDefinition[] _cachedPickaxeDefinitions;
+                private static WoodAxeDefinition[] _cachedWoodAxeDefinitions;
 
                 string  IInteraction.Name        => _interactionName;
                 string  IInteraction.Description => _interactionDescription;
@@ -116,7 +122,7 @@ namespace TPSBR
 
                         destination.Clear();
 
-                        if (ItemDefinitions == null || ItemDefinitions.Length == 0)
+                        if (FilterDefinitions == null || FilterDefinitions.Length == 0)
                                 return VendorItemStatus.NoDefinitions;
 
                         EnsureGeneratedItems();
@@ -136,25 +142,103 @@ namespace TPSBR
                         _generatedItems.Clear();
                         _itemsDirty = false;
 
-                        if (ItemDefinitions == null || ItemDefinitions.Length == 0)
+                        if (FilterDefinitions == null || FilterDefinitions.Length == 0)
                                 return;
 
                         int itemsPerDefinition = Mathf.Max(1, _itemsPerDefinition);
 
-                        for (int i = 0; i < ItemDefinitions.Length; ++i)
+                        for (int i = 0; i < FilterDefinitions.Length; ++i)
                         {
-                                DataDefinition filter = ItemDefinitions[i];
+                                DataDefinition filter = FilterDefinitions[i];
                                 if (filter == null)
                                         continue;
 
-                                if (filter is ItemDefinition itemDefinition)
-                                {
-                                        GenerateItemsForDefinition(itemDefinition, itemsPerDefinition);
-                                }
+                                GenerateItemsForFilter(filter, itemsPerDefinition);
                         }
                 }
 
-                private void GenerateItemsForDefinition(ItemDefinition definition, int count)
+                private void GenerateItemsForFilter(DataDefinition filter, int count)
+                {
+                        if (count <= 0)
+                                return;
+
+                        if (filter is WeaponDefinition)
+                        {
+                                WeaponDefinition[] definitions = GetCachedDefinitions(ref _cachedWeaponDefinitions);
+                                if (AddRandomItems(definitions, count, filter.GetType()) == false)
+                                {
+                                        AddSpecificDefinition(filter as ItemDefinition, count);
+                                }
+                        }
+                        else if (filter is PickaxeDefinition)
+                        {
+                                PickaxeDefinition[] definitions = GetCachedDefinitions(ref _cachedPickaxeDefinitions);
+                                if (AddRandomItems(definitions, count, filter.GetType()) == false)
+                                {
+                                        AddSpecificDefinition(filter as ItemDefinition, count);
+                                }
+                        }
+                        else if (filter is WoodAxeDefinition)
+                        {
+                                WoodAxeDefinition[] definitions = GetCachedDefinitions(ref _cachedWoodAxeDefinitions);
+                                if (AddRandomItems(definitions, count, filter.GetType()) == false)
+                                {
+                                        AddSpecificDefinition(filter as ItemDefinition, count);
+                                }
+                        }
+                        else if (filter is ItemDefinition itemDefinition)
+                        {
+                                AddSpecificDefinition(itemDefinition, count);
+                        }
+                }
+
+                private bool AddRandomItems<TDefinition>(TDefinition[] definitions, int count, Type requiredType) where TDefinition : ItemDefinition
+                {
+                        if (definitions == null || definitions.Length == 0)
+                                return false;
+
+                        bool addedAny = false;
+
+                        for (int i = 0; i < count; ++i)
+                        {
+                                TDefinition definition = GetRandomDefinition(definitions, requiredType);
+                                if (definition == null)
+                                        continue;
+
+                                AddSpecificDefinition(definition, 1);
+                                addedAny = true;
+                        }
+
+                        return addedAny;
+                }
+
+                private static TDefinition GetRandomDefinition<TDefinition>(TDefinition[] definitions, Type requiredType) where TDefinition : ItemDefinition
+                {
+                        if (definitions == null || definitions.Length == 0)
+                                return null;
+
+                        if (requiredType == null || requiredType == typeof(TDefinition))
+                        {
+                                return definitions[UnityEngine.Random.Range(0, definitions.Length)];
+                        }
+
+                        int startIndex = UnityEngine.Random.Range(0, definitions.Length);
+
+                        for (int i = 0; i < definitions.Length; ++i)
+                        {
+                                int index = (startIndex + i) % definitions.Length;
+                                TDefinition candidate = definitions[index];
+
+                                if (candidate != null && candidate.GetType() == requiredType)
+                                {
+                                        return candidate;
+                                }
+                        }
+
+                        return null;
+                }
+
+                private void AddSpecificDefinition(ItemDefinition definition, int count)
                 {
                         if (definition == null)
                                 return;
@@ -166,6 +250,16 @@ namespace TPSBR
                                 string configurationHash = GenerateConfigurationHash(definition);
                                 _generatedItems.Add(new VendorItemData(icon, 1, definition, configurationHash));
                         }
+                }
+
+                private static TDefinition[] GetCachedDefinitions<TDefinition>(ref TDefinition[] cache) where TDefinition : ItemDefinition
+                {
+                        if (cache == null || cache.Length == 0)
+                        {
+                                cache = Resources.LoadAll<TDefinition>(string.Empty);
+                        }
+
+                        return cache;
                 }
 
                 private string GenerateConfigurationHash(ItemDefinition definition)
