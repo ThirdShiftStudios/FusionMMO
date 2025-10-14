@@ -24,8 +24,12 @@ namespace TPSBR
                 [SerializeField]
                 private Transform _weaponViewTransform;
 
-                [Networked(OnChanged = nameof(OnSelectedWeaponDefinitionChanged))]
+                [Networked]
                 private int SelectedWeaponDefinitionId { get; set; }
+                [Networked]
+                private StaffItemSourceType SelectedStaffItemSourceType { get; set; }
+                [Networked]
+                private int SelectedStaffItemSourceIndex { get; set; }
 
                 private UIItemContextView _activeItemContextView;
                 private Weapon _weaponPreviewInstance;
@@ -34,6 +38,9 @@ namespace TPSBR
                 private Quaternion _originalCameraRotation;
                 private float _cameraViewDistance;
                 private int _currentPreviewDefinitionId;
+                private StaffItemSourceType _currentSelectedSourceType = StaffItemSourceType.None;
+                private int _currentSelectedSourceIndex = -1;
+                private ChangeDetector _changeDetector;
 
                 string  IInteraction.Name        => _interactionName;
                 string  IInteraction.Description => _interactionDescription;
@@ -174,6 +181,7 @@ namespace TPSBR
 
                 public enum StaffItemSourceType
                 {
+                        None,
                         Inventory,
                         Hotbar
                 }
@@ -232,6 +240,15 @@ namespace TPSBR
                 }
 #endif
 
+                public override void Spawned()
+                {
+                        base.Spawned();
+
+                        _changeDetector = GetChangeDetector(ChangeDetector.Source.SimulationState);
+                        UpdateSelectedStaffItemSlotCache();
+                        UpdateWeaponPreviewFromDefinitionId(SelectedWeaponDefinitionId);
+                }
+
                 private void OnDisable()
                 {
                         if (_activeItemContextView != null)
@@ -244,7 +261,12 @@ namespace TPSBR
                         UpdateLocalWeaponPreview(null);
                         if (HasStateAuthority == true)
                         {
-                                RequestSetSelectedWeaponDefinition(0);
+                                RequestSetSelectedStaffItem(0, StaffItemSourceType.None, -1);
+                        }
+                        else
+                        {
+                                _currentSelectedSourceType = StaffItemSourceType.None;
+                                _currentSelectedSourceIndex = -1;
                         }
                         RestoreCameraView();
                 }
@@ -270,7 +292,7 @@ namespace TPSBR
                 private void HandleStaffItemSelected(StaffItemData data)
                 {
                         UpdateLocalWeaponPreview(data.Definition);
-                        RequestSetSelectedWeaponDefinition(data.Definition != null ? data.Definition.ID : 0);
+                        RequestSetSelectedStaffItem(data.Definition != null ? data.Definition.ID : 0, data.SourceType, data.SourceIndex);
                         ApplyCameraView();
                 }
 
@@ -284,7 +306,7 @@ namespace TPSBR
                         }
 
                         UpdateLocalWeaponPreview(null);
-                        RequestSetSelectedWeaponDefinition(0);
+                        RequestSetSelectedStaffItem(0, StaffItemSourceType.None, -1);
                         RestoreCameraView();
                 }
 
@@ -361,47 +383,37 @@ namespace TPSBR
                         _currentPreviewDefinitionId = 0;
                 }
 
-                private void RequestSetSelectedWeaponDefinition(int definitionId)
+                private void RequestSetSelectedStaffItem(int definitionId, StaffItemSourceType sourceType, int sourceIndex)
                 {
                         definitionId = Mathf.Max(0, definitionId);
+                        sourceIndex = Mathf.Max(-1, sourceIndex);
 
                         if (HasStateAuthority == true)
                         {
-                                SetSelectedWeaponDefinitionId(definitionId);
+                                SetSelectedStaffItem(definitionId, sourceType, sourceIndex);
                                 return;
                         }
 
-                        RPC_RequestSetSelectedWeaponDefinition(definitionId);
+                        RPC_RequestSetSelectedStaffItem(definitionId, sourceType, sourceIndex);
                 }
 
                 [Rpc(RpcSources.All, RpcTargets.StateAuthority, Channel = RpcChannel.Reliable)]
-                private void RPC_RequestSetSelectedWeaponDefinition(int definitionId)
+                private void RPC_RequestSetSelectedStaffItem(int definitionId, StaffItemSourceType sourceType, int sourceIndex)
                 {
-                        SetSelectedWeaponDefinitionId(definitionId);
+                        SetSelectedStaffItem(definitionId, sourceType, sourceIndex);
                 }
 
-                private void SetSelectedWeaponDefinitionId(int definitionId)
+                private void SetSelectedStaffItem(int definitionId, StaffItemSourceType sourceType, int sourceIndex)
                 {
                         definitionId = Mathf.Max(0, definitionId);
-
-                        if (SelectedWeaponDefinitionId == definitionId)
-                        {
-                                UpdateWeaponPreviewFromDefinitionId(definitionId);
-                                return;
-                        }
+                        sourceIndex = Mathf.Max(-1, sourceIndex);
 
                         SelectedWeaponDefinitionId = definitionId;
+                        SelectedStaffItemSourceType = sourceType;
+                        SelectedStaffItemSourceIndex = sourceIndex;
+
                         UpdateWeaponPreviewFromDefinitionId(definitionId);
-                }
-
-                private static void OnSelectedWeaponDefinitionChanged(Changed<ArcaneConduit> changed)
-                {
-                        changed.Behaviour.HandleSelectedWeaponDefinitionChanged();
-                }
-
-                private void HandleSelectedWeaponDefinitionChanged()
-                {
-                        UpdateWeaponPreviewFromDefinitionId(SelectedWeaponDefinitionId);
+                        UpdateSelectedStaffItemSlotCache();
                 }
 
                 private void UpdateWeaponPreviewFromDefinitionId(int definitionId)
@@ -454,10 +466,33 @@ namespace TPSBR
                 {
                         base.Render();
 
+                        if (_changeDetector != null)
+                        {
+                                foreach (var change in _changeDetector.DetectChanges(this))
+                                {
+                                        switch (change)
+                                        {
+                                                case nameof(SelectedWeaponDefinitionId):
+                                                        UpdateWeaponPreviewFromDefinitionId(SelectedWeaponDefinitionId);
+                                                        break;
+                                                case nameof(SelectedStaffItemSourceType):
+                                                case nameof(SelectedStaffItemSourceIndex):
+                                                        UpdateSelectedStaffItemSlotCache();
+                                                        break;
+                                        }
+                                }
+                        }
+
                         if (_cameraViewActive == false)
                                 return;
 
                         UpdateCameraView();
+                }
+
+                private void UpdateSelectedStaffItemSlotCache()
+                {
+                        _currentSelectedSourceType = SelectedStaffItemSourceType;
+                        _currentSelectedSourceIndex = SelectedStaffItemSourceIndex;
                 }
 
                 private void UpdateCameraView()
