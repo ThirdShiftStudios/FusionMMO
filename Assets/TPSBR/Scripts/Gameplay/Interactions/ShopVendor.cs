@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Unity.Template.CompetitiveActionMultiplayer;
 using UnityEngine;
+using Random = UnityEngine.Random;
 using TSS.Data;
 
 namespace TPSBR
