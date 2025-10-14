@@ -16,6 +16,8 @@ namespace TPSBR.UI
                 private string _noInventoryText = "Inventory unavailable.";
                 [SerializeField]
                 private string _noStaffText = "No staffs available.";
+                [SerializeField] 
+                private UIItemSlot _itemSlotPrefab;
 
                 private Agent _sourceAgent;
                 private readonly StringBuilder _builder = new StringBuilder(256);
