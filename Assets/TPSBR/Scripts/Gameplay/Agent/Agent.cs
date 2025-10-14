@@ -231,6 +231,11 @@ namespace TPSBR
             {
                 _interactions.SetInventory(inventory);
             }
+
+            if (_character != null && _character.AnimationController != null)
+            {
+                _character.AnimationController.SetInventory(inventory);
+            }
         }
 
         // PRIVATE METHODS

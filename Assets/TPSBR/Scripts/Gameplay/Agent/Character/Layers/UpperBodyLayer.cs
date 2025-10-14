@@ -9,18 +9,20 @@ namespace TPSBR
 
 		// PRIVATE MEMBERS
 
-		private Inventory      _inventory;
+                private Agent          _agent;
+                private Inventory      _inventory;
 
 		// AnimationLayer INTERFACE
 
 		protected override void OnInitialize()
 		{
-			_inventory = Controller.GetComponentNoAlloc<Inventory>();
-		}
+                        _agent = Controller.GetComponentNoAlloc<Agent>();
+                        _inventory = _agent != null ? _agent.Inventory : null;
+                }
 
-		protected override void OnFixedUpdate()
-		{
-			
-		}
-	}
+                protected override void OnFixedUpdate()
+                {
+
+                }
+        }
 }

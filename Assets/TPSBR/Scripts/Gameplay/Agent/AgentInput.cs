@@ -622,14 +622,16 @@ namespace TPSBR
 				return WeaponDeselectValue;
 			}
 
-			if (keyboard.qKey.wasPressedThisFrame == true)
-			{
-				int previousSlot = _agent.Inventory.PreviousWeaponSlot;
-				if (previousSlot > 0)
-				{
-					return (byte)previousSlot; // Fast switch
-				}
-			}
+                        Inventory inventory = _agent != null ? _agent.Inventory : null;
+
+                        if (keyboard.qKey.wasPressedThisFrame == true && inventory != null)
+                        {
+                                int previousSlot = inventory.PreviousWeaponSlot;
+                                if (previousSlot > 0)
+                                {
+                                        return (byte)previousSlot; // Fast switch
+                                }
+                        }
 
 			int weaponSlot = -1;
 

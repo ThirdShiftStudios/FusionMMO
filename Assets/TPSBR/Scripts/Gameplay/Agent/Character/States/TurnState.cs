@@ -79,9 +79,9 @@ namespace TPSBR
 		{
 			base.OnInitialize();
 
-			_kcc     = Controller.GetComponentNoAlloc<KCC>();
-			_agent   = Controller.GetComponentNoAlloc<Agent>();
-			_inventory = Controller.GetComponentNoAlloc<Inventory>();
+                        _kcc     = Controller.GetComponentNoAlloc<KCC>();
+                        _agent   = Controller.GetComponentNoAlloc<Agent>();
+                        _inventory = _agent != null ? _agent.Inventory : null;
 		}
 
 		protected override void OnDespawned()
@@ -175,7 +175,7 @@ namespace TPSBR
 
                 private int GetClipID()
                 {
-                        WeaponSize currentSize = _inventory.CurrentWeaponSize;
+                        WeaponSize currentSize = GetCurrentWeaponSize();
                         int stanceIndex = currentSize.ToStanceIndex();
 
                         int setCount = _nodes != null && _nodes.Length > 0 ? Mathf.Max(1, _nodes.Length / 3) : 1;
@@ -189,9 +189,35 @@ namespace TPSBR
 			InterpolatedAnimationTime = AnimationUtility.InterpolateTime(interpolationInfo.FromBuffer.ReinterpretState<float>(interpolationInfo.Offset), interpolationInfo.ToBuffer.ReinterpretState<float>(interpolationInfo.Offset), 1.0f, interpolationInfo.Alpha);
 		}
 
-		private void InterpolateRemainingTime(AnimationInterpolationInfo interpolationInfo)
-		{
-			InterpolatedRemainingTime = Mathf.LerpUnclamped(interpolationInfo.FromBuffer.ReinterpretState<float>(interpolationInfo.Offset), interpolationInfo.ToBuffer.ReinterpretState<float>(interpolationInfo.Offset), interpolationInfo.Alpha);
-		}
-	}
+                private void InterpolateRemainingTime(AnimationInterpolationInfo interpolationInfo)
+                {
+                        InterpolatedRemainingTime = Mathf.LerpUnclamped(interpolationInfo.FromBuffer.ReinterpretState<float>(interpolationInfo.Offset), interpolationInfo.ToBuffer.ReinterpretState<float>(interpolationInfo.Offset), interpolationInfo.Alpha);
+                }
+
+                private Inventory GetInventory()
+                {
+                        if (_agent != null)
+                        {
+                                Inventory agentInventory = _agent.Inventory;
+
+                                if (ReferenceEquals(_inventory, agentInventory) == false)
+                                {
+                                        _inventory = agentInventory;
+                                }
+                        }
+                        else
+                        {
+                                _inventory = null;
+                        }
+
+                        return _inventory;
+                }
+
+                private WeaponSize GetCurrentWeaponSize()
+                {
+                        var inventory = GetInventory();
+
+                        return inventory != null ? inventory.CurrentWeaponSize : WeaponSize.Unarmed;
+                }
+        }
 }

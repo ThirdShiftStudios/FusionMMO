@@ -284,7 +284,7 @@ namespace TPSBR
 
             _kcc = this.GetComponentNoAlloc<KCC>();
             _agent = this.GetComponentNoAlloc<Agent>();
-            _inventory = this.GetComponentNoAlloc<Inventory>();
+            _inventory = _agent != null ? _agent.Inventory : null;
 
             _locomotion = FindLayer<LocomotionLayer>();
             _fullBody = FindLayer<FullBodyLayer>();
@@ -294,6 +294,11 @@ namespace TPSBR
             _interactionsLayer = FindLayer<InteractionsAnimationLayer>();
 
             _kcc.MoveState = _locomotion.FindState<MoveState>();
+        }
+
+        public void SetInventory(Inventory inventory)
+        {
+            _inventory = inventory;
         }
 
         private void UpdateInteractionState()

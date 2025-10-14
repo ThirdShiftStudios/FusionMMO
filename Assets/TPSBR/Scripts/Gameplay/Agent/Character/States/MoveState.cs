@@ -74,11 +74,12 @@ namespace TPSBR
 
         public override int GetSetID()
         {
-	        if (_animationCategory == AnimationCategory.UseFirstSet)
-	        {
-		        return 0;
-	        }
-            WeaponSize currentSize = _inventory.CurrentWeaponSize;
+                if (_animationCategory == AnimationCategory.UseFirstSet)
+                {
+                        return 0;
+                }
+
+            WeaponSize currentSize = GetCurrentWeaponSize();
             int stanceIndex = currentSize.ToStanceIndex();
 
             return Mathf.Max(0, stanceIndex);
@@ -90,9 +91,9 @@ namespace TPSBR
 		{
 			base.OnInitialize();
 
-			_kcc     = Controller.GetComponentNoAlloc<KCC>();
-			_agent   = Controller.GetComponentNoAlloc<Agent>();
-			_inventory = Controller.GetComponentNoAlloc<Inventory>();
+                        _kcc     = Controller.GetComponentNoAlloc<KCC>();
+                        _agent   = Controller.GetComponentNoAlloc<Agent>();
+                        _inventory = _agent != null ? _agent.Inventory : null;
 		}
 
 		protected override void OnSpawned()
@@ -266,7 +267,7 @@ namespace TPSBR
 
         private float GetMultiplier()
         {
-                switch (_inventory.CurrentWeaponSize)
+                switch (GetCurrentWeaponSize())
                 {
                         case WeaponSize.Unarmed:   return 1.0f;
                         case WeaponSize.Throwable: return 0.95f;
@@ -278,7 +279,33 @@ namespace TPSBR
 
         public void SetAnimationCategory(AnimationCategory category)
         {
-	        _animationCategory = category;
+                _animationCategory = category;
         }
-	}
+
+        private Inventory GetInventory()
+        {
+                if (_agent != null)
+                {
+                        Inventory agentInventory = _agent.Inventory;
+
+                        if (ReferenceEquals(_inventory, agentInventory) == false)
+                        {
+                                _inventory = agentInventory;
+                        }
+                }
+                else
+                {
+                        _inventory = null;
+                }
+
+                return _inventory;
+        }
+
+        private WeaponSize GetCurrentWeaponSize()
+        {
+                var inventory = GetInventory();
+
+                return inventory != null ? inventory.CurrentWeaponSize : WeaponSize.Unarmed;
+        }
+        }
 }

@@ -66,6 +66,12 @@
                 return;
             }
 
+            if (_inventory == null)
+            {
+                DropItemTimer = default;
+                return;
+            }
+
 
             if (_inventory.CurrentWeapon != null && _inventory.CurrentWeapon.IsBusy() == true)
             {
@@ -138,6 +144,11 @@
             var cameraDirection = cameraTransform.Rotation * Vector3.forward;
 
             var fireTransform = _character.GetFireTransform(resolveRenderHistory);
+            if (_inventory == null)
+            {
+                IsUndesiredTargetPoint = false;
+                return fireTransform.Position + (cameraDirection * 500f);
+            }
             var targetPoint = cameraTransform.Position + cameraDirection * 500f;
 
             if (Runner.LagCompensation.Raycast(cameraTransform.Position, cameraDirection, 500f, Object.InputAuthority,

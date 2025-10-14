@@ -73,7 +73,9 @@ namespace TPSBR
                 return;
             }
 
-            if (Character.Agent.Inventory.CurrentWeapon != this)
+            Inventory inventory = Character.Agent != null ? Character.Agent.Inventory : null;
+
+            if (inventory == null || inventory.CurrentWeapon != this)
             {
                 ResetAttackState(true);
                 return;

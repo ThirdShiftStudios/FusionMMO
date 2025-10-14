@@ -219,11 +219,13 @@ namespace TPSBR
 			if (_agent.IsObserved == false)
 				return;
 
-			float aimFOV = _aimFOV;
-			if (_agent.Inventory.CurrentWeapon != null && _agent.Inventory.CurrentWeapon.AimFOV > 1.0f)
-			{
-				aimFOV = _agent.Inventory.CurrentWeapon.AimFOV;
-			}
+                        float aimFOV = _aimFOV;
+                        Inventory inventory = _agent != null ? _agent.Inventory : null;
+                        Weapon currentWeapon = inventory != null ? inventory.CurrentWeapon : null;
+                        if (currentWeapon != null && currentWeapon.AimFOV > 1.0f)
+                        {
+                                aimFOV = currentWeapon.AimFOV;
+                        }
 
 			_targetFOV = _characterController.Data.Aim == true ? aimFOV : _defaultFOV;
 			_camera.Camera.fieldOfView = Mathf.Lerp(_camera.Camera.fieldOfView, _targetFOV, _fovChangeSpeed * Time.deltaTime);

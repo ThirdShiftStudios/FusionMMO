@@ -46,29 +46,31 @@ namespace TPSBR
 
 		protected override void OnFixedUpdate()
 		{
-			KCCData kccData = _kcc.FixedData;
-			WeaponSize currentWeaponSize = _agent.Inventory.CurrentWeaponSize;
-			if(_lastWeaponSize == currentWeaponSize)
-				return;
-			_lastWeaponSize = currentWeaponSize;
+                        KCCData kccData = _kcc.FixedData;
+                        Inventory inventory = _agent != null ? _agent.Inventory : null;
+                        WeaponSize currentWeaponSize = inventory != null ? inventory.CurrentWeaponSize : WeaponSize.Unarmed;
+
+                        if(_lastWeaponSize == currentWeaponSize)
+                                return;
+                        _lastWeaponSize = currentWeaponSize;
 
 			// Activate the current weapon
 			bool found = false;
 			for (int i = 0; i < _moveStateCategories.Length; i++)
 			{
-				if (_moveStateCategories[i].WeaponSize == currentWeaponSize)
-				{
-					_moveStateCategories[i].Move.Activate(0.0f);
-					found = true;
-					continue;
-				}
+                                if (_moveStateCategories[i].WeaponSize == currentWeaponSize)
+                                {
+                                        _moveStateCategories[i].Move.Activate(0.0f);
+                                        found = true;
+                                        continue;
+                                }
 				_moveStateCategories[i].Move.Deactivate(0.0f);
 			}
 
-			if (found == false)
-			{
-				Debug.LogError($"[LocomotionLayer]: Could not find MoveState for WeaponSize == {currentWeaponSize}");
-			}
-		}
-	}
+                        if (found == false && inventory != null)
+                        {
+                                Debug.LogError($"[LocomotionLayer]: Could not find MoveState for WeaponSize == {currentWeaponSize}");
+                        }
+                }
+        }
 }
