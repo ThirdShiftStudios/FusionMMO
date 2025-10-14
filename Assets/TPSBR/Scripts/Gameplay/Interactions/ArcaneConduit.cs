@@ -28,6 +28,7 @@ namespace TPSBR
                 private bool _cameraViewActive;
                 private Vector3 _originalCameraPosition;
                 private Quaternion _originalCameraRotation;
+                private float _cameraViewDistance;
 
                 string  IInteraction.Name        => _interactionName;
                 string  IInteraction.Description => _interactionDescription;
@@ -268,7 +269,7 @@ namespace TPSBR
 
                 private void ApplyCameraView()
                 {
-                        if (_cameraViewTransform == null || Context == null || Context.Camera == null || Context.Camera.Camera == null)
+                        if (_cameraViewTransform == null || Context == null || Context.HasInput == false || Context.Camera == null || Context.Camera.Camera == null)
                                 return;
 
                         Transform cameraTransform = Context.Camera.Camera.transform;
@@ -278,9 +279,18 @@ namespace TPSBR
                                 _cameraViewActive = true;
                                 _originalCameraPosition = cameraTransform.position;
                                 _originalCameraRotation = cameraTransform.rotation;
+
+                                if (TryGetCameraViewData(out _, out _, out float maxDistance, out _) == true)
+                                {
+                                        _cameraViewDistance = maxDistance;
+                                }
+                                else
+                                {
+                                        _cameraViewDistance = 0f;
+                                }
                         }
 
-                        cameraTransform.SetPositionAndRotation(_cameraViewTransform.position, _cameraViewTransform.rotation);
+                        UpdateCameraView();
                 }
 
                 private void RestoreCameraView()
@@ -295,6 +305,7 @@ namespace TPSBR
                         }
 
                         _cameraViewActive = false;
+                        _cameraViewDistance = 0f;
                 }
 
                 private void ShowWeaponPreview(WeaponDefinition definition)
@@ -344,6 +355,97 @@ namespace TPSBR
                                 NetworkObject networkObject = networkObjects[i];
                                 Destroy(networkObject);
                         }
+                }
+
+                public override void Render()
+                {
+                        base.Render();
+
+                        if (_cameraViewActive == false)
+                                return;
+
+                        UpdateCameraView();
+                }
+
+                private void UpdateCameraView()
+                {
+                        if (_cameraViewActive == false || Context == null || Context.HasInput == false)
+                                return;
+
+                        SceneCamera sceneCamera = Context.Camera;
+                        if (sceneCamera == null || sceneCamera.Camera == null)
+                                return;
+
+                        if (TryGetCameraViewData(out Vector3 raycastStart, out Vector3 raycastDirection, out float maxCameraDistance, out Quaternion targetRotation) == false)
+                                return;
+
+                        Transform cameraTransform = sceneCamera.Camera.transform;
+
+                        if (maxCameraDistance > 0.0001f)
+                        {
+                                _cameraViewDistance = Mathf.Clamp(_cameraViewDistance + maxCameraDistance * 8.0f * Time.deltaTime, 0.0f, maxCameraDistance);
+
+                                if (Runner != null)
+                                {
+                                        PhysicsScene physicsScene = Runner.GetPhysicsScene();
+                                        if (physicsScene.Raycast(raycastStart, raycastDirection, out RaycastHit hitInfo, maxCameraDistance + 0.25f, -5, QueryTriggerInteraction.Ignore) == true)
+                                        {
+                                                Agent observedAgent = Context != null ? Context.ObservedAgent : null;
+                                                Agent hitAgent = hitInfo.transform.GetComponentInParent<Agent>();
+
+                                                if (hitAgent == null || hitAgent != observedAgent)
+                                                {
+                                                        float adjustedDistance = Mathf.Clamp(hitInfo.distance - 0.25f, 0.0f, maxCameraDistance);
+                                                        if (adjustedDistance < _cameraViewDistance)
+                                                        {
+                                                                _cameraViewDistance = adjustedDistance;
+                                                        }
+                                                }
+                                        }
+                                }
+
+                                cameraTransform.position = raycastStart + raycastDirection * _cameraViewDistance;
+                        }
+                        else
+                        {
+                                _cameraViewDistance = 0f;
+                                cameraTransform.position = raycastStart;
+                        }
+
+                        cameraTransform.rotation = targetRotation;
+                }
+
+                private bool TryGetCameraViewData(out Vector3 raycastStart, out Vector3 raycastDirection, out float maxCameraDistance, out Quaternion targetRotation)
+                {
+                        raycastStart = default;
+                        raycastDirection = default;
+                        maxCameraDistance = 0f;
+                        targetRotation = Quaternion.identity;
+
+                        if (_cameraViewTransform == null)
+                                return false;
+
+                        Transform referenceTransform = _cameraViewTransform.parent != null ? _cameraViewTransform.parent : transform;
+                        Vector3 targetPosition = _cameraViewTransform.position;
+                        Vector3 referencePosition = referenceTransform != null ? referenceTransform.position : Vector3.zero;
+                        Vector3 offset = targetPosition - referencePosition;
+
+                        targetRotation = _cameraViewTransform.rotation;
+
+                        if (offset.sqrMagnitude > 0.0001f)
+                        {
+                                maxCameraDistance = offset.magnitude;
+                                raycastDirection = offset / maxCameraDistance;
+                                raycastStart = targetPosition - raycastDirection * maxCameraDistance;
+                        }
+                        else
+                        {
+                                raycastDirection = _cameraViewTransform.forward.sqrMagnitude > 0.0001f ? _cameraViewTransform.forward.normalized : Vector3.forward;
+                                raycastStart = targetPosition;
+                                maxCameraDistance = 0f;
+                        }
+
+                        return true;
                 }
         }
 }
