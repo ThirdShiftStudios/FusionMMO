@@ -328,7 +328,7 @@ namespace TPSBR
 
                 private void ApplyCameraView()
                 {
-                        if (_cameraViewTransform == null || Context == null || Context.HasInput == false || Context.Camera == null || Context.Camera.Camera == null)
+                        if (_cameraViewTransform == null || Context == null || Context.Camera == null || Context.Camera.Camera == null)
                                 return;
 
                         Transform cameraTransform = Context.Camera.Camera.transform;
@@ -368,7 +368,7 @@ namespace TPSBR
 
                         Transform cameraTransform = Context.Camera.Camera.transform;
 
-                        if (instant == true || Context.HasInput == false)
+                        if (instant == true)
                         {
                                 cameraTransform.SetPositionAndRotation(_originalCameraPosition, _originalCameraRotation);
                                 FinishCameraView();
@@ -527,7 +527,7 @@ namespace TPSBR
 
                 private void UpdateCameraView()
                 {
-                        if (_cameraViewActive == false || Context == null || Context.HasInput == false)
+                        if (_cameraViewActive == false || Context == null)
                                 return;
 
                         SceneCamera sceneCamera = Context.Camera;
