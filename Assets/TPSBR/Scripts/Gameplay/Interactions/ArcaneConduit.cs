@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Fusion;
 using TPSBR.UI;
+using TSS.Data;
 using Unity.Template.CompetitiveActionMultiplayer;
 using UnityEngine;
 
@@ -23,12 +24,16 @@ namespace TPSBR
                 [SerializeField]
                 private Transform _weaponViewTransform;
 
+                [Networked(OnChanged = nameof(OnSelectedWeaponDefinitionChanged))]
+                private int SelectedWeaponDefinitionId { get; set; }
+
                 private UIItemContextView _activeItemContextView;
                 private Weapon _weaponPreviewInstance;
                 private bool _cameraViewActive;
                 private Vector3 _originalCameraPosition;
                 private Quaternion _originalCameraRotation;
                 private float _cameraViewDistance;
+                private int _currentPreviewDefinitionId;
 
                 string  IInteraction.Name        => _interactionName;
                 string  IInteraction.Description => _interactionDescription;
@@ -236,21 +241,36 @@ namespace TPSBR
                                 _activeItemContextView = null;
                         }
 
-                        ClearWeaponPreview();
+                        UpdateLocalWeaponPreview(null);
+                        if (HasStateAuthority == true)
+                        {
+                                RequestSetSelectedWeaponDefinition(0);
+                        }
                         RestoreCameraView();
+                }
+
+                private void UpdateLocalWeaponPreview(WeaponDefinition definition)
+                {
+                        if (definition == null)
+                        {
+                                if (_currentPreviewDefinitionId != 0)
+                                {
+                                        ClearWeaponPreview();
+                                }
+
+                                return;
+                        }
+
+                        if (_currentPreviewDefinitionId == definition.ID)
+                                return;
+
+                        ShowWeaponPreview(definition);
                 }
 
                 private void HandleStaffItemSelected(StaffItemData data)
                 {
-                        if (data.Definition == null)
-                        {
-                                ClearWeaponPreview();
-                        }
-                        else
-                        {
-                                ShowWeaponPreview(data.Definition);
-                        }
-
+                        UpdateLocalWeaponPreview(data.Definition);
+                        RequestSetSelectedWeaponDefinition(data.Definition != null ? data.Definition.ID : 0);
                         ApplyCameraView();
                 }
 
@@ -263,7 +283,8 @@ namespace TPSBR
                                 _activeItemContextView = null;
                         }
 
-                        ClearWeaponPreview();
+                        UpdateLocalWeaponPreview(null);
+                        RequestSetSelectedWeaponDefinition(0);
                         RestoreCameraView();
                 }
 
@@ -326,15 +347,87 @@ namespace TPSBR
                         previewTransform.localPosition = Vector3.zero;
                         previewTransform.localRotation = Quaternion.identity;
                         previewTransform.localScale = Vector3.one;
+                        _currentPreviewDefinitionId = definition.ID;
                 }
 
                 private void ClearWeaponPreview()
                 {
-                        if (_weaponPreviewInstance == null)
-                                return;
+                        if (_weaponPreviewInstance != null)
+                        {
+                                Destroy(_weaponPreviewInstance.gameObject);
+                                _weaponPreviewInstance = null;
+                        }
 
-                        Destroy(_weaponPreviewInstance.gameObject);
-                        _weaponPreviewInstance = null;
+                        _currentPreviewDefinitionId = 0;
+                }
+
+                private void RequestSetSelectedWeaponDefinition(int definitionId)
+                {
+                        definitionId = Mathf.Max(0, definitionId);
+
+                        if (HasStateAuthority == true)
+                        {
+                                SetSelectedWeaponDefinitionId(definitionId);
+                                return;
+                        }
+
+                        RPC_RequestSetSelectedWeaponDefinition(definitionId);
+                }
+
+                [Rpc(RpcSources.All, RpcTargets.StateAuthority, Channel = RpcChannel.Reliable)]
+                private void RPC_RequestSetSelectedWeaponDefinition(int definitionId)
+                {
+                        SetSelectedWeaponDefinitionId(definitionId);
+                }
+
+                private void SetSelectedWeaponDefinitionId(int definitionId)
+                {
+                        definitionId = Mathf.Max(0, definitionId);
+
+                        if (SelectedWeaponDefinitionId == definitionId)
+                        {
+                                UpdateWeaponPreviewFromDefinitionId(definitionId);
+                                return;
+                        }
+
+                        SelectedWeaponDefinitionId = definitionId;
+                        UpdateWeaponPreviewFromDefinitionId(definitionId);
+                }
+
+                private static void OnSelectedWeaponDefinitionChanged(Changed<ArcaneConduit> changed)
+                {
+                        changed.Behaviour.HandleSelectedWeaponDefinitionChanged();
+                }
+
+                private void HandleSelectedWeaponDefinitionChanged()
+                {
+                        UpdateWeaponPreviewFromDefinitionId(SelectedWeaponDefinitionId);
+                }
+
+                private void UpdateWeaponPreviewFromDefinitionId(int definitionId)
+                {
+                        if (definitionId <= 0)
+                        {
+                                if (_currentPreviewDefinitionId != 0)
+                                {
+                                        ClearWeaponPreview();
+                                }
+
+                                return;
+                        }
+
+                        ItemDefinition itemDefinition = ItemDefinition.Get(definitionId);
+                        if (itemDefinition is WeaponDefinition weaponDefinition)
+                        {
+                                if (_currentPreviewDefinitionId == weaponDefinition.ID)
+                                        return;
+
+                                ShowWeaponPreview(weaponDefinition);
+                        }
+                        else if (_currentPreviewDefinitionId != 0)
+                        {
+                                ClearWeaponPreview();
+                        }
                 }
 
                 private void DisableNetworkingForPreview(Weapon previewWeapon)
