@@ -130,7 +130,7 @@ namespace TPSBR
         [Networked] private InventorySlot _woodAxeSlot { get; set; }
         [Networked] private byte _currentWeaponSlot { get; set; }
 
-        [Networked(OnChanged = nameof(OnGoldChanged))]
+        [Networked]
         private int _gold { get; set; }
 
         [Networked] private byte _previousWeaponSlot { get; set; }
@@ -161,6 +161,7 @@ namespace TPSBR
         private Dictionary<int, WeaponDefinition> _weaponDefinitionsBySlot = new Dictionary<int, WeaponDefinition>();
         private readonly Dictionary<WeaponSize, int> _weaponSizeToSlotIndex = new Dictionary<WeaponSize, int>();
         private int _localGold;
+        private ChangeDetector _changeDetector;
 
         private static readonly Dictionary<int, Weapon> _weaponPrefabsByDefinitionId = new Dictionary<int, Weapon>();
         private static PickaxeDefinition _cachedFallbackPickaxe;
@@ -763,6 +764,8 @@ namespace TPSBR
 
         public override void Spawned()
         {
+            _changeDetector = GetChangeDetector(ChangeDetector.Source.SimulationState);
+
             bool restoredFromCloud = Global.PlayerCloudSaveService != null &&
                                       Global.PlayerCloudSaveService.RegisterInventoryAndRestore(this);
 
@@ -835,6 +838,7 @@ namespace TPSBR
 
             GoldChanged = null;
             _localGold = 0;
+            _changeDetector = null;
 
             // Cleanup weapons
             for (int i = 0; i < _hotbar.Length; i++)
@@ -919,6 +923,17 @@ namespace TPSBR
             RefreshItems();
             RefreshPickaxeVisuals();
             RefreshWoodAxeVisuals();
+
+            if (_changeDetector != null)
+            {
+                foreach (var changedProperty in _changeDetector.DetectChanges(this))
+                {
+                    if (changedProperty == nameof(_gold))
+                    {
+                        HandleGoldChanged(_gold);
+                    }
+                }
+            }
         }
 
         public bool CanFireWeapon(bool keyDown)
@@ -2035,11 +2050,6 @@ namespace TPSBR
                 _appliedHotbarBonuses[i] = 0;
                 _hotbarStatBuffer[i] = 0;
             }
-        }
-
-        private static void OnGoldChanged(Changed<Inventory> changed)
-        {
-            changed.Behaviour.HandleGoldChanged(changed.Behaviour._gold);
         }
 
         private void HandleGoldChanged(int value)
