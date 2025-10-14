@@ -26,6 +26,7 @@ namespace TPSBR
                 private UIItemContextView _activeItemContextView;
                 private Weapon _weaponPreviewInstance;
                 private bool _cameraViewActive;
+                private Agent _cameraAgent;
                 private Vector3 _originalCameraPosition;
                 private Quaternion _originalCameraRotation;
                 private float _cameraViewDistance;
@@ -97,6 +98,8 @@ namespace TPSBR
                         _activeItemContextView = view;
                         _activeItemContextView.StaffItemSelected += HandleStaffItemSelected;
                         _activeItemContextView.HasClosed         += HandleItemContextViewClosed;
+
+                        _cameraAgent = agent;
 
                         Context.UI.Open(view);
                 }
@@ -304,6 +307,13 @@ namespace TPSBR
                                 cameraTransform.SetPositionAndRotation(_originalCameraPosition, _originalCameraRotation);
                         }
 
+                        if (_cameraAgent != null && _cameraAgent.Character != null)
+                        {
+                                _cameraAgent.Character.ClearCameraOverride();
+                        }
+
+                        _cameraAgent = null;
+
                         _cameraViewActive = false;
                         _cameraViewDistance = 0f;
                 }
@@ -380,6 +390,7 @@ namespace TPSBR
                                 return;
 
                         Transform cameraTransform = sceneCamera.Camera.transform;
+                        Vector3   targetPosition;
 
                         if (maxCameraDistance > 0.0001f)
                         {
@@ -404,15 +415,20 @@ namespace TPSBR
                                         }
                                 }
 
-                                cameraTransform.position = raycastStart + raycastDirection * _cameraViewDistance;
+                                targetPosition = raycastStart + raycastDirection * _cameraViewDistance;
                         }
                         else
                         {
                                 _cameraViewDistance = 0f;
-                                cameraTransform.position = raycastStart;
+                                targetPosition = raycastStart;
                         }
 
-                        cameraTransform.rotation = targetRotation;
+                        cameraTransform.SetPositionAndRotation(targetPosition, targetRotation);
+
+                        if (_cameraAgent != null && _cameraAgent.Character != null)
+                        {
+                                _cameraAgent.Character.SetCameraOverride(targetPosition, targetRotation);
+                        }
                 }
 
                 private bool TryGetCameraViewData(out Vector3 raycastStart, out Vector3 raycastDirection, out float maxCameraDistance, out Quaternion targetRotation)
