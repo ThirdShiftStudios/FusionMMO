@@ -161,6 +161,8 @@ namespace TPSBR
         private static PickaxeDefinition _cachedFallbackPickaxe;
         private static WoodAxeDefinition _cachedFallbackWoodAxe;
 
+        private ChangeDetector _networkChangeDetector;
+
         public event Action<int, InventorySlot> ItemSlotChanged;
         public event Action<int, Weapon> HotbarSlotChanged;
 
@@ -516,6 +518,8 @@ namespace TPSBR
             }
 
             _currentWeaponSlot = (byte)slot;
+
+            HandleCurrentWeaponSlotChanged();
         }
 
         public void ArmCurrentWeapon()
@@ -721,6 +725,8 @@ namespace TPSBR
 
         public override void Spawned()
         {
+            _networkChangeDetector = GetChangeDetector(ChangeDetector.Source.SimulationState);
+
             bool restoredFromCloud = Global.PlayerCloudSaveService != null &&
                                       Global.PlayerCloudSaveService.RegisterInventoryAndRestore(this);
 
@@ -867,6 +873,17 @@ namespace TPSBR
 
         public override void Render()
         {
+            if (_networkChangeDetector != null)
+            {
+                foreach (var change in _networkChangeDetector.DetectChanges(this))
+                {
+                    if (change == nameof(_currentWeaponSlot))
+                    {
+                        HandleCurrentWeaponSlotChanged();
+                    }
+                }
+            }
+
             RefreshWeapons();
             RefreshItems();
             RefreshPickaxeVisuals();
@@ -1787,6 +1804,11 @@ namespace TPSBR
 
             RefreshPickaxeSlot();
             RefreshWoodAxeSlot();
+        }
+
+        private void HandleCurrentWeaponSlotChanged()
+        {
+            RefreshWeapons();
         }
 
         private void RefreshWeapons()
