@@ -1,8 +1,11 @@
 using System;
 using System.Collections.Generic;
+using Fusion;
 using TMPro;
+using Unity.Template.CompetitiveActionMultiplayer;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using TSS.Data;
 
 namespace TPSBR.UI
 {
@@ -20,6 +23,8 @@ namespace TPSBR.UI
                 private UIItemSlot _itemSlotPrefab;
                 [SerializeField]
                 private Color _selectedSlotColor = Color.white;
+                [SerializeField]
+                private UIInventoryDetailsPanel _detailsPanel;
 
                 private readonly List<UIItemSlot> _spawnedSlots = new List<UIItemSlot>();
                 private readonly List<ItemVendor.VendorItemData> _currentItems = new List<ItemVendor.VendorItemData>();
@@ -36,6 +41,7 @@ namespace TPSBR.UI
                         _itemProvider = itemProvider;
                         _selectedIndex = -1;
                         RefreshItemSlots(true);
+                        _detailsPanel?.Hide();
                 }
 
                 protected override void OnOpen()
@@ -56,6 +62,7 @@ namespace TPSBR.UI
                         _selectedIndex = -1;
                         ClearSlots();
                         SetEmptyState(string.Empty);
+                        _detailsPanel?.Hide();
                 }
 
                 protected override void OnTick()
@@ -118,6 +125,7 @@ namespace TPSBR.UI
                         }
 
                         UpdateSelectionVisuals();
+                        RefreshSelectedItemDetails();
                 }
 
                 private void EnsureSlotCapacity(int required)
@@ -145,6 +153,7 @@ namespace TPSBR.UI
 
                         _selectedIndex = -1;
                         UpdateSelectionVisuals();
+                        UpdateDetailsPanel(null);
                 }
 
                 private void HandleEmptyState(ItemVendor.VendorItemStatus status)
@@ -246,18 +255,97 @@ namespace TPSBR.UI
                         {
                                 _selectedIndex = -1;
                                 UpdateSelectionVisuals();
+                                UpdateDetailsPanel(null);
                                 return;
                         }
 
                         if (_selectedIndex == slot.Index)
                         {
-                                ItemSelected?.Invoke(_lastItems[slot.Index]);
+                                ItemVendor.VendorItemData data = _lastItems[slot.Index];
+                                UpdateDetailsPanel(data);
+                                ItemSelected?.Invoke(data);
                                 return;
                         }
 
                         _selectedIndex = slot.Index;
                         UpdateSelectionVisuals();
-                        ItemSelected?.Invoke(_lastItems[slot.Index]);
+                        ItemVendor.VendorItemData selectedData = _lastItems[slot.Index];
+                        UpdateDetailsPanel(selectedData);
+                        ItemSelected?.Invoke(selectedData);
+                }
+
+                private void RefreshSelectedItemDetails()
+                {
+                        if (_selectedIndex >= 0 && _selectedIndex < _lastItems.Count)
+                        {
+                                UpdateDetailsPanel(_lastItems[_selectedIndex]);
+                        }
+                        else
+                        {
+                                UpdateDetailsPanel(null);
+                        }
+                }
+
+                private void UpdateDetailsPanel(ItemVendor.VendorItemData? itemData)
+                {
+                        if (_detailsPanel == null)
+                                return;
+
+                        if (itemData.HasValue == false)
+                        {
+                                _detailsPanel.Hide();
+                                return;
+                        }
+
+                        if (TryGetInventoryDetails(itemData.Value, out IInventoryItemDetails itemDetails, out NetworkString<_32> configurationHash) == false || itemDetails == null)
+                        {
+                                _detailsPanel.Hide();
+                                return;
+                        }
+
+                        _detailsPanel.Show(itemDetails, configurationHash);
+                }
+
+                private bool TryGetInventoryDetails(ItemVendor.VendorItemData itemData, out IInventoryItemDetails itemDetails, out NetworkString<_32> configurationHash)
+                {
+                        itemDetails = null;
+                        configurationHash = default;
+
+                        ItemDefinition definition = itemData.Definition;
+
+                        if (definition == null)
+                        {
+                                return false;
+                        }
+
+                        if (definition is WeaponDefinition weaponDefinition && weaponDefinition.WeaponPrefab != null)
+                        {
+                                itemDetails = weaponDefinition.WeaponPrefab;
+                        }
+                        else if (definition is PickaxeDefinition pickaxeDefinition && pickaxeDefinition.PickaxePrefab != null)
+                        {
+                                itemDetails = pickaxeDefinition.PickaxePrefab;
+                        }
+                        else if (definition is WoodAxeDefinition woodAxeDefinition && woodAxeDefinition.WoodAxePrefab != null)
+                        {
+                                itemDetails = woodAxeDefinition.WoodAxePrefab;
+                        }
+                        else if (definition is IInventoryItemDetails definitionDetails)
+                        {
+                                itemDetails = definitionDetails;
+                        }
+
+                        if (itemDetails == null)
+                        {
+                                return false;
+                        }
+
+                        if (string.IsNullOrWhiteSpace(itemData.ConfigurationHash) == false)
+                        {
+                                configurationHash = itemData.ConfigurationHash;
+                        }
+
+                        return true;
                 }
         }
 }
