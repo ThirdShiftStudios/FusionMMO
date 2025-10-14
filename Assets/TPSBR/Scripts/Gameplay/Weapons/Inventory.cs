@@ -2061,7 +2061,9 @@ namespace TPSBR
         [ContextMenu("Debug/Add 10 Gold")]
         private void Debug_AddTenGold()
         {
+            int currentGold = _gold;
             AddGold(10);
+            Debug.Log($"Added {_gold - currentGold} gold. Total: {_gold}");
         }
 
         private void DropAllWeapons()
