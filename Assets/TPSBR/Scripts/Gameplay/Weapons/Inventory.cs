@@ -216,7 +216,7 @@ namespace TPSBR
 
             for (int i = 0; i < _hotbar.Length; i++)
             {
-                var weapon = _hotbar[i];
+                var weapon = GetHotbarWeapon(i);
                 if (weapon == null)
                 {
                     data.HotbarSlots[i] = default;
