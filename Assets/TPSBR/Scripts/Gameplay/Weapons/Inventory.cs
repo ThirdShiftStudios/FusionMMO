@@ -96,6 +96,7 @@ namespace TPSBR
         public Weapon CurrentWeapon { get; private set; }
         public Transform CurrentWeaponHandle { get; private set; }
         public Quaternion CurrentWeaponBaseRotation { get; private set; }
+        public int Gold => _gold;
 
         public LayerMask HitMask => _hitMask;
         public int CurrentWeaponSlot => _currentWeaponSlot;
@@ -129,6 +130,9 @@ namespace TPSBR
         [Networked] private InventorySlot _woodAxeSlot { get; set; }
         [Networked] private byte _currentWeaponSlot { get; set; }
 
+        [Networked]
+        private int _gold { get; set; }
+
         [Networked] private byte _previousWeaponSlot { get; set; }
         [Networked] private Pickaxe _pickaxe { get; set; }
         [Networked] private NetworkBool _isPickaxeEquipped { get; set; }
@@ -156,6 +160,8 @@ namespace TPSBR
         private byte _weaponSlotBeforeWoodAxe = byte.MaxValue;
         private Dictionary<int, WeaponDefinition> _weaponDefinitionsBySlot = new Dictionary<int, WeaponDefinition>();
         private readonly Dictionary<WeaponSize, int> _weaponSizeToSlotIndex = new Dictionary<WeaponSize, int>();
+        private int _localGold;
+        private ChangeDetector _changeDetector;
 
         private static readonly Dictionary<int, Weapon> _weaponPrefabsByDefinitionId = new Dictionary<int, Weapon>();
         private static PickaxeDefinition _cachedFallbackPickaxe;
@@ -163,6 +169,7 @@ namespace TPSBR
 
         public event Action<int, InventorySlot> ItemSlotChanged;
         public event Action<int, Weapon> HotbarSlotChanged;
+        public event Action<int> GoldChanged;
 
         // PUBLIC METHODS
 
@@ -188,13 +195,47 @@ namespace TPSBR
             return _hotbar[index];
         }
 
+        public void SetGold(int amount)
+        {
+            if (HasStateAuthority == false)
+                return;
+
+            amount = Mathf.Max(0, amount);
+
+            if (_gold == amount)
+                return;
+
+            _gold = amount;
+        }
+
+        public void AddGold(int amount)
+        {
+            if (amount <= 0)
+                return;
+
+            SetGold(_gold + amount);
+        }
+
+        public bool TrySpendGold(int amount)
+        {
+            if (amount <= 0)
+                return true;
+
+            if (_gold < amount)
+                return false;
+
+            SetGold(_gold - amount);
+            return true;
+        }
+
         internal PlayerInventorySaveData CreateSaveData()
         {
             var data = new PlayerInventorySaveData
             {
-                InventorySlots = new PlayerInventoryItemData[_items.Length],
-                HotbarSlots    = new PlayerHotbarSlotData[_hotbar.Length],
-                CurrentWeaponSlot = _currentWeaponSlot
+                InventorySlots     = new PlayerInventoryItemData[_items.Length],
+                HotbarSlots        = new PlayerHotbarSlotData[_hotbar.Length],
+                CurrentWeaponSlot  = _currentWeaponSlot,
+                Gold               = _gold
             };
 
             for (int i = 0; i < _items.Length; i++)
@@ -364,6 +405,8 @@ namespace TPSBR
             RefreshItems();
             EnsureToolAvailability();
             ArmCurrentWeapon();
+
+            SetGold(data.Gold);
         }
 
         public InventorySlot GetItemSlot(int index)
@@ -721,6 +764,8 @@ namespace TPSBR
 
         public override void Spawned()
         {
+            _changeDetector = GetChangeDetector(ChangeDetector.Source.SimulationState);
+
             bool restoredFromCloud = Global.PlayerCloudSaveService != null &&
                                       Global.PlayerCloudSaveService.RegisterInventoryAndRestore(this);
 
@@ -730,6 +775,7 @@ namespace TPSBR
                 RefreshItems();
                 RefreshPickaxeVisuals();
                 RefreshWoodAxeVisuals();
+                HandleGoldChanged(_gold);
                 return;
             }
 
@@ -739,6 +785,7 @@ namespace TPSBR
                 RefreshItems();
                 RefreshPickaxeVisuals();
                 RefreshWoodAxeVisuals();
+                HandleGoldChanged(_gold);
                 return;
             }
 
@@ -777,6 +824,7 @@ namespace TPSBR
             EnsureToolAvailability();
             RefreshPickaxeVisuals();
             RefreshWoodAxeVisuals();
+            HandleGoldChanged(_gold);
         }
 
         public void OnDespawned()
@@ -787,6 +835,10 @@ namespace TPSBR
 
             DespawnPickaxe();
             DespawnWoodAxe();
+
+            GoldChanged = null;
+            _localGold = 0;
+            _changeDetector = null;
 
             // Cleanup weapons
             for (int i = 0; i < _hotbar.Length; i++)
@@ -871,6 +923,17 @@ namespace TPSBR
             RefreshItems();
             RefreshPickaxeVisuals();
             RefreshWoodAxeVisuals();
+
+            if (_changeDetector != null)
+            {
+                foreach (var changedProperty in _changeDetector.DetectChanges(this))
+                {
+                    if (changedProperty == nameof(_gold))
+                    {
+                        HandleGoldChanged(_gold);
+                    }
+                }
+            }
         }
 
         public bool CanFireWeapon(bool keyDown)
@@ -1989,27 +2052,40 @@ namespace TPSBR
             }
         }
 
-
-    private void DropAllWeapons()
-    {
-        for (int i = 1; i < _hotbar.Length; i++)
+        private void HandleGoldChanged(int value)
         {
-            DropWeapon(i);
+            _localGold = value;
+            GoldChanged?.Invoke(value);
         }
-    }
 
-    private void DropWeapon(int weaponSlot)
-    {
-        if (weaponSlot <= 0 || weaponSlot >= _hotbar.Length)
-            return;
+        [ContextMenu("Debug/Add 10 Gold")]
+        private void Debug_AddTenGold()
+        {
+            int currentGold = _gold;
+            AddGold(10);
+            Debug.Log($"Added {_gold - currentGold} gold. Total: {_gold}");
+        }
 
-        var weapon = _hotbar[weaponSlot];
-        if (weapon == null)
-            return;
+        private void DropAllWeapons()
+        {
+            for (int i = 1; i < _hotbar.Length; i++)
+            {
+                DropWeapon(i);
+            }
+        }
 
-        var definition = weapon.Definition;
+        private void DropWeapon(int weaponSlot)
+        {
+            if (weaponSlot <= 0 || weaponSlot >= _hotbar.Length)
+                return;
 
-        weapon.Deinitialize(Object);
+            var weapon = _hotbar[weaponSlot];
+            if (weapon == null)
+                return;
+
+            var definition = weapon.Definition;
+
+            weapon.Deinitialize(Object);
 
         if (weaponSlot == _currentWeaponSlot)
         {

@@ -17,6 +17,7 @@ namespace TPSBR
         public byte CurrentWeaponSlot;
         public PlayerInventoryItemData PickaxeSlot;
         public PlayerInventoryItemData WoodAxeSlot;
+        public int Gold;
     }
 
     [Serializable]
@@ -244,6 +245,7 @@ namespace TPSBR
             {
                 _trackedInventory.ItemSlotChanged += OnItemSlotChanged;
                 _trackedInventory.HotbarSlotChanged += OnHotbarSlotChanged;
+                _trackedInventory.GoldChanged += OnGoldChanged;
             }
         }
 
@@ -254,6 +256,7 @@ namespace TPSBR
 
             _trackedInventory.ItemSlotChanged -= OnItemSlotChanged;
             _trackedInventory.HotbarSlotChanged -= OnHotbarSlotChanged;
+            _trackedInventory.GoldChanged -= OnGoldChanged;
             _trackedInventory = null;
         }
 
@@ -472,6 +475,20 @@ namespace TPSBR
         }
 
         private void OnHotbarSlotChanged(int index, Weapon weapon)
+        {
+            if (_suppressTracking == true)
+                return;
+
+            if (_trackedInventory == null || _trackedInventory.HasStateAuthority == false)
+                return;
+
+            if (ReferenceEquals(_pendingRestoreInventory, _trackedInventory) == true)
+                return;
+
+            _pendingSave = true;
+        }
+
+        private void OnGoldChanged(int value)
         {
             if (_suppressTracking == true)
                 return;
