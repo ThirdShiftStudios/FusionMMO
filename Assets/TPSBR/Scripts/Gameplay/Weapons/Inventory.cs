@@ -127,7 +127,7 @@ namespace TPSBR
         [Networked, Capacity(INVENTORY_SIZE)] private NetworkArray<InventorySlot> _items { get; }
         [Networked] private InventorySlot _pickaxeSlot { get; set; }
         [Networked] private InventorySlot _woodAxeSlot { get; set; }
-        [Networked] private byte _currentWeaponSlot { get; set; }
+        [Networked(OnChanged = nameof(OnCurrentWeaponSlotChanged))] private byte _currentWeaponSlot { get; set; }
 
         [Networked] private byte _previousWeaponSlot { get; set; }
         [Networked] private Pickaxe _pickaxe { get; set; }
@@ -1787,6 +1787,16 @@ namespace TPSBR
 
             RefreshPickaxeSlot();
             RefreshWoodAxeSlot();
+        }
+
+        private static void OnCurrentWeaponSlotChanged(Changed<Inventory> changed)
+        {
+            changed.Behaviour.HandleCurrentWeaponSlotChanged();
+        }
+
+        private void HandleCurrentWeaponSlotChanged()
+        {
+            RefreshWeapons();
         }
 
         private void RefreshWeapons()
