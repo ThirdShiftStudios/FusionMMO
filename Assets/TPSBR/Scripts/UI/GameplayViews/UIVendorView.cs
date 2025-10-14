@@ -5,6 +5,7 @@ using TMPro;
 using Unity.Template.CompetitiveActionMultiplayer;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.UI;
 using TSS.Data;
 
 namespace TPSBR.UI
@@ -25,6 +26,8 @@ namespace TPSBR.UI
                 private Color _selectedSlotColor = Color.white;
                 [SerializeField]
                 private UIInventoryDetailsPanel _detailsPanel;
+                [SerializeField]
+                private Button _buyButton;
 
                 private readonly List<UIItemSlot> _spawnedSlots = new List<UIItemSlot>();
                 private readonly List<ItemVendor.VendorItemData> _currentItems = new List<ItemVendor.VendorItemData>();
@@ -32,16 +35,27 @@ namespace TPSBR.UI
                 private Func<List<ItemVendor.VendorItemData>, ItemVendor.VendorItemStatus> _itemProvider;
                 private ItemVendor.VendorItemStatus _lastStatus = ItemVendor.VendorItemStatus.NoDefinitions;
                 private int _selectedIndex = -1;
+                private Agent _agent;
+
+                private const int ITEM_COST = 10;
 
                 public event Action<ItemVendor.VendorItemData> ItemSelected;
 
                 public void Configure(Agent agent, Func<List<ItemVendor.VendorItemData>, ItemVendor.VendorItemStatus> itemProvider)
                 {
-                        _ = agent;
+                        _agent = agent;
                         _itemProvider = itemProvider;
                         _selectedIndex = -1;
+
+                        if (_buyButton != null)
+                        {
+                                _buyButton.onClick.RemoveListener(HandleBuyButtonClicked);
+                                _buyButton.onClick.AddListener(HandleBuyButtonClicked);
+                        }
+
                         RefreshItemSlots(true);
                         _detailsPanel?.Hide();
+                        UpdateBuyButtonState();
                 }
 
                 protected override void OnOpen()
@@ -49,6 +63,7 @@ namespace TPSBR.UI
                         base.OnOpen();
 
                         RefreshItemSlots(true);
+                        UpdateBuyButtonState();
                 }
 
                 protected override void OnClose()
@@ -56,6 +71,7 @@ namespace TPSBR.UI
                         base.OnClose();
 
                         _itemProvider = null;
+                        _agent = null;
                         _currentItems.Clear();
                         _lastItems.Clear();
                         _lastStatus = ItemVendor.VendorItemStatus.NoDefinitions;
@@ -63,6 +79,12 @@ namespace TPSBR.UI
                         ClearSlots();
                         SetEmptyState(string.Empty);
                         _detailsPanel?.Hide();
+
+                        if (_buyButton != null)
+                        {
+                                _buyButton.onClick.RemoveListener(HandleBuyButtonClicked);
+                                _buyButton.interactable = false;
+                        }
                 }
 
                 protected override void OnTick()
@@ -126,6 +148,7 @@ namespace TPSBR.UI
 
                         UpdateSelectionVisuals();
                         RefreshSelectedItemDetails();
+                        UpdateBuyButtonState();
                 }
 
                 private void EnsureSlotCapacity(int required)
@@ -154,6 +177,7 @@ namespace TPSBR.UI
                         _selectedIndex = -1;
                         UpdateSelectionVisuals();
                         UpdateDetailsPanel(null);
+                        UpdateBuyButtonState();
                 }
 
                 private void HandleEmptyState(ItemVendor.VendorItemStatus status)
@@ -264,6 +288,7 @@ namespace TPSBR.UI
                                 ItemVendor.VendorItemData data = _lastItems[slot.Index];
                                 UpdateDetailsPanel(data);
                                 ItemSelected?.Invoke(data);
+                                UpdateBuyButtonState();
                                 return;
                         }
 
@@ -272,6 +297,7 @@ namespace TPSBR.UI
                         ItemVendor.VendorItemData selectedData = _lastItems[slot.Index];
                         UpdateDetailsPanel(selectedData);
                         ItemSelected?.Invoke(selectedData);
+                        UpdateBuyButtonState();
                 }
 
                 private void RefreshSelectedItemDetails()
@@ -284,6 +310,8 @@ namespace TPSBR.UI
                         {
                                 UpdateDetailsPanel(null);
                         }
+
+                        UpdateBuyButtonState();
                 }
 
                 private void UpdateDetailsPanel(ItemVendor.VendorItemData? itemData)
@@ -346,6 +374,112 @@ namespace TPSBR.UI
                         }
 
                         return true;
+                }
+
+                private void HandleBuyButtonClicked()
+                {
+                        _ = TryPurchaseSelectedItem();
+                        UpdateBuyButtonState();
+                }
+
+                private bool TryPurchaseSelectedItem()
+                {
+                        if (_agent == null)
+                                return false;
+
+                        if (_selectedIndex < 0 || _selectedIndex >= _lastItems.Count)
+                                return false;
+
+                        Inventory inventory = _agent.Inventory;
+
+                        if (inventory == null)
+                                return false;
+
+                        if (CanPurchaseSelectedItem(inventory) == false)
+                                return false;
+
+                        ItemVendor.VendorItemData selectedItem = _lastItems[_selectedIndex];
+
+                        if (selectedItem.Definition == null)
+                                return false;
+
+                        if (inventory.TrySpendGold(ITEM_COST) == false)
+                                return false;
+
+                        byte quantity = (byte)Mathf.Clamp(selectedItem.Quantity, 0, byte.MaxValue);
+
+                        if (quantity == 0)
+                        {
+                                quantity = 1;
+                        }
+
+                        NetworkString<_32> configurationHash = default;
+
+                        if (string.IsNullOrWhiteSpace(selectedItem.ConfigurationHash) == false)
+                        {
+                                configurationHash = selectedItem.ConfigurationHash;
+                        }
+
+                        inventory.AddItem(selectedItem.Definition, quantity, configurationHash);
+
+                        return true;
+                }
+
+                private void UpdateBuyButtonState()
+                {
+                        if (_buyButton == null)
+                                return;
+
+                        bool isInteractable = false;
+
+                        if (_agent != null && _selectedIndex >= 0 && _selectedIndex < _lastItems.Count)
+                        {
+                                Inventory inventory = _agent.Inventory;
+
+                                if (inventory != null && CanPurchaseSelectedItem(inventory) == true)
+                                {
+                                        isInteractable = true;
+                                }
+                        }
+
+                        _buyButton.interactable = isInteractable;
+                }
+
+                private bool CanPurchaseSelectedItem(Inventory inventory)
+                {
+                        if (inventory == null)
+                                return false;
+
+                        if (inventory.Gold < ITEM_COST)
+                                return false;
+
+                        if (HasEmptyInventorySlot(inventory) == false)
+                                return false;
+
+                        if (_selectedIndex < 0 || _selectedIndex >= _lastItems.Count)
+                                return false;
+
+                        ItemVendor.VendorItemData selectedItem = _lastItems[_selectedIndex];
+
+                        return selectedItem.Definition != null;
+                }
+
+                private static bool HasEmptyInventorySlot(Inventory inventory)
+                {
+                        if (inventory == null)
+                                return false;
+
+                        int slotCount = inventory.InventorySize;
+
+                        for (int i = 0; i < slotCount; ++i)
+                        {
+                                InventorySlot slot = inventory.GetItemSlot(i);
+
+                                if (slot.IsEmpty == true)
+                                        return true;
+                        }
+
+                        return false;
                 }
         }
 }
