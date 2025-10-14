@@ -13,52 +13,189 @@ namespace TPSBR
 		string			 UnityID     { get; }
 	}
 
-	public class PlayerData : IPlayer
-	{
-		// PUBLIC MEMBERS
+        [Serializable]
+        public class PlayerData : IPlayer
+        {
+                // PUBLIC MEMBERS
 
-		public string           UserID          => _userID;
-		public string           UnityID         { get => _unityID; set => _unityID = value; }
-		public NetworkPrefabRef AgentPrefab     => GetAgentPrefab();
-		public string           Nickname        { get { return _nickname; } set { _nickname = value; IsDirty = true; } }
-		public string           AgentID         { get { return _agentID; } set { _agentID = value; IsDirty = true; } }
+                public string           UserID          => _userID;
+                public string           UnityID         { get => _unityID; set => _unityID = value; }
+                public NetworkPrefabRef AgentPrefab     => GetAgentPrefab();
+                public string           Nickname        { get { return _nickname; } set { _nickname = value; IsDirty = true; } }
+                public string           AgentID         { get { return _agentID; } set { _agentID = value; IsDirty = true; } }
 
-		public bool             IsDirty         { get; private set; }
+                public int              Level           => _level;
+                public int              Experience      => _experience;
+                public int              ExperienceToNextLevel => GetExperienceRequiredForNextLevel();
+                public int              MaxLevel        => MAX_LEVEL;
+                public bool             IsMaxLevel      => _level >= MAX_LEVEL;
 
-		// PRIVATE MEMBERS
+                public bool             IsDirty         { get; private set; }
 
-		[SerializeField]
-		private string _userID;
-		[SerializeField]
-		private string _unityID;
-		[SerializeField]
-		private string _nickname;
-		[SerializeField]
-		private string _agentID;
+                // PRIVATE MEMBERS
 
-		[SerializeField]
-		private bool _isLocked;
-		[SerializeField]
-		private int _lastProcessID;
+                private const int MAX_LEVEL                    = 100;
+                private const int BASE_EXPERIENCE_PER_LEVEL     = 100;
+                private const float EXPERIENCE_GROWTH_EXPONENT  = 1.5f;
 
-		// CONSTRUCTORS
+                [SerializeField]
+                private string _userID;
+                [SerializeField]
+                private string _unityID;
+                [SerializeField]
+                private string _nickname;
+                [SerializeField]
+                private string _agentID;
 
-		public PlayerData(string userID)
-		{
-			_userID = userID;
-		}
+                [SerializeField]
+                private int _level = 1;
+                [SerializeField]
+                private int _experience;
 
-		// PUBLIC METHODS
+                [SerializeField]
+                private bool _isLocked;
+                [SerializeField]
+                private int _lastProcessID;
 
-		public void ClearDirty()
-		{
-			IsDirty = false;
-		}
+                // CONSTRUCTORS
 
-		public bool IsLocked(bool checkProcess = true)
-		{
-			if (_isLocked == false)
-				return false;
+                public PlayerData(string userID)
+                {
+                        _userID = userID;
+
+                        EnsureProgressInitialized();
+                }
+
+                // PUBLIC METHODS
+
+                public void ClearDirty()
+                {
+                        IsDirty = false;
+                }
+
+                public bool AddExperience(int amount)
+                {
+                        if (amount <= 0 || _level >= MAX_LEVEL)
+                                return false;
+
+                        int previousLevel = _level;
+                        int previousExperience = _experience;
+                        bool leveledUp = false;
+
+                        _experience = Mathf.Max(0, _experience + amount);
+
+                        while (_level < MAX_LEVEL)
+                        {
+                                int experienceRequired = GetExperienceRequiredForNextLevel();
+
+                                if (_experience < experienceRequired)
+                                        break;
+
+                                _experience -= experienceRequired;
+                                _level++;
+                                leveledUp = true;
+                        }
+
+                        if (_level >= MAX_LEVEL)
+                        {
+                                _level = MAX_LEVEL;
+                                _experience = 0;
+                        }
+
+                        if (_level != previousLevel || _experience != previousExperience)
+                        {
+                                IsDirty = true;
+                        }
+
+                        return leveledUp;
+                }
+
+                public bool TryLevelUp()
+                {
+                        if (_level >= MAX_LEVEL)
+                                return false;
+
+                        int experienceRequired = GetExperienceRequiredForNextLevel();
+
+                        if (_experience < experienceRequired)
+                                return false;
+
+                        _experience -= experienceRequired;
+                        _level++;
+                        IsDirty = true;
+
+                        if (_level >= MAX_LEVEL)
+                        {
+                                _level = MAX_LEVEL;
+                                _experience = 0;
+                        }
+
+                        return true;
+                }
+
+                public bool ForceLevelUp()
+                {
+                        if (_level >= MAX_LEVEL)
+                                return false;
+
+                        _level++;
+                        _experience = 0;
+                        IsDirty = true;
+                        return true;
+                }
+
+                public void EnsureProgressInitialized()
+                {
+                        bool wasDirty = IsDirty;
+                        bool progressAdjusted = false;
+
+                        if (_level < 1)
+                        {
+                                _level = 1;
+                                progressAdjusted = true;
+                        }
+
+                        if (_level > MAX_LEVEL)
+                        {
+                                _level = MAX_LEVEL;
+                                progressAdjusted = true;
+                        }
+
+                        if (_experience < 0)
+                        {
+                                _experience = 0;
+                                progressAdjusted = true;
+                        }
+
+                        if (_level >= MAX_LEVEL)
+                        {
+                                if (_experience != 0)
+                                {
+                                        _experience = 0;
+                                        progressAdjusted = true;
+                                }
+                        }
+                        else
+                        {
+                                int experienceRequired = GetExperienceRequiredForNextLevel();
+
+                                if (_experience >= experienceRequired)
+                                {
+                                        _experience = Mathf.Clamp(_experience, 0, Mathf.Max(0, experienceRequired - 1));
+                                        progressAdjusted = true;
+                                }
+                        }
+
+                        if (progressAdjusted == true && wasDirty == false)
+                        {
+                                IsDirty = true;
+                        }
+                }
+
+                public bool IsLocked(bool checkProcess = true)
+                {
+                        if (_isLocked == false)
+                                return false;
 
 			if (checkProcess == true)
 			{
@@ -91,10 +228,10 @@ namespace TPSBR
 
 		// PRIVATE METHODS
 
-		private NetworkPrefabRef GetAgentPrefab()
-		{
-			if (_agentID.HasValue() == false)
-				return default;
+                private NetworkPrefabRef GetAgentPrefab()
+                {
+                        if (_agentID.HasValue() == false)
+                                return default;
 
 			var setup = Global.Settings.Agent.GetAgentSetup(_agentID);
 			if (setup != null)
@@ -102,8 +239,16 @@ namespace TPSBR
 				return setup.AgentPrefab;
 			}
 
-			UnityEngine.Debug.LogWarning("AGENT SETUP NOT FOUND : Returnig random setup");
-			return Global.Settings.Agent.GetRandomAgentSetup().AgentPrefab;
-		}
-	}
+                        UnityEngine.Debug.LogWarning("AGENT SETUP NOT FOUND : Returnig random setup");
+                        return Global.Settings.Agent.GetRandomAgentSetup().AgentPrefab;
+                }
+
+                private int GetExperienceRequiredForNextLevel()
+                {
+                        if (_level >= MAX_LEVEL)
+                                return 0;
+
+                        return Mathf.RoundToInt(BASE_EXPERIENCE_PER_LEVEL * Mathf.Pow(_level, EXPERIENCE_GROWTH_EXPONENT));
+                }
+        }
 }

@@ -278,9 +278,47 @@ namespace TPSBR
 		}
 
 		[Rpc(RpcSources.StateAuthority | RpcSources.InputAuthority, RpcTargets.StateAuthority | RpcTargets.InputAuthority, Channel = RpcChannel.Reliable)]
-		private void RPC_SetObservedPlayer(PlayerRef player)
-		{
-			_observePlayer = player;
-		}
-	}
+                private void RPC_SetObservedPlayer(PlayerRef player)
+                {
+                        _observePlayer = player;
+                }
+
+                // DEBUG
+
+                [ContextMenu("Debug/Add Experience")]
+                private void Debug_AddExperience()
+                {
+                        if (Context?.PlayerData == null)
+                                return;
+
+                        const int debugExperienceAmount = 500;
+
+                        Context.PlayerData.AddExperience(debugExperienceAmount);
+
+                        int experienceToNextLevel = Context.PlayerData.ExperienceToNextLevel;
+                        if (experienceToNextLevel <= 0)
+                        {
+                                Debug.Log($"[Player Debug] Added {debugExperienceAmount} XP. Player is at max level {Context.PlayerData.Level}.");
+                        }
+                        else
+                        {
+                                Debug.Log($"[Player Debug] Added {debugExperienceAmount} XP. Level {Context.PlayerData.Level} ({Context.PlayerData.Experience}/{experienceToNextLevel}).");
+                        }
+                }
+
+                [ContextMenu("Debug/Level Up")]
+                private void Debug_LevelUp()
+                {
+                        if (Context?.PlayerData == null)
+                                return;
+
+                        if (Context.PlayerData.ForceLevelUp() == false)
+                        {
+                                Debug.Log($"[Player Debug] Player already at max level ({Context.PlayerData.Level}).");
+                                return;
+                        }
+
+                        Debug.Log($"[Player Debug] Player leveled up to {Context.PlayerData.Level}.");
+                }
+        }
 }

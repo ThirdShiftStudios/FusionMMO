@@ -98,7 +98,9 @@ namespace TPSBR
                         {
                                 playerData = new PlayerData(userID);
                                 playerData.AgentID = Global.Settings.Agent.GetRandomAgentSetup().ID;
-                        };
+                        }
+
+                        playerData.EnsureProgressInitialized();
 
                         return playerData;
                 }
