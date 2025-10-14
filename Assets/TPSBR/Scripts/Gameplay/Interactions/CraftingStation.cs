@@ -5,6 +5,7 @@ using TPSBR.UI;
 using TSS.Data;
 using Unity.Template.CompetitiveActionMultiplayer;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace TPSBR
 {
@@ -19,8 +20,9 @@ namespace TPSBR
                 private Transform _hudPivot;
                 [SerializeField]
                 private Collider _interactionCollider;
+                [FormerlySerializedAs("_cameraViewTransform")]
                 [SerializeField]
-                private Transform _cameraViewTransform;
+                private Transform _cameraTransform;
                 [SerializeField]
                 private Transform _weaponViewTransform;
                 [Header("Filtering")]
@@ -115,7 +117,7 @@ namespace TPSBR
                         Context.UI.Open(view);
                 }
 
-                private ItemStatus PopulateItems(Agent agent, List<ItemData> destination)
+                protected virtual ItemStatus PopulateItems(Agent agent, List<ItemData> destination)
                 {
                         if (destination == null)
                                 return ItemStatus.NoItems;
@@ -144,7 +146,7 @@ namespace TPSBR
                                                 continue;
 
                                         Sprite icon = weaponDefinition.IconSprite;
-                                        destination.Add(new ItemData(icon, slot.Quantity, ItemSourceType.Inventory, i, weaponDefinition, null));
+                                        destination.Add(new ItemData(icon, slot.Quantity, ItemSourceType.Inventory, i, weaponDefinition, null, null));
                                         hasAny = true;
                                 }
                         }
@@ -166,7 +168,7 @@ namespace TPSBR
                                         icon = definition.IconSprite;
                                 }
 
-                                destination.Add(new ItemData(icon, 1, ItemSourceType.Hotbar, i, definition, weapon));
+                                destination.Add(new ItemData(icon, 1, ItemSourceType.Hotbar, i, definition, weapon, null));
                                 hasAny = true;
                         }
 
@@ -188,12 +190,13 @@ namespace TPSBR
                 {
                         None,
                         Inventory,
-                        Hotbar
+                        Hotbar,
+                        Vendor
                 }
 
                 public readonly struct ItemData : IEquatable<ItemData>
                 {
-                        public ItemData(Sprite icon, int quantity, ItemSourceType sourceType, int sourceIndex, WeaponDefinition definition, Weapon weapon)
+                        public ItemData(Sprite icon, int quantity, ItemSourceType sourceType, int sourceIndex, ItemDefinition definition, Weapon weapon, string configurationHash)
                         {
                                 Icon = icon;
                                 Quantity = quantity;
@@ -201,18 +204,20 @@ namespace TPSBR
                                 SourceIndex = sourceIndex;
                                 Definition = definition;
                                 Weapon = weapon;
+                                ConfigurationHash = configurationHash;
                         }
 
                         public Sprite Icon { get; }
                         public int Quantity { get; }
                         public ItemSourceType SourceType { get; }
                         public int SourceIndex { get; }
-                        public WeaponDefinition Definition { get; }
+                        public ItemDefinition Definition { get; }
                         public Weapon Weapon { get; }
+                        public string ConfigurationHash { get; }
 
                         public bool Equals(ItemData other)
                         {
-                                return Icon == other.Icon && Quantity == other.Quantity && SourceType == other.SourceType && SourceIndex == other.SourceIndex && Definition == other.Definition && Weapon == other.Weapon;
+                                return Icon == other.Icon && Quantity == other.Quantity && SourceType == other.SourceType && SourceIndex == other.SourceIndex && Definition == other.Definition && Weapon == other.Weapon && ConfigurationHash == other.ConfigurationHash;
                         }
 
                         public override bool Equals(object obj)
@@ -230,6 +235,7 @@ namespace TPSBR
                                         hashCode = (hashCode * 397) ^ SourceIndex;
                                         hashCode = (hashCode * 397) ^ (Definition != null ? Definition.GetHashCode() : 0);
                                         hashCode = (hashCode * 397) ^ (Weapon != null ? Weapon.GetHashCode() : 0);
+                                        hashCode = (hashCode * 397) ^ (ConfigurationHash != null ? ConfigurationHash.GetHashCode() : 0);
                                         return hashCode;
                                 }
                         }
@@ -263,20 +269,16 @@ namespace TPSBR
                                 _activeItemContextView = null;
                         }
 
-                        UpdateLocalWeaponPreview(null);
-                        if (HasStateAuthority == true)
-                        {
-                                RequestSetSelectedItem(0, ItemSourceType.None, -1);
-                        }
-                        else
+                        OnItemContextViewClosed();
+
+                        if (HasStateAuthority == false)
                         {
                                 _currentSelectedSourceType = ItemSourceType.None;
                                 _currentSelectedSourceIndex = -1;
                         }
-                        RestoreCameraView();
                 }
 
-                private void UpdateLocalWeaponPreview(WeaponDefinition definition)
+                private void UpdateLocalItemPreview(ItemDefinition definition)
                 {
                         if (definition == null)
                         {
@@ -291,14 +293,19 @@ namespace TPSBR
                         if (_currentPreviewDefinitionId == definition.ID)
                                 return;
 
-                        ShowWeaponPreview(definition);
+                        if (definition is WeaponDefinition weaponDefinition)
+                        {
+                                ShowWeaponPreview(weaponDefinition);
+                        }
+                        else
+                        {
+                                ClearWeaponPreview();
+                        }
                 }
 
                 private void HandleItemSelected(ItemData data)
                 {
-                        UpdateLocalWeaponPreview(data.Definition);
-                        RequestSetSelectedItem(data.Definition != null ? data.Definition.ID : 0, data.SourceType, data.SourceIndex);
-                        ApplyCameraView();
+                        OnItemSelected(data);
                 }
 
                 private void HandleItemContextViewClosed()
@@ -310,14 +317,26 @@ namespace TPSBR
                                 _activeItemContextView = null;
                         }
 
-                        UpdateLocalWeaponPreview(null);
+                        OnItemContextViewClosed();
+                }
+
+                protected virtual void OnItemSelected(ItemData data)
+                {
+                        UpdateLocalItemPreview(data.Definition);
+                        RequestSetSelectedItem(data.Definition != null ? data.Definition.ID : 0, data.SourceType, data.SourceIndex);
+                        ApplyCameraView();
+                }
+
+                protected virtual void OnItemContextViewClosed()
+                {
+                        UpdateLocalItemPreview(null);
                         RequestSetSelectedItem(0, ItemSourceType.None, -1);
                         RestoreCameraView();
                 }
 
                 private void ApplyCameraView()
                 {
-                        if (_cameraViewTransform == null || Context == null || Context.HasInput == false || Context.Camera == null || Context.Camera.Camera == null)
+                        if (_cameraTransform == null || Context == null || Context.HasInput == false || Context.Camera == null || Context.Camera.Camera == null)
                                 return;
 
                         Transform cameraTransform = Context.Camera.Camera.transform;
@@ -555,15 +574,15 @@ namespace TPSBR
                         maxCameraDistance = 0f;
                         targetRotation = Quaternion.identity;
 
-                        if (_cameraViewTransform == null)
+                        if (_cameraTransform == null)
                                 return false;
 
-                        Transform referenceTransform = _cameraViewTransform.parent != null ? _cameraViewTransform.parent : transform;
-                        Vector3 targetPosition = _cameraViewTransform.position;
+                        Transform referenceTransform = _cameraTransform.parent != null ? _cameraTransform.parent : transform;
+                        Vector3 targetPosition = _cameraTransform.position;
                         Vector3 referencePosition = referenceTransform != null ? referenceTransform.position : Vector3.zero;
                         Vector3 offset = targetPosition - referencePosition;
 
-                        targetRotation = _cameraViewTransform.rotation;
+                        targetRotation = _cameraTransform.rotation;
 
                         if (offset.sqrMagnitude > 0.0001f)
                         {
@@ -573,7 +592,7 @@ namespace TPSBR
                         }
                         else
                         {
-                                raycastDirection = _cameraViewTransform.forward.sqrMagnitude > 0.0001f ? _cameraViewTransform.forward.normalized : Vector3.forward;
+                                raycastDirection = _cameraTransform.forward.sqrMagnitude > 0.0001f ? _cameraTransform.forward.normalized : Vector3.forward;
                                 raycastStart = targetPosition;
                                 maxCameraDistance = 0f;
                         }
@@ -581,7 +600,7 @@ namespace TPSBR
                         return true;
                 }
 
-                private bool MatchesFilter(DataDefinition definition)
+                protected bool MatchesFilter(DataDefinition definition)
                 {
                         if (FilterDefinitions == null || FilterDefinitions.Length == 0)
                                 return true;
