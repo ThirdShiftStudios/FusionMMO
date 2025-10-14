@@ -13,6 +13,7 @@ namespace TPSBR.UI
 		
 		private UIDeathView _deathView;
 		private UIGameplayInventory _inventoryView;
+		private const string _vendorViewResourcePath = "UI/GameplayViews/UIVendorView";
 		
 		private bool _gameOverShown;
 		private Coroutine _gameOverCoroutine;
@@ -43,6 +44,8 @@ namespace TPSBR.UI
 		protected override void OnInitializeInternal()
 		{
 			base.OnInitializeInternal();
+
+			EnsureVendorView();
 
 			_deathView = Get<UIDeathView>();
 			_inventoryView = Get<UIGameplayInventory>();
@@ -132,5 +135,31 @@ namespace TPSBR.UI
 
 			_gameOverCoroutine = null;
 		}
+
+		private void EnsureVendorView()
+		{
+			if (Get<UIVendorView>() != null)
+				return;
+
+			if (Canvas == null)
+				return;
+
+			var vendorPrefab = Resources.Load<UIVendorView>(_vendorViewResourcePath);
+
+			if (vendorPrefab == null)
+			{
+				Debug.LogWarning($"Unable to locate {nameof(UIVendorView)} prefab at Resources/{_vendorViewResourcePath}.");
+				return;
+			}
+
+			var vendorView = Instantiate(vendorPrefab, Canvas.transform, false);
+			vendorView.gameObject.name = vendorPrefab.gameObject.name;
+
+			if (RegisterView(vendorView) == false)
+			{
+				Destroy(vendorView.gameObject);
+			}
+		}
+
 	}
 }

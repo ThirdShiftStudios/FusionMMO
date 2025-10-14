@@ -26,19 +26,19 @@ namespace TPSBR.UI
 
 		protected UIView[] _views;
 
-		protected virtual void OnInitializeInternal()   { }
-		protected virtual void OnDeinitializeInternal() { }
-		protected virtual void OnTickInternal()         { }
-		protected virtual bool OnBackAction()           { return false; }
-		protected virtual void OnViewOpened(UIView view) { }
-		protected virtual void OnViewClosed(UIView view) { }
+                protected virtual void OnInitializeInternal()   { }
+                protected virtual void OnDeinitializeInternal() { }
+                protected virtual void OnTickInternal()         { }
+                protected virtual bool OnBackAction()           { return false; }
+                protected virtual void OnViewOpened(UIView view) { }
+                protected virtual void OnViewClosed(UIView view) { }
 
 		// PUBLIC METHODS
 
-		public T Get<T>() where T : UIView
-		{
-			if (_views == null)
-				return null;
+                public T Get<T>() where T : UIView
+                {
+                        if (_views == null)
+                                return null;
 
 			for (int i = 0; i < _views.Length; ++i)
 			{
@@ -48,8 +48,30 @@ namespace TPSBR.UI
 					return view;
 			}
 
-			return null;
-		}
+                        return null;
+                }
+
+                protected bool RegisterView(UIView view)
+                {
+                        if (view == null)
+                                return false;
+
+                        if (_views == null)
+                                return false;
+
+                        if (Array.IndexOf(_views, view) >= 0)
+                                return true;
+
+                        int currentLength = _views.Length;
+                        Array.Resize(ref _views, currentLength + 1);
+                        _views[currentLength] = view;
+
+                        view.Initialize(this, null);
+                        view.SetPriority(currentLength);
+                        view.gameObject.SetActive(false);
+
+                        return true;
+                }
 
 		public T Open<T>() where T : UIView
 		{
