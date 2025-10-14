@@ -23,6 +23,9 @@ namespace TPSBR
                 private Transform _cameraViewTransform;
                 [SerializeField]
                 private Transform _weaponViewTransform;
+                [Header("Camera Transition")]
+                [SerializeField, Min(0.01f)]
+                private float _cameraTransitionDuration = 0.35f;
                 [Header("Filtering")]
                 public DataDefinition[] FilterDefinitions; // items must match any of these to be shown
 
@@ -43,6 +46,13 @@ namespace TPSBR
                 private ItemSourceType _currentSelectedSourceType = ItemSourceType.None;
                 private int _currentSelectedSourceIndex = -1;
                 private ChangeDetector _changeDetector;
+                private bool _cameraTransitionActive;
+                private bool _cameraTransitionToView;
+                private float _cameraTransitionElapsed;
+                private Vector3 _cameraTransitionStartPosition;
+                private Quaternion _cameraTransitionStartRotation;
+                private Vector3 _cameraTransitionTargetPosition;
+                private Quaternion _cameraTransitionTargetRotation;
 
                 string  IInteraction.Name        => _interactionName;
                 string  IInteraction.Description => _interactionDescription;
@@ -328,14 +338,9 @@ namespace TPSBR
                                 _originalCameraPosition = cameraTransform.position;
                                 _originalCameraRotation = cameraTransform.rotation;
 
-                                if (TryGetCameraViewData(out _, out _, out float maxDistance, out _) == true)
-                                {
-                                        _cameraViewDistance = maxDistance;
-                                }
-                                else
-                                {
-                                        _cameraViewDistance = 0f;
-                                }
+                                _cameraViewDistance = 0f;
+
+                                BeginCameraTransition(cameraTransform, true);
                         }
 
                         UpdateCameraView();
@@ -343,13 +348,13 @@ namespace TPSBR
 
                 private void RestoreCameraView()
                 {
-                        if (_cameraViewActive == false)
+                        if (_cameraViewActive == false && _cameraTransitionActive == false)
                                 return;
 
                         if (Context != null && Context.Camera != null && Context.Camera.Camera != null)
                         {
                                 Transform cameraTransform = Context.Camera.Camera.transform;
-                                cameraTransform.SetPositionAndRotation(_originalCameraPosition, _originalCameraRotation);
+                                BeginCameraTransition(cameraTransform, false);
                         }
 
                         _cameraViewActive = false;
@@ -488,10 +493,17 @@ namespace TPSBR
                                 }
                         }
 
-                        if (_cameraViewActive == false)
+                        if (_cameraViewActive == false && (_cameraTransitionActive == false || _cameraTransitionToView == true))
                                 return;
 
-                        UpdateCameraView();
+                        if (_cameraViewActive == true)
+                        {
+                                UpdateCameraView();
+                        }
+                        else
+                        {
+                                UpdateCameraTransition();
+                        }
                 }
 
                 private void UpdateSelectedItemSlotCache()
@@ -512,7 +524,7 @@ namespace TPSBR
                         if (TryGetCameraViewData(out Vector3 raycastStart, out Vector3 raycastDirection, out float maxCameraDistance, out Quaternion targetRotation) == false)
                                 return;
 
-                        Transform cameraTransform = sceneCamera.Camera.transform;
+                        Vector3 targetPosition;
 
                         if (maxCameraDistance > 0.0001f)
                         {
@@ -537,15 +549,15 @@ namespace TPSBR
                                         }
                                 }
 
-                                cameraTransform.position = raycastStart + raycastDirection * _cameraViewDistance;
+                                targetPosition = raycastStart + raycastDirection * _cameraViewDistance;
                         }
                         else
                         {
                                 _cameraViewDistance = 0f;
-                                cameraTransform.position = raycastStart;
+                                targetPosition = raycastStart;
                         }
 
-                        cameraTransform.rotation = targetRotation;
+                        ApplyCameraTransform(targetPosition, targetRotation);
                 }
 
                 private bool TryGetCameraViewData(out Vector3 raycastStart, out Vector3 raycastDirection, out float maxCameraDistance, out Quaternion targetRotation)
@@ -602,6 +614,85 @@ namespace TPSBR
                         }
 
                         return false;
+                }
+
+                private void BeginCameraTransition(Transform cameraTransform, bool toView)
+                {
+                        if (cameraTransform == null)
+                                return;
+
+                        _cameraTransitionActive = true;
+                        _cameraTransitionToView = toView;
+                        _cameraTransitionElapsed = 0f;
+                        _cameraTransitionStartPosition = cameraTransform.position;
+                        _cameraTransitionStartRotation = cameraTransform.rotation;
+
+                        if (toView == false)
+                        {
+                                _cameraTransitionTargetPosition = _originalCameraPosition;
+                                _cameraTransitionTargetRotation = _originalCameraRotation;
+                        }
+                }
+
+                private void UpdateCameraTransition()
+                {
+                        if (_cameraTransitionActive == false)
+                                return;
+
+                        if (Context == null || Context.Camera == null || Context.Camera.Camera == null)
+                                return;
+
+                        Transform cameraTransform = Context.Camera.Camera.transform;
+
+                        Vector3 targetPosition = _cameraTransitionToView == true ? _cameraTransitionTargetPosition : _originalCameraPosition;
+                        Quaternion targetRotation = _cameraTransitionToView == true ? _cameraTransitionTargetRotation : _originalCameraRotation;
+
+                        UpdateCameraTransitionTransform(cameraTransform, targetPosition, targetRotation);
+
+                        if (_cameraTransitionActive == false && _cameraTransitionToView == false)
+                        {
+                                cameraTransform.SetPositionAndRotation(_originalCameraPosition, _originalCameraRotation);
+                        }
+                }
+
+                private void ApplyCameraTransform(Vector3 targetPosition, Quaternion targetRotation)
+                {
+                        if (Context == null || Context.Camera == null || Context.Camera.Camera == null)
+                                return;
+
+                        Transform cameraTransform = Context.Camera.Camera.transform;
+
+                        if (_cameraTransitionActive == true && _cameraTransitionToView == true)
+                        {
+                                _cameraTransitionTargetPosition = targetPosition;
+                                _cameraTransitionTargetRotation = targetRotation;
+
+                                UpdateCameraTransitionTransform(cameraTransform, targetPosition, targetRotation);
+                        }
+                        else
+                        {
+                                cameraTransform.SetPositionAndRotation(targetPosition, targetRotation);
+                        }
+                }
+
+                private void UpdateCameraTransitionTransform(Transform cameraTransform, Vector3 targetPosition, Quaternion targetRotation)
+                {
+                        float duration = Mathf.Max(0.01f, _cameraTransitionDuration);
+
+                        _cameraTransitionElapsed = Mathf.Min(_cameraTransitionElapsed + Time.deltaTime, duration);
+                        float normalized = _cameraTransitionElapsed / duration;
+                        float eased = Mathf.SmoothStep(0f, 1f, normalized);
+
+                        Vector3 position = Vector3.Lerp(_cameraTransitionStartPosition, targetPosition, eased);
+                        Quaternion rotation = Quaternion.Slerp(_cameraTransitionStartRotation, targetRotation, eased);
+
+                        cameraTransform.SetPositionAndRotation(position, rotation);
+
+                        if (normalized >= 0.999f)
+                        {
+                                _cameraTransitionActive = false;
+                                cameraTransform.SetPositionAndRotation(targetPosition, targetRotation);
+                        }
                 }
         }
 }
