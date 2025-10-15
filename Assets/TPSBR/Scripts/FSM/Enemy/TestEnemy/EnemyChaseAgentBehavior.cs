@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 namespace TPSBR.Enemies
 {
@@ -6,26 +6,47 @@ namespace TPSBR.Enemies
     {
         [SerializeField]
         [Tooltip("Maximum chase distance before giving up.")]
-        private float _maxChaseDistance = 25f;
-
-        protected override void OnEnterState()
-        {
-            base.OnEnterState();
-            // Pseudocode: Lock onto the detected agent, increase movement speed, and play chase animation.
-        }
+        private float _maxChaseDistance = 20f;
 
         protected override void OnFixedUpdate()
         {
             base.OnFixedUpdate();
-            // Pseudocode: Pursue the target, update pathing, and evaluate attack opportunities.
-            // if (target lost or too far) -> transition to return-to-patrol-zone.
-            // if (target defeated) -> transition to patrol or idle.
-        }
 
-        protected override void OnExitState()
-        {
-            base.OnExitState();
-            // Pseudocode: Reset chase modifiers and release target references.
+            if (HasStateAuthority == false)
+                return;
+
+            if (Controller is not TestEnemy enemy)
+                return;
+
+            if (enemy.HasPlayerTarget == false)
+            {
+                if (enemy.ReturnToPatrolZone != null)
+                {
+                    Machine.ForceActivateState(enemy.ReturnToPatrolZone.StateId);
+                }
+                else if (enemy.Patrol != null)
+                {
+                    Machine.ForceActivateState(enemy.Patrol.StateId);
+                }
+
+                return;
+            }
+
+            Vector3 playerPosition = enemy.GetPlayerPosition();
+            enemy.MoveTowardsXZ(playerPosition, enemy.MovementSpeed, Runner.DeltaTime);
+
+            float distanceFromSpawn = enemy.GetHorizontalDistanceFromSpawn();
+            if (distanceFromSpawn >= _maxChaseDistance)
+            {
+                if (enemy.ReturnToPatrolZone != null)
+                {
+                    Machine.ForceActivateState(enemy.ReturnToPatrolZone.StateId);
+                }
+                else if (enemy.Patrol != null)
+                {
+                    Machine.ForceActivateState(enemy.Patrol.StateId);
+                }
+            }
         }
     }
 }

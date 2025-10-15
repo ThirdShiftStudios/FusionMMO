@@ -31,11 +31,10 @@ namespace TPSBR.Enemies
 
             if (_spawnTimer <= 0f)
             {
-                // Pseudocode: Determine if we should go to idle or patrol depending on world state.
-                var next = ResolveDefaultNext<EnemyIdleBehavior>();
+                var next = ResolveDefaultNext<EnemyPatrolBehavior>();
                 if (next != null)
                 {
-                    Machine.ForceActivateState(next);
+                    Machine.ForceActivateState(next.StateId);
                 }
             }
         }

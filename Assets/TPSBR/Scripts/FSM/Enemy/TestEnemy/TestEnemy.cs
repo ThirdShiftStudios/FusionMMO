@@ -41,6 +41,18 @@ namespace TPSBR.Enemies
         [SerializeField] [Tooltip("Reference to the despawn behavior.")]
         private EnemyDespawnBehavior _despawn;
 
+        [Header("Movement")]
+        [SerializeField]
+        [Tooltip("Movement speed used by simple navigation logic.")]
+        private float _movementSpeed = 3f;
+
+        [SerializeField]
+        [Tooltip("Optional explicit target to chase when entering the chase state.")]
+        private Transform _playerTarget;
+
+        private Vector3 _spawnPosition;
+        private bool _hasSpawnPosition;
+
         protected override void OnBehaviorsCached(List<EnemyBehavior> behaviors)
         {
             base.OnBehaviorsCached(behaviors);
@@ -52,6 +64,100 @@ namespace TPSBR.Enemies
             _returnToPatrolZone = ResolveBehavior(_returnToPatrolZone, behaviors);
             _death = ResolveBehavior(_death, behaviors);
             _despawn = ResolveBehavior(_despawn, behaviors);
+        }
+
+        public override void Spawned()
+        {
+            base.Spawned();
+
+            CacheSpawnPosition();
+        }
+
+        public float MovementSpeed => _movementSpeed;
+
+        public Transform PlayerTarget
+        {
+            get => _playerTarget;
+            set => _playerTarget = value;
+        }
+
+        public bool HasPlayerTarget => _playerTarget != null;
+
+        public Vector3 SpawnPosition
+        {
+            get
+            {
+                CacheSpawnPosition();
+                return _spawnPosition;
+            }
+        }
+
+        public float PatrolRadius => _patrol != null ? _patrol.PatrolRadius : 0f;
+
+        public Vector3 GetPlayerPosition()
+        {
+            if (_playerTarget == null)
+                return transform.position;
+
+            return _playerTarget.position;
+        }
+
+        public bool MoveTowardsXZ(Vector3 target, float speed, float deltaTime)
+        {
+            Vector3 currentPosition = transform.position;
+            target.y = currentPosition.y;
+
+            Vector3 toTarget = target - currentPosition;
+            toTarget.y = 0f;
+
+            float distance = toTarget.magnitude;
+            if (distance <= 0.01f)
+            {
+                transform.position = new Vector3(target.x, currentPosition.y, target.z);
+                return true;
+            }
+
+            float step = speed * deltaTime;
+            if (step >= distance)
+            {
+                transform.position = new Vector3(target.x, currentPosition.y, target.z);
+                return true;
+            }
+
+            Vector3 movement = toTarget.normalized * step;
+            transform.position = new Vector3(currentPosition.x + movement.x, currentPosition.y, currentPosition.z + movement.z);
+            return false;
+        }
+
+        public float GetHorizontalDistanceFromSpawn()
+        {
+            Vector3 currentPosition = transform.position;
+            return GetHorizontalDistanceFromSpawn(currentPosition);
+        }
+
+        public float GetHorizontalDistanceFromSpawn(Vector3 position)
+        {
+            Vector3 delta = position - SpawnPosition;
+            delta.y = 0f;
+            return delta.magnitude;
+        }
+
+        public bool IsWithinPatrolRadius(Vector3 position)
+        {
+            float radius = PatrolRadius;
+            if (radius <= 0f)
+                return true;
+
+            return GetHorizontalDistanceFromSpawn(position) <= radius;
+        }
+
+        private void CacheSpawnPosition()
+        {
+            if (_hasSpawnPosition == true)
+                return;
+
+            _spawnPosition = transform.position;
+            _hasSpawnPosition = true;
         }
 
         protected override void ConfigureStateMachine(StateMachine<EnemyBehavior> machine)

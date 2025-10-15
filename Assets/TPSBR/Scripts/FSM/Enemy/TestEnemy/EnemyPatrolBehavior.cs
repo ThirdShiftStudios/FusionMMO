@@ -8,31 +8,70 @@ namespace TPSBR.Enemies
         [Tooltip("Radius around the spawn point considered the patrol zone.")]
         private float _patrolRadius = 10f;
 
-        [SerializeField]
-        [Tooltip("Waypoints the enemy should follow when patrolling.")]
-        private Transform[] _waypoints;
+        private Vector3 _currentTarget;
+        private bool _hasTarget;
 
-        private int _currentWaypointIndex;
+        public float PatrolRadius => _patrolRadius;
 
         protected override void OnEnterState()
         {
             base.OnEnterState();
-            _currentWaypointIndex = 0;
-            // Pseudocode: Acquire navigation agent, start moving towards the first waypoint, and raise patrol started events.
+
+            _hasTarget = false;
+            SelectNewTarget();
         }
 
         protected override void OnFixedUpdate()
         {
             base.OnFixedUpdate();
-            // Pseudocode: Advance through waypoints, loop when necessary, and monitor for enemies entering detection radius.
-            // if (playerDetected) -> transition to chase behavior.
-            // if (outside patrol radius) -> request return-to-patrol-zone behavior.
+
+            if (HasStateAuthority == false)
+                return;
+
+            if (Controller is not TestEnemy enemy)
+                return;
+
+            if (enemy.HasPlayerTarget == true && enemy.ChaseAgent != null)
+            {
+                Machine.ForceActivateState(enemy.ChaseAgent.StateId);
+                return;
+            }
+
+            if (_hasTarget == false)
+            {
+                SelectNewTarget();
+            }
+
+            if (_hasTarget == false)
+                return;
+
+            bool reached = enemy.MoveTowardsXZ(_currentTarget, enemy.MovementSpeed, Runner.DeltaTime);
+
+            if (reached == true)
+            {
+                if (enemy.Idle != null)
+                {
+                    Machine.ForceActivateState(enemy.Idle.StateId);
+                }
+                else
+                {
+                    SelectNewTarget();
+                }
+            }
         }
 
-        protected override void OnExitState()
+        private void SelectNewTarget()
         {
-            base.OnExitState();
-            // Pseudocode: Stop pathing and clear patrol navigation data.
+            if (Controller is not TestEnemy enemy)
+            {
+                _hasTarget = false;
+                return;
+            }
+
+            Vector3 spawnPosition = enemy.SpawnPosition;
+            Vector2 randomOffset = Random.insideUnitCircle * _patrolRadius;
+            _currentTarget = new Vector3(spawnPosition.x + randomOffset.x, spawnPosition.y, spawnPosition.z + randomOffset.y);
+            _hasTarget = true;
         }
     }
 }
