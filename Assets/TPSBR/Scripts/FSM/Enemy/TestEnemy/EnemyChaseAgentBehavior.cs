@@ -32,7 +32,7 @@ namespace TPSBR.Enemies
                 return;
             }
 
-            Vector3 playerPosition = enemy.GetPlayerPosition();
+            Vector3 playerPosition = enemy.GetTargetPosition();
             enemy.MoveTowardsXZ(playerPosition, enemy.MovementSpeed, Runner.DeltaTime);
 
             float distanceFromSpawn = enemy.GetHorizontalDistanceFromSpawn();
@@ -47,6 +47,12 @@ namespace TPSBR.Enemies
                     Machine.ForceActivateState(enemy.Patrol.StateId);
                 }
             }
+        }
+
+        protected override void OnExitState()
+        {
+            Controller.ClearTarget(); 
+            base.OnExitState();
         }
     }
 }

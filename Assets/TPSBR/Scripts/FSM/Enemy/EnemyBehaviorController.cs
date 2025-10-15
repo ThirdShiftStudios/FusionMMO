@@ -1,82 +1,73 @@
 using System.Collections.Generic;
+using TPSBR;
 using UnityEngine;
 
 namespace Fusion.Addons.FSM
 {
-        [DisallowMultipleComponent]
-        [RequireComponent(typeof(StateMachineController))]
-        public abstract class EnemyBehaviorController : NetworkBehaviour, IStateMachineOwner
+    [DisallowMultipleComponent]
+    [RequireComponent(typeof(StateMachineController))]
+    public abstract class EnemyBehaviorController : ContextBehaviour, IStateMachineOwner
+    {
+        public float MovementSpeed => _movementSpeed;
+
+        public Transform Target
         {
-                public StateMachine<EnemyBehavior> Machine => _machine;
-
-                protected IReadOnlyList<EnemyBehavior> Behaviors => _behaviors;
-
-                [SerializeField]
-                [Tooltip("Optional override for the state machine name.")]
-                private string _machineName = "Enemy Behavior";
-
-                private readonly List<EnemyBehavior> _behaviors = new(16);
-                private StateMachine<EnemyBehavior> _machine;
-
-                void IStateMachineOwner.CollectStateMachines(List<IStateMachine> stateMachines)
-                {
-                        CacheBehaviors();
-                        InitializeBehaviors();
-
-                        _machine = new StateMachine<EnemyBehavior>(GetMachineName(), _behaviors.ToArray());
-
-                        ConfigureStateMachine(_machine);
-
-                        stateMachines.Add(_machine);
-                }
-
-                protected virtual void ConfigureStateMachine(StateMachine<EnemyBehavior> machine)
-                {
-                        var defaultBehavior = GetDefaultBehavior(machine.States);
-                        if (defaultBehavior != null)
-                        {
-                                machine.SetDefaultState(defaultBehavior.StateId);
-                        }
-                }
-
-                protected virtual EnemyBehavior GetDefaultBehavior(EnemyBehavior[] behaviors)
-                {
-                        return behaviors != null && behaviors.Length > 0 ? behaviors[0] : null;
-                }
-
-                protected virtual string GetMachineName()
-                {
-                        if (string.IsNullOrWhiteSpace(_machineName) == false)
-                                return _machineName;
-
-                        return $"{GetType().Name} Machine";
-                }
-
-                protected virtual void CacheBehaviors()
-                {
-                        _behaviors.Clear();
-
-                        var behavioursInHierarchy = GetComponentsInChildren<EnemyBehavior>(true);
-
-                        for (int i = 0; i < behavioursInHierarchy.Length; i++)
-                        {
-                                if (behavioursInHierarchy[i] == null)
-                                        continue;
-
-                                _behaviors.Add(behavioursInHierarchy[i]);
-                        }
-
-                        OnBehaviorsCached(_behaviors);
-                }
-
-                protected virtual void OnBehaviorsCached(List<EnemyBehavior> behaviors) {}
-
-                private void InitializeBehaviors()
-                {
-                        for (int i = 0; i < _behaviors.Count; i++)
-                        {
-                                _behaviors[i].SetController(this);
-                        }
-                }
+            get => _target;
+            set => _target = value;
         }
+
+        public bool HasPlayerTarget => _target != null;
+
+        public Vector3 SpawnPosition
+        {
+            get
+            {
+                CacheSpawnPosition();
+                return _spawnPosition;
+            }
+        }
+        
+        [SerializeField] [Tooltip("Optional explicit target to chase when entering the chase state.")]
+        private protected Transform _target;
+        public EnemyBehaviorMachine Machine => _machine;
+        [Header("Movement")] [SerializeField] [Tooltip("Movement speed used by simple navigation logic.")]
+        private float _movementSpeed = 3f;
+        
+
+        private Vector3 _spawnPosition;
+        private bool _hasSpawnPosition;
+        protected IReadOnlyList<EnemyBehavior> Behaviors => _behaviors;
+
+        [SerializeField] [Tooltip("Optional override for the state machine name.")]
+        private protected string _machineName = "Enemy Behavior";
+
+        private readonly List<EnemyBehavior> _behaviors = new(16);
+        private protected EnemyBehaviorMachine _machine;
+
+        void IStateMachineOwner.CollectStateMachines(List<IStateMachine> stateMachines)
+        {
+            OnCollectStateMachines(stateMachines);
+        }
+
+        protected abstract void OnCollectStateMachines(List<IStateMachine> stateMachines);
+
+        public override void Spawned()
+        {
+            base.Spawned();
+
+            CacheSpawnPosition();
+        }
+        public void ClearTarget()
+        {
+            _target = null;
+        }
+        private void CacheSpawnPosition()
+        {
+            if (_hasSpawnPosition == true)
+                return;
+
+            _spawnPosition = transform.position;
+            _hasSpawnPosition = true;
+        }
+    }
 }

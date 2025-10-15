@@ -41,65 +41,54 @@ namespace TPSBR.Enemies
         [SerializeField] [Tooltip("Reference to the despawn behavior.")]
         private EnemyDespawnBehavior _despawn;
 
-        [Header("Movement")]
-        [SerializeField]
-        [Tooltip("Movement speed used by simple navigation logic.")]
-        private float _movementSpeed = 3f;
 
-        [SerializeField]
-        [Tooltip("Optional explicit target to chase when entering the chase state.")]
-        private Transform _playerTarget;
 
-        private Vector3 _spawnPosition;
-        private bool _hasSpawnPosition;
+      
 
-        protected override void OnBehaviorsCached(List<EnemyBehavior> behaviors)
-        {
-            base.OnBehaviorsCached(behaviors);
 
-            _spawning = ResolveBehavior(_spawning, behaviors);
-            _idle = ResolveBehavior(_idle, behaviors);
-            _patrol = ResolveBehavior(_patrol, behaviors);
-            _chaseAgent = ResolveBehavior(_chaseAgent, behaviors);
-            _returnToPatrolZone = ResolveBehavior(_returnToPatrolZone, behaviors);
-            _death = ResolveBehavior(_death, behaviors);
-            _despawn = ResolveBehavior(_despawn, behaviors);
-        }
-
-        public override void Spawned()
-        {
-            base.Spawned();
-
-            CacheSpawnPosition();
-        }
-
-        public float MovementSpeed => _movementSpeed;
-
-        public Transform PlayerTarget
-        {
-            get => _playerTarget;
-            set => _playerTarget = value;
-        }
-
-        public bool HasPlayerTarget => _playerTarget != null;
-
-        public Vector3 SpawnPosition
-        {
-            get
-            {
-                CacheSpawnPosition();
-                return _spawnPosition;
-            }
-        }
 
         public float PatrolRadius => _patrol != null ? _patrol.PatrolRadius : 0f;
 
-        public Vector3 GetPlayerPosition()
+        protected override void OnCollectStateMachines(List<IStateMachine> stateMachines)
         {
-            if (_playerTarget == null)
+            List<EnemyBehavior> states = new List<EnemyBehavior>();
+            states.Add(_spawning);
+            states.Add(_death);
+            states.Add(_patrol);
+            states.Add(_despawn);
+            states.Add(_idle);
+            states.Add(_chaseAgent);
+            states.Add(_returnToPatrolZone);
+
+            _machine = new EnemyBehaviorMachine(_machineName, this, states.ToArray());
+            
+            stateMachines.Add(_machine);
+        }
+
+        public override void FixedUpdateNetwork()
+        {
+            base.FixedUpdateNetwork();
+
+            foreach (var player in Context.NetworkGame.ActivePlayers)
+            {
+                if (player == false) continue;
+                if (player.Object == false) continue;
+                if (player.IsInitialized == false) continue;
+                if (player.ActiveAgent == false) continue;
+                if (player.ActiveAgent.Object == false) continue;
+
+                var agent = player.ActiveAgent;
+                if (Vector3.Distance(agent.transform.position, transform.position) <= 10f)
+                    _target = agent.transform;
+            }
+        }
+
+        public Vector3 GetTargetPosition()
+        {
+            if (_target == null)
                 return transform.position;
 
-            return _playerTarget.position;
+            return _target.position;
         }
 
         public bool MoveTowardsXZ(Vector3 target, float speed, float deltaTime)
@@ -125,7 +114,8 @@ namespace TPSBR.Enemies
             }
 
             Vector3 movement = toTarget.normalized * step;
-            transform.position = new Vector3(currentPosition.x + movement.x, currentPosition.y, currentPosition.z + movement.z);
+            transform.position = new Vector3(currentPosition.x + movement.x, currentPosition.y,
+                currentPosition.z + movement.z);
             return false;
         }
 
@@ -149,42 +139,6 @@ namespace TPSBR.Enemies
                 return true;
 
             return GetHorizontalDistanceFromSpawn(position) <= radius;
-        }
-
-        private void CacheSpawnPosition()
-        {
-            if (_hasSpawnPosition == true)
-                return;
-
-            _spawnPosition = transform.position;
-            _hasSpawnPosition = true;
-        }
-
-        protected override void ConfigureStateMachine(StateMachine<EnemyBehavior> machine)
-        {
-            base.ConfigureStateMachine(machine);
-
-            if (_spawning != null)
-            {
-                machine.SetDefaultState(_spawning.StateId);
-            }
-        }
-
-        private static TBehavior ResolveBehavior<TBehavior>(TBehavior current, IReadOnlyList<EnemyBehavior> available)
-            where TBehavior : EnemyBehavior
-        {
-            if (current != null)
-                return current;
-
-            for (int i = 0; i < available.Count; i++)
-            {
-                if (available[i] is TBehavior typed)
-                {
-                    return typed;
-                }
-            }
-
-            return null;
         }
     }
 }
