@@ -143,7 +143,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6dbf7c59cc3340839d165fbe5fcb0c71, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _health: {fileID: 0}
+  _health: {fileID: 6323051593667454083}
 --- !u!114 &8241693279465801080
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -157,13 +157,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _machineName: Enemy Behavior
-  _spawning: {fileID: 0}
-  _idle: {fileID: 0}
-  _patrol: {fileID: 0}
-  _chaseAgent: {fileID: 0}
-  _returnToPatrolZone: {fileID: 0}
-  _death: {fileID: 0}
-  _despawn: {fileID: 0}
+  _spawning: {fileID: 6953381631365717517}
+  _idle: {fileID: 3126986843726209373}
+  _patrol: {fileID: 4908855209534494959}
+  _chaseAgent: {fileID: 642975748742039380}
+  _returnToPatrolZone: {fileID: 4718970296107162292}
+  _death: {fileID: 1045673506506699745}
+  _despawn: {fileID: 4032810369556411222}
 --- !u!114 &6323051593667454083
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -201,14 +201,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   SortKey: 2900722269
   ObjectInterest: 1
-  Flags: 1
+  Flags: 262145
   NestedObjects: []
   NetworkedBehaviours:
   - {fileID: 7901085010266203322}
   - {fileID: 8241693279465801080}
   - {fileID: 6323051593667454083}
   - {fileID: 7508731426582388167}
-  - {fileID: 4123466324708068308}
+  - {fileID: 6953381631365717517}
   - {fileID: 1045673506506699745}
   - {fileID: 3126986843726209373}
   - {fileID: 4718970296107162292}
@@ -445,7 +445,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4500259823670189168}
-  - component: {fileID: 4123466324708068308}
+  - component: {fileID: 6953381631365717517}
   m_Layer: 0
   m_Name: Spawn
   m_TagString: Untagged
@@ -468,7 +468,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 6109164301637757938}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &4123466324708068308
+--- !u!114 &6953381631365717517
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -477,12 +477,13 @@ MonoBehaviour:
   m_GameObject: {fileID: 5892478307987658546}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0c2250dc2e1a49b495d49f5f42537d61, type: 3}
+  m_Script: {fileID: 11500000, guid: 52179b8aa425428d9c62d0e766c39448, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   _priority: 0
   _checkPriorityOnExit: 1
   _defaultNext: {fileID: 0}
+  _spawnDuration: 2
 --- !u!1 &6470464156100871862
 GameObject:
   m_ObjectHideFlags: 0
