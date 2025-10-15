@@ -15,6 +15,7 @@ namespace TSS.Data
         [SerializeField] private Texture2D _iconTexture;
         [SerializeField] private Sprite _iconSprite;
         [SerializeField] private ushort maxStack = 100;
+        [SerializeField] private string _shortCode;
 
         [NonSerialized]
         private Sprite _generatedSprite;
