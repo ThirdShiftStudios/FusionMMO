@@ -11,6 +11,9 @@ namespace TPSBR
 {
         public sealed class ItemVendor : ContextBehaviour, IInteraction
         {
+                private const int MAX_VENDOR_ITEMS = 64;
+                private const int DEFAULT_PURCHASE_COST = 10;
+
                 [Header("Interaction")]
                 [SerializeField]
                 private string _interactionName = "Item Vendor";
@@ -29,8 +32,29 @@ namespace TPSBR
                 [SerializeField]
                 private int _itemsPerDefinition = 3;
 
-                private readonly List<VendorItemData> _generatedItems = new List<VendorItemData>();
-                private bool _itemsDirty = true;
+                [SerializeField, Min(0)]
+                private int _purchaseCost = DEFAULT_PURCHASE_COST;
+                [SerializeField, Min(0)]
+                private int _sellReward = 5;
+
+                [Networked, Capacity(MAX_VENDOR_ITEMS)]
+                private NetworkArray<VendorItem> _networkedItems { get; }
+
+                private bool _itemsInitialized;
+
+                internal int PurchaseCost => Mathf.Max(0, _purchaseCost);
+                internal int SellReward   => Mathf.Max(0, _sellReward);
+
+                internal bool HasAvailableItemSlot()
+                {
+                        for (int i = 0; i < _networkedItems.Length; ++i)
+                        {
+                                if (_networkedItems.Get(i).IsValid == false)
+                                        return true;
+                        }
+
+                        return false;
+                }
 
                 private UIVendorView _activeVendorView;
                 private bool _cameraViewActive;
@@ -56,6 +80,31 @@ namespace TPSBR
                 string  IInteraction.Description => _interactionDescription;
                 Vector3 IInteraction.HUDPosition => _hudPivot != null ? _hudPivot.position : transform.position;
                 bool    IInteraction.IsActive    => isActiveAndEnabled == true && (_interactionCollider == null || (_interactionCollider.enabled == true && _interactionCollider.gameObject.activeInHierarchy == true));
+
+                public override void CopyBackingFieldsToState(bool firstTime)
+                {
+                        base.CopyBackingFieldsToState(firstTime);
+
+                        InvokeWeavedCode();
+
+                        if (HasStateAuthority == true)
+                        {
+                                ClearNetworkItems();
+                        }
+
+                        _itemsInitialized = false;
+                }
+
+                public override void Spawned()
+                {
+                        base.Spawned();
+
+                        if (HasStateAuthority == true)
+                        {
+                                _itemsInitialized = false;
+                                EnsureGeneratedItems();
+                        }
+                }
 
                 public void Interact(Agent agent)
                 {
@@ -95,6 +144,24 @@ namespace TPSBR
                         OpenVendorView(agent);
                 }
 
+                [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority, Channel = RpcChannel.Reliable)]
+                private void RPC_RequestPurchase(PlayerRef playerRef, NetworkId agentId, int vendorIndex)
+                {
+                        if (TryResolveAgent(playerRef, agentId, out Agent agent) == false)
+                                return;
+
+                        ProcessPurchase(agent, vendorIndex);
+                }
+
+                [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority, Channel = RpcChannel.Reliable)]
+                private void RPC_RequestSell(PlayerRef playerRef, NetworkId agentId, int inventoryIndex)
+                {
+                        if (TryResolveAgent(playerRef, agentId, out Agent agent) == false)
+                                return;
+
+                        ProcessSell(agent, inventoryIndex);
+                }
+
                 private void OpenVendorView(Agent agent)
                 {
                         if (Context == null || Context.UI == null)
@@ -108,8 +175,7 @@ namespace TPSBR
                                 return;
                         }
 
-                        _itemsDirty = true;
-                        view.Configure(agent, PopulateItems);
+                        view.Configure(this, agent, PopulateItems);
 
                         if (_activeVendorView != null)
                         {
@@ -137,23 +203,183 @@ namespace TPSBR
 
                         EnsureGeneratedItems();
 
-                        if (_generatedItems.Count == 0)
+                        int count = 0;
+
+                        for (int i = 0; i < _networkedItems.Length; ++i)
+                        {
+                                VendorItem vendorItem = _networkedItems.Get(i);
+
+                                if (vendorItem.IsValid == false)
+                                        continue;
+
+                                ItemDefinition definition = ItemDefinition.Get(vendorItem.DefinitionId);
+
+                                if (definition == null)
+                                        continue;
+
+                                Sprite icon = definition.IconSprite;
+                                int quantity = Mathf.Max(1, vendorItem.Quantity);
+                                string configurationHash = vendorItem.ConfigurationHash.ToString();
+
+                                destination.Add(new VendorItemData(i, icon, quantity, definition, configurationHash));
+                                count++;
+                        }
+
+                        if (count == 0)
                                 return VendorItemStatus.NoItems;
 
-                        destination.AddRange(_generatedItems);
                         return VendorItemStatus.Success;
+                }
+
+                internal void RequestPurchase(Agent agent, int vendorIndex)
+                {
+                        if (agent == null)
+                                return;
+
+                        if (HasStateAuthority == true)
+                        {
+                                ProcessPurchase(agent, vendorIndex);
+                        }
+                        else
+                        {
+                                RPC_RequestPurchase(agent.Object.InputAuthority, agent.Object.Id, vendorIndex);
+                        }
+                }
+
+                internal void RequestSell(Agent agent, int inventoryIndex)
+                {
+                        if (agent == null)
+                                return;
+
+                        if (HasStateAuthority == true)
+                        {
+                                ProcessSell(agent, inventoryIndex);
+                        }
+                        else
+                        {
+                                RPC_RequestSell(agent.Object.InputAuthority, agent.Object.Id, inventoryIndex);
+                        }
+                }
+
+                private bool TryResolveAgent(PlayerRef playerRef, NetworkId agentId, out Agent agent)
+                {
+                        agent = null;
+
+                        if (Runner == null)
+                                return false;
+
+                        if (Runner.TryFindObject(agentId, out NetworkObject agentObject) == false)
+                                return false;
+
+                        agent = agentObject.GetComponent<Agent>();
+
+                        if (agent == null)
+                                return false;
+
+                        if (agent.Object == null || agent.Object.InputAuthority != playerRef)
+                                return false;
+
+                        return true;
+                }
+
+                private void ProcessPurchase(Agent agent, int vendorIndex)
+                {
+                        if (HasStateAuthority == false || agent == null)
+                                return;
+
+                        if (vendorIndex < 0 || vendorIndex >= _networkedItems.Length)
+                                return;
+
+                        VendorItem vendorItem = _networkedItems.Get(vendorIndex);
+
+                        if (vendorItem.IsValid == false)
+                                return;
+
+                        ItemDefinition definition = ItemDefinition.Get(vendorItem.DefinitionId);
+
+                        if (definition == null)
+                        {
+                                RemoveVendorItemAt(vendorIndex);
+                                return;
+                        }
+
+                        Inventory inventory = agent.Inventory;
+
+                        if (inventory == null)
+                                return;
+
+                        int cost = PurchaseCost;
+
+                        if (inventory.TrySpendGold(cost) == false)
+                                return;
+
+                        if (HasEmptyInventorySlot(inventory) == false)
+                        {
+                                inventory.AddGold(cost);
+                                return;
+                        }
+
+                        byte quantity = vendorItem.Quantity;
+
+                        if (quantity == 0)
+                                quantity = 1;
+
+                        NetworkString<_32> configurationHash = vendorItem.ConfigurationHash;
+
+                        byte remaining = inventory.AddItem(definition, quantity, configurationHash);
+
+                        if (remaining > 0)
+                        {
+                                inventory.AddGold(cost);
+                                return;
+                        }
+
+                        RemoveVendorItemAt(vendorIndex);
+                }
+
+                private void ProcessSell(Agent agent, int inventoryIndex)
+                {
+                        if (HasStateAuthority == false || agent == null)
+                                return;
+
+                        Inventory inventory = agent.Inventory;
+
+                        if (inventory == null)
+                                return;
+
+                        if (inventoryIndex < 0 || inventoryIndex >= inventory.InventorySize)
+                                return;
+
+                        if (HasAvailableItemSlot() == false)
+                                return;
+
+                        if (inventory.TryRemoveItemForVendor(inventoryIndex, out ItemDefinition definition, out NetworkString<_32> configurationHash) == false)
+                                return;
+
+                        if (definition == null)
+                                return;
+
+                        if (TryAddVendorItem(definition, 1, configurationHash) == false)
+                        {
+                                inventory.AddItem(definition, 1, configurationHash);
+                                return;
+                        }
+
+                        inventory.AddGold(SellReward);
                 }
 
                 private void EnsureGeneratedItems()
                 {
-                        if (_itemsDirty == false && _generatedItems.Count > 0)
+                        if (_itemsInitialized == true)
                                 return;
-
-                        _generatedItems.Clear();
-                        _itemsDirty = false;
 
                         if (FilterDefinitions == null || FilterDefinitions.Length == 0)
                                 return;
+
+                        if (HasStateAuthority == false)
+                                return;
+
+                        ClearNetworkItems();
 
                         int itemsPerDefinition = Mathf.Max(1, _itemsPerDefinition);
 
@@ -165,6 +391,8 @@ namespace TPSBR
 
                                 GenerateItemsForFilter(filter, itemsPerDefinition);
                         }
+
+                        _itemsInitialized = true;
                 }
 
                 private void GenerateItemsForFilter(DataDefinition filter, int count)
@@ -253,12 +481,18 @@ namespace TPSBR
                         if (definition == null)
                                 return;
 
-                        Sprite icon = definition.IconSprite;
-
                         for (int i = 0; i < count; ++i)
                         {
                                 string configurationHash = GenerateConfigurationHash(definition);
-                                _generatedItems.Add(new VendorItemData(icon, 1, definition, configurationHash));
+                                NetworkString<_32> networkHash = default;
+
+                                if (string.IsNullOrWhiteSpace(configurationHash) == false)
+                                {
+                                        networkHash = configurationHash;
+                                }
+
+                                if (TryAddVendorItem(definition, 1, networkHash) == false)
+                                        break;
                         }
                 }
 
@@ -270,6 +504,45 @@ namespace TPSBR
                         }
 
                         return cache;
+                }
+
+                private void ClearNetworkItems()
+                {
+                        for (int i = 0; i < _networkedItems.Length; ++i)
+                        {
+                                _networkedItems.Set(i, default);
+                        }
+                }
+
+                private bool TryAddVendorItem(ItemDefinition definition, byte quantity, NetworkString<_32> configurationHash)
+                {
+                        if (definition == null || quantity == 0)
+                                return false;
+
+                        VendorItem item = new VendorItem(definition.ID, quantity, configurationHash);
+                        return TryAddVendorItem(item);
+                }
+
+                private bool TryAddVendorItem(VendorItem item)
+                {
+                        for (int i = 0; i < _networkedItems.Length; ++i)
+                        {
+                                if (_networkedItems.Get(i).IsValid == true)
+                                        continue;
+
+                                _networkedItems.Set(i, item);
+                                return true;
+                        }
+
+                        return false;
+                }
+
+                private void RemoveVendorItemAt(int index)
+                {
+                        if (index < 0 || index >= _networkedItems.Length)
+                                return;
+
+                        _networkedItems.Set(index, default);
                 }
 
                 private string GenerateConfigurationHash(ItemDefinition definition)
@@ -318,8 +591,6 @@ namespace TPSBR
                         }
 
                         RestoreCameraView(true);
-                        _itemsDirty = true;
-                        _generatedItems.Clear();
                 }
 
                 private void OnDisable()
@@ -332,8 +603,7 @@ namespace TPSBR
                         }
 
                         RestoreCameraView(true);
-                        _generatedItems.Clear();
-                        _itemsDirty = true;
+                        _itemsInitialized = false;
                 }
 
                 private void ApplyCameraView()
@@ -491,6 +761,24 @@ namespace TPSBR
                         _cameraReturnTimer = 0f;
                 }
 
+                private static bool HasEmptyInventorySlot(Inventory inventory)
+                {
+                        if (inventory == null)
+                                return false;
+
+                        int slotCount = inventory.InventorySize;
+
+                        for (int i = 0; i < slotCount; ++i)
+                        {
+                                InventorySlot slot = inventory.GetItemSlot(i);
+
+                                if (slot.IsEmpty == true)
+                                        return true;
+                        }
+
+                        return false;
+                }
+
                 private enum CameraTransitionState
                 {
                         None,
@@ -539,16 +827,41 @@ namespace TPSBR
                         Success
                 }
 
+                private struct VendorItem : INetworkStruct
+                {
+                        public VendorItem(int definitionId, byte quantity, NetworkString<_32> configurationHash)
+                        {
+                                DefinitionId = definitionId;
+                                Quantity = quantity;
+                                ConfigurationHash = configurationHash;
+                        }
+
+                        public int DefinitionId { get; private set; }
+                        public byte Quantity { get; private set; }
+                        public NetworkString<_32> ConfigurationHash { get; private set; }
+
+                        public bool IsValid => DefinitionId != 0 && Quantity > 0;
+
+                        public void Clear()
+                        {
+                                DefinitionId = 0;
+                                Quantity = 0;
+                                ConfigurationHash = default;
+                        }
+                }
+
                 public readonly struct VendorItemData : IEquatable<VendorItemData>
                 {
-                        public VendorItemData(Sprite icon, int quantity, ItemDefinition definition, string configurationHash)
+                        public VendorItemData(int vendorIndex, Sprite icon, int quantity, ItemDefinition definition, string configurationHash)
                         {
+                                VendorIndex = vendorIndex;
                                 Icon = icon;
                                 Quantity = quantity;
                                 Definition = definition;
                                 ConfigurationHash = configurationHash;
                         }
 
+                        public int VendorIndex { get; }
                         public Sprite Icon { get; }
                         public int Quantity { get; }
                         public ItemDefinition Definition { get; }
@@ -556,7 +869,7 @@ namespace TPSBR
 
                         public bool Equals(VendorItemData other)
                         {
-                                return Icon == other.Icon && Quantity == other.Quantity && Definition == other.Definition && string.Equals(ConfigurationHash, other.ConfigurationHash, StringComparison.Ordinal);
+                                return VendorIndex == other.VendorIndex && Icon == other.Icon && Quantity == other.Quantity && Definition == other.Definition && string.Equals(ConfigurationHash, other.ConfigurationHash, StringComparison.Ordinal);
                         }
 
                         public override bool Equals(object obj)
@@ -568,7 +881,8 @@ namespace TPSBR
                         {
                                 unchecked
                                 {
-                                        int hashCode = Icon != null ? Icon.GetHashCode() : 0;
+                                        int hashCode = VendorIndex;
+                                        hashCode = (hashCode * 397) ^ (Icon != null ? Icon.GetHashCode() : 0);
                                         hashCode = (hashCode * 397) ^ Quantity;
                                         hashCode = (hashCode * 397) ^ (Definition != null ? Definition.GetHashCode() : 0);
                                         hashCode = (hashCode * 397) ^ (ConfigurationHash != null ? ConfigurationHash.GetHashCode() : 0);

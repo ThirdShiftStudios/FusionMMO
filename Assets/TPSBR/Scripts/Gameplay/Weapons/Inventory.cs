@@ -434,6 +434,35 @@ namespace TPSBR
             return AddItemInternal(definition, quantity, configurationHash);
         }
 
+        internal bool TryRemoveItemForVendor(int inventoryIndex, out ItemDefinition definition, out NetworkString<_32> configurationHash)
+        {
+            definition = null;
+            configurationHash = default;
+
+            if (HasStateAuthority == false)
+                return false;
+
+            if (inventoryIndex < 0 || inventoryIndex >= _items.Length)
+                return false;
+
+            var slot = _items[inventoryIndex];
+
+            if (slot.IsEmpty == true)
+                return false;
+
+            definition = slot.GetDefinition();
+
+            if (definition == null)
+                return false;
+
+            configurationHash = slot.ConfigurationHash;
+
+            if (RemoveInventoryItemInternal(inventoryIndex, 1) == false)
+                return false;
+
+            return true;
+        }
+
         public void RequestMoveItem(int fromIndex, int toIndex)
         {
             if (fromIndex == toIndex)
