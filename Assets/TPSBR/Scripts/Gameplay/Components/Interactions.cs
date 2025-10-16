@@ -40,6 +40,7 @@
         private CharacterAnimationController _animationController;
         private ResourceNode _activeResourceNode;
         private RaycastHit[] _interactionHits = new RaycastHit[10];
+        private Transform _interactionCameraTransform;
 
         // PUBLIC METHODS
 
@@ -163,6 +164,35 @@
             return targetPoint;
         }
 
+        public void SetInteractionCameraAuthority(Transform cameraTransform)
+        {
+            if (_character == null || cameraTransform == null)
+                return;
+
+            if (_interactionCameraTransform != cameraTransform)
+            {
+                ClearInteractionCameraAuthority();
+                _interactionCameraTransform = cameraTransform;
+            }
+
+            _character.SetOtherCameraAuthority(cameraTransform);
+        }
+
+        public void ClearInteractionCameraAuthority(Transform cameraTransform = null)
+        {
+            if (_character == null)
+                return;
+
+            if (cameraTransform != null && _interactionCameraTransform != cameraTransform)
+                return;
+
+            if (_interactionCameraTransform == null)
+                return;
+
+            _character.ClearOtherCameraAuthority(_interactionCameraTransform);
+            _interactionCameraTransform = null;
+        }
+
         // NetworkBehaviour INTERFACE
 
         public override void Despawned(NetworkRunner runner, bool hasState)
@@ -174,6 +204,7 @@
         {
             if (_character.HasInputAuthority == false)
             {
+                ClearInteractionCameraAuthority();
                 InteractionTarget = null;
                 _activeResourceNode = null;
                 return;
@@ -181,6 +212,7 @@
 
             if (_health.IsAlive == false)
             {
+                ClearInteractionCameraAuthority();
                 InteractionTarget = null;
                 _activeResourceNode = null;
                 return;
@@ -216,6 +248,11 @@
             _inventory = GetComponent<Inventory>();
             _character = GetComponent<Character>();
             _animationController = GetComponent<CharacterAnimationController>();
+        }
+
+        private void OnDisable()
+        {
+            ClearInteractionCameraAuthority();
         }
 
         // PRIVATE METHODS

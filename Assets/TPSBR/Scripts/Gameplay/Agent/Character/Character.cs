@@ -84,14 +84,17 @@ namespace TPSBR
 
 		private float                        _targetFOV;
 
-		private float                        _cameraChangeTime;
-		private float                        _cameraDistance;
+                private float                        _cameraChangeTime;
+                private float                        _cameraDistance;
 
-		private Vector3                      _defaultFireTransformPosition;
+                private Transform                    _overrideCameraTransform;
+                private TransformData                _overrideCameraTransformData;
 
-		private ECameraState                 _previousCameraState;
-		private ECameraState                 _currentCameraState;
-		private TransformSampler             _fireTransformSampler   = new TransformSampler();
+                private Vector3                      _defaultFireTransformPosition;
+
+                private ECameraState                 _previousCameraState;
+                private ECameraState                 _currentCameraState;
+                private TransformSampler             _fireTransformSampler   = new TransformSampler();
 		private TransformSampler             _cameraTransformSampler = new TransformSampler();
 
 		// PUBLIC METHODS
@@ -114,11 +117,11 @@ namespace TPSBR
 			return transformData;
 		}
 
-		public TransformData GetFireTransform(bool resolveRenderHistory)
-		{
-			Vector3    firePosition;
-			Vector3    localFirePosition;
-			Quaternion fireRotation;
+                public TransformData GetFireTransform(bool resolveRenderHistory)
+                {
+                        Vector3    firePosition;
+                        Vector3    localFirePosition;
+                        Quaternion fireRotation;
 
 			if (resolveRenderHistory == true && CharacterController.IsProxy == false && _fireTransformSampler.ResolveRenderPositionAndRotation(_characterController, _agent.AgentInput.FixedInput.LocalAlpha, out firePosition, out fireRotation) == true)
 			{
@@ -130,13 +133,39 @@ namespace TPSBR
 				localFirePosition = transform.InverseTransformPoint(firePosition);
 			}
 
-			return new TransformData(firePosition, localFirePosition, fireRotation);
-		}
+                        return new TransformData(firePosition, localFirePosition, fireRotation);
+                }
 
-		public void OnSpawned(Agent agent)
-		{
-			_agent  = agent;
-			_camera = agent.Context.Camera;
+                public void SetOtherCameraAuthority(Transform cameraTransform)
+                {
+                        if (cameraTransform == null)
+                                return;
+
+                        if (_overrideCameraTransform != cameraTransform)
+                        {
+                                _overrideCameraTransform = cameraTransform;
+                        }
+
+                        SetCameraState(ECameraState.OtherAuthority);
+                }
+
+                public void ClearOtherCameraAuthority(Transform cameraTransform)
+                {
+                        if (cameraTransform != null && _overrideCameraTransform != cameraTransform)
+                                return;
+
+                        if (_overrideCameraTransform == null)
+                                return;
+
+                        _overrideCameraTransform = null;
+
+                        SetCameraState(_characterController.Data.Aim == true ? ECameraState.Aim : ECameraState.Default);
+                }
+
+                public void OnSpawned(Agent agent)
+                {
+                        _agent  = agent;
+                        _camera = agent.Context.Camera;
 
 			_characterController.SetManualUpdate(true);
 			_animationController.SetManualUpdate(true);
@@ -144,11 +173,14 @@ namespace TPSBR
 			_previousCameraState = ECameraState.Default;
 			_currentCameraState = ECameraState.Default;
 
-			_cameraDistance = GetCameraTransform(ECameraState.Default).LocalPosition.magnitude;
+                        _cameraDistance = GetCameraTransform(ECameraState.Default).LocalPosition.magnitude;
 
-			_fireTransformSampler.Clear();
-			_cameraTransformSampler.Clear();
-		}
+                        _fireTransformSampler.Clear();
+                        _cameraTransformSampler.Clear();
+
+                        _overrideCameraTransform     = null;
+                        _overrideCameraTransformData = default;
+                }
 
 		public void OnFixedUpdate()
 		{
@@ -197,17 +229,19 @@ namespace TPSBR
 			Profiler.EndSample();
 		}
 
-		public void OnRender()
-		{
-			_characterController.ManualRenderUpdate();
-			_animationController.ManualRenderUpdate();
+                public void OnRender()
+                {
+                        _characterController.ManualRenderUpdate();
+                        _animationController.ManualRenderUpdate();
 
-			SetCameraState(_characterController.Data.Aim == true ? ECameraState.Aim : ECameraState.Default);
+                        ECameraState desiredCameraState = _overrideCameraTransform != null ? ECameraState.OtherAuthority : (_characterController.Data.Aim == true ? ECameraState.Aim : ECameraState.Default);
 
-			RefreshCameraHeadPosition();
-			RefreshFiringPosition();
+                        SetCameraState(desiredCameraState);
 
-			TransformData fireTransformData = GetFireTransform(false);
+                        RefreshCameraHeadPosition();
+                        RefreshFiringPosition();
+
+                        TransformData fireTransformData = GetFireTransform(false);
 			_fireTransformSampler.Sample(_characterController, fireTransformData.Position, fireTransformData.Rotation);
 
 			TransformData cameraTransformData = GetCameraTransform(false);
@@ -225,14 +259,30 @@ namespace TPSBR
 				aimFOV = _agent.Inventory.CurrentWeapon.AimFOV;
 			}
 
-			_targetFOV = _characterController.Data.Aim == true ? aimFOV : _defaultFOV;
-			_camera.Camera.fieldOfView = Mathf.Lerp(_camera.Camera.fieldOfView, _targetFOV, _fovChangeSpeed * Time.deltaTime);
+                        _targetFOV = _characterController.Data.Aim == true ? aimFOV : _defaultFOV;
+                        _camera.Camera.fieldOfView = Mathf.Lerp(_camera.Camera.fieldOfView, _targetFOV, _fovChangeSpeed * Time.deltaTime);
 
-			if (_previousCameraState != _currentCameraState)
-			{
-				_cameraChangeTime += Time.deltaTime;
+                        if (_currentCameraState == ECameraState.OtherAuthority)
+                        {
+                                TransformData overrideTransform = GetCameraTransform(ECameraState.OtherAuthority);
 
-				if (_cameraChangeTime >= _cameraChangeDuration)
+                                _camera.transform.SetPositionAndRotation(overrideTransform.Position, overrideTransform.Rotation);
+                                _cameraDistance   = 0f;
+                                _cameraChangeTime = _cameraChangeDuration;
+
+                                if (_agent.HasInputAuthority == true)
+                                {
+                                        _animationController.RefreshSnapping();
+                                }
+
+                                return;
+                        }
+
+                        if (_previousCameraState != _currentCameraState)
+                        {
+                                _cameraChangeTime += Time.deltaTime;
+
+                                if (_cameraChangeTime >= _cameraChangeDuration)
 				{
 					_previousCameraState = _currentCameraState;
 				}
@@ -319,18 +369,25 @@ namespace TPSBR
 		{
 			Transform cameraTransform = null;
 
-			switch (cameraState)
-			{
-				case ECameraState.Default:
-					cameraTransform = _thirdPersonView.DefaultCameraTransform;
-					break;
-				case ECameraState.Aim:
-					cameraTransform = _thirdPersonView.AimCameraTransform;
-					break;
-			}
+                        switch (cameraState)
+                        {
+                                case ECameraState.Default:
+                                        cameraTransform = _thirdPersonView.DefaultCameraTransform;
+                                        break;
+                                case ECameraState.Aim:
+                                        cameraTransform = _thirdPersonView.AimCameraTransform;
+                                        break;
+                                case ECameraState.OtherAuthority:
+                                        if (_overrideCameraTransform != null)
+                                        {
+                                                _overrideCameraTransformData = new TransformData(_overrideCameraTransform.position, _overrideCameraTransform.position - transform.position, _overrideCameraTransform.rotation);
+                                        }
 
-			if (cameraTransform == null)
-				return default;
+                                        return _overrideCameraTransformData;
+                        }
+
+                        if (cameraTransform == null)
+                                return default;
 
 			var transformData = new TransformData(cameraTransform.position, cameraTransform.position - cameraTransform.parent.position, cameraTransform.rotation);
 
@@ -403,11 +460,12 @@ namespace TPSBR
 
 		// HELPERS
 
-		private enum ECameraState
-		{
-			None,
-			Default,
-			Aim,
-		}
-	}
+                private enum ECameraState
+                {
+                        None,
+                        Default,
+                        Aim,
+                        OtherAuthority,
+                }
+        }
 }
