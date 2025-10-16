@@ -4,6 +4,16 @@ namespace TPSBR.Enemies
 {
     public class EnemyReturnToPatrolZoneBehavior : EnemyBehaviorBase
     {
+        protected override void OnEnterState()
+        {
+            base.OnEnterState();
+
+            if (Controller is TestEnemy enemy)
+            {
+                enemy.ResetPathfinding();
+            }
+        }
+
         protected override void OnFixedUpdate()
         {
             base.OnFixedUpdate();

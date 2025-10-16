@@ -8,6 +8,16 @@ namespace TPSBR.Enemies
         [Tooltip("Maximum chase distance before giving up.")]
         private float _maxChaseDistance = 20f;
 
+        protected override void OnEnterState()
+        {
+            base.OnEnterState();
+
+            if (Controller is TestEnemy enemy)
+            {
+                enemy.ResetPathfinding();
+            }
+        }
+
         protected override void OnFixedUpdate()
         {
             base.OnFixedUpdate();
@@ -51,7 +61,12 @@ namespace TPSBR.Enemies
 
         protected override void OnExitState()
         {
-            Controller.ClearTarget(); 
+            if (Controller is TestEnemy enemy)
+            {
+                enemy.ResetPathfinding();
+            }
+
+            Controller.ClearTarget();
             base.OnExitState();
         }
     }

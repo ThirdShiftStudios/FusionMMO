@@ -17,6 +17,11 @@ namespace TPSBR.Enemies
         {
             base.OnEnterState();
 
+            if (Controller is TestEnemy enemy)
+            {
+                enemy.ResetPathfinding();
+            }
+
             _hasTarget = false;
             SelectNewTarget();
         }
