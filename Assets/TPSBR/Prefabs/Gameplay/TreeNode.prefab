@@ -317,8 +317,11 @@ MonoBehaviour:
   _interactionDescription: Hold interact to chop down this tree.
   _hudPivot: {fileID: 0}
   _interactionCollider: {fileID: 0}
-  _requiredChopTime: 3
+  _requiredInteractionTime: 3
   _respawnTime: 0
+  _toolSpeedMultiplier: 0.05
+  _lootTableItems: []
+  _despawnDelay: 2
 --- !u!1 &7173359131901375928
 GameObject:
   m_ObjectHideFlags: 0

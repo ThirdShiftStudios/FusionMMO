@@ -80,7 +80,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2591564877390741912}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: 1, z: -0, w: 0.00000058114523}
+  m_LocalRotation: {x: 0, y: 1, z: 0, w: 0}
   m_LocalPosition: {x: -19.11, y: 0, z: 1.4199998}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -90,7 +90,7 @@ Transform:
   - {fileID: 4879926103150208606}
   - {fileID: 2285921633030486698}
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
 --- !u!114 &4014846061296113904
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -107,8 +107,14 @@ MonoBehaviour:
   _interactionDescription: Hold interact to mine this ore node.
   _hudPivot: {fileID: 7995531721896353681}
   _interactionCollider: {fileID: 7906244902350635517}
-  _requiredMiningTime: 3
+  _requiredInteractionTime: 10
   _respawnTime: 0
+  _toolSpeedMultiplier: 0.05
+  _lootTableItems:
+  - ItemDefinition: {fileID: 11400000, guid: 416ad8650ff4a8e46b00e0aff3bfef65, type: 2}
+    Probability: 100
+    MinimumLuck: 0
+  _despawnDelay: 2
 --- !u!114 &8430423530934186912
 MonoBehaviour:
   m_ObjectHideFlags: 0
