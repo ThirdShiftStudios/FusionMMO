@@ -16,10 +16,12 @@ namespace TPSBR.UI
 		private UIGameplayInteractions _interactions;
 		[SerializeField]
 		private UIAgentEffects _effects;
-		[SerializeField]
-		private UIGameplayEvents _events;
-		[SerializeField]
-		private UIKillFeed _killFeed;
+                [SerializeField]
+                private UIGameplayEvents _events;
+                [SerializeField]
+                private UIKillFeed _killFeed;
+                [SerializeField]
+                private UIInventoryFeed _inventoryFeed;
 		[SerializeField]
 		private UIBehaviour _spectatingGroup;
 		[SerializeField]
@@ -236,53 +238,66 @@ namespace TPSBR.UI
 			Context.Input.TrigggerBackAction();
 		}
 
-		private void SetLocalAgent(Agent agent, Player player, bool isLocalPlayer)
-		{
-			if (_localAgent != null)
-			{
-				_localAgent.Health.HitPerformed -= OnHitPerformed;
-				_localAgent.Health.HitTaken -= OnHitTaken;
+                private void SetLocalAgent(Agent agent, Player player, bool isLocalPlayer)
+                {
+                        if (_localAgent != null)
+                        {
+                                _localAgent.Health.HitPerformed -= OnHitPerformed;
+                                _localAgent.Health.HitTaken     -= OnHitTaken;
 
-				_localAgent.Interactions.InteractionFailed -= OnInteractionFailed;
-			}
+                                _localAgent.Interactions.InteractionFailed -= OnInteractionFailed;
 
-			_localAgent   = agent;
-			_localAgentId = agent.Id;
+                                _inventoryFeed?.Bind(null);
+                        }
 
-			_health.SetActive(true);
-			_interactions.SetActive(true);
-			_effects.SetActive(true);
-			_spectatingGroup.SetActive(isLocalPlayer == false);
+                        _localAgent   = agent;
+                        _localAgentId = agent.Id;
 
-			_player.SetData(Context, player);
+                        _health.SetActive(true);
+                        _interactions.SetActive(true);
+                        _effects.SetActive(true);
+                        _spectatingGroup.SetActive(isLocalPlayer == false);
 
-			if (isLocalPlayer == false)
-			{
-				_spectatingText.text = player.Nickname;
-			}
+                        _player.SetData(Context, player);
 
-			agent.Health.HitPerformed += OnHitPerformed;
-			agent.Health.HitTaken += OnHitTaken;
-			agent.Interactions.InteractionFailed += OnInteractionFailed;
-		}
+                        if (isLocalPlayer == false)
+                        {
+                                _spectatingText.text = player.Nickname;
+                        }
 
-		private void ClearLocalAgent()
-		{
-			_health.SetActive(false);
-			_interactions.SetActive(false);
-			_effects.SetActive(false);
-			_spectatingGroup.SetActive(false);
+                        if (isLocalPlayer == true)
+                        {
+                                _inventoryFeed?.Bind(agent.Inventory);
+                        }
+                        else
+                        {
+                                _inventoryFeed?.Bind(null);
+                        }
 
-			if (_localAgent != null)
-			{
-				_localAgent.Health.HitPerformed -= OnHitPerformed;
-				_localAgent.Health.HitTaken -= OnHitTaken;
-				_localAgent.Interactions.InteractionFailed -= OnInteractionFailed;
+                        agent.Health.HitPerformed += OnHitPerformed;
+                        agent.Health.HitTaken     += OnHitTaken;
+                        agent.Interactions.InteractionFailed += OnInteractionFailed;
+                }
 
-				_localAgent   = null;
-				_localAgentId = default;
-			}
-		}
+                private void ClearLocalAgent()
+                {
+                        _health.SetActive(false);
+                        _interactions.SetActive(false);
+                        _effects.SetActive(false);
+                        _spectatingGroup.SetActive(false);
+
+                        _inventoryFeed?.Bind(null);
+
+                        if (_localAgent != null)
+                        {
+                                _localAgent.Health.HitPerformed -= OnHitPerformed;
+                                _localAgent.Health.HitTaken     -= OnHitTaken;
+                                _localAgent.Interactions.InteractionFailed -= OnInteractionFailed;
+
+                                _localAgent   = null;
+                                _localAgentId = default;
+                        }
+                }
 
 		private void OnHitTaken(HitData hitData)
 		{
