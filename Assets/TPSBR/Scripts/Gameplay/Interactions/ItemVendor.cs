@@ -575,22 +575,24 @@ namespace TPSBR
 
                 public readonly struct VendorItemData : IEquatable<VendorItemData>
                 {
-                        public VendorItemData(Sprite icon, int quantity, ItemDefinition definition, string configurationHash)
+                        public VendorItemData(Sprite icon, int quantity, ItemDefinition definition, string configurationHash, int sourceIndex)
                         {
                                 Icon = icon;
                                 Quantity = quantity;
                                 Definition = definition;
                                 ConfigurationHash = configurationHash;
+                                SourceIndex = sourceIndex;
                         }
 
                         public Sprite Icon { get; }
                         public int Quantity { get; }
                         public ItemDefinition Definition { get; }
                         public string ConfigurationHash { get; }
+                        public int SourceIndex { get; }
 
                         public bool Equals(VendorItemData other)
                         {
-                                return Icon == other.Icon && Quantity == other.Quantity && Definition == other.Definition && string.Equals(ConfigurationHash, other.ConfigurationHash, StringComparison.Ordinal);
+                                return Icon == other.Icon && Quantity == other.Quantity && Definition == other.Definition && string.Equals(ConfigurationHash, other.ConfigurationHash, StringComparison.Ordinal) && SourceIndex == other.SourceIndex;
                         }
 
                         public override bool Equals(object obj)
@@ -606,6 +608,7 @@ namespace TPSBR
                                         hashCode = (hashCode * 397) ^ Quantity;
                                         hashCode = (hashCode * 397) ^ (Definition != null ? Definition.GetHashCode() : 0);
                                         hashCode = (hashCode * 397) ^ (ConfigurationHash != null ? ConfigurationHash.GetHashCode() : 0);
+                                        hashCode = (hashCode * 397) ^ SourceIndex;
                                         return hashCode;
                                 }
                         }
