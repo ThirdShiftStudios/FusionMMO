@@ -25,8 +25,13 @@ namespace TPSBR
         [SerializeField]
         private LootTableItem[] _lootTableItems;
 
+        [Header("Lifecycle")]
+        [SerializeField, Tooltip("Delay before the resource node despawns after being depleted.")]
+        private float _despawnDelay = 2f;
+
         [Networked, HideInInspector] private bool IsDepleted { get; set; }
         [Networked, HideInInspector] private TickTimer RespawnTimer { get; set; }
+        [Networked, HideInInspector] private TickTimer DespawnTimer { get; set; }
         [Networked, HideInInspector] private float InteractionProgress { get; set; }
         [Networked, HideInInspector] private float InteractionProgressRate { get; set; }
         [Networked, HideInInspector] private float LastProgressUpdateTime { get; set; }
@@ -78,13 +83,30 @@ namespace TPSBR
         public override void Spawned()
         {
             base.Spawned();
+            DespawnTimer = default;
             RefreshInteractionState();
         }
 
         public override void FixedUpdateNetwork()
         {
+            if(Object == false)
+                return;
             if (HasStateAuthority == false)
                 return;
+
+            if (DespawnTimer.IsRunning == true)
+            {
+                if (DespawnTimer.Expired(Runner) == false)
+                    return;
+
+                if (Object != null && Object.IsValid == true)
+                {
+                    Runner.Despawn(Object);
+                }
+
+                DespawnTimer = default;
+                return;
+            }
 
             if (IsDepleted == false)
                 return;
@@ -184,6 +206,7 @@ namespace TPSBR
             InteractionProgressRate = 0f;
             ActiveInteractor = PlayerRef.None;
             LastProgressUpdateTime = GetCurrentSimulationTime();
+            DespawnTimer = default;
             RefreshInteractionState();
         }
 
@@ -278,6 +301,11 @@ namespace TPSBR
                 if (_respawnTime > 0f)
                 {
                     RespawnTimer = TickTimer.CreateFromSeconds(Runner, _respawnTime);
+                }
+
+                if (_despawnDelay > 0f)
+                {
+                    DespawnTimer = TickTimer.CreateFromSeconds(Runner, _despawnDelay);
                 }
             }
 
