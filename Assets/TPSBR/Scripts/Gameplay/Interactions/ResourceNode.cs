@@ -21,6 +21,9 @@ namespace TPSBR
         private float _respawnTime;
         [SerializeField, Tooltip("Additional interaction speed gained per tool Speed point.")]
         private float _toolSpeedMultiplier = 0.05f;
+        [Header("Loot")]
+        [SerializeField]
+        private LootTableItem[] _lootTableItems;
 
         [Networked, HideInInspector] private bool IsDepleted { get; set; }
         [Networked, HideInInspector] private TickTimer RespawnTimer { get; set; }
@@ -220,6 +223,43 @@ namespace TPSBR
             {
                 bool hasInteractor = _activeAgent != null || ActiveInteractor != PlayerRef.None;
                 _interactionCollider.enabled = IsDepleted == false && hasInteractor == false;
+            }
+        }
+
+        protected void EvaluateLootTable(Agent agent)
+        {
+            if (HasStateAuthority == false)
+                return;
+
+            if (_lootTableItems == null || _lootTableItems.Length == 0)
+                return;
+
+            if (agent == null)
+                return;
+
+            Inventory inventory = agent.Inventory;
+            if (inventory == null)
+                return;
+
+            Stats stats = agent.GetComponent<Stats>();
+            int playerLuck = stats != null ? stats.Luck : 0;
+
+            for (int i = 0; i < _lootTableItems.Length; ++i)
+            {
+                LootTableItem loot = _lootTableItems[i];
+                if (loot.ItemDefinition == null)
+                    continue;
+
+                if (playerLuck < loot.MinimumLuck)
+                    continue;
+
+                float probability = Mathf.Clamp(loot.Probability, 0f, 100f);
+                int roll = UnityEngine.Random.Range(0, 101);
+
+                if (roll <= probability)
+                {
+                    inventory.AddItem(loot.ItemDefinition, 1);
+                }
             }
         }
 

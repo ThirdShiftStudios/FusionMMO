@@ -61,6 +61,7 @@ namespace TPSBR
         {
             base.OnInteractionCompleted(agent);
             MiningCompleted?.Invoke(agent);
+            EvaluateLootTable(agent);
         }
     }
 }
