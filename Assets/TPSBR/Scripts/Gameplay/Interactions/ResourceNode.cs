@@ -86,6 +86,8 @@ namespace TPSBR
 
         public override void FixedUpdateNetwork()
         {
+            if(Object == false)
+                return;
             if (HasStateAuthority == false)
                 return;
 
