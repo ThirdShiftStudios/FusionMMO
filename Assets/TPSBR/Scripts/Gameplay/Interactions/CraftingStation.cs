@@ -35,20 +35,7 @@ namespace TPSBR
 
                 private UIItemContextView _activeItemContextView;
                 private Weapon _weaponPreviewInstance;
-                private bool _cameraViewActive;
-                private Vector3 _originalCameraPosition;
-                private Quaternion _originalCameraRotation;
-                private float _cameraViewDistance;
-                [SerializeField, Min(0f)]
-                private float _cameraTransitionSpeed = 8f;
-                [SerializeField, Min(0f)]
-                private float _cameraReturnDuration = 0.25f;
-                [SerializeField, Min(0f)]
-                private float _cameraRotationLerpSpeed = 12f;
-                private CameraTransitionState _cameraTransitionState;
-                private float _cameraReturnTimer;
-                private Vector3 _cameraReturnStartPosition;
-                private Quaternion _cameraReturnStartRotation;
+                private Agent _cameraAgent;
                 private int _currentPreviewDefinitionId;
                 private ItemSourceType _currentSelectedSourceType = ItemSourceType.None;
                 private int _currentSelectedSourceIndex = -1;
@@ -123,7 +110,7 @@ namespace TPSBR
                         _activeItemContextView.HasClosed    += HandleItemContextViewClosed;
 
                         Context.UI.Open(view);
-                        ApplyCameraView();
+                        ApplyCameraAuthority(agent);
                 }
 
                 private ItemStatus PopulateItems(Agent agent, List<ItemData> destination)
@@ -274,6 +261,8 @@ namespace TPSBR
                                 _activeItemContextView = null;
                         }
 
+                        RestoreCameraAuthority();
+
                         UpdateLocalWeaponPreview(null);
                         if (HasStateAuthority == true)
                         {
@@ -284,7 +273,6 @@ namespace TPSBR
                                 _currentSelectedSourceType = ItemSourceType.None;
                                 _currentSelectedSourceIndex = -1;
                         }
-                        RestoreCameraView(true);
                 }
 
                 private void UpdateLocalWeaponPreview(WeaponDefinition definition)
@@ -309,7 +297,7 @@ namespace TPSBR
                 {
                         UpdateLocalWeaponPreview(data.Definition);
                         RequestSetSelectedItem(data.Definition != null ? data.Definition.ID : 0, data.SourceType, data.SourceIndex);
-                        ApplyCameraView();
+                        ApplyCameraAuthority(_cameraAgent);
                 }
 
                 private void HandleItemContextViewClosed()
@@ -323,62 +311,38 @@ namespace TPSBR
 
                         UpdateLocalWeaponPreview(null);
                         RequestSetSelectedItem(0, ItemSourceType.None, -1);
-                        RestoreCameraView();
+                        RestoreCameraAuthority();
                 }
 
-                private void ApplyCameraView()
+                private void ApplyCameraAuthority(Agent agent)
                 {
-                        if (_cameraViewTransform == null || Context == null || Context.Camera == null || Context.Camera.Camera == null)
+                        if (_cameraViewTransform == null || agent == null)
                                 return;
 
-                        Transform cameraTransform = Context.Camera.Camera.transform;
+                        if (agent.Interactions == null)
+                                return;
 
-                        if (_cameraViewActive == false)
+                        if (_cameraAgent != null && _cameraAgent != agent)
                         {
-                                _cameraViewActive = true;
-                                _originalCameraPosition = cameraTransform.position;
-                                _originalCameraRotation = cameraTransform.rotation;
-                                _cameraViewDistance = 0f;
-                                _cameraTransitionState = CameraTransitionState.Entering;
-                                _cameraReturnTimer = 0f;
-                        }
-                        else if (_cameraTransitionState == CameraTransitionState.Leaving)
-                        {
-                                _cameraTransitionState = CameraTransitionState.Entering;
-                                _cameraReturnTimer = 0f;
-                        }
-                        else if (_cameraTransitionState == CameraTransitionState.None)
-                        {
-                                _cameraTransitionState = CameraTransitionState.Active;
+                                RestoreCameraAuthority();
                         }
 
-                        UpdateCameraView();
+                        _cameraAgent = agent;
+                        agent.Interactions.SetInteractionCameraAuthority(_cameraViewTransform);
                 }
 
-                private void RestoreCameraView(bool instant = false)
+                private void RestoreCameraAuthority()
                 {
-                        if (_cameraViewActive == false)
+                        if (_cameraAgent == null)
                                 return;
 
-                        if (Context == null || Context.Camera == null || Context.Camera.Camera == null)
+                        Interactions interactions = _cameraAgent.Interactions;
+                        if (interactions != null)
                         {
-                                FinishCameraView();
-                                return;
+                                interactions.ClearInteractionCameraAuthority(_cameraViewTransform);
                         }
 
-                        Transform cameraTransform = Context.Camera.Camera.transform;
-
-                        if (instant == true)
-                        {
-                                cameraTransform.SetPositionAndRotation(_originalCameraPosition, _originalCameraRotation);
-                                FinishCameraView();
-                                return;
-                        }
-
-                        _cameraTransitionState = CameraTransitionState.Leaving;
-                        _cameraReturnTimer = 0f;
-                        _cameraReturnStartPosition = cameraTransform.position;
-                        _cameraReturnStartRotation = cameraTransform.rotation;
+                        _cameraAgent = null;
                 }
 
                 private void ShowWeaponPreview(WeaponDefinition definition)
@@ -513,147 +477,13 @@ namespace TPSBR
                                 }
                         }
 
-                        if (_cameraViewActive == false)
-                                return;
-
-                        UpdateCameraView();
+                        ApplyCameraAuthority(_cameraAgent);
                 }
 
                 private void UpdateSelectedItemSlotCache()
                 {
                         _currentSelectedSourceType = SelectedItemSourceType;
                         _currentSelectedSourceIndex = SelectedItemSourceIndex;
-                }
-
-                private void UpdateCameraView()
-                {
-                        if (_cameraViewActive == false || Context == null)
-                                return;
-
-                        SceneCamera sceneCamera = Context.Camera;
-                        if (sceneCamera == null || sceneCamera.Camera == null)
-                                return;
-
-                        Transform cameraTransform = sceneCamera.Camera.transform;
-
-                        if (_cameraTransitionState == CameraTransitionState.Leaving)
-                        {
-                                UpdateCameraReturn(cameraTransform);
-                                return;
-                        }
-
-                        if (TryGetCameraViewData(out Vector3 raycastStart, out Vector3 raycastDirection, out float maxCameraDistance, out Quaternion targetRotation) == false)
-                                return;
-
-                        float desiredDistance = 0f;
-
-                        if (maxCameraDistance > 0.0001f)
-                        {
-                                desiredDistance = maxCameraDistance;
-
-                                if (Runner != null)
-                                {
-                                        PhysicsScene physicsScene = Runner.GetPhysicsScene();
-                                        if (physicsScene.Raycast(raycastStart, raycastDirection, out RaycastHit hitInfo, maxCameraDistance + 0.25f, -5, QueryTriggerInteraction.Ignore) == true)
-                                        {
-                                                Agent observedAgent = Context != null ? Context.ObservedAgent : null;
-                                                Agent hitAgent = hitInfo.transform.GetComponentInParent<Agent>();
-
-                                                if (hitAgent == null || hitAgent != observedAgent)
-                                                {
-                                                        float adjustedDistance = Mathf.Clamp(hitInfo.distance - 0.25f, 0.0f, maxCameraDistance);
-                                                        desiredDistance = Mathf.Min(desiredDistance, adjustedDistance);
-                                                }
-                                        }
-                                }
-                        }
-
-                        float step = Mathf.Max(desiredDistance, 0.01f) * _cameraTransitionSpeed * Time.deltaTime;
-                        _cameraViewDistance = Mathf.MoveTowards(_cameraViewDistance, desiredDistance, step);
-
-                        Vector3 targetPosition = raycastStart + raycastDirection * _cameraViewDistance;
-                        cameraTransform.position = targetPosition;
-
-                        float rotationLerp = 1f - Mathf.Exp(-_cameraRotationLerpSpeed * Time.deltaTime);
-                        cameraTransform.rotation = Quaternion.Slerp(cameraTransform.rotation, targetRotation, rotationLerp);
-
-                        if (_cameraTransitionState == CameraTransitionState.Entering && Mathf.Abs(_cameraViewDistance - desiredDistance) < 0.01f)
-                        {
-                                _cameraTransitionState = CameraTransitionState.Active;
-                        }
-                }
-
-                private void UpdateCameraReturn(Transform cameraTransform)
-                {
-                        if (_cameraReturnDuration <= 0.0001f)
-                        {
-                                cameraTransform.SetPositionAndRotation(_originalCameraPosition, _originalCameraRotation);
-                                FinishCameraView();
-                                return;
-                        }
-
-                        _cameraReturnTimer += Time.deltaTime;
-
-                        float t = Mathf.Clamp01(_cameraReturnTimer / _cameraReturnDuration);
-                        t = t * t * (3f - 2f * t);
-
-                        cameraTransform.position = Vector3.Lerp(_cameraReturnStartPosition, _originalCameraPosition, t);
-                        cameraTransform.rotation = Quaternion.Slerp(_cameraReturnStartRotation, _originalCameraRotation, t);
-
-                        if (t >= 0.999f)
-                        {
-                                cameraTransform.SetPositionAndRotation(_originalCameraPosition, _originalCameraRotation);
-                                FinishCameraView();
-                        }
-                }
-
-                private void FinishCameraView()
-                {
-                        _cameraViewActive = false;
-                        _cameraTransitionState = CameraTransitionState.None;
-                        _cameraViewDistance = 0f;
-                        _cameraReturnTimer = 0f;
-                }
-
-                private bool TryGetCameraViewData(out Vector3 raycastStart, out Vector3 raycastDirection, out float maxCameraDistance, out Quaternion targetRotation)
-                {
-                        raycastStart = default;
-                        raycastDirection = default;
-                        maxCameraDistance = 0f;
-                        targetRotation = Quaternion.identity;
-
-                        if (_cameraViewTransform == null)
-                                return false;
-
-                        Transform referenceTransform = _cameraViewTransform.parent != null ? _cameraViewTransform.parent : transform;
-                        Vector3 targetPosition = _cameraViewTransform.position;
-                        Vector3 referencePosition = referenceTransform != null ? referenceTransform.position : Vector3.zero;
-                        Vector3 offset = targetPosition - referencePosition;
-
-                        targetRotation = _cameraViewTransform.rotation;
-
-                        if (offset.sqrMagnitude > 0.0001f)
-                        {
-                                maxCameraDistance = offset.magnitude;
-                                raycastDirection = offset / maxCameraDistance;
-                                raycastStart = targetPosition - raycastDirection * maxCameraDistance;
-                        }
-                        else
-                        {
-                                raycastDirection = _cameraViewTransform.forward.sqrMagnitude > 0.0001f ? _cameraViewTransform.forward.normalized : Vector3.forward;
-                                raycastStart = targetPosition;
-                                maxCameraDistance = 0f;
-                        }
-
-                        return true;
-                }
-
-                private enum CameraTransitionState
-                {
-                        None,
-                        Entering,
-                        Active,
-                        Leaving
                 }
 
                 private bool MatchesFilter(DataDefinition definition)
