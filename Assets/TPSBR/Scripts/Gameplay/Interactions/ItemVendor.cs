@@ -29,8 +29,11 @@ namespace TPSBR
                 [SerializeField]
                 private int _itemsPerDefinition = 3;
 
-                private readonly List<VendorItemData> _generatedItems = new List<VendorItemData>();
-                private bool _itemsDirty = true;
+                [Networked, Capacity(64)]
+                private NetworkLinkedList<InventorySlot> _availableItems { get; }
+
+                public const int ITEM_COST = 10;
+                private const int SELL_REWARD = 5;
 
                 private UIVendorView _activeVendorView;
                 private Agent _cameraAgent;
@@ -43,6 +46,16 @@ namespace TPSBR
                 string  IInteraction.Description => _interactionDescription;
                 Vector3 IInteraction.HUDPosition => _hudPivot != null ? _hudPivot.position : transform.position;
                 bool    IInteraction.IsActive    => isActiveAndEnabled == true && (_interactionCollider == null || (_interactionCollider.enabled == true && _interactionCollider.gameObject.activeInHierarchy == true));
+
+                public override void Spawned()
+                {
+                        base.Spawned();
+
+                        if (HasStateAuthority == true)
+                        {
+                                EnsureGeneratedItems();
+                        }
+                }
 
                 public void Interact(Agent agent)
                 {
@@ -95,8 +108,7 @@ namespace TPSBR
                                 return;
                         }
 
-                        _itemsDirty = true;
-                        view.Configure(agent, PopulateItems);
+                        view.Configure(agent, this, PopulateItems);
 
                         if (_activeVendorView != null)
                         {
@@ -122,22 +134,40 @@ namespace TPSBR
                         if (FilterDefinitions == null || FilterDefinitions.Length == 0)
                                 return VendorItemStatus.NoDefinitions;
 
-                        EnsureGeneratedItems();
+                        if (HasStateAuthority == true)
+                        {
+                                EnsureGeneratedItems();
+                        }
 
-                        if (_generatedItems.Count == 0)
+                        if (_availableItems.Count == 0)
                                 return VendorItemStatus.NoItems;
 
-                        destination.AddRange(_generatedItems);
-                        return VendorItemStatus.Success;
+                        for (int i = 0; i < _availableItems.Count; ++i)
+                        {
+                                InventorySlot slot = _availableItems.Get(i);
+
+                                if (slot.IsEmpty == true)
+                                        continue;
+
+                                ItemDefinition definition = ItemDefinition.Get(slot.ItemDefinitionId);
+                                if (definition == null)
+                                        continue;
+
+                                Sprite icon = definition.IconSprite;
+                                string configurationHash = slot.ConfigurationHash.ToString();
+                                destination.Add(new VendorItemData(icon, slot.Quantity, definition, configurationHash, i));
+                        }
+
+                        return destination.Count > 0 ? VendorItemStatus.Success : VendorItemStatus.NoItems;
                 }
 
                 private void EnsureGeneratedItems()
                 {
-                        if (_itemsDirty == false && _generatedItems.Count > 0)
+                        if (HasStateAuthority == false)
                                 return;
 
-                        _generatedItems.Clear();
-                        _itemsDirty = false;
+                        if (_availableItems.Count > 0)
+                                return;
 
                         if (FilterDefinitions == null || FilterDefinitions.Length == 0)
                                 return;
@@ -152,6 +182,173 @@ namespace TPSBR
 
                                 GenerateItemsForFilter(filter, itemsPerDefinition);
                         }
+                }
+
+                public void RequestPurchase(Agent agent, int vendorIndex)
+                {
+                        if (agent == null)
+                                return;
+
+                        if (HasStateAuthority == true)
+                        {
+                                ProcessPurchase(agent, vendorIndex);
+                        }
+                        else
+                        {
+                                RPC_RequestPurchase(agent.Object.InputAuthority, agent.Object.Id, vendorIndex);
+                        }
+                }
+
+                public void RequestSell(Agent agent, int inventoryIndex)
+                {
+                        if (agent == null)
+                                return;
+
+                        if (HasStateAuthority == true)
+                        {
+                                ProcessSell(agent, inventoryIndex);
+                        }
+                        else
+                        {
+                                RPC_RequestSell(agent.Object.InputAuthority, agent.Object.Id, inventoryIndex);
+                        }
+                }
+
+                [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority, Channel = RpcChannel.Reliable)]
+                private void RPC_RequestPurchase(PlayerRef playerRef, NetworkId agentId, int vendorIndex)
+                {
+                        if (TryResolveAgent(playerRef, agentId, out Agent agent) == false)
+                                return;
+
+                        ProcessPurchase(agent, vendorIndex);
+                }
+
+                [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority, Channel = RpcChannel.Reliable)]
+                private void RPC_RequestSell(PlayerRef playerRef, NetworkId agentId, int inventoryIndex)
+                {
+                        if (TryResolveAgent(playerRef, agentId, out Agent agent) == false)
+                                return;
+
+                        ProcessSell(agent, inventoryIndex);
+                }
+
+                private bool TryResolveAgent(PlayerRef playerRef, NetworkId agentId, out Agent agent)
+                {
+                        agent = null;
+
+                        if (Runner == null)
+                                return false;
+
+                        if (Runner.TryFindObject(agentId, out NetworkObject agentObject) == false)
+                                return false;
+
+                        agent = agentObject.GetComponent<Agent>();
+
+                        if (agent == null || agent.Object == null)
+                                return false;
+
+                        if (agent.Object.InputAuthority != playerRef)
+                                return false;
+
+                        return true;
+                }
+
+                private void ProcessPurchase(Agent agent, int vendorIndex)
+                {
+                        if (HasStateAuthority == false || agent == null)
+                                return;
+
+                        if (vendorIndex < 0 || vendorIndex >= _availableItems.Count)
+                                return;
+
+                        Inventory inventory = agent.Inventory;
+                        if (inventory == null)
+                                return;
+
+                        InventorySlot vendorSlot = _availableItems.Get(vendorIndex);
+                        if (vendorSlot.IsEmpty == true)
+                                return;
+
+                        ItemDefinition definition = ItemDefinition.Get(vendorSlot.ItemDefinitionId);
+                        if (definition == null)
+                                return;
+
+                        if (inventory.Gold < ITEM_COST)
+                                return;
+
+                        if (HasEmptyInventorySlot(inventory) == false)
+                                return;
+
+                        if (inventory.TrySpendGold(ITEM_COST) == false)
+                                return;
+
+                        byte quantity = vendorSlot.Quantity;
+                        if (quantity == 0)
+                        {
+                                quantity = 1;
+                        }
+
+                        byte remainder = inventory.AddItem(definition, quantity, vendorSlot.ConfigurationHash);
+
+                        if (remainder > 0)
+                        {
+                                inventory.AddGold(ITEM_COST);
+                                return;
+                        }
+
+                        _availableItems.Remove(vendorSlot);
+                }
+
+                private void ProcessSell(Agent agent, int inventoryIndex)
+                {
+                        if (HasStateAuthority == false || agent == null)
+                                return;
+
+                        if (_availableItems.Count >= _availableItems.Capacity)
+                                return;
+
+                        Inventory inventory = agent.Inventory;
+                        if (inventory == null)
+                                return;
+
+                        InventorySlot inventorySlot = inventory.GetItemSlot(inventoryIndex);
+                        if (inventorySlot.IsEmpty == true)
+                                return;
+
+                        ItemDefinition definition = ItemDefinition.Get(inventorySlot.ItemDefinitionId);
+                        if (definition == null)
+                                return;
+
+                        byte quantity = inventorySlot.Quantity;
+                        if (quantity == 0)
+                                return;
+
+                        if (inventory.TryExtractInventoryItem(inventoryIndex, quantity, out InventorySlot removedSlot) == false)
+                                return;
+
+                        if (removedSlot.Quantity == 0)
+                                return;
+
+                        _availableItems.Add(removedSlot);
+                        inventory.AddGold(SELL_REWARD);
+                }
+
+                private static bool HasEmptyInventorySlot(Inventory inventory)
+                {
+                        if (inventory == null)
+                                return false;
+
+                        int slotCount = inventory.InventorySize;
+
+                        for (int i = 0; i < slotCount; ++i)
+                        {
+                                InventorySlot slot = inventory.GetItemSlot(i);
+
+                                if (slot.IsEmpty == true)
+                                        return true;
+                        }
+
+                        return false;
                 }
 
                 private void GenerateItemsForFilter(DataDefinition filter, int count)
@@ -240,12 +437,20 @@ namespace TPSBR
                         if (definition == null)
                                 return;
 
-                        Sprite icon = definition.IconSprite;
-
                         for (int i = 0; i < count; ++i)
                         {
                                 string configurationHash = GenerateConfigurationHash(definition);
-                                _generatedItems.Add(new VendorItemData(icon, 1, definition, configurationHash));
+                                NetworkString<_32> networkHash = default;
+
+                                if (string.IsNullOrWhiteSpace(configurationHash) == false)
+                                {
+                                        networkHash = configurationHash;
+                                }
+
+                                if (_availableItems.Count >= _availableItems.Capacity)
+                                        return;
+
+                                _availableItems.Add(new InventorySlot(definition.ID, 1, networkHash));
                         }
                 }
 
@@ -305,8 +510,6 @@ namespace TPSBR
                         }
 
                         RestoreCameraAuthority();
-                        _itemsDirty = true;
-                        _generatedItems.Clear();
                 }
 
                 private void OnDisable()
@@ -319,8 +522,10 @@ namespace TPSBR
                         }
 
                         RestoreCameraAuthority();
-                        _generatedItems.Clear();
-                        _itemsDirty = true;
+                        if (HasStateAuthority == true)
+                        {
+                                _availableItems.Clear();
+                        }
                 }
 
                 private void ApplyCameraAuthority(Agent agent)

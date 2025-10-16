@@ -434,6 +434,48 @@ namespace TPSBR
             return AddItemInternal(definition, quantity, configurationHash);
         }
 
+        public bool TryExtractInventoryItem(int inventoryIndex, byte quantity, out InventorySlot removedSlot)
+        {
+            removedSlot = default;
+
+            if (HasStateAuthority == false)
+                return false;
+
+            if (quantity == 0)
+                return false;
+
+            if (IsGeneralInventoryIndex(inventoryIndex) == false)
+                return false;
+
+            var slot = _items[inventoryIndex];
+            if (slot.IsEmpty == true)
+                return false;
+
+            if (slot.Quantity < quantity)
+                return false;
+
+            if (IsPickaxeSlotItem(slot) == true || IsWoodAxeSlotItem(slot) == true)
+                return false;
+
+            removedSlot = new InventorySlot(slot.ItemDefinitionId, quantity, slot.ConfigurationHash);
+
+            if (slot.Quantity == quantity)
+            {
+                _items.Set(inventoryIndex, default);
+                UpdateWeaponDefinitionMapping(inventoryIndex, default);
+            }
+            else
+            {
+                slot.Remove(quantity);
+                _items.Set(inventoryIndex, slot);
+                UpdateWeaponDefinitionMapping(inventoryIndex, slot);
+            }
+
+            RefreshItems();
+
+            return true;
+        }
+
         public void RequestMoveItem(int fromIndex, int toIndex)
         {
             if (fromIndex == toIndex)
