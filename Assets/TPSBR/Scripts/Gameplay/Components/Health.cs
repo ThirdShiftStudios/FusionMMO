@@ -3,390 +3,313 @@ using Fusion;
 
 namespace TPSBR
 {
-	using UnityEngine;
+        using UnityEngine;
 
-	public struct BodyHitData : INetworkStruct
-	{
-		public EHitAction Action;
-		public float      Damage;
-		public Vector3    RelativePosition;
-		public Vector3    Direction;
-		public PlayerRef  Instigator;
-	}
+        public struct BodyHitData : INetworkStruct
+        {
+                public EHitAction Action;
+                public float      Damage;
+                public Vector3    RelativePosition;
+                public Vector3    Direction;
+                public PlayerRef  Instigator;
+        }
 
-	public sealed class Health : ContextBehaviour, IHitTarget, IHitInstigator
-	{
-		// PUBLIC MEMBERS
+        public abstract class Health : ContextBehaviour, IHitTarget, IHitInstigator
+        {
+                // PUBLIC MEMBERS
 
-		public bool  IsAlive   => CurrentHealth > 0f;
-		public float MaxHealth => _maxHealth;
-		public float MaxShield => _maxShield;
+                public bool  IsAlive   => CurrentHealth > 0f;
+                public float MaxHealth => _maxHealth;
+                public float MaxShield => _maxShield;
 
-		[Networked, HideInInspector]
-		public float CurrentHealth { get; private set; }
-		[Networked, HideInInspector]
-		public float CurrentShield { get; private set; }
+                [Networked, HideInInspector]
+                public float CurrentHealth { get; protected set; }
+                [Networked, HideInInspector]
+                public float CurrentShield { get; protected set; }
 
-		public event Action<HitData> HitTaken;
-		public event Action<HitData> HitPerformed;
+                public event Action<HitData> HitTaken;
+                public event Action<HitData> HitPerformed;
 
-		// PRIVATE MEMBERS
+                // PROTECTED MEMBERS
 
-		[SerializeField]
-                private float _maxHealth;
                 [SerializeField]
-                private float _maxShield;
+                protected float _maxHealth;
                 [SerializeField]
-                private float _startShield;
+                protected float _maxShield;
                 [SerializeField]
-                private Transform _hitIndicatorPivot;
-
-                [Header("Attributes")]
+                protected float _startShield;
                 [SerializeField]
-                private float _healthPerStrength = 20f;
+                protected Transform _hitIndicatorPivot;
 
-		[Header("Regeneration")]
-		[SerializeField]
-		private float _healthRegenPerSecond;
-		[SerializeField]
-		private float _maxHealthFromRegen;
-		[SerializeField]
-		private int _regenTickPerSecond;
-		[SerializeField]
-		private int _regenCombatDelay;
+                [Header("Regeneration")]
+                [SerializeField]
+                protected float _healthRegenPerSecond;
+                [SerializeField]
+                protected float _maxHealthFromRegen;
+                [SerializeField]
+                protected int _regenTickPerSecond;
+                [SerializeField]
+                protected int _regenCombatDelay;
 
-		[Networked]
-		private int _hitCount { get; set; }
-		[Networked, Capacity(4)]
-		private NetworkArray<BodyHitData> _hitData { get; }
+                [Networked]
+                protected int _hitCount { get; set; }
+                [Networked, Capacity(4)]
+                protected NetworkArray<BodyHitData> _hitData { get; }
 
-		private int _visibleHitCount;
-                private Agent _agent;
-                private Stats _stats;
+                protected int _visibleHitCount;
 
-                private TickTimer _regenTickTimer;
-                private float _healthRegenPerTick;
-                private float _regenTickTime;
-                private float _baseMaxHealth;
-                private bool _baseMaxHealthInitialized;
+                protected TickTimer _regenTickTimer;
+                protected float _healthRegenPerTick;
+                protected float _regenTickTime;
 
-		// PUBLIC METHODS
+                // PUBLIC METHODS
 
-                public void OnSpawned(Agent agent)
+                public virtual void OnSpawned(Agent agent)
                 {
                         _visibleHitCount = _hitCount;
-
-                        _baseMaxHealthInitialized = false;
-
-                        _stats = agent != null ? agent.GetComponent<Stats>() : GetComponent<Stats>();
-
-                        if (_stats != null)
-                        {
-                                _stats.StatChanged += OnStatChanged;
-                                UpdateMaxHealthFromStrength(_stats.Strength, false, _stats.Strength);
-                        }
                 }
 
-                public void OnDespawned()
+                public virtual void OnDespawned()
                 {
                         HitTaken = null;
                         HitPerformed = null;
-
-                        if (_stats != null)
-                        {
-                                _stats.StatChanged -= OnStatChanged;
-                        }
-
-                        _stats = null;
-                        _baseMaxHealthInitialized = false;
-                        _baseMaxHealth = 0f;
                 }
 
-		public void OnFixedUpdate()
-		{
-			if (HasStateAuthority == false)
-				return;
-
-			if (IsAlive == true && _healthRegenPerSecond > 0f && _regenTickTimer.ExpiredOrNotRunning(Runner) == true)
-			{
-				_regenTickTimer = TickTimer.CreateFromSeconds(Runner, _regenTickTime);
-
-				var healthDiff = _maxHealthFromRegen - CurrentHealth;
-				if (healthDiff <= 0f)
-					return;
-
-				AddHealth(Mathf.Min(healthDiff, _healthRegenPerTick));
-			}
-		}
-
-		public void ResetRegenDelay()
-		{
-			_regenTickTimer = TickTimer.CreateFromSeconds(Runner, _regenCombatDelay);
-		}
-
-		public override void CopyBackingFieldsToState(bool firstTime)
-		{
-			base.CopyBackingFieldsToState(firstTime);
-
-			InvokeWeavedCode();
-
-			CurrentHealth = _maxHealth;
-			CurrentShield = _startShield;
-		}
-
-		// NetworkBehaviour INTERFACE
-
-		public override void Render()
-		{
-			if (Runner.Mode != SimulationModes.Server)
-			{
-				UpdateVisibleHits();
-			}
-		}
-
-		// MONOBEHAVIOUR
-
-                private void Awake()
+                public virtual void OnFixedUpdate()
                 {
-                        _agent = GetComponent<Agent>();
-
-                        _regenTickTime      = 1f / _regenTickPerSecond;
-                        _healthRegenPerTick = _healthRegenPerSecond / _regenTickPerSecond;
-                }
-
-                private void OnStatChanged(Stats.StatIndex stat, int previousValue, int newValue)
-                {
-                        if (stat != Stats.StatIndex.Strength)
+                        if (HasStateAuthority == false)
                                 return;
 
-                        UpdateMaxHealthFromStrength(newValue, true, previousValue);
+                        if (IsAlive == true && _healthRegenPerSecond > 0f && _regenTickTimer.ExpiredOrNotRunning(Runner) == true)
+                        {
+                                _regenTickTimer = TickTimer.CreateFromSeconds(Runner, _regenTickTime);
+
+                                var healthDiff = _maxHealthFromRegen - CurrentHealth;
+                                if (healthDiff <= 0f)
+                                        return;
+
+                                AddHealth(Mathf.Min(healthDiff, _healthRegenPerTick));
+                        }
                 }
 
-		// IHitTarget INTERFACE
+                public void ResetRegenDelay()
+                {
+                        _regenTickTimer = TickTimer.CreateFromSeconds(Runner, _regenCombatDelay);
+                }
 
-		Transform IHitTarget.HitPivot => _hitIndicatorPivot != null ? _hitIndicatorPivot : transform;
+                public override void CopyBackingFieldsToState(bool firstTime)
+                {
+                        base.CopyBackingFieldsToState(firstTime);
 
-		void IHitTarget.ProcessHit(ref HitData hitData)
-		{
-			if (IsAlive == false)
-			{
-				hitData.Amount = 0;
-				return;
-			}
+                        InvokeWeavedCode();
 
-			ApplyHit(ref hitData);
+                        CurrentHealth = _maxHealth;
+                        CurrentShield = _startShield;
+                }
 
-			if (IsAlive == false)
-			{
-				hitData.IsFatal = true;
-				Context.GameplayMode.AgentDeath(_agent, hitData);
-			}
-		}
+                // NetworkBehaviour INTERFACE
 
-		// IHitInstigator INTERFACE
+                public override void Render()
+                {
+                        if (Runner.Mode != SimulationModes.Server)
+                        {
+                                UpdateVisibleHits();
+                        }
+                }
 
-		void IHitInstigator.HitPerformed(HitData hitData)
-		{
-			if (hitData.Amount > 0 && hitData.Target != (IHitTarget)this && Runner.IsResimulation == false)
-			{
-				HitPerformed?.Invoke(hitData);
-			}
-		}
+                // MONOBEHAVIOUR
 
-		// PRIVATE METHODS
+                protected virtual void Awake()
+                {
+                        _regenTickTime      = _regenTickPerSecond > 0 ? 1f / _regenTickPerSecond : 0f;
+                        _healthRegenPerTick = _regenTickPerSecond > 0 ? _healthRegenPerSecond / _regenTickPerSecond : 0f;
+                }
 
-		private void ApplyHit(ref HitData hit)
-		{
-			if (IsAlive == false)
-				return;
+                // IHitTarget INTERFACE
 
-			if (hit.Action == EHitAction.Damage)
-			{
-				hit.Amount = ApplyDamage(hit.Amount);
-			}
-			else if (hit.Action == EHitAction.Heal)
-			{
-				hit.Amount = AddHealth(hit.Amount);
-			}
-			else if (hit.Action == EHitAction.Shield)
-			{
-				hit.Amount = AddShield(hit.Amount);
-			}
+                Transform IHitTarget.HitPivot => _hitIndicatorPivot != null ? _hitIndicatorPivot : transform;
 
-			if (hit.Amount <= 0)
-				return;
+                void IHitTarget.ProcessHit(ref HitData hitData)
+                {
+                        if (IsAlive == false)
+                        {
+                                hitData.Amount = 0;
+                                return;
+                        }
 
-			// Hit taken effects (blood) is shown immediately for local player, for other
-			// effects (hit number, crosshair hit effect) we are waiting for server confirmation
-			if (hit.InstigatorRef == Context.LocalPlayerRef && Runner.IsForward == true)
-			{
-				HitTaken?.Invoke(hit);
-			}
+                        ApplyHit(ref hitData);
 
-			if (HasStateAuthority == false)
-				return;
+                        if (IsAlive == false)
+                        {
+                                hitData.IsFatal = true;
+                                OnDeath(hitData);
+                        }
+                }
 
-			_hitCount++;
+                // IHitInstigator INTERFACE
 
-			var bodyHitData = new BodyHitData
-			{
-				Action           = hit.Action,
-				Damage           = hit.Amount,
-				Direction        = hit.Direction,
-				RelativePosition = hit.Position != Vector3.zero ? hit.Position - transform.position : Vector3.zero,
-				Instigator       = hit.InstigatorRef,
-			};
+                void IHitInstigator.HitPerformed(HitData hitData)
+                {
+                        if (hitData.Amount > 0 && hitData.Target != (IHitTarget)this && Runner.IsResimulation == false)
+                        {
+                                HitPerformed?.Invoke(hitData);
+                        }
+                }
 
-			int hitIndex = _hitCount % _hitData.Length;
-			_hitData.Set(hitIndex, bodyHitData);
-		}
+                // PROTECTED METHODS
 
-		private float ApplyDamage(float damage)
-		{
-			if (damage <= 0f)
-				return 0f;
+                protected virtual void ApplyHit(ref HitData hit)
+                {
+                        if (IsAlive == false)
+                                return;
 
-			ResetRegenDelay();
+                        if (hit.Action == EHitAction.Damage)
+                        {
+                                hit.Amount = ApplyDamage(hit.Amount);
+                        }
+                        else if (hit.Action == EHitAction.Heal)
+                        {
+                                hit.Amount = AddHealth(hit.Amount);
+                        }
+                        else if (hit.Action == EHitAction.Shield)
+                        {
+                                hit.Amount = AddShield(hit.Amount);
+                        }
 
-			var shieldChange = AddShield(-damage);
-			var healthChange = AddHealth(-(damage + shieldChange));
+                        if (hit.Amount <= 0)
+                                return;
 
-			return -(shieldChange + healthChange);
-		}
+                        if (hit.InstigatorRef == Context.LocalPlayerRef && Runner.IsForward == true)
+                        {
+                                HitTaken?.Invoke(hit);
+                        }
 
-		private float AddHealth(float health)
-		{
-			float previousHealth = CurrentHealth;
-			SetHealth(CurrentHealth + health);
-			return CurrentHealth - previousHealth;
-		}
+                        if (HasStateAuthority == false)
+                                return;
 
-		private float AddShield(float shield)
-		{
-			float previousShield = CurrentShield;
-			SetShield(CurrentShield + shield);
-			return CurrentShield - previousShield;
-		}
+                        _hitCount++;
 
-                private void SetHealth(float health)
+                        var bodyHitData = new BodyHitData
+                        {
+                                Action           = hit.Action,
+                                Damage           = hit.Amount,
+                                Direction        = hit.Direction,
+                                RelativePosition = hit.Position != Vector3.zero ? hit.Position - transform.position : Vector3.zero,
+                                Instigator       = hit.InstigatorRef,
+                        };
+
+                        int hitIndex = _hitCount % _hitData.Length;
+                        _hitData.Set(hitIndex, bodyHitData);
+                }
+
+                protected virtual float ApplyDamage(float damage)
+                {
+                        if (damage <= 0f)
+                                return 0f;
+
+                        ResetRegenDelay();
+
+                        var shieldChange = AddShield(-damage);
+                        var healthChange = AddHealth(-(damage + shieldChange));
+
+                        return -(shieldChange + healthChange);
+                }
+
+                protected float AddHealth(float health)
+                {
+                        float previousHealth = CurrentHealth;
+                        SetHealth(CurrentHealth + health);
+                        return CurrentHealth - previousHealth;
+                }
+
+                protected float AddShield(float shield)
+                {
+                        float previousShield = CurrentShield;
+                        SetShield(CurrentShield + shield);
+                        return CurrentShield - previousShield;
+                }
+
+                protected void SetHealth(float health)
                 {
                         CurrentHealth = Mathf.Clamp(health, 0, _maxHealth);
                 }
 
-		private void SetShield(float shield)
-		{
-			CurrentShield = Mathf.Clamp(shield, 0, _maxShield);
-		}
+                protected void SetShield(float shield)
+                {
+                        CurrentShield = Mathf.Clamp(shield, 0, _maxShield);
+                }
 
-		private void UpdateVisibleHits()
-		{
-			if (_visibleHitCount == _hitCount)
-				return;
+                protected void UpdateVisibleHits()
+                {
+                        if (_visibleHitCount == _hitCount)
+                                return;
 
-			int dataCount = _hitData.Length;
-			int oldestHitData = _hitCount - dataCount + 1;
+                        int dataCount = _hitData.Length;
+                        int oldestHitData = _hitCount - dataCount + 1;
 
-			for (int i = Mathf.Max(_visibleHitCount + 1, oldestHitData); i <= _hitCount; i++)
-			{
-				int shotIndex = i % dataCount;
-				var bodyHitData = _hitData.Get(shotIndex);
+                        for (int i = Mathf.Max(_visibleHitCount + 1, oldestHitData); i <= _hitCount; i++)
+                        {
+                                int shotIndex = i % dataCount;
+                                var bodyHitData = _hitData.Get(shotIndex);
 
-				var hitData = new HitData
-				{
-					Action        = bodyHitData.Action,
-					Amount        = bodyHitData.Damage,
-					Position      = transform.position + bodyHitData.RelativePosition,
-					Direction     = bodyHitData.Direction,
-					Normal        = -bodyHitData.Direction,
-					Target        = this,
-					InstigatorRef = bodyHitData.Instigator,
-					IsFatal       = i == _hitCount && CurrentHealth <= 0f,
-				};
+                                var hitData = new HitData
+                                {
+                                        Action        = bodyHitData.Action,
+                                        Amount        = bodyHitData.Damage,
+                                        Position      = transform.position + bodyHitData.RelativePosition,
+                                        Direction     = bodyHitData.Direction,
+                                        Normal        = -bodyHitData.Direction,
+                                        Target        = this,
+                                        InstigatorRef = bodyHitData.Instigator,
+                                        IsFatal       = i == _hitCount && CurrentHealth <= 0f,
+                                };
 
-				OnHitTaken(hitData);
-			}
+                                OnHitTaken(hitData);
+                        }
 
-			_visibleHitCount = _hitCount;
-		}
+                        _visibleHitCount = _hitCount;
+                }
 
-		private void OnHitTaken(HitData hit)
-		{
-			// For local player, HitTaken was already called when applying hit
-			if (hit.InstigatorRef != Context.LocalPlayerRef)
-			{
-				HitTaken?.Invoke(hit);
-			}
+                protected virtual void OnHitTaken(HitData hit)
+                {
+                        if (hit.InstigatorRef != Context.LocalPlayerRef)
+                        {
+                                HitTaken?.Invoke(hit);
+                        }
 
-			// We use _hitData buffer to inform instigator about successful hit as this needs
-			// to be synchronized over network as well (e.g. when spectating other players)
-			if (hit.InstigatorRef.IsRealPlayer == true && hit.InstigatorRef == Context.ObservedPlayerRef)
-			{
-				var instigator = hit.Instigator;
+                        if (hit.InstigatorRef.IsRealPlayer == true && hit.InstigatorRef == Context.ObservedPlayerRef)
+                        {
+                                var instigator = hit.Instigator;
 
-				if (instigator == null)
-				{
-					var player = Context.NetworkGame.GetPlayer(hit.InstigatorRef);
-					instigator = player != null ? player.ActiveAgent.Health as IHitInstigator : null;
-				}
+                                if (instigator == null)
+                                {
+                                        var player = Context.NetworkGame.GetPlayer(hit.InstigatorRef);
+                                        instigator = player != null ? player.ActiveAgent.Health as IHitInstigator : null;
+                                }
 
-				if (instigator != null)
-				{
-					instigator.HitPerformed(hit);
-				}
-			}
-		}
+                                if (instigator != null)
+                                {
+                                        instigator.HitPerformed(hit);
+                                }
+                        }
+                }
 
-		// DEBUG
+                // DEBUG
 
-		[ContextMenu("Add Health")]
-		private void Debug_AddHealth()
-		{
-			CurrentHealth += 10;
-		}
+                [ContextMenu("Add Health")]
+                protected void Debug_AddHealth()
+                {
+                        CurrentHealth += 10;
+                }
 
-		[ContextMenu("Remove Health")]
-                private void Debug_RemoveHealth()
+                [ContextMenu("Remove Health")]
+                protected void Debug_RemoveHealth()
                 {
                         CurrentHealth -= 10;
                 }
 
-                private void InitializeBaseMaxHealth(int strength)
-                {
-                        if (_baseMaxHealthInitialized == true)
-                                return;
+                // ABSTRACT METHODS
 
-                        _baseMaxHealth = _maxHealth - strength * _healthPerStrength;
-                        _baseMaxHealthInitialized = true;
-                }
-
-                private void UpdateMaxHealthFromStrength(int newStrength, bool preserveHealthPercentage, int? previousStrengthOverride = null)
-                {
-                        if (_stats == null)
-                                return;
-
-                        InitializeBaseMaxHealth(newStrength);
-
-                        float previousMaxHealth = previousStrengthOverride.HasValue
-                                ? Mathf.Max(0f, _baseMaxHealth + previousStrengthOverride.Value * _healthPerStrength)
-                                : _maxHealth;
-
-                        float targetMaxHealth = Mathf.Max(0f, _baseMaxHealth + newStrength * _healthPerStrength);
-
-                        float healthRatio = preserveHealthPercentage && previousMaxHealth > 0f ? CurrentHealth / previousMaxHealth : 1f;
-                        float regenRatio = previousMaxHealth > 0f ? _maxHealthFromRegen / previousMaxHealth : 1f;
-
-                        _maxHealth = targetMaxHealth;
-
-                        if (preserveHealthPercentage == true)
-                        {
-                                SetHealth(_maxHealth * healthRatio);
-                        }
-                        else
-                        {
-                                SetHealth(_maxHealth);
-                        }
-
-                        _maxHealthFromRegen = _maxHealth * regenRatio;
-                }
+                protected abstract void OnDeath(HitData hitData);
         }
 }

@@ -212,6 +212,11 @@ namespace TPSBR
 			CheckWinCondition();
 		}
 
+		public virtual void EnemyDeath(EnemyHealth enemy, HitData hitData)
+		{
+			Debug.Log("[GameplayMode] Enemy Hit");
+		}
+
 		public Transform GetRandomSpawnPoint(float minDistanceFromAgents)
 		{
 			if (_availableSpawnPoints.SafeCount() == 0)
