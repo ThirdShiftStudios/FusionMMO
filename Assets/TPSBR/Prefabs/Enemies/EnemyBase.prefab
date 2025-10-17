@@ -78,7 +78,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _priority: 0
   _checkPriorityOnExit: 1
-  _defaultNext: {fileID: 0}
   _idleDuration: 3
 --- !u!1 &1863816064368683867
 GameObject:
@@ -92,7 +91,6 @@ GameObject:
   - component: {fileID: 7901085010266203322}
   - component: {fileID: 7832199949782362821}
   - component: {fileID: 8241693279465801080}
-  - component: {fileID: 6323051593667454083}
   - component: {fileID: 8146570425657444872}
   - component: {fileID: 7508731426582388167}
   - component: {fileID: 4620145005282728938}
@@ -146,7 +144,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6dbf7c59cc3340839d165fbe5fcb0c71, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _health: {fileID: 6323051593667454083}
+  _CurrentHealth: 0
+  _CurrentShield: 0
+  _maxHealth: 100
+  _maxShield: 0
+  _startShield: 0
+  _hitIndicatorPivot: {fileID: 0}
+  _healthRegenPerSecond: 0
+  _maxHealthFromRegen: 0
+  _regenTickPerSecond: 0
+  _regenCombatDelay: 0
 --- !u!114 &8241693279465801080
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -169,29 +176,6 @@ MonoBehaviour:
   _returnToPatrolZone: {fileID: 4718970296107162292}
   _death: {fileID: 1045673506506699745}
   _despawn: {fileID: 4032810369556411222}
---- !u!114 &6323051593667454083
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1863816064368683867}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3181ad8a26fad7a4f95a3288028fb68f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _CurrentHealth: 0
-  _CurrentShield: 0
-  _maxHealth: 100
-  _maxShield: 0
-  _startShield: 0
-  _hitIndicatorPivot: {fileID: 0}
-  _healthPerStrength: 20
-  _healthRegenPerSecond: 0
-  _maxHealthFromRegen: 0
-  _regenTickPerSecond: 0
-  _regenCombatDelay: 0
 --- !u!114 &8146570425657444872
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -210,8 +194,8 @@ MonoBehaviour:
   NestedObjects: []
   NetworkedBehaviours:
   - {fileID: 7901085010266203322}
+  - {fileID: 7832199949782362821}
   - {fileID: 8241693279465801080}
-  - {fileID: 6323051593667454083}
   - {fileID: 7508731426582388167}
   - {fileID: 4620145005282728938}
   - {fileID: 6953381631365717517}
@@ -302,7 +286,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _priority: 0
   _checkPriorityOnExit: 1
-  _defaultNext: {fileID: 0}
   _patrolRadius: 10
 --- !u!1 &3791659149402008403
 GameObject:
@@ -457,7 +440,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _priority: 0
   _checkPriorityOnExit: 1
-  _defaultNext: {fileID: 0}
 --- !u!1 &5892478307987658546
 GameObject:
   m_ObjectHideFlags: 0
@@ -504,7 +486,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _priority: 0
   _checkPriorityOnExit: 1
-  _defaultNext: {fileID: 0}
   _spawnDuration: 2
 --- !u!1 &6470464156100871862
 GameObject:
@@ -552,7 +533,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _priority: 0
   _checkPriorityOnExit: 1
-  _defaultNext: {fileID: 0}
   _maxChaseDistance: 25
 --- !u!1 &6543540963549531908
 GameObject:
@@ -692,7 +672,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _priority: 0
   _checkPriorityOnExit: 1
-  _defaultNext: {fileID: 0}
 --- !u!1 &8040976105639610020
 GameObject:
   m_ObjectHideFlags: 0
@@ -739,4 +718,3 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _priority: 0
   _checkPriorityOnExit: 1
-  _defaultNext: {fileID: 0}
