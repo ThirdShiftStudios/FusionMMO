@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Fusion;
+using TPSBR.Abilities;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -543,7 +544,51 @@ namespace TPSBR
             ResetAttackState(false);
         }
 
+        public void ExecuteAbility(AbilityDefinition ability)
+        {
+            if (ability == null)
+            {
+                Debug.LogWarning($"{LogPrefix} Attempted to execute a null ability.");
+                return;
+            }
+
+            if (Definition != null && Definition.HasAbility(ability) == false)
+            {
+                Debug.LogWarning($"{LogPrefix} Ability '{ability.Name}' is not available on weapon definition '{Definition.name}'.");
+                return;
+            }
+
+            switch (ability)
+            {
+                case FireballAbilityDefinition:
+                    ExecuteFireballAbility();
+                    break;
+                default:
+                    Debug.LogWarning($"{LogPrefix} Ability '{ability.Name}' is not supported by {GetType().Name}.");
+                    break;
+            }
+        }
+
         public void TriggerLightAttackProjectile()
+        {
+            ExecuteFireballAbility();
+        }
+
+        private void PerformHeavyAttack()
+        {
+            Character.Agent.Health?.ResetRegenDelay();
+
+            Debug.Log($"{LogPrefix} Heavy attack triggered on left click release.");
+            ResetAttackState(false);
+        }
+
+        private void PerformAbilityAttack()
+        {
+            Debug.Log($"{LogPrefix} Ability attack triggered.");
+            ResetAttackState(false);
+        }
+
+        private void ExecuteFireballAbility()
         {
             if (HasStateAuthority == false)
             {
@@ -605,20 +650,6 @@ namespace TPSBR
 
                 projectile.Fire(owner, firePosition, initialVelocity, hitMask, HitType);
             });
-        }
-
-        private void PerformHeavyAttack()
-        {
-            Character.Agent.Health?.ResetRegenDelay();
-
-            Debug.Log($"{LogPrefix} Heavy attack triggered on left click release.");
-            ResetAttackState(false);
-        }
-
-        private void PerformAbilityAttack()
-        {
-            Debug.Log($"{LogPrefix} Ability attack triggered.");
-            ResetAttackState(false);
         }
 
         private void CancelHeavyCharge()
