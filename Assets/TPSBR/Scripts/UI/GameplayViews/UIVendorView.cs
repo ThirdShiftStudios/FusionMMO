@@ -10,7 +10,7 @@ using TSS.Data;
 
 namespace TPSBR.UI
 {
-        public sealed class UIVendorView : UICloseView, IUIItemSlotOwner
+        public sealed class UIVendorView : UICloseView, IUIListItemOwner
         {
                 [SerializeField]
                 private TextMeshProUGUI _emptyStateLabel;
@@ -21,11 +21,11 @@ namespace TPSBR.UI
                 [SerializeField]
                 private RectTransform _slotContainer;
                 [SerializeField]
-                private UIItemSlot _itemSlotPrefab;
+                private UIListItem _itemSlotPrefab;
                 [SerializeField]
                 private RectTransform _inventorySlotContainer;
                 [SerializeField]
-                private UIItemSlot _inventoryItemSlotPrefab;
+                private UIListItem _inventoryItemSlotPrefab;
                 [SerializeField]
                 private Color _selectedSlotColor = Color.white;
                 [SerializeField]
@@ -35,13 +35,13 @@ namespace TPSBR.UI
                 [SerializeField]
                 private Button _sellButton;
 
-                private readonly List<UIItemSlot> _vendorSlots = new List<UIItemSlot>();
-                private readonly List<UIItemSlot> _inventorySlots = new List<UIItemSlot>();
+                private readonly List<UIListItem> _vendorSlots = new List<UIListItem>();
+                private readonly List<UIListItem> _inventorySlots = new List<UIListItem>();
                 private readonly List<ItemVendor.VendorItemData> _currentVendorItems = new List<ItemVendor.VendorItemData>();
                 private readonly List<ItemVendor.VendorItemData> _lastVendorItems = new List<ItemVendor.VendorItemData>();
                 private readonly List<ItemVendor.VendorItemData> _currentInventoryItems = new List<ItemVendor.VendorItemData>();
                 private readonly List<ItemVendor.VendorItemData> _lastInventoryItems = new List<ItemVendor.VendorItemData>();
-                private readonly Dictionary<UIItemSlot, SlotCategory> _slotCategories = new Dictionary<UIItemSlot, SlotCategory>();
+                private readonly Dictionary<UIListItem, SlotCategory> _slotCategories = new Dictionary<UIListItem, SlotCategory>();
                 private Func<List<ItemVendor.VendorItemData>, ItemVendor.VendorItemStatus> _itemProvider;
                 private ItemVendor.VendorItemStatus _lastStatus = ItemVendor.VendorItemStatus.NoDefinitions;
                 private int _selectedVendorIndex = -1;
@@ -164,7 +164,7 @@ namespace TPSBR.UI
 
                         for (int i = 0; i < _currentVendorItems.Count; ++i)
                         {
-                                UIItemSlot slot = _vendorSlots[i];
+                                UIListItem slot = _vendorSlots[i];
                                 ItemVendor.VendorItemData data = _currentVendorItems[i];
 
                                 slot.InitializeSlot(this, i);
@@ -175,7 +175,7 @@ namespace TPSBR.UI
 
                         for (int i = _currentVendorItems.Count; i < _vendorSlots.Count; ++i)
                         {
-                                UIItemSlot slot = _vendorSlots[i];
+                                UIListItem slot = _vendorSlots[i];
                                 slot.Clear();
                                 slot.gameObject.SetActive(false);
                         }
@@ -231,7 +231,7 @@ namespace TPSBR.UI
 
                         for (int i = 0; i < _currentInventoryItems.Count; ++i)
                         {
-                                UIItemSlot slot = _inventorySlots[i];
+                                UIListItem slot = _inventorySlots[i];
                                 ItemVendor.VendorItemData data = _currentInventoryItems[i];
 
                                 slot.InitializeSlot(this, i);
@@ -242,7 +242,7 @@ namespace TPSBR.UI
 
                         for (int i = _currentInventoryItems.Count; i < _inventorySlots.Count; ++i)
                         {
-                                UIItemSlot slot = _inventorySlots[i];
+                                UIListItem slot = _inventorySlots[i];
                                 slot.Clear();
                                 slot.gameObject.SetActive(false);
                         }
@@ -263,7 +263,7 @@ namespace TPSBR.UI
                 {
                         while (_vendorSlots.Count < required)
                         {
-                                UIItemSlot newSlot = Instantiate(_itemSlotPrefab, _slotContainer);
+                                UIListItem newSlot = Instantiate(_itemSlotPrefab, _slotContainer);
                                 newSlot.InitializeSlot(this, _vendorSlots.Count);
                                 newSlot.gameObject.SetActive(false);
                                 _vendorSlots.Add(newSlot);
@@ -273,7 +273,7 @@ namespace TPSBR.UI
 
                 private void EnsureInventorySlotCapacity(int required)
                 {
-                        UIItemSlot prefab = _inventoryItemSlotPrefab != null ? _inventoryItemSlotPrefab : _itemSlotPrefab;
+                        UIListItem prefab = _inventoryItemSlotPrefab != null ? _inventoryItemSlotPrefab : _itemSlotPrefab;
 
                         if (prefab == null)
                                 return;
@@ -282,7 +282,7 @@ namespace TPSBR.UI
 
                         while (_inventorySlots.Count < required)
                         {
-                                UIItemSlot newSlot = Instantiate(prefab, parent);
+                                UIListItem newSlot = Instantiate(prefab, parent);
                                 newSlot.InitializeSlot(this, _inventorySlots.Count);
                                 newSlot.gameObject.SetActive(false);
                                 _inventorySlots.Add(newSlot);
@@ -294,7 +294,7 @@ namespace TPSBR.UI
                 {
                         for (int i = 0; i < _vendorSlots.Count; ++i)
                         {
-                                UIItemSlot slot = _vendorSlots[i];
+                                UIListItem slot = _vendorSlots[i];
                                 if (slot == null)
                                         continue;
 
@@ -312,7 +312,7 @@ namespace TPSBR.UI
                 {
                         for (int i = 0; i < _inventorySlots.Count; ++i)
                         {
-                                UIItemSlot slot = _inventorySlots[i];
+                                UIListItem slot = _inventorySlots[i];
                                 if (slot == null)
                                         continue;
 
@@ -380,7 +380,7 @@ namespace TPSBR.UI
                 {
                         for (int i = 0; i < _vendorSlots.Count; ++i)
                         {
-                                UIItemSlot slot = _vendorSlots[i];
+                                UIListItem slot = _vendorSlots[i];
                                 if (slot == null || slot.gameObject.activeSelf == false)
                                         continue;
 
@@ -390,7 +390,7 @@ namespace TPSBR.UI
 
                         for (int i = 0; i < _inventorySlots.Count; ++i)
                         {
-                                UIItemSlot slot = _inventorySlots[i];
+                                UIListItem slot = _inventorySlots[i];
                                 if (slot == null || slot.gameObject.activeSelf == false)
                                         continue;
 
@@ -399,32 +399,32 @@ namespace TPSBR.UI
                         }
                 }
 
-                void IUIItemSlotOwner.BeginSlotDrag(UIItemSlot slot, PointerEventData eventData)
+                void IUIListItemOwner.BeginSlotDrag(UIListItem slot, PointerEventData eventData)
                 {
                         // Drag & drop is not supported within the vendor view yet.
                 }
 
-                void IUIItemSlotOwner.UpdateSlotDrag(PointerEventData eventData)
+                void IUIListItemOwner.UpdateSlotDrag(PointerEventData eventData)
                 {
                         // Drag & drop is not supported within the vendor view yet.
                 }
 
-                void IUIItemSlotOwner.EndSlotDrag(UIItemSlot slot, PointerEventData eventData)
+                void IUIListItemOwner.EndSlotDrag(UIListItem slot, PointerEventData eventData)
                 {
                         // Drag & drop is not supported within the vendor view yet.
                 }
 
-                void IUIItemSlotOwner.HandleSlotDrop(UIItemSlot source, UIItemSlot target)
+                void IUIListItemOwner.HandleSlotDrop(UIListItem source, UIListItem target)
                 {
                         // Drag & drop is not supported within the vendor view yet.
                 }
 
-                void IUIItemSlotOwner.HandleSlotDropOutside(UIItemSlot slot, PointerEventData eventData)
+                void IUIListItemOwner.HandleSlotDropOutside(UIListItem slot, PointerEventData eventData)
                 {
                         // Drag & drop is not supported within the vendor view yet.
                 }
 
-                void IUIItemSlotOwner.HandleSlotSelected(UIItemSlot slot)
+                void IUIListItemOwner.HandleSlotSelected(UIListItem slot)
                 {
                         if (slot == null)
                         {
@@ -470,7 +470,7 @@ namespace TPSBR.UI
                         UpdateSellButtonState();
                 }
 
-                private void HandleVendorSlotSelected(UIItemSlot slot)
+                private void HandleVendorSlotSelected(UIListItem slot)
                 {
                         if (slot.Index < 0 || slot.Index >= _lastVendorItems.Count)
                         {
@@ -502,7 +502,7 @@ namespace TPSBR.UI
                         UpdateSellButtonState();
                 }
 
-                private void HandleInventorySlotSelected(UIItemSlot slot)
+                private void HandleInventorySlotSelected(UIListItem slot)
                 {
                         if (slot.Index < 0 || slot.Index >= _lastInventoryItems.Count)
                         {
