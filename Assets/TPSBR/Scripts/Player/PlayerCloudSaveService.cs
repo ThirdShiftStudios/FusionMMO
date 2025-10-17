@@ -21,6 +21,7 @@ namespace TPSBR
         public int Gold;
         public PlayerCharacterSaveData[] Characters;
         public string ActiveCharacterId;
+        public PlayerCharacterInventorySaveData[] CharacterInventories;
     }
 
     [Serializable]
@@ -47,6 +48,18 @@ namespace TPSBR
         public long CreatedAtUtc;
     }
 
+    [Serializable]
+    public class PlayerCharacterInventorySaveData
+    {
+        public string CharacterId;
+        public PlayerInventoryItemData[] InventorySlots;
+        public PlayerHotbarSlotData[] HotbarSlots;
+        public byte CurrentWeaponSlot;
+        public PlayerInventoryItemData PickaxeSlot;
+        public PlayerInventoryItemData WoodAxeSlot;
+        public int Gold;
+    }
+
     public sealed class PlayerCloudSaveService : IGlobalService
     {
         // CONSTANTS
@@ -67,6 +80,7 @@ namespace TPSBR
         private Task _saveTask;
         private bool _initialLoadComplete;
         private readonly List<PlayerCharacterSaveData> _characters = new List<PlayerCharacterSaveData>();
+        private readonly List<PlayerCharacterInventorySaveData> _characterInventories = new List<PlayerCharacterInventorySaveData>();
         private string _activeCharacterId;
 
         // PUBLIC PROPERTIES
@@ -94,6 +108,7 @@ namespace TPSBR
             _saveTask = null;
             _initialLoadComplete = false;
             _characters.Clear();
+            _characterInventories.Clear();
             _activeCharacterId = null;
             _isInitialized = false;
 
@@ -180,11 +195,7 @@ namespace TPSBR
 
             bool restored = TryRestoreInventory(inventory);
 
-            if (restored == false && _cachedData != null)
-            {
-                _pendingRestoreInventory = inventory;
-            }
-            else if (restored == true && ReferenceEquals(_pendingRestoreInventory, inventory) == true)
+            if (restored == true && ReferenceEquals(_pendingRestoreInventory, inventory) == true)
             {
                 _pendingRestoreInventory = null;
             }
@@ -264,6 +275,7 @@ namespace TPSBR
             };
 
             _characters.Add(record);
+            EnsureCharacterInventoryData(record.CharacterId);
             _activeCharacterId = record.CharacterId;
 
             ApplyCharacterDataToCachedData();
@@ -287,6 +299,7 @@ namespace TPSBR
                 return false;
 
             _activeCharacterId = characterId;
+            EnsureCharacterInventoryData(_activeCharacterId);
 
             ApplyCharacterDataToCachedData();
             UpdatePlayerActiveCharacter();
@@ -315,22 +328,37 @@ namespace TPSBR
 
         public bool TryRestoreInventory(Inventory inventory)
         {
-            if (_cachedData == null)
-                return false;
-
             if (inventory == null || inventory.HasStateAuthority == false)
                 return false;
 
-            _suppressTracking = true;
-            inventory.ApplySaveData(_cachedData);
-            _suppressTracking = false;
+            string characterId = _activeCharacterId;
+            PlayerCharacterInventorySaveData inventoryData = null;
+
+            if (characterId.HasValue() == true)
+            {
+                inventoryData = GetCharacterInventoryData(characterId);
+
+                if (inventoryData == null)
+                {
+                    EnsureCharacterInventoryData(characterId);
+                }
+            }
+
+            bool hasInventoryData = inventoryData != null;
+
+            if (hasInventoryData == true)
+            {
+                _suppressTracking = true;
+                inventory.ApplySaveData(inventoryData);
+                _suppressTracking = false;
+            }
 
             if (ReferenceEquals(_pendingRestoreInventory, inventory) == true)
             {
                 _pendingRestoreInventory = null;
             }
 
-            return true;
+            return hasInventoryData;
         }
 
         // PRIVATE METHODS
@@ -375,6 +403,70 @@ namespace TPSBR
             _trackedInventory.HotbarSlotChanged -= OnHotbarSlotChanged;
             _trackedInventory.GoldChanged -= OnGoldChanged;
             _trackedInventory = null;
+        }
+
+        private PlayerCharacterInventorySaveData GetCharacterInventoryData(string characterId)
+        {
+            if (string.IsNullOrEmpty(characterId) == true)
+                return null;
+
+            for (int i = 0; i < _characterInventories.Count; i++)
+            {
+                var inventory = _characterInventories[i];
+                if (inventory == null)
+                    continue;
+
+                if (string.Equals(inventory.CharacterId, characterId, StringComparison.Ordinal) == true)
+                {
+                    return inventory;
+                }
+            }
+
+            return null;
+        }
+
+        private PlayerCharacterInventorySaveData EnsureCharacterInventoryData(string characterId, bool markDirty = true)
+        {
+            if (string.IsNullOrEmpty(characterId) == true)
+                return null;
+
+            var inventory = GetCharacterInventoryData(characterId);
+            if (inventory != null)
+                return inventory;
+
+            inventory = new PlayerCharacterInventorySaveData
+            {
+                CharacterId = characterId,
+                PickaxeSlot = default,
+                WoodAxeSlot = default,
+                CurrentWeaponSlot = 0,
+                Gold = 0,
+            };
+
+            _characterInventories.Add(inventory);
+            if (markDirty == true)
+            {
+                MarkDirty();
+            }
+            return inventory;
+        }
+
+        private void StoreCharacterInventorySnapshot(PlayerCharacterInventorySaveData snapshot)
+        {
+            if (snapshot == null || snapshot.CharacterId.HasValue() == false)
+                return;
+
+            for (int i = 0; i < _characterInventories.Count; i++)
+            {
+                var inventory = _characterInventories[i];
+                if (inventory != null && string.Equals(inventory.CharacterId, snapshot.CharacterId, StringComparison.Ordinal) == true)
+                {
+                    _characterInventories[i] = snapshot;
+                    return;
+                }
+            }
+
+            _characterInventories.Add(snapshot);
         }
 
         private void ResolveStorageKey()
@@ -643,9 +735,10 @@ namespace TPSBR
                 var snapshot = _trackedInventory.CreateSaveData();
                 _suppressTracking = false;
 
-                if (snapshot != null)
+                if (snapshot != null && _activeCharacterId.HasValue() == true)
                 {
-                    _cachedData = snapshot;
+                    snapshot.CharacterId = _activeCharacterId;
+                    StoreCharacterInventorySnapshot(snapshot);
                 }
             }
 
@@ -711,6 +804,22 @@ namespace TPSBR
                 _cachedData.Characters = null;
             }
 
+            if (_characterInventories.Count > 0)
+            {
+                _cachedData.CharacterInventories = _characterInventories.ToArray();
+            }
+            else
+            {
+                _cachedData.CharacterInventories = null;
+            }
+
+            _cachedData.InventorySlots = null;
+            _cachedData.HotbarSlots = null;
+            _cachedData.CurrentWeaponSlot = 0;
+            _cachedData.PickaxeSlot = default;
+            _cachedData.WoodAxeSlot = default;
+            _cachedData.Gold = 0;
+
             _cachedData.ActiveCharacterId = _activeCharacterId;
         }
 
@@ -739,11 +848,32 @@ namespace TPSBR
                 return;
 
             playerData.ActiveCharacterId = _activeCharacterId;
+
+            if (_activeCharacterId.HasValue() == true)
+            {
+                var character = GetCharacter(_activeCharacterId);
+                if (character != null)
+                {
+                    playerData.ActiveCharacterName = character.CharacterName;
+                    playerData.ActiveCharacterDefinitionCode = character.CharacterDefinitionCode;
+                }
+                else
+                {
+                    playerData.ActiveCharacterName = null;
+                    playerData.ActiveCharacterDefinitionCode = null;
+                }
+            }
+            else
+            {
+                playerData.ActiveCharacterName = null;
+                playerData.ActiveCharacterDefinitionCode = null;
+            }
         }
 
         private void SyncCharactersFromCachedData(bool notify)
         {
             _characters.Clear();
+            _characterInventories.Clear();
             _activeCharacterId = null;
 
             if (_cachedData != null)
@@ -763,10 +893,71 @@ namespace TPSBR
                     }
                 }
 
+                if (_cachedData.CharacterInventories != null && _cachedData.CharacterInventories.Length > 0)
+                {
+                    for (int i = 0; i < _cachedData.CharacterInventories.Length; i++)
+                    {
+                        var inventory = _cachedData.CharacterInventories[i];
+                        if (inventory == null)
+                            continue;
+
+                        if (string.IsNullOrEmpty(inventory.CharacterId) == true)
+                            continue;
+
+                        _characterInventories.Add(inventory);
+                    }
+                }
+                else if ((_cachedData.InventorySlots != null && _cachedData.InventorySlots.Length > 0) ||
+                         (_cachedData.HotbarSlots != null && _cachedData.HotbarSlots.Length > 0) ||
+                         _cachedData.PickaxeSlot.ItemDefinitionId != 0 ||
+                         _cachedData.WoodAxeSlot.ItemDefinitionId != 0 ||
+                         _cachedData.Gold != 0)
+                {
+                    string legacyCharacterId = _cachedData.ActiveCharacterId;
+                    if (legacyCharacterId.HasValue() == false && _cachedData.Characters != null && _cachedData.Characters.Length > 0)
+                    {
+                        for (int i = 0; i < _cachedData.Characters.Length; i++)
+                        {
+                            var character = _cachedData.Characters[i];
+                            if (character != null && character.CharacterId.HasValue() == true)
+                            {
+                                legacyCharacterId = character.CharacterId;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (legacyCharacterId.HasValue() == true)
+                    {
+                        var legacy = new PlayerCharacterInventorySaveData
+                        {
+                            CharacterId = legacyCharacterId,
+                            InventorySlots = _cachedData.InventorySlots,
+                            HotbarSlots = _cachedData.HotbarSlots,
+                            CurrentWeaponSlot = _cachedData.CurrentWeaponSlot,
+                            PickaxeSlot = _cachedData.PickaxeSlot,
+                            WoodAxeSlot = _cachedData.WoodAxeSlot,
+                            Gold = _cachedData.Gold,
+                        };
+
+                        _characterInventories.Add(legacy);
+                        MarkDirty();
+                    }
+                }
+
                 if (_cachedData.ActiveCharacterId.HasValue() == true)
                 {
                     _activeCharacterId = _cachedData.ActiveCharacterId;
                 }
+            }
+
+            for (int i = 0; i < _characters.Count; i++)
+            {
+                var character = _characters[i];
+                if (character == null)
+                    continue;
+
+                EnsureCharacterInventoryData(character.CharacterId, false);
             }
 
             if (_activeCharacterId.HasValue() == false && _characters.Count > 0)

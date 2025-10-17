@@ -32,6 +32,7 @@ namespace TPSBR
 		public string           UserID         { get; private set; }
 		public string			UnityID        { get; private set; }
 		public string           Nickname       { get; private set; }
+		public string           CharacterName { get; private set; }
 		public SceneContext     Context        { get; set; }
 		public bool             IsInitialized => _initCounter <= 0;
 
@@ -43,14 +44,14 @@ namespace TPSBR
 		public PlayerStatistics Statistics     { get; private set; }
 
 		// PRIVATE MEMBERS
-
 		[Networked]
 		private byte SyncToken { get; set; }
 		[Networked]
 		private NetworkString<_64> NetworkedUserID { get; set; }
 		[Networked]
 		private NetworkString<_32> NetworkedNickname { get; set; }
-
+		[Networked]
+		private NetworkString<_32> NetworkedCharacterName { get; set; }
 		private byte      _syncToken;
 		private Agent     _activeAgent;
 		private PlayerRef _observePlayer;
@@ -108,15 +109,17 @@ namespace TPSBR
 			Statistics = statistics;
 		}
 
-		public void OnReconnect(Player newPlayer)
-		{
-			UserID            = newPlayer.UserID;
-			Nickname          = newPlayer.Nickname;
-			NetworkedUserID   = newPlayer.NetworkedUserID;
-			NetworkedNickname = newPlayer.NetworkedNickname;
-			AgentPrefab       = newPlayer.AgentPrefab;
-			UnityID           = newPlayer.UnityID;
-		}
+                public void OnReconnect(Player newPlayer)
+                {
+                        UserID            = newPlayer.UserID;
+                        Nickname          = newPlayer.Nickname;
+                        NetworkedUserID   = newPlayer.NetworkedUserID;
+                        NetworkedNickname = newPlayer.NetworkedNickname;
+                        CharacterName     = newPlayer.CharacterName;
+                        NetworkedCharacterName = newPlayer.NetworkedCharacterName;
+                        AgentPrefab       = newPlayer.AgentPrefab;
+                        UnityID           = newPlayer.UnityID;
+                }
 
 		// PlayerInterestManager INTERFACE
 
@@ -180,7 +183,7 @@ namespace TPSBR
 				{
 					var unityID = Context.PlayerData.UnityID != null ? Context.PlayerData.UnityID : string.Empty;
 
-					RPC_SendPlayerData(Context.PeerUserID, Context.PlayerData.Nickname, Context.PlayerData.AgentPrefab, unityID);
+					RPC_SendPlayerData(Context.PeerUserID, Context.PlayerData.Nickname, Context.PlayerData.CharacterName, Context.PlayerData.AgentPrefab, unityID);
 					_playerDataSent = true;
 				}
 			}
@@ -235,13 +238,14 @@ namespace TPSBR
 				}
 			}
 
-			if (_syncToken != SyncToken)
-			{
-				_syncToken = SyncToken;
+                        if (_syncToken != SyncToken)
+                        {
+                                _syncToken = SyncToken;
 
-				UserID   = NetworkedUserID.Value;
-				Nickname = NetworkedNickname.Value;
-			}
+                                UserID   = NetworkedUserID.Value;
+                                Nickname = NetworkedNickname.Value;
+                                CharacterName = NetworkedCharacterName.Value;
+                        }
 
 			if (ReferenceEquals(_platformAgent, _activeAgent) == false && _activeAgent != null)
 			{
@@ -255,7 +259,7 @@ namespace TPSBR
 		}
 
 		[Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority, Channel = RpcChannel.Reliable)]
-		private void RPC_SendPlayerData(string userID, string nickname, NetworkPrefabRef agentPrefab, string unityID)
+		private void RPC_SendPlayerData(string userID, string nickname, string characterName, NetworkPrefabRef agentPrefab, string unityID)
 		{
 			#if UNITY_EDITOR
 			nickname += $" {Object.InputAuthority}";
@@ -271,6 +275,8 @@ namespace TPSBR
 
 			UserID = userID;
 			Nickname = nickname;
+			CharacterName = characterName;
+			NetworkedCharacterName = characterName;
 			NetworkedUserID = userID;
 			NetworkedNickname = nickname;
 			AgentPrefab = agentPrefab;

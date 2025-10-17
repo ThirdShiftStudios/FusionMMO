@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using Fusion;
+using TSS.Data;
 using UnityEngine;
 
 namespace TPSBR
@@ -10,6 +11,7 @@ namespace TPSBR
 		string           UserID      { get; }
 		string           Nickname    { get; }
 		NetworkPrefabRef AgentPrefab { get; }
+		string           CharacterName { get; }
 		string			 UnityID     { get; }
 	}
 
@@ -24,6 +26,9 @@ namespace TPSBR
                 public string           Nickname        { get { return _nickname; } set { _nickname = value; IsDirty = true; } }
                 public string           AgentID         { get { return _agentID; } set { _agentID = value; IsDirty = true; } }
                 public string           ActiveCharacterId { get { return _activeCharacterId; } set { if (_activeCharacterId == value) return; _activeCharacterId = value; IsDirty = true; } }
+                public string           ActiveCharacterName { get { return _activeCharacterName; } set { if (_activeCharacterName == value) return; _activeCharacterName = value; IsDirty = true; } }
+                public string           ActiveCharacterDefinitionCode { get { return _activeCharacterDefinitionCode; } set { if (_activeCharacterDefinitionCode == value) return; _activeCharacterDefinitionCode = value; IsDirty = true; } }
+                public string           CharacterName   => ActiveCharacterName.HasValue() == true ? ActiveCharacterName : Nickname;
 
                 public int              Level           => _level;
                 public int              Experience      => _experience;
@@ -49,6 +54,10 @@ namespace TPSBR
                 private string _agentID;
                 [SerializeField]
                 private string _activeCharacterId;
+                [SerializeField]
+                private string _activeCharacterName;
+                [SerializeField]
+                private string _activeCharacterDefinitionCode;
 
                 [SerializeField]
                 private int _level = 1;
@@ -233,8 +242,24 @@ namespace TPSBR
 
                 private NetworkPrefabRef GetAgentPrefab()
                 {
+                        if (_activeCharacterDefinitionCode.HasValue() == true)
+                        {
+                                var definition = CharacterDefinition.GetByStringCode(_activeCharacterDefinitionCode);
+                                if (definition != null)
+                                {
+                                        var prefab = definition.AgentPrefab;
+                                        if (prefab.IsValid == true)
+                                        {
+                                                return prefab;
+                                        }
+                                }
+                        }
+
                         if (_agentID.HasValue() == false)
-                                return default;
+                        {
+                                var fallbackSetup = Global.Settings.Agent.GetRandomAgentSetup();
+                                return fallbackSetup != null ? fallbackSetup.AgentPrefab : default;
+                        }
 
 			var setup = Global.Settings.Agent.GetAgentSetup(_agentID);
 			if (setup != null)

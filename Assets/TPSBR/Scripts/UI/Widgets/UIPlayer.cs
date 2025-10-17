@@ -13,9 +13,16 @@ namespace TPSBR.UI
 
 		// PUBLIC MEMBERS
 
-		public void SetData(SceneContext context, IPlayer player)
-		{
-			_playerName.text = player.Nickname;
-		}
-	}
+                public void SetData(SceneContext context, IPlayer player)
+                {
+                        string displayName = player.CharacterName;
+
+                        if (string.IsNullOrEmpty(displayName) == true)
+                        {
+                                displayName = player.Nickname;
+                        }
+
+                        _playerName.text = displayName;
+                }
+        }
 }

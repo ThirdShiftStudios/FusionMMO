@@ -5,6 +5,7 @@ namespace TPSBR
 	using UnityEngine.InputSystem;
 	using UnityEngine.SceneManagement;
 	using Fusion;
+	using TSS.Data;
 
 	public sealed class Loader : MonoBehaviour
 	{
@@ -42,8 +43,27 @@ namespace TPSBR
 			mouse.MakeCurrent();
 
 			PlayerData playerData = Global.PlayerService.PlayerData;
-			playerData.AgentID  = Global.Settings.Agent.Agents.GetRandom().ID;
+			var characterDefinitions = CharacterDefinition.GetAll();
+			CharacterDefinition selectedDefinition = null;
+			if (characterDefinitions != null && characterDefinitions.Count > 0)
+			{
+				selectedDefinition = characterDefinitions[UnityEngine.Random.Range(0, characterDefinitions.Count)];
+			}
+
+			string characterName = $"RandomAgent_{UnityEngine.Random.Range(1, 101)}";
 			playerData.Nickname = "Batch" + UnityEngine.Random.Range(1000, 10000);
+			playerData.ActiveCharacterName = characterName;
+			playerData.ActiveCharacterId = Guid.NewGuid().ToString("N");
+			if (selectedDefinition != null)
+			{
+				playerData.ActiveCharacterDefinitionCode = selectedDefinition.StringCode;
+				playerData.AgentID  = null;
+			}
+			else
+			{
+				playerData.ActiveCharacterDefinitionCode = null;
+				playerData.AgentID  = Global.Settings.Agent.Agents.GetRandom().ID;
+			}
 
 			if (ApplicationSettings.IsQuickPlay == true)
 			{

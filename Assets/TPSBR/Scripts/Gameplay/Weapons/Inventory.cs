@@ -228,9 +228,9 @@ namespace TPSBR
             return true;
         }
 
-        internal PlayerInventorySaveData CreateSaveData()
+        internal PlayerCharacterInventorySaveData CreateSaveData()
         {
-            var data = new PlayerInventorySaveData
+            var data = new PlayerCharacterInventorySaveData
             {
                 InventorySlots     = new PlayerInventoryItemData[_items.Length],
                 HotbarSlots        = new PlayerHotbarSlotData[_hotbar.Length],
@@ -288,7 +288,7 @@ namespace TPSBR
             return data;
         }
 
-        internal void ApplySaveData(PlayerInventorySaveData data)
+        internal void ApplySaveData(PlayerCharacterInventorySaveData data)
         {
             if (data == null)
                 return;

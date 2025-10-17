@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Fusion;
 using UnityEngine;
 
 namespace TSS.Data
@@ -12,6 +13,8 @@ namespace TSS.Data
         private Sprite icon;
         [SerializeField]
         private string stringCode;
+        [SerializeField]
+        private NetworkPrefabRef agentPrefab;
 
         [NonSerialized]
         private static CharacterDefinition[] _cachedDefinitions;
@@ -22,6 +25,7 @@ namespace TSS.Data
         public override Texture2D Icon => icon != null ? icon.texture : null;
         public Sprite IconSprite => icon;
         public string StringCode => stringCode;
+        public NetworkPrefabRef AgentPrefab => agentPrefab;
 
         public static IReadOnlyList<CharacterDefinition> GetAll()
         {
