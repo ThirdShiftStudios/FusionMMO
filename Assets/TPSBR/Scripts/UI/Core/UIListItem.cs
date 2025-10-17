@@ -34,6 +34,7 @@ namespace TPSBR.UI
                 internal int Quantity => _quantity;
                 internal bool HasItem => _iconSprite != null && _quantity > 0;
                 internal IUIListItemOwner Owner => _owner;
+                private UIListItem OwnerSlot => this as UIListItem;
 
                 // PRIVATE MEMBERS
 
@@ -195,7 +196,11 @@ namespace TPSBR.UI
                         _canvasGroup.alpha = 0.35f;
                         _canvasGroup.blocksRaycasts = false;
 
-                        _owner.BeginSlotDrag(this, eventData);
+                        var ownerSlot = OwnerSlot;
+                        if (ownerSlot == null)
+                                return;
+
+                        _owner.BeginSlotDrag(ownerSlot, eventData);
                 }
 
                 public void OnDrag(PointerEventData eventData)
@@ -220,7 +225,11 @@ namespace TPSBR.UI
                         _canvasGroup.alpha = 1f;
                         _canvasGroup.blocksRaycasts = true;
 
-                        _owner.EndSlotDrag(this, eventData);
+                        var ownerSlot = OwnerSlot;
+                        if (ownerSlot == null)
+                                return;
+
+                        _owner.EndSlotDrag(ownerSlot, eventData);
 
                         if (eventData == null)
                                 return;
@@ -231,15 +240,19 @@ namespace TPSBR.UI
                         var targetSlot = FindDropTarget(eventData);
                         if (targetSlot == null)
                         {
-                                _owner?.HandleSlotDropOutside(this, eventData);
+                                _owner?.HandleSlotDropOutside(ownerSlot, eventData);
                                 return;
                         }
 
                         if (ReferenceEquals(targetSlot, this))
                                 return;
 
+                        var targetOwnerSlot = targetSlot as UIListItem;
+                        if (targetOwnerSlot == null)
+                                return;
+
                         var targetOwner = targetSlot.Owner;
-                        targetOwner?.HandleSlotDrop(this, targetSlot);
+                        targetOwner?.HandleSlotDrop(ownerSlot, targetOwnerSlot);
                 }
 
                 public void OnDrop(PointerEventData eventData)
@@ -256,7 +269,12 @@ namespace TPSBR.UI
                                 return;
 
                         CacheDropTarget(eventData.pointerId, this);
-                        _owner.HandleSlotDrop(sourceSlot, this);
+                        var sourceOwnerSlot = sourceSlot as UIListItem;
+                        var targetOwnerSlot = OwnerSlot;
+                        if (sourceOwnerSlot == null || targetOwnerSlot == null)
+                                return;
+
+                        _owner.HandleSlotDrop(sourceOwnerSlot, targetOwnerSlot);
                 }
 
                 public void OnPointerClick(PointerEventData eventData)
@@ -267,7 +285,11 @@ namespace TPSBR.UI
                         if (eventData.button != PointerEventData.InputButton.Left)
                                 return;
 
-                        _owner.HandleSlotSelected(this);
+                        var ownerSlot = OwnerSlot;
+                        if (ownerSlot == null)
+                                return;
+
+                        _owner.HandleSlotSelected(ownerSlot);
 
                         if (_buttonWrapper != null)
                         {
