@@ -7,14 +7,14 @@ using UnityEngine.UI;
 
 namespace TPSBR.UI
 {
-    public class UIHotbar : UIWidget, IUIItemSlotOwner
+    public class UIHotbar : UIWidget, IUIListItemOwner
     {
         [SerializeField]
         private RectTransform _dragLayer;
 
-        private UIItemSlot[] _slots;
+        private UIListItem[] _slots;
         private Inventory _inventory;
-        private UIItemSlot _dragSource;
+        private UIListItem _dragSource;
         private RectTransform _dragIcon;
         private Image _dragImage;
         private CanvasGroup _dragCanvasGroup;
@@ -30,7 +30,7 @@ namespace TPSBR.UI
         {
             base.OnInitialize();
 
-            _slots = GetComponentsInChildren<UIItemSlot>(true);
+            _slots = GetComponentsInChildren<UIListItem>(true);
 
             for (int i = 0; i < _slots.Length; i++)
             {
@@ -110,7 +110,7 @@ namespace TPSBR.UI
             UpdateSelection();
         }
 
-        void IUIItemSlotOwner.BeginSlotDrag(UIItemSlot slot, PointerEventData eventData)
+        void IUIListItemOwner.BeginSlotDrag(UIListItem slot, PointerEventData eventData)
         {
             if (_inventory == null)
                 return;
@@ -125,7 +125,7 @@ namespace TPSBR.UI
             UpdateDragPosition(eventData);
         }
 
-        void IUIItemSlotOwner.UpdateSlotDrag(PointerEventData eventData)
+        void IUIListItemOwner.UpdateSlotDrag(PointerEventData eventData)
         {
             if (_dragSource == null)
                 return;
@@ -133,7 +133,7 @@ namespace TPSBR.UI
             UpdateDragPosition(eventData);
         }
 
-        void IUIItemSlotOwner.EndSlotDrag(UIItemSlot slot, PointerEventData eventData)
+        void IUIListItemOwner.EndSlotDrag(UIListItem slot, PointerEventData eventData)
         {
             if (_dragSource != slot)
                 return;
@@ -142,7 +142,7 @@ namespace TPSBR.UI
             SetDragVisible(false);
         }
 
-        void IUIItemSlotOwner.HandleSlotDrop(UIItemSlot source, UIItemSlot target)
+        void IUIListItemOwner.HandleSlotDrop(UIListItem source, UIListItem target)
         {
             if (_inventory == null || target == null)
                 return;
@@ -160,7 +160,7 @@ namespace TPSBR.UI
             }
         }
 
-        void IUIItemSlotOwner.HandleSlotDropOutside(UIItemSlot slot, PointerEventData eventData)
+        void IUIListItemOwner.HandleSlotDropOutside(UIListItem slot, PointerEventData eventData)
         {
             if (_inventory == null || slot == null)
                 return;
@@ -168,7 +168,7 @@ namespace TPSBR.UI
             _inventory.RequestDropHotbar(slot.Index);
         }
 
-        void IUIItemSlotOwner.HandleSlotSelected(UIItemSlot slot)
+        void IUIListItemOwner.HandleSlotSelected(UIListItem slot)
         {
             if (_inventory == null || slot == null)
             {

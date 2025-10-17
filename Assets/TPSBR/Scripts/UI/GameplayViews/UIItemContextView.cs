@@ -6,7 +6,7 @@ using UnityEngine.EventSystems;
 
 namespace TPSBR.UI
 {
-        public sealed class UIItemContextView : UICloseView, IUIItemSlotOwner
+        public sealed class UIItemContextView : UICloseView, IUIListItemOwner
         {
                 [SerializeField]
                 private TextMeshProUGUI _emptyStateLabel;
@@ -19,11 +19,11 @@ namespace TPSBR.UI
                 [SerializeField]
                 private RectTransform _slotContainer;
                 [SerializeField]
-                private UIItemSlot _itemSlotPrefab;
+                private UIListItem _itemSlotPrefab;
                 [SerializeField]
                 private Color _selectedSlotColor = Color.white;
 
-                private readonly List<UIItemSlot> _spawnedSlots = new List<UIItemSlot>();
+                private readonly List<UIListItem> _spawnedSlots = new List<UIListItem>();
                 private readonly List<CraftingStation.ItemData> _currentItems = new List<CraftingStation.ItemData>();
                 private readonly List<CraftingStation.ItemData> _lastItems = new List<CraftingStation.ItemData>();
                 private Func<List<CraftingStation.ItemData>, CraftingStation.ItemStatus> _itemProvider;
@@ -96,7 +96,7 @@ namespace TPSBR.UI
 
                         for (int i = 0; i < _currentItems.Count; ++i)
                         {
-                                UIItemSlot slot = _spawnedSlots[i];
+                                UIListItem slot = _spawnedSlots[i];
                                 CraftingStation.ItemData data = _currentItems[i];
 
                                 slot.InitializeSlot(this, i);
@@ -106,7 +106,7 @@ namespace TPSBR.UI
 
                         for (int i = _currentItems.Count; i < _spawnedSlots.Count; ++i)
                         {
-                                UIItemSlot slot = _spawnedSlots[i];
+                                UIListItem slot = _spawnedSlots[i];
                                 slot.Clear();
                                 slot.gameObject.SetActive(false);
                         }
@@ -126,7 +126,7 @@ namespace TPSBR.UI
                 {
                         while (_spawnedSlots.Count < required)
                         {
-                                UIItemSlot newSlot = Instantiate(_itemSlotPrefab, _slotContainer);
+                                UIListItem newSlot = Instantiate(_itemSlotPrefab, _slotContainer);
                                 newSlot.InitializeSlot(this, _spawnedSlots.Count);
                                 newSlot.gameObject.SetActive(false);
                                 _spawnedSlots.Add(newSlot);
@@ -137,7 +137,7 @@ namespace TPSBR.UI
                 {
                         for (int i = 0; i < _spawnedSlots.Count; ++i)
                         {
-                                UIItemSlot slot = _spawnedSlots[i];
+                                UIListItem slot = _spawnedSlots[i];
                                 if (slot == null)
                                         continue;
 
@@ -206,7 +206,7 @@ namespace TPSBR.UI
                 {
                         for (int i = 0; i < _spawnedSlots.Count; ++i)
                         {
-                                UIItemSlot slot = _spawnedSlots[i];
+                                UIListItem slot = _spawnedSlots[i];
                                 if (slot == null || slot.gameObject.activeSelf == false)
                                         continue;
 
@@ -215,32 +215,32 @@ namespace TPSBR.UI
                         }
                 }
 
-                void IUIItemSlotOwner.BeginSlotDrag(UIItemSlot slot, PointerEventData eventData)
+                void IUIListItemOwner.BeginSlotDrag(UIListItem slot, PointerEventData eventData)
                 {
                         // Drag & drop is not supported within the conduit view yet.
                 }
 
-                void IUIItemSlotOwner.UpdateSlotDrag(PointerEventData eventData)
+                void IUIListItemOwner.UpdateSlotDrag(PointerEventData eventData)
                 {
                         // Drag & drop is not supported within the conduit view yet.
                 }
 
-                void IUIItemSlotOwner.EndSlotDrag(UIItemSlot slot, PointerEventData eventData)
+                void IUIListItemOwner.EndSlotDrag(UIListItem slot, PointerEventData eventData)
                 {
                         // Drag & drop is not supported within the conduit view yet.
                 }
 
-                void IUIItemSlotOwner.HandleSlotDrop(UIItemSlot source, UIItemSlot target)
+                void IUIListItemOwner.HandleSlotDrop(UIListItem source, UIListItem target)
                 {
                         // Drag & drop is not supported within the conduit view yet.
                 }
 
-                void IUIItemSlotOwner.HandleSlotDropOutside(UIItemSlot slot, PointerEventData eventData)
+                void IUIListItemOwner.HandleSlotDropOutside(UIListItem slot, PointerEventData eventData)
                 {
                         // Drag & drop is not supported within the conduit view yet.
                 }
 
-                void IUIItemSlotOwner.HandleSlotSelected(UIItemSlot slot)
+                void IUIListItemOwner.HandleSlotSelected(UIListItem slot)
                 {
                         if (slot == null)
                         {
