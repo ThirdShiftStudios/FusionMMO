@@ -118,6 +118,9 @@ namespace TPSBR
 
 		public override void FixedUpdateNetwork()
 		{
+			if (Object == null || Object.IsValid == false) return;   // <-- guard
+			if (Object == false) return;
+			
 			var data = _data;
 
 			if (CalculateProjectile(ref data) == true)

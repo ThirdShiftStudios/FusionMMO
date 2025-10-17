@@ -126,7 +126,7 @@ namespace TPSBR
 
                         if (activeState == _lightAttackState)
                         {
-                                if (_lightAttackProjectileTriggered == false && _lightAttackState.IsFinished(0.85f) == true)
+                                if (_lightAttackProjectileTriggered == false && _lightAttackState.IsFinished(0.5f) == true)
                                 {
                                         _lightAttackProjectileTriggered = true;
 
