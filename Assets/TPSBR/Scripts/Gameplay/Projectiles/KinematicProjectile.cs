@@ -67,21 +67,44 @@ namespace TPSBR
 		private TrailRenderer    _trailRenderer;
 		private bool             _hasImpactedVisual;
 
+		// Despawn / spawn-safety
+		private bool             _despawning;
+
+		// Optional: defer init if Fire() is called before spawn
+		private bool             _pendingInit;
+		private NetworkObject    _pendingOwner;
+		private Vector3          _pendingFirePos;
+		private Vector3          _pendingVelocity;
+		private LayerMask        _pendingMask;
+		private EHitType         _pendingHitType;
+
 		// PUBLIC METHODS
 
 		public override void Fire(NetworkObject owner, Vector3 firePosition, Vector3 initialVelocity, LayerMask hitMask, EHitType hitType)
 		{
+			// Prepare data
 			ProjectileData data = default;
 
-			data.FirePosition = firePosition;
+			data.FirePosition    = firePosition;
 			data.InitialVelocity = initialVelocity;
 			data.DespawnCooldown = TickTimer.CreateFromSeconds(Runner, _fireDespawnTime);
-			data.StartTick = Runner.Tick;
+			data.StartTick       = Runner.Tick;
 
-			_hitMask = hitMask;
-			_hitType = hitType;
-
+			_hitMask  = hitMask;
+			_hitType  = hitType;
 			_ownerObjectInstanceID = owner != null ? owner.gameObject.GetInstanceID() : 0;
+
+			// If we're not spawned yet, defer until Spawned()
+			if (Object == null || !Object.IsValid)
+			{
+				_pendingInit   = true;
+				_pendingOwner  = owner;
+				_pendingFirePos = firePosition;
+				_pendingVelocity = initialVelocity;
+				_pendingMask   = hitMask;
+				_pendingHitType = hitType;
+				return;
+			}
 
 			_data = data;
 			_bounceCount = default;
@@ -89,6 +112,9 @@ namespace TPSBR
 
 		public void SetDespawnCooldown(float cooldown)
 		{
+			// Guard against post-despawn or pre-spawn access
+			if (_despawning || Object == null || !Object.IsValid) return;
+
 			var data = _data;
 			data.DespawnCooldown = TickTimer.CreateFromSeconds(Runner, cooldown);
 			_data = data;
@@ -98,6 +124,8 @@ namespace TPSBR
 
 		public override void Spawned()
 		{
+			_despawning = false;
+
 			_projectileVisual.SetActiveSafe(_showProjectileVisualAfterDistance <= 0f);
 
 			_hasImpactedVisual = false;
@@ -106,10 +134,32 @@ namespace TPSBR
 			{
 				_trailRenderer.Clear();
 			}
+
+			// Apply any deferred init now that touching [Networked] is legal
+			if (_pendingInit)
+			{
+				ProjectileData data = default;
+				data.FirePosition    = _pendingFirePos;
+				data.InitialVelocity = _pendingVelocity;
+				data.DespawnCooldown = TickTimer.CreateFromSeconds(Runner, _fireDespawnTime);
+				data.StartTick       = Runner.Tick;
+
+				_hitMask  = _pendingMask;
+				_hitType  = _pendingHitType;
+				_ownerObjectInstanceID = _pendingOwner != null ? _pendingOwner.gameObject.GetInstanceID() : 0;
+
+				_data = data;
+				_bounceCount = default;
+
+				_pendingInit = false;
+				_pendingOwner = null;
+			}
 		}
 
 		public override void Despawned(NetworkRunner runner, bool hasState)
 		{
+			_despawning = true;
+
 			if (_dummyRotationTarget != null)
 			{
 				_dummyRotationTarget.rotation = Quaternion.identity;
@@ -118,19 +168,24 @@ namespace TPSBR
 
 		public override void FixedUpdateNetwork()
 		{
-			if (Object == null || Object.IsValid == false) return;   // <-- guard
-			if (Object == false) return;
-			
+			// Guard against the extra tick after despawn and pre-spawn access
+			if (_despawning || Object == null || !Object.IsValid) return;
+
 			var data = _data;
 
 			if (CalculateProjectile(ref data) == true)
 			{
-				_data = data;
+				// Only write back if we aren't despawning mid-tick
+				if (!_despawning && Object != null && Object.IsValid)
+					_data = data;
 			}
 		}
 
 		public override void Render()
 		{
+			// Guard against render after despawn and pre-spawn
+			if (_despawning || Object == null || !Object.IsValid) return;
+
 			RenderProjectile(_data);
 		}
 
@@ -146,6 +201,7 @@ namespace TPSBR
 
 		protected void OnBounceCountChanged()
 		{
+			if (_despawning || Object == null || !Object.IsValid) return;
 			if (_bounceEffect == null)
 				return;
 
@@ -218,7 +274,11 @@ namespace TPSBR
 					SpawnImpact(ref data, data.FinishedPosition, Vector3.up, 0);
 				}
 
+				// Mark despawning BEFORE requesting despawn to avoid the "one extra tick" touching _data
+				_despawning = true;
 				Runner.Despawn(Object);
+
+				// IMPORTANT: do not write _data back after this point
 				return false;
 			}
 
@@ -251,11 +311,11 @@ namespace TPSBR
 			return true;
 		}
 
-                private void ProcessHit(ref ProjectileData data, LagCompensatedHit hit, Vector3 direction)
-                {
-                        data.FinishedPosition = hit.Point + direction * _impactPenetration;
+		private void ProcessHit(ref ProjectileData data, LagCompensatedHit hit, Vector3 direction)
+		{
+			data.FinishedPosition = hit.Point + direction * _impactPenetration;
 
-                        float realDistance = Vector3.Distance(data.FirePosition, hit.Point);
+			float realDistance = Vector3.Distance(data.FirePosition, hit.Point);
 			float hitDamage = _damage.GetDamage(realDistance);
 
 			if (hitDamage > 0f)
@@ -280,11 +340,11 @@ namespace TPSBR
 				SpawnImpact(ref data, hit.Point, (hit.Normal + -direction) * 0.5f, hit.GameObject.tag.GetHashCode());
 			}
 
-                        data.HasStopped = true;
-                        data.DespawnCooldown = TickTimer.CreateFromSeconds(Runner, isDynamicTarget == false ? _impactDespawnTime : 0.1f);
+			data.HasStopped = true;
+			data.DespawnCooldown = TickTimer.CreateFromSeconds(Runner, isDynamicTarget == false ? _impactDespawnTime : 0.1f);
 
-                        OnImpact(in hit);
-                }
+			OnImpact(in hit);
+		}
 
 		private void ProcessBounce(ref ProjectileData data, LagCompensatedHit hit, Vector3 direction, float distance)
 		{
@@ -303,7 +363,7 @@ namespace TPSBR
 
 			var reflectedDirection = Vector3.Reflect(direction, hit.Normal);
 
-			data.FirePosition = hit.Point + reflectedDirection * _bounceObjectRadius;;
+			data.FirePosition = hit.Point + reflectedDirection * _bounceObjectRadius;
 			data.InitialVelocity = reflectedDirection * data.InitialVelocity.magnitude * bounceMultiplier;
 
 			// Simple trick to better align position with ticks. More precise solution would be to remember
@@ -313,7 +373,7 @@ namespace TPSBR
 			_bounceCount++;
 		}
 
-                private void SpawnImpact(ref ProjectileData data, Vector3 position, Vector3 normal, int impactTagHash)
+		private void SpawnImpact(ref ProjectileData data, Vector3 position, Vector3 normal, int impactTagHash)
 		{
 			if (position == Vector3.zero)
 				return;
@@ -351,11 +411,11 @@ namespace TPSBR
 			}
 
 			_hasImpactedVisual = true;
-                }
+		}
 
-                private Vector3 GetProjectilePosition(ref ProjectileData data, float tick)
-                {
-                        float time = (tick - data.StartTick) * Runner.DeltaTime;
+		private Vector3 GetProjectilePosition(ref ProjectileData data, float tick)
+		{
+			float time = (tick - data.StartTick) * Runner.DeltaTime;
 
 			if (time <= 0f)
 				return data.FirePosition;
@@ -365,8 +425,8 @@ namespace TPSBR
 
 		// CLASSES / STRUCTS
 
-                public struct ProjectileData : INetworkStruct
-                {
+		public struct ProjectileData : INetworkStruct
+		{
 			public bool        IsFinished         => HasImpacted || HasStopped;
 			public bool        HasStopped         { get { return State.IsBitSet(0); } set { State.SetBit(0, value); } }
 			public bool        HasImpacted        { get { return State.IsBitSet(1); } set { State.SetBit(1, value); } }
@@ -382,10 +442,10 @@ namespace TPSBR
 			public Vector3     ImpactPosition;
 			public Vector3     ImpactNormal;
 			public int         ImpactTagHash;
-                }
+		}
 
-                protected virtual void OnImpact(in LagCompensatedHit hit)
-                {
-                }
-        }
+		protected virtual void OnImpact(in LagCompensatedHit hit)
+		{
+		}
+	}
 }
