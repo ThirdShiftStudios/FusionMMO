@@ -19,6 +19,7 @@ namespace TPSBR
 
                 private StaffWeapon _activeWeapon;
                 private bool _isCharging;
+                private bool _lightAttackProjectileTriggered;
 
                 // PUBLIC METHODS
 
@@ -57,6 +58,7 @@ namespace TPSBR
                                 return;
 
                         _isCharging = false;
+                        _lightAttackProjectileTriggered = false;
 
                         _lightAttackState.SetAnimationTime(0.0f);
                         _lightAttackState.Activate(_blendInDuration);
@@ -124,6 +126,13 @@ namespace TPSBR
 
                         if (activeState == _lightAttackState)
                         {
+                                if (_lightAttackProjectileTriggered == false && _lightAttackState.IsFinished(0.85f) == true)
+                                {
+                                        _lightAttackProjectileTriggered = true;
+
+                                        _activeWeapon?.TriggerLightAttackProjectile();
+                                }
+
                                 if (_lightAttackState.IsFinished(0.95f) == true)
                                 {
                                         Finish();
@@ -173,6 +182,7 @@ namespace TPSBR
                 private void Finish()
                 {
                         _activeWeapon = null;
+                        _lightAttackProjectileTriggered = false;
 
                         if (IsActive(true) == true)
                         {

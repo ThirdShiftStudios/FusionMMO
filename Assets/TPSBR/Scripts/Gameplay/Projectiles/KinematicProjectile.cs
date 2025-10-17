@@ -248,11 +248,11 @@ namespace TPSBR
 			return true;
 		}
 
-		private void ProcessHit(ref ProjectileData data, LagCompensatedHit hit, Vector3 direction)
-		{
-			data.FinishedPosition = hit.Point + direction * _impactPenetration;
+                private void ProcessHit(ref ProjectileData data, LagCompensatedHit hit, Vector3 direction)
+                {
+                        data.FinishedPosition = hit.Point + direction * _impactPenetration;
 
-			float realDistance = Vector3.Distance(data.FirePosition, hit.Point);
+                        float realDistance = Vector3.Distance(data.FirePosition, hit.Point);
 			float hitDamage = _damage.GetDamage(realDistance);
 
 			if (hitDamage > 0f)
@@ -277,9 +277,11 @@ namespace TPSBR
 				SpawnImpact(ref data, hit.Point, (hit.Normal + -direction) * 0.5f, hit.GameObject.tag.GetHashCode());
 			}
 
-			data.HasStopped = true;
-			data.DespawnCooldown = TickTimer.CreateFromSeconds(Runner, isDynamicTarget == false ? _impactDespawnTime : 0.1f);
-		}
+                        data.HasStopped = true;
+                        data.DespawnCooldown = TickTimer.CreateFromSeconds(Runner, isDynamicTarget == false ? _impactDespawnTime : 0.1f);
+
+                        OnImpact(in hit);
+                }
 
 		private void ProcessBounce(ref ProjectileData data, LagCompensatedHit hit, Vector3 direction, float distance)
 		{
@@ -308,7 +310,7 @@ namespace TPSBR
 			_bounceCount++;
 		}
 
-		private void SpawnImpact(ref ProjectileData data, Vector3 position, Vector3 normal, int impactTagHash)
+                private void SpawnImpact(ref ProjectileData data, Vector3 position, Vector3 normal, int impactTagHash)
 		{
 			if (position == Vector3.zero)
 				return;
@@ -346,11 +348,11 @@ namespace TPSBR
 			}
 
 			_hasImpactedVisual = true;
-		}
+                }
 
-		private Vector3 GetProjectilePosition(ref ProjectileData data, float tick)
-		{
-			float time = (tick - data.StartTick) * Runner.DeltaTime;
+                private Vector3 GetProjectilePosition(ref ProjectileData data, float tick)
+                {
+                        float time = (tick - data.StartTick) * Runner.DeltaTime;
 
 			if (time <= 0f)
 				return data.FirePosition;
@@ -360,8 +362,8 @@ namespace TPSBR
 
 		// CLASSES / STRUCTS
 
-		public struct ProjectileData : INetworkStruct
-		{
+                public struct ProjectileData : INetworkStruct
+                {
 			public bool        IsFinished         => HasImpacted || HasStopped;
 			public bool        HasStopped         { get { return State.IsBitSet(0); } set { State.SetBit(0, value); } }
 			public bool        HasImpacted        { get { return State.IsBitSet(1); } set { State.SetBit(1, value); } }
@@ -377,6 +379,10 @@ namespace TPSBR
 			public Vector3     ImpactPosition;
 			public Vector3     ImpactNormal;
 			public int         ImpactTagHash;
-		}
-	}
+                }
+
+                protected virtual void OnImpact(in LagCompensatedHit hit)
+                {
+                }
+        }
 }
