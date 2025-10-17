@@ -90,6 +90,17 @@ namespace Fusion.Addons.FSM
             if (_aiPath != null)
             {
                 _aiPath.maxSpeed = _movementSpeed;
+                _aiPath.canSearch = true;
+
+#pragma warning disable CS0618 // Backwards compatibility - keep simulateMovement in sync
+                _aiPath.canMove = true;
+#pragma warning restore CS0618
+
+                _aiPath.simulateMovement = true;
+                _aiPath.updatePosition = true;
+                _aiPath.isStopped = true;
+                _aiPath.SetPath(null);
+                _aiPath.Teleport(transform.position);
             }
         }
     }

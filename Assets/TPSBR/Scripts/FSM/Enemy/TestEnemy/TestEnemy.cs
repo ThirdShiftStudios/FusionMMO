@@ -108,6 +108,28 @@ namespace TPSBR.Enemies
                 return;
             }
 
+            if (AIPath.simulateMovement == false)
+            {
+                AIPath.simulateMovement = true;
+            }
+
+            if (AIPath.updatePosition == false)
+            {
+                AIPath.updatePosition = true;
+            }
+
+            if (AIPath.canSearch == false)
+            {
+                AIPath.canSearch = true;
+            }
+
+#pragma warning disable CS0618 // Sync obsolete wrapper with simulateMovement for legacy configs
+            if (AIPath.canMove == false)
+            {
+                AIPath.canMove = true;
+            }
+#pragma warning restore CS0618
+
             if (Mathf.Approximately(AIPath.maxSpeed, MovementSpeed) == false)
             {
                 AIPath.maxSpeed = MovementSpeed;
