@@ -14,12 +14,12 @@ GameObject:
   - component: {fileID: 4284538436436629100}
   - component: {fileID: 6846514888227408305}
   m_Layer: 5
-  m_Name: UIListItem
+  m_Name: UIItemSlot
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1650781864028813837
 RectTransform:
   m_ObjectHideFlags: 0
@@ -91,6 +91,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 30f3dbc3aea6bc84fbdf97baf66b0b13, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _button: {fileID: 0}
+  _animator: {fileID: 0}
+  _content: {fileID: 0}
+  _selectedAnimatorParameter: IsSelected
+  _selectedGroup: {fileID: 0}
+  _deselectedGroup: {fileID: 0}
   _backgroundImage: {fileID: 5743454164759915271}
   _selectionBorderImage: {fileID: 7365173924255391619}
 --- !u!114 &6846514888227408305

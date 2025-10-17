@@ -195,8 +195,7 @@ MonoBehaviour:
   _useSafeArea: 1
   _closeButton: {fileID: 2012746768402173249}
   _cancelButton: {fileID: 0}
-  _inventoryList: {fileID: 5632109876543210987}
-  _inventoryDragLayer: {fileID: 0}
+  _inventoryGrid: {fileID: 5632109876543210987}
   _hotbar: {fileID: 7032918475623412348}
   _selectedHotbarColor: {r: 1, g: 0.3537736, b: 0.3537736, a: 0.6666667}
   _selectedInventorySlotColor: {r: 0.2971698, g: 0.5005123, b: 1, a: 0.64705884}
@@ -764,9 +763,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5bc0d8683b4dbde408576c61d7ed173e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _allowSelection: 1
-  _allowDeselection: 1
-  _itemInstance: {fileID: 4284538436436629100, guid: 2240850c425092947a275dd96f69fc73, type: 3}
+  _dragLayer: {fileID: 0}
+  _selectedSlotColor: {r: 1, g: 1, b: 1, a: 1}
 --- !u!1 &7032918475623412345
 GameObject:
   m_ObjectHideFlags: 0
@@ -1354,11 +1352,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1510047559347500528, guid: 47b23fa93879c4a418d93f82e5eae92f, type: 3}
       propertyPath: m_fontSize
-      value: 26.8
+      value: 13
       objectReference: {fileID: 0}
     - target: {fileID: 1769021591822348950, guid: 47b23fa93879c4a418d93f82e5eae92f, type: 3}
       propertyPath: m_fontSize
-      value: 31.85
+      value: 13
       objectReference: {fileID: 0}
     - target: {fileID: 2320278492930923620, guid: 47b23fa93879c4a418d93f82e5eae92f, type: 3}
       propertyPath: m_AnchorMax.y
@@ -1422,7 +1420,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3570403946143269508, guid: 47b23fa93879c4a418d93f82e5eae92f, type: 3}
       propertyPath: m_fontSize
-      value: 26.8
+      value: 13
       objectReference: {fileID: 0}
     - target: {fileID: 3646742202259318987, guid: 47b23fa93879c4a418d93f82e5eae92f, type: 3}
       propertyPath: m_AnchorMax.y
@@ -1486,7 +1484,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4464343738202621410, guid: 47b23fa93879c4a418d93f82e5eae92f, type: 3}
       propertyPath: m_fontSize
-      value: 31.85
+      value: 13
       objectReference: {fileID: 0}
     - target: {fileID: 4642155044900856686, guid: 47b23fa93879c4a418d93f82e5eae92f, type: 3}
       propertyPath: m_Pivot.x
@@ -1590,19 +1588,19 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5135652992936561705, guid: 47b23fa93879c4a418d93f82e5eae92f, type: 3}
       propertyPath: m_fontSize
-      value: 26.8
+      value: 13
       objectReference: {fileID: 0}
     - target: {fileID: 5297282212308811050, guid: 47b23fa93879c4a418d93f82e5eae92f, type: 3}
       propertyPath: m_fontSize
-      value: 31.85
+      value: 13
       objectReference: {fileID: 0}
     - target: {fileID: 5756384152014090739, guid: 47b23fa93879c4a418d93f82e5eae92f, type: 3}
       propertyPath: m_fontSize
-      value: 31.85
+      value: 13
       objectReference: {fileID: 0}
     - target: {fileID: 6191637391654008966, guid: 47b23fa93879c4a418d93f82e5eae92f, type: 3}
       propertyPath: m_fontSize
-      value: 26.8
+      value: 13
       objectReference: {fileID: 0}
     - target: {fileID: 6267417119449830089, guid: 47b23fa93879c4a418d93f82e5eae92f, type: 3}
       propertyPath: m_AnchorMax.y
@@ -1666,7 +1664,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6954673417278557496, guid: 47b23fa93879c4a418d93f82e5eae92f, type: 3}
       propertyPath: m_fontSize
-      value: 26.8
+      value: 13
       objectReference: {fileID: 0}
     - target: {fileID: 7049701764332834146, guid: 47b23fa93879c4a418d93f82e5eae92f, type: 3}
       propertyPath: m_fontSize
@@ -1694,11 +1692,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7413633450187948513, guid: 47b23fa93879c4a418d93f82e5eae92f, type: 3}
       propertyPath: m_fontSize
-      value: 26.8
+      value: 13
       objectReference: {fileID: 0}
     - target: {fileID: 7945983156655701051, guid: 47b23fa93879c4a418d93f82e5eae92f, type: 3}
       propertyPath: m_fontSize
-      value: 31.85
+      value: 13
       objectReference: {fileID: 0}
     - target: {fileID: 8024084104205404920, guid: 47b23fa93879c4a418d93f82e5eae92f, type: 3}
       propertyPath: m_AnchorMax.y
@@ -1742,7 +1740,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 9001941235879168148, guid: 47b23fa93879c4a418d93f82e5eae92f, type: 3}
       propertyPath: m_fontSize
-      value: 31.85
+      value: 13
       objectReference: {fileID: 0}
     - target: {fileID: 9075837034508222039, guid: 47b23fa93879c4a418d93f82e5eae92f, type: 3}
       propertyPath: m_AnchorMax.y
