@@ -23,6 +23,7 @@ namespace TPSBR
                 public NetworkPrefabRef AgentPrefab     => GetAgentPrefab();
                 public string           Nickname        { get { return _nickname; } set { _nickname = value; IsDirty = true; } }
                 public string           AgentID         { get { return _agentID; } set { _agentID = value; IsDirty = true; } }
+                public string           ActiveCharacterId { get { return _activeCharacterId; } set { if (_activeCharacterId == value) return; _activeCharacterId = value; IsDirty = true; } }
 
                 public int              Level           => _level;
                 public int              Experience      => _experience;
@@ -46,6 +47,8 @@ namespace TPSBR
                 private string _nickname;
                 [SerializeField]
                 private string _agentID;
+                [SerializeField]
+                private string _activeCharacterId;
 
                 [SerializeField]
                 private int _level = 1;
