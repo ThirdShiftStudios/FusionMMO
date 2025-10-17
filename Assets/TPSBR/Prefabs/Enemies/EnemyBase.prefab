@@ -79,6 +79,7 @@ MonoBehaviour:
   _priority: 0
   _checkPriorityOnExit: 1
   _defaultNext: {fileID: 0}
+  _idleDuration: 3
 --- !u!1 &1863816064368683867
 GameObject:
   m_ObjectHideFlags: 0
@@ -94,8 +95,9 @@ GameObject:
   - component: {fileID: 6323051593667454083}
   - component: {fileID: 8146570425657444872}
   - component: {fileID: 7508731426582388167}
+  - component: {fileID: 4620145005282728938}
   m_Layer: 0
-  m_Name: enemy base
+  m_Name: EnemyBase
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -116,6 +118,7 @@ Transform:
   m_Children:
   - {fileID: 6109164301637757938}
   - {fileID: 6743233630782905233}
+  - {fileID: 7048983770356658687}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &7901085010266203322
@@ -156,6 +159,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3b1e9d3c5432490bb0a53a35bda54b9e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _target: {fileID: 0}
+  _movementSpeed: 3
   _machineName: Enemy Behavior
   _spawning: {fileID: 6953381631365717517}
   _idle: {fileID: 3126986843726209373}
@@ -178,7 +183,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _CurrentHealth: 0
   _CurrentShield: 0
-  _maxHealth: 0
+  _maxHealth: 100
   _maxShield: 0
   _startShield: 0
   _hitIndicatorPivot: {fileID: 0}
@@ -208,6 +213,7 @@ MonoBehaviour:
   - {fileID: 8241693279465801080}
   - {fileID: 6323051593667454083}
   - {fileID: 7508731426582388167}
+  - {fileID: 4620145005282728938}
   - {fileID: 6953381631365717517}
   - {fileID: 1045673506506699745}
   - {fileID: 3126986843726209373}
@@ -233,6 +239,23 @@ MonoBehaviour:
   SyncParent: 0
   _autoAOIOverride: 1
   DisableSharedModeInterpolation: 0
+--- !u!114 &4620145005282728938
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1863816064368683867}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 1039544458, guid: e725a070cec140c4caffb81624c8c787, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Config: 3
+  BroadRadius: 0
+  Offset: {x: 0, y: 0, z: 0}
+  GizmosColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  Hitboxes: []
 --- !u!1 &2175482970033138067
 GameObject:
   m_ObjectHideFlags: 0
@@ -281,7 +304,6 @@ MonoBehaviour:
   _checkPriorityOnExit: 1
   _defaultNext: {fileID: 0}
   _patrolRadius: 10
-  _waypoints: []
 --- !u!1 &3791659149402008403
 GameObject:
   m_ObjectHideFlags: 0
@@ -344,7 +366,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
+  - {fileID: 2100000, guid: 03a2dfc3cfa8ba8419c7787b1aa03fd8, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -532,6 +554,60 @@ MonoBehaviour:
   _checkPriorityOnExit: 1
   _defaultNext: {fileID: 0}
   _maxChaseDistance: 25
+--- !u!1 &6543540963549531908
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7048983770356658687}
+  - component: {fileID: 8929381016907679407}
+  m_Layer: 0
+  m_Name: Hitbox
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7048983770356658687
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6543540963549531908}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2140496408858436907}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &8929381016907679407
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6543540963549531908}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b8e6ed021e4c493f9300a2832209fca7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Type: 1
+  SphereRadius: 0
+  CapsuleRadius: 0
+  BoxExtents: {x: 1, y: 1, z: 1}
+  CapsuleExtents: 0
+  Offset: {x: 0, y: 1, z: 0}
+  Root: {fileID: 0}
+  GizmosColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  _damageMultiplier: 1
+  _isCritical: 0
 --- !u!1 &6629457516061144546
 GameObject:
   m_ObjectHideFlags: 0
