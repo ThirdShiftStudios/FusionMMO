@@ -1,6 +1,14 @@
+using TPSBR;
+
 namespace TPSBR.Abilities
 {
-    public abstract class StaffAbilityDefinition : AbilityDefinition
+    public interface IStaffAbilityHandler
     {
+        void Execute(StaffWeapon staffWeapon);
+    }
+
+    public abstract class StaffAbilityDefinition : AbilityDefinition, IStaffAbilityHandler
+    {
+        public abstract void Execute(StaffWeapon staffWeapon);
     }
 }

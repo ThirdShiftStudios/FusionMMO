@@ -25,13 +25,6 @@ namespace TPSBR
         [SerializeField]
         [Tooltip("Duration in seconds the left mouse button must be held to fully charge the heavy attack.")]
         private float _heavyChargeDuration = 1.25f;
-        [Header("Projectile")]
-        [SerializeField]
-        private NetworkPrefabRef _fireballProjectilePrefab;
-        [SerializeField]
-        private float _fireballSpeed = 30f;
-        [SerializeField]
-        private float _fireballTargetDistance = 40f;
         private string _lastConfigurationHash = string.Empty;
         private float _attackButtonDownTime;
         private bool _pendingLightAttack;
@@ -558,20 +551,26 @@ namespace TPSBR
                 return;
             }
 
-            switch (ability)
+            if (ability is IStaffAbilityHandler staffAbility)
             {
-                case FireballAbilityDefinition:
-                    ExecuteFireballAbility();
-                    break;
-                default:
-                    Debug.LogWarning($"{LogPrefix} Ability '{ability.Name}' is not supported by {GetType().Name}.");
-                    break;
+                staffAbility.Execute(this);
+                return;
             }
+
+            Debug.LogWarning($"{LogPrefix} Ability '{ability.Name}' is not supported by {GetType().Name}.");
         }
 
         public void TriggerLightAttackProjectile()
         {
-            ExecuteFireballAbility();
+            StaffAbilityDefinition ability = GetDefaultStaffAbility();
+
+            if (ability == null)
+            {
+                Debug.LogWarning($"{LogPrefix} Unable to locate a staff ability to trigger the light attack projectile.");
+                return;
+            }
+
+            ExecuteAbility(ability);
         }
 
         private void PerformHeavyAttack()
@@ -588,68 +587,31 @@ namespace TPSBR
             ResetAttackState(false);
         }
 
-        private void ExecuteFireballAbility()
+        private StaffAbilityDefinition GetDefaultStaffAbility()
         {
-            if (HasStateAuthority == false)
+            var definition = Definition;
+
+            if (definition == null)
             {
-                return;
+                return null;
             }
 
-            if (_fireballProjectilePrefab.IsValid == false)
+            IReadOnlyList<AbilityDefinition> abilities = definition.AvailableAbilities;
+
+            if (abilities == null)
             {
-                Debug.LogWarning($"{LogPrefix} Fireball projectile prefab is not assigned.");
-                return;
+                return null;
             }
 
-            if (Runner == null || Runner.IsRunning == false)
+            for (int i = 0; i < abilities.Count; i++)
             {
-                return;
-            }
-
-            if (Character == null || Character.ThirdPersonView == null)
-            {
-                return;
-            }
-
-            Transform fireTransform = Character.ThirdPersonView.FireTransform;
-            Transform cameraTransform = Character.ThirdPersonView.DefaultCameraTransform;
-
-            if (fireTransform == null || cameraTransform == null)
-            {
-                return;
-            }
-
-            Vector3 firePosition = fireTransform.position;
-            Vector3 targetPoint = cameraTransform.position + cameraTransform.forward * _fireballTargetDistance;
-            Vector3 direction = targetPoint - firePosition;
-
-            if (direction.sqrMagnitude < 0.0001f)
-            {
-                direction = fireTransform.forward;
-            }
-
-            direction.Normalize();
-
-            Vector3 initialVelocity = direction * _fireballSpeed;
-            LayerMask hitMask = Character.Agent != null && Character.Agent.Inventory != null ? Character.Agent.Inventory.HitMask : default;
-            NetworkObject owner = Owner;
-
-            if (owner == null)
-            {
-                return;
-            }
-
-            Runner.Spawn(_fireballProjectilePrefab, firePosition, Quaternion.LookRotation(direction), owner.InputAuthority, (runner, spawnedObject) =>
-            {
-                FireballProjectile projectile = spawnedObject.GetComponent<FireballProjectile>();
-
-                if (projectile == null)
+                if (abilities[i] is StaffAbilityDefinition staffAbility)
                 {
-                    return;
+                    return staffAbility;
                 }
+            }
 
-                projectile.Fire(owner, firePosition, initialVelocity, hitMask, HitType);
-            });
+            return null;
         }
 
         private void CancelHeavyCharge()
