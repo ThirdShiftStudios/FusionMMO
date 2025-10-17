@@ -68,6 +68,9 @@ namespace TPSBR.Enemies
         {
             base.FixedUpdateNetwork();
 
+            float deltaTime = Runner != null ? Runner.DeltaTime : Time.fixedDeltaTime;
+            UpdateNavigationSimulation(deltaTime);
+
             foreach (var player in Context.NetworkGame.ActivePlayers)
             {
                 if (player == false) continue;
@@ -80,6 +83,30 @@ namespace TPSBR.Enemies
                 if (Vector3.Distance(agent.transform.position, transform.position) <= 10f)
                     _target = agent.transform;
             }
+        }
+
+        private void UpdateNavigationSimulation(float deltaTime)
+        {
+            if (AIPath == null)
+                return;
+
+            if (AIPath.enabled == false)
+                return;
+
+            if (deltaTime <= 0f)
+                return;
+
+            if (AIPath.simulateMovement != false)
+            {
+                AIPath.simulateMovement = false;
+            }
+
+            bool hasActiveRequest = AIPath.isStopped == false || AIPath.hasPath == true;
+            if (hasActiveRequest == false && _hasNavigationDestination == false)
+                return;
+
+            AIPath.MovementUpdate(deltaTime, out var nextPosition, out var nextRotation);
+            AIPath.FinalizeMovement(nextPosition, nextRotation);
         }
 
         public Vector3 GetTargetPosition()
@@ -108,9 +135,9 @@ namespace TPSBR.Enemies
                 return;
             }
 
-            if (AIPath.simulateMovement == false)
+            if (AIPath.simulateMovement != false)
             {
-                AIPath.simulateMovement = true;
+                AIPath.simulateMovement = false;
             }
 
             if (AIPath.updatePosition == false)

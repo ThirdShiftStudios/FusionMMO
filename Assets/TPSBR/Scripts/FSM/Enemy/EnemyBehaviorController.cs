@@ -96,7 +96,7 @@ namespace Fusion.Addons.FSM
                 _aiPath.canMove = true;
 #pragma warning restore CS0618
 
-                _aiPath.simulateMovement = true;
+                _aiPath.simulateMovement = false;
                 _aiPath.updatePosition = true;
                 _aiPath.isStopped = true;
                 _aiPath.SetPath(null);
