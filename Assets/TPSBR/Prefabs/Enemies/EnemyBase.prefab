@@ -177,6 +177,7 @@ MonoBehaviour:
   _idle: {fileID: 3126986843726209373}
   _patrol: {fileID: 4908855209534494959}
   _chaseAgent: {fileID: 642975748742039380}
+  _attackPlayer: {fileID: 15206556752700060509}
   _returnToPatrolZone: {fileID: 4718970296107162292}
   _death: {fileID: 1045673506506699745}
   _despawn: {fileID: 4032810369556411222}
@@ -761,9 +762,64 @@ Transform:
   - {fileID: 6931722582757797284}
   - {fileID: 241536734503253316}
   - {fileID: 1036355954964522755}
+  - {fileID: 9373503758962266375}
   - {fileID: 2518388141203435718}
   m_Father: {fileID: 2140496408858436907}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &12869158484755239612
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 9373503758962266375}
+  - component: {fileID: 15206556752700060509}
+  m_Layer: 0
+  m_Name: AttackPlayer
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &9373503758962266375
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 12869158484755239612}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6109164301637757938}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &15206556752700060509
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 12869158484755239612}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0ac5cef91e304cfcbbee2d65cc07439b, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  _priority: 0
+  _checkPriorityOnExit: 1
+  _defaultNext: {fileID: 0}
+  _attackRange: 2
+  _damagePerHit: 10
+  _attackCooldown: 1
+  _targetMask:
+    serializedVersion: 2
+    m_Bits: 0
+  _hitType: 4
 --- !u!1 &7528462532399794410
 GameObject:
   m_ObjectHideFlags: 0

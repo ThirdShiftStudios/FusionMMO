@@ -17,6 +17,7 @@ namespace TPSBR.Enemies
         public EnemyIdleBehavior Idle => _idle;
         public EnemyPatrolBehavior Patrol => _patrol;
         public EnemyChaseAgentBehavior ChaseAgent => _chaseAgent;
+        public EnemyAttackPlayerBehavior AttackPlayer => _attackPlayer;
         public EnemyReturnToPatrolZoneBehavior ReturnToPatrolZone => _returnToPatrolZone;
         public EnemyDeathBehavior Death => _death;
         public EnemyDespawnBehavior Despawn => _despawn;
@@ -32,6 +33,9 @@ namespace TPSBR.Enemies
 
         [SerializeField] [Tooltip("Reference to the chase agent behavior.")]
         private EnemyChaseAgentBehavior _chaseAgent;
+
+        [SerializeField] [Tooltip("Reference to the player attack behavior.")]
+        private EnemyAttackPlayerBehavior _attackPlayer;
 
         [SerializeField] [Tooltip("Reference to the return-to-patrol-zone behavior.")]
         private EnemyReturnToPatrolZoneBehavior _returnToPatrolZone;
@@ -57,6 +61,7 @@ namespace TPSBR.Enemies
             states.Add(_despawn);
             states.Add(_idle);
             states.Add(_chaseAgent);
+            states.Add(_attackPlayer);
             states.Add(_returnToPatrolZone);
 
             _machine = new EnemyBehaviorMachine(_machineName, this, states.ToArray());

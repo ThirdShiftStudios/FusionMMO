@@ -37,6 +37,13 @@ namespace TPSBR.Enemies
             Vector3 playerPosition = enemy.GetTargetPosition();
             const float stoppingDistance = 0.25f;
 
+            if (enemy.AttackPlayer != null && enemy.AttackPlayer.IsWithinAttackRange(enemy))
+            {
+                enemy.StopNavigation();
+                Machine.ForceActivateState(enemy.AttackPlayer.StateId);
+                return;
+            }
+
             if (enemy.AIPath != null && enemy.Seeker != null)
             {
                 enemy.NavigateTo(playerPosition, stoppingDistance);
