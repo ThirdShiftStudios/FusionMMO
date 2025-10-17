@@ -1,7 +1,8 @@
 namespace TPSBR
 {
-	using UnityEngine;
-	using Fusion.Addons.AnimationController;
+        using UnityEngine;
+        using Fusion.Addons.AnimationController;
+        using TPSBR.Abilities;
 
         public sealed class StaffAttackState : MixerState
         {
@@ -9,9 +10,9 @@ namespace TPSBR
 
                 [Header("States")]
                 [SerializeField] private ClipState _chargeState;
-                [SerializeField] private ClipState _lightAttackState;
+                [SerializeField] private AbilityClipState _lightAttackState;
                 [SerializeField] private ClipState _heavyAttackState;
-                [SerializeField] private ClipState _abilityAttackState;
+                [SerializeField] private AbilityClipState _abilityAttackState;
 
                 [Header("Timing")]
                 [SerializeField] private float _blendInDuration = 0.1f;
@@ -19,7 +20,8 @@ namespace TPSBR
 
                 private StaffWeapon _activeWeapon;
                 private bool _isCharging;
-                private bool _lightAttackProjectileTriggered;
+                private bool _lightAttackAbilityTriggered;
+                private bool _abilityAttackTriggered;
 
                 // PUBLIC METHODS
 
@@ -58,7 +60,7 @@ namespace TPSBR
                                 return;
 
                         _isCharging = false;
-                        _lightAttackProjectileTriggered = false;
+                        _lightAttackAbilityTriggered = false;
 
                         _lightAttackState.SetAnimationTime(0.0f);
                         _lightAttackState.Activate(_blendInDuration);
@@ -71,6 +73,7 @@ namespace TPSBR
                                 return;
 
                         _isCharging = false;
+                        _abilityAttackTriggered = false;
 
                         _heavyAttackState.SetAnimationTime(0.0f);
                         _heavyAttackState.Activate(_blendInDuration);
@@ -126,12 +129,7 @@ namespace TPSBR
 
                         if (activeState == _lightAttackState)
                         {
-                                if (_lightAttackProjectileTriggered == false && _lightAttackState.IsFinished(0.5f) == true)
-                                {
-                                        _lightAttackProjectileTriggered = true;
-
-                                        _activeWeapon?.TriggerLightAttackProjectile();
-                                }
+                                TryTriggerAbility(_lightAttackState, ref _lightAttackAbilityTriggered);
 
                                 if (_lightAttackState.IsFinished(0.95f) == true)
                                 {
@@ -147,6 +145,8 @@ namespace TPSBR
                         }
                         else if (activeState == _abilityAttackState)
                         {
+                                TryTriggerAbility(_abilityAttackState, ref _abilityAttackTriggered);
+
                                 if (_abilityAttackState.IsFinished(0.95f) == true)
                                 {
                                         Finish();
@@ -182,11 +182,42 @@ namespace TPSBR
                 private void Finish()
                 {
                         _activeWeapon = null;
-                        _lightAttackProjectileTriggered = false;
+                        _lightAttackAbilityTriggered = false;
+                        _abilityAttackTriggered = false;
 
                         if (IsActive(true) == true)
                         {
                                 Deactivate(_blendOutDuration);
+                        }
+                }
+
+                private void TryTriggerAbility(AbilityClipState state, ref bool hasTriggered)
+                {
+                        if (state == null || hasTriggered == true)
+                                return;
+
+                        float triggerTime = Mathf.Clamp01(state.AbilityTriggerNormalizedTime);
+
+                        if (state.IsFinished(triggerTime) == false)
+                                return;
+
+                        hasTriggered = true;
+
+                        if (_activeWeapon == null)
+                                return;
+
+                        AbilityDefinition ability = state.Ability;
+
+                        if (ability != null)
+                        {
+                                _activeWeapon.ExecuteAbility(ability);
+                                return;
+                        }
+
+                        // Legacy fallback for configurations that have not yet been migrated to ability definitions.
+                        if (state == _lightAttackState)
+                        {
+                                _activeWeapon.TriggerLightAttackProjectile();
                         }
                 }
         }

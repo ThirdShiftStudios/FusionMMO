@@ -240,13 +240,15 @@ MonoBehaviour:
   m_GameObject: {fileID: 2640745800688205192}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3721801b5fc53e942a7112883e5665f6, type: 3}
+  m_Script: {fileID: 11500000, guid: 33382dc73c29409bb44f761134880718, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   _node:
     Clip: {fileID: 8993902097722301239, guid: b626f827dc97e204cbcc12862f3d7d0e, type: 3}
     Speed: 1
     IsLooping: 0
+  _ability: {fileID: 0}
+  _abilityTriggerNormalizedTime: 0.5
 --- !u!1 &4445815982237870121
 GameObject:
   m_ObjectHideFlags: 0
@@ -336,13 +338,15 @@ MonoBehaviour:
   m_GameObject: {fileID: 6239261266472993028}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3721801b5fc53e942a7112883e5665f6, type: 3}
+  m_Script: {fileID: 11500000, guid: 33382dc73c29409bb44f761134880718, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   _node:
     Clip: {fileID: 8993902097722301239, guid: 349bdfafa53f06a4a8ac410d377ed669, type: 3}
     Speed: 1
     IsLooping: 0
+  _ability: {fileID: 11400000, guid: 5451e32ec25fdca42a85a55c7241ae7e, type: 2}
+  _abilityTriggerNormalizedTime: 0.729
 --- !u!1 &6435352256549253745
 GameObject:
   m_ObjectHideFlags: 0
