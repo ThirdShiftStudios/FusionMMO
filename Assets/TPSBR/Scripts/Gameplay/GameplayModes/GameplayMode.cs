@@ -214,7 +214,7 @@ namespace TPSBR
 
 		public virtual void EnemyDeath(EnemyHealth enemy, HitData hitData)
 		{
-			Debug.Log("[GameplayMode] Enemy Hit");
+			Debug.Log("[GameplayMode] Enemy Killed");
 		}
 
 		public Transform GetRandomSpawnPoint(float minDistanceFromAgents)

@@ -3916,7 +3916,6 @@ GameObject:
   - component: {fileID: 6522195430194241608}
   - component: {fileID: 8019168302190258968}
   - component: {fileID: 1018819908989435078}
-  - component: {fileID: 9214389469141760512}
   - component: {fileID: 9046183259892481614}
   - component: {fileID: -3239075717166987496}
   - component: {fileID: 1995551543325358703}
@@ -3924,6 +3923,7 @@ GameObject:
   - component: {fileID: 4264704789929423561}
   - component: {fileID: 2084853432409141758}
   - component: {fileID: 42101657442118405}
+  - component: {fileID: 8453197996839227471}
   m_Layer: 8
   m_Name: AgentBase
   m_TagString: Untagged
@@ -3978,10 +3978,10 @@ MonoBehaviour:
   - {fileID: 6522195430194241608}
   - {fileID: 8019168302190258968}
   - {fileID: 1018819908989435078}
-  - {fileID: 9214389469141760512}
   - {fileID: 3308056109482708667}
   - {fileID: 4264704789929423561}
   - {fileID: 2084853432409141758}
+  - {fileID: 8453197996839227471}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &8106659039670942066
 MonoBehaviour:
@@ -4126,6 +4126,10 @@ MonoBehaviour:
   _itemDropForwardOffset: 1.5
   _itemDropUpOffset: 0.35
   _itemDropImpulse: 3
+  _pickaxeEquippedParent: {fileID: 0}
+  _pickaxeUnequippedParent: {fileID: 0}
+  _woodAxeEquippedParent: {fileID: 0}
+  _woodAxeUnequippedParent: {fileID: 0}
   _fireAudioEffectsRoot: {fileID: 5519487549885795405}
 --- !u!114 &1018819908989435078
 MonoBehaviour:
@@ -4144,28 +4148,6 @@ MonoBehaviour:
   Offset: {x: 0, y: 1, z: 0}
   GizmosColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
   Hitboxes: []
---- !u!114 &9214389469141760512
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7625200539080901463}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3181ad8a26fad7a4f95a3288028fb68f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _CurrentHealth: 0
-  _CurrentShield: 0
-  _maxHealth: 100
-  _maxShield: 100
-  _startShield: 0
-  _hitIndicatorPivot: {fileID: 2784425989707770540}
-  _healthRegenPerSecond: 10
-  _maxHealthFromRegen: 50
-  _regenTickPerSecond: 5
-  _regenCombatDelay: 5
 --- !u!114 &9046183259892481614
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4274,6 +4256,8 @@ MonoBehaviour:
   _itemBoxOpenNormalizedTime: 0.8
   _oreCancelMoveDistance: 0.35
   _oreCancelInputThreshold: 0.1
+  _treeCancelMoveDistance: 0.35
+  _treeCancelInputThreshold: 0.1
 --- !u!114 &2084853432409141758
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4321,6 +4305,29 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _target: {fileID: 7479170632602112611}
   _enableLogs: 1
+--- !u!114 &8453197996839227471
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7625200539080901463}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d63ac2fd50f933c439602bcb438b12c3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _CurrentHealth: 0
+  _CurrentShield: 0
+  _maxHealth: 100
+  _maxShield: 100
+  _startShield: 0
+  _hitIndicatorPivot: {fileID: 2784425989707770540}
+  _healthRegenPerSecond: 1
+  _maxHealthFromRegen: 0
+  _regenTickPerSecond: 0
+  _regenCombatDelay: 0
+  _healthPerStrength: 20
 --- !u!1 &8107021845495828554
 GameObject:
   m_ObjectHideFlags: 0
