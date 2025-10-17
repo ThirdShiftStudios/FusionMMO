@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using Pathfinding;
 using TPSBR;
 using UnityEngine;
 
@@ -9,7 +11,7 @@ namespace Fusion.Addons.FSM
     public abstract class EnemyBehaviorController : ContextBehaviour, IStateMachineOwner
     {
         public float MovementSpeed => _movementSpeed;
-
+        public AIPath AIPath => _aiPath;
         public Transform Target
         {
             get => _target;
@@ -36,6 +38,8 @@ namespace Fusion.Addons.FSM
 
         private Vector3 _spawnPosition;
         private bool _hasSpawnPosition;
+        private AIPath _aiPath;
+
         protected IReadOnlyList<EnemyBehavior> Behaviors => _behaviors;
 
         [SerializeField] [Tooltip("Optional override for the state machine name.")]
@@ -50,6 +54,11 @@ namespace Fusion.Addons.FSM
         }
 
         protected abstract void OnCollectStateMachines(List<IStateMachine> stateMachines);
+
+        private void Awake()
+        {
+            _aiPath = GetComponent<AIPath>();
+        }
 
         public override void Spawned()
         {

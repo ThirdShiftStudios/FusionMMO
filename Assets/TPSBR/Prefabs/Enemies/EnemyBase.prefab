@@ -78,6 +78,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _priority: 0
   _checkPriorityOnExit: 1
+  _defaultNext: {fileID: 0}
   _idleDuration: 3
 --- !u!1 &1863816064368683867
 GameObject:
@@ -94,6 +95,9 @@ GameObject:
   - component: {fileID: 8146570425657444872}
   - component: {fileID: 7508731426582388167}
   - component: {fileID: 4620145005282728938}
+  - component: {fileID: 2228751369356529363}
+  - component: {fileID: 3122034728966952312}
+  - component: {fileID: 1940624839876605530}
   m_Layer: 0
   m_Name: EnemyBase
   m_TagString: Untagged
@@ -240,6 +244,136 @@ MonoBehaviour:
   Offset: {x: 0, y: 0, z: 0}
   GizmosColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
   Hitboxes: []
+--- !u!114 &2228751369356529363
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1863816064368683867}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 373b52eb9bf8c40f785bb6947a1aee66, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  version: 1073741824
+  drawGizmos: 1
+  detailedGizmos: 0
+  startEndModifier:
+    addPoints: 0
+    exactStartPoint: 3
+    exactEndPoint: 3
+    useRaycasting: 0
+    mask:
+      serializedVersion: 2
+      m_Bits: 4294967295
+    useGraphRaycasting: 0
+  traversableTags: -1
+  tagCostMultipliers:
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  tagEntryCosts: 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+  graphMask:
+    value: -1
+--- !u!114 &3122034728966952312
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1863816064368683867}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f6eb1402c17e84a9282a7f0f62eb584f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  version: 1073741824
+  radius: 0.5
+  height: 1
+  simulateMovement: 1
+  maxSpeed: 9
+  gravity: {x: NaN, y: NaN, z: NaN}
+  groundMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  endReachedDistance: 0.05
+  whenCloseToDestination: 0
+  rvoDensityBehavior:
+    enabled: 0
+    densityThreshold: 0.5
+    returnAfterBeingPushedAway: 0
+    progressAverage: 0
+    lastJobDensityResult: 0
+  repathRateCompatibility: 3
+  canSearchCompability: 1
+  orientation: 0
+  enableRotation: 1
+  autoRepath:
+    mode: 2
+    period: 3
+    sensitivity: 10
+    maximumPeriod: 2
+    visualizeSensitivity: 0
+  maxAcceleration: -2.5
+  rotationSpeed: 810
+  slowdownDistance: 3
+  pickNextWaypointDist: 2
+  alwaysDrawGizmos: 0
+  slowWhenNotFacingTarget: 1
+  preventMovingBackwards: 0
+  constrainInsideGraph: 0
+--- !u!114 &1940624839876605530
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1863816064368683867}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cb6a34d769a1e4ac7b0b30e433aa443c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  version: 1073741824
+  smoothType: 0
+  subdivisions: 2
+  iterations: 2
+  strength: 0.5
+  uniformLength: 1
+  maxSegmentLength: 2
+  bezierTangentLength: 0.4
+  offset: 0.2
+  factor: 0.1
 --- !u!1 &2175482970033138067
 GameObject:
   m_ObjectHideFlags: 0
@@ -286,6 +420,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _priority: 0
   _checkPriorityOnExit: 1
+  _defaultNext: {fileID: 0}
   _patrolRadius: 10
 --- !u!1 &3791659149402008403
 GameObject:
@@ -440,6 +575,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _priority: 0
   _checkPriorityOnExit: 1
+  _defaultNext: {fileID: 0}
 --- !u!1 &5892478307987658546
 GameObject:
   m_ObjectHideFlags: 0
@@ -486,6 +622,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _priority: 0
   _checkPriorityOnExit: 1
+  _defaultNext: {fileID: 0}
   _spawnDuration: 2
 --- !u!1 &6470464156100871862
 GameObject:
@@ -533,6 +670,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _priority: 0
   _checkPriorityOnExit: 1
+  _defaultNext: {fileID: 0}
   _maxChaseDistance: 25
 --- !u!1 &6543540963549531908
 GameObject:
@@ -672,6 +810,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _priority: 0
   _checkPriorityOnExit: 1
+  _defaultNext: {fileID: 0}
 --- !u!1 &8040976105639610020
 GameObject:
   m_ObjectHideFlags: 0
@@ -718,3 +857,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _priority: 0
   _checkPriorityOnExit: 1
+  _defaultNext: {fileID: 0}
