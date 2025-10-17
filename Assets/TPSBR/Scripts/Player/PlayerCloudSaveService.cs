@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Fusion;
+using TSS.Data;
 using Unity.Services.Authentication;
 using Unity.Services.CloudSave;
 using Unity.Services.CloudSave.Models;
@@ -18,6 +19,8 @@ namespace TPSBR
         public PlayerInventoryItemData PickaxeSlot;
         public PlayerInventoryItemData WoodAxeSlot;
         public int Gold;
+        public PlayerCharacterSaveData[] Characters;
+        public string ActiveCharacterId;
     }
 
     [Serializable]
@@ -33,6 +36,15 @@ namespace TPSBR
     {
         public int WeaponDefinitionId;
         public string ConfigurationHash;
+    }
+
+    [Serializable]
+    public class PlayerCharacterSaveData
+    {
+        public string CharacterId;
+        public string CharacterName;
+        public string CharacterDefinitionCode;
+        public long CreatedAtUtc;
     }
 
     public sealed class PlayerCloudSaveService : IGlobalService
@@ -54,10 +66,17 @@ namespace TPSBR
         private bool _cloudSaveReady;
         private Task _saveTask;
         private bool _initialLoadComplete;
+        private readonly List<PlayerCharacterSaveData> _characters = new List<PlayerCharacterSaveData>();
+        private string _activeCharacterId;
 
         // PUBLIC PROPERTIES
 
         public bool IsInitialized => _isInitialized;
+        public IReadOnlyList<PlayerCharacterSaveData> Characters => _characters;
+        public string ActiveCharacterId => _activeCharacterId;
+
+        public event Action CharactersChanged;
+        public event Action<string> ActiveCharacterChanged;
 
         // IGlobalService INTERFACE
 
@@ -74,6 +93,8 @@ namespace TPSBR
             _cloudSaveReady = false;
             _saveTask = null;
             _initialLoadComplete = false;
+            _characters.Clear();
+            _activeCharacterId = null;
             _isInitialized = false;
 
             _pendingRegistration = pendingInventory;
@@ -194,6 +215,102 @@ namespace TPSBR
             ObserveTask(saveTask);
 
             DetachInventory();
+        }
+
+        public IReadOnlyList<PlayerCharacterSaveData> GetCharacters()
+        {
+            return _characters;
+        }
+
+        public PlayerCharacterSaveData GetCharacter(string characterId)
+        {
+            if (string.IsNullOrEmpty(characterId) == true)
+                return null;
+
+            for (int i = 0; i < _characters.Count; i++)
+            {
+                var character = _characters[i];
+                if (character != null && string.Equals(character.CharacterId, characterId, StringComparison.Ordinal) == true)
+                {
+                    return character;
+                }
+            }
+
+            return null;
+        }
+
+        public PlayerCharacterSaveData CreateCharacter(string name, CharacterDefinition definition)
+        {
+            if (definition == null)
+                throw new ArgumentNullException(nameof(definition));
+
+            if (string.IsNullOrWhiteSpace(name) == true)
+                return null;
+
+            string trimmedName = name.Trim();
+
+            if (trimmedName.HasValue() == false)
+                return null;
+
+            if (IsCharacterNameAvailable(trimmedName) == false)
+                return null;
+
+            var record = new PlayerCharacterSaveData
+            {
+                CharacterId = Guid.NewGuid().ToString("N"),
+                CharacterName = trimmedName,
+                CharacterDefinitionCode = definition.StringCode,
+                CreatedAtUtc = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
+            };
+
+            _characters.Add(record);
+            _activeCharacterId = record.CharacterId;
+
+            ApplyCharacterDataToCachedData();
+            UpdatePlayerActiveCharacter();
+            NotifyCharactersChanged();
+            NotifyActiveCharacterChanged();
+            MarkDirty();
+
+            return record;
+        }
+
+        public bool SelectCharacter(string characterId)
+        {
+            if (string.IsNullOrEmpty(characterId) == true)
+                return false;
+
+            if (string.Equals(_activeCharacterId, characterId, StringComparison.Ordinal) == true)
+                return false;
+
+            if (GetCharacter(characterId) == null)
+                return false;
+
+            _activeCharacterId = characterId;
+
+            ApplyCharacterDataToCachedData();
+            UpdatePlayerActiveCharacter();
+            NotifyActiveCharacterChanged();
+            MarkDirty();
+
+            return true;
+        }
+
+        public bool IsCharacterNameAvailable(string name)
+        {
+            if (string.IsNullOrEmpty(name) == true)
+                return false;
+
+            for (int i = 0; i < _characters.Count; i++)
+            {
+                var character = _characters[i];
+                if (character != null && string.Equals(character.CharacterName, name, StringComparison.OrdinalIgnoreCase) == true)
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         public bool TryRestoreInventory(Inventory inventory)
@@ -411,6 +528,8 @@ namespace TPSBR
                 Debug.LogWarning($"Failed to load inventory from Unity Cloud Save using key {_storageKey}.");
                 Debug.LogException(exception);
             }
+
+            SyncCharactersFromCachedData(true);
         }
 
         private void ProcessDeferredInventory()
@@ -502,6 +621,11 @@ namespace TPSBR
             _pendingSave = true;
         }
 
+        private void MarkDirty()
+        {
+            _pendingSave = true;
+        }
+
         private async Task CaptureAndStoreSnapshotAsync(bool forceSave)
         {
             _ = forceSave;
@@ -516,9 +640,16 @@ namespace TPSBR
             if (_trackedInventory != null && _trackedInventory.HasStateAuthority == true)
             {
                 _suppressTracking = true;
-                _cachedData = _trackedInventory.CreateSaveData();
+                var snapshot = _trackedInventory.CreateSaveData();
                 _suppressTracking = false;
+
+                if (snapshot != null)
+                {
+                    _cachedData = snapshot;
+                }
             }
+
+            ApplyCharacterDataToCachedData();
 
             if (_cachedData == null)
                 return;
@@ -562,6 +693,94 @@ namespace TPSBR
                     Debug.LogException(t.Exception);
                 }
             }, TaskContinuationOptions.ExecuteSynchronously | TaskContinuationOptions.OnlyOnFaulted);
+        }
+
+        private void ApplyCharacterDataToCachedData()
+        {
+            EnsureCachedData();
+
+            if (_cachedData == null)
+                return;
+
+            if (_characters.Count > 0)
+            {
+                _cachedData.Characters = _characters.ToArray();
+            }
+            else
+            {
+                _cachedData.Characters = null;
+            }
+
+            _cachedData.ActiveCharacterId = _activeCharacterId;
+        }
+
+        private void EnsureCachedData()
+        {
+            if (_cachedData == null)
+            {
+                _cachedData = new PlayerInventorySaveData();
+            }
+        }
+
+        private void NotifyCharactersChanged()
+        {
+            CharactersChanged?.Invoke();
+        }
+
+        private void NotifyActiveCharacterChanged()
+        {
+            ActiveCharacterChanged?.Invoke(_activeCharacterId);
+        }
+
+        private void UpdatePlayerActiveCharacter()
+        {
+            var playerData = Global.PlayerService?.PlayerData;
+            if (playerData == null)
+                return;
+
+            playerData.ActiveCharacterId = _activeCharacterId;
+        }
+
+        private void SyncCharactersFromCachedData(bool notify)
+        {
+            _characters.Clear();
+            _activeCharacterId = null;
+
+            if (_cachedData != null)
+            {
+                if (_cachedData.Characters != null && _cachedData.Characters.Length > 0)
+                {
+                    for (int i = 0; i < _cachedData.Characters.Length; i++)
+                    {
+                        var character = _cachedData.Characters[i];
+                        if (character == null)
+                            continue;
+
+                        if (string.IsNullOrEmpty(character.CharacterId) == true)
+                            continue;
+
+                        _characters.Add(character);
+                    }
+                }
+
+                if (_cachedData.ActiveCharacterId.HasValue() == true)
+                {
+                    _activeCharacterId = _cachedData.ActiveCharacterId;
+                }
+            }
+
+            if (_activeCharacterId.HasValue() == false && _characters.Count > 0)
+            {
+                _activeCharacterId = _characters[0].CharacterId;
+            }
+
+            UpdatePlayerActiveCharacter();
+
+            if (notify == true)
+            {
+                NotifyCharactersChanged();
+                NotifyActiveCharacterChanged();
+            }
         }
     }
 }

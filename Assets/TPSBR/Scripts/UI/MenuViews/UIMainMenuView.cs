@@ -10,6 +10,8 @@ namespace TPSBR.UI
 		[SerializeField]
 		private UIButton _playButton;
 		[SerializeField]
+		private UIButton _charactersButton;
+		[SerializeField]
 		private UIButton _settingsButton;
 		[SerializeField]
 		private UIButton _creditsButton;
@@ -50,7 +52,7 @@ namespace TPSBR.UI
 			_changeNicknameButton.onClick.AddListener(OnChangeNicknameButton);
 			_quitButton.onClick.AddListener(OnQuitButton);
 			_playerButton.onClick.AddListener(OnPlayerButton);
-
+			_charactersButton.onClick.AddListener(OnCharactersButton);
 			_applicationVersion.text = $"Version {Application.version}";
 		}
 
@@ -62,7 +64,7 @@ namespace TPSBR.UI
 			_changeNicknameButton.onClick.RemoveListener(OnChangeNicknameButton);
 			_quitButton.onClick.RemoveListener(OnQuitButton);
 			_playerButton.onClick.RemoveListener(OnPlayerButton);
-
+			_charactersButton.onClick.RemoveListener(OnCharactersButton);
 			base.OnDeinitialize();
 		}
 
@@ -138,6 +140,13 @@ namespace TPSBR.UI
 			};
 		}
 
+		private void OnCharactersButton()
+		{
+			var selectCharacterView = Open<UISelectCharacterView>();
+			selectCharacterView.BackView = this;
+
+			Close();
+		}
 		private void OnPlayerButton()
 		{
 			var agentSelection = Open<UIAgentSelectionView>();
