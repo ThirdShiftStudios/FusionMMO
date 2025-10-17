@@ -15,11 +15,26 @@ namespace TPSBR.Enemies
                 return;
 
             Vector3 spawnPosition = enemy.SpawnPosition;
-            enemy.MoveTowardsXZ(spawnPosition, enemy.MovementSpeed, Runner.DeltaTime);
 
-            if (enemy.IsWithinPatrolRadius(enemy.transform.position) == true && enemy.Patrol != null)
+            if (enemy.AIPath != null && enemy.Seeker != null)
             {
-                Machine.ForceActivateState(enemy.Patrol.StateId);
+                const float stoppingDistance = 0.5f;
+                enemy.NavigateTo(spawnPosition, stoppingDistance);
+
+                bool reachedDestination = enemy.HasReachedDestination(stoppingDistance);
+                if ((reachedDestination == true || enemy.IsWithinPatrolRadius(enemy.transform.position) == true) && enemy.Patrol != null)
+                {
+                    Machine.ForceActivateState(enemy.Patrol.StateId);
+                }
+            }
+            else
+            {
+                bool reached = enemy.MoveTowardsXZ(spawnPosition, enemy.MovementSpeed, Runner.DeltaTime);
+
+                if ((reached == true || enemy.IsWithinPatrolRadius(enemy.transform.position) == true) && enemy.Patrol != null)
+                {
+                    Machine.ForceActivateState(enemy.Patrol.StateId);
+                }
             }
         }
     }

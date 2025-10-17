@@ -8,6 +8,10 @@ namespace TPSBR.Enemies
         [Tooltip("Radius around the spawn point considered the patrol zone.")]
         private float _patrolRadius = 10f;
 
+        [SerializeField]
+        [Tooltip("Distance from the patrol destination at which it is considered reached.")]
+        private float _patrolStoppingDistance = 0.5f;
+
         private Vector3 _currentTarget;
         private bool _hasTarget;
 
@@ -45,17 +49,36 @@ namespace TPSBR.Enemies
             if (_hasTarget == false)
                 return;
 
-            bool reached = enemy.MoveTowardsXZ(_currentTarget, enemy.MovementSpeed, Runner.DeltaTime);
-
-            if (reached == true)
+            if (enemy.AIPath != null && enemy.Seeker != null)
             {
-                if (enemy.Idle != null)
+                enemy.NavigateTo(_currentTarget, _patrolStoppingDistance);
+
+                if (enemy.HasReachedDestination(_patrolStoppingDistance) == true)
                 {
-                    Machine.ForceActivateState(enemy.Idle.StateId);
+                    if (enemy.Idle != null)
+                    {
+                        Machine.ForceActivateState(enemy.Idle.StateId);
+                    }
+                    else
+                    {
+                        SelectNewTarget();
+                    }
                 }
-                else
+            }
+            else
+            {
+                bool reached = enemy.MoveTowardsXZ(_currentTarget, enemy.MovementSpeed, Runner.DeltaTime);
+
+                if (reached == true)
                 {
-                    SelectNewTarget();
+                    if (enemy.Idle != null)
+                    {
+                        Machine.ForceActivateState(enemy.Idle.StateId);
+                    }
+                    else
+                    {
+                        SelectNewTarget();
+                    }
                 }
             }
         }
@@ -72,6 +95,11 @@ namespace TPSBR.Enemies
             Vector2 randomOffset = Random.insideUnitCircle * _patrolRadius;
             _currentTarget = new Vector3(spawnPosition.x + randomOffset.x, spawnPosition.y, spawnPosition.z + randomOffset.y);
             _hasTarget = true;
+
+            if (enemy.AIPath != null && enemy.Seeker != null)
+            {
+                enemy.NavigateTo(_currentTarget, _patrolStoppingDistance);
+            }
         }
     }
 }

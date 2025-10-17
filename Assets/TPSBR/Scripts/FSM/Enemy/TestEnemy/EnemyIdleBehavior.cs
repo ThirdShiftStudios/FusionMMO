@@ -14,6 +14,11 @@ namespace TPSBR.Enemies
         {
             base.OnEnterState();
             _idleTimer = _idleDuration;
+
+            if (Controller is TestEnemy enemy)
+            {
+                enemy.StopNavigation();
+            }
         }
 
         protected override void OnFixedUpdate()

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Pathfinding;
 using Fusion;
 using Fusion.Addons.FSM;
 using UnityEngine;
@@ -41,11 +42,9 @@ namespace TPSBR.Enemies
         [SerializeField] [Tooltip("Reference to the despawn behavior.")]
         private EnemyDespawnBehavior _despawn;
 
-
-
-      
-
-
+        private GraphMask _activeGraphMask = GraphMask.everything;
+        private Vector3 _navigationDestination;
+        private bool _hasNavigationDestination;
 
         public float PatrolRadius => _patrol != null ? _patrol.PatrolRadius : 0f;
 
@@ -89,6 +88,86 @@ namespace TPSBR.Enemies
                 return transform.position;
 
             return _target.position;
+        }
+
+        public void StopNavigation()
+        {
+            if (AIPath != null)
+            {
+                AIPath.isStopped = true;
+                AIPath.SetPath(null);
+            }
+
+            _hasNavigationDestination = false;
+        }
+
+        public void NavigateTo(Vector3 destination, float stoppingDistance)
+        {
+            if (AIPath == null || Seeker == null)
+            {
+                return;
+            }
+
+            if (Mathf.Approximately(AIPath.maxSpeed, MovementSpeed) == false)
+            {
+                AIPath.maxSpeed = MovementSpeed;
+            }
+
+            if (Mathf.Approximately(AIPath.endReachedDistance, stoppingDistance) == false)
+            {
+                AIPath.endReachedDistance = stoppingDistance;
+            }
+
+            var graphMask = DetermineClosestGraphMask(destination);
+            bool graphMaskChanged = graphMask != _activeGraphMask;
+
+            if (graphMaskChanged == true)
+            {
+                _activeGraphMask = graphMask;
+                Seeker.graphMask = graphMask;
+            }
+
+            bool destinationChanged = _hasNavigationDestination == false ||
+                                      (AIPath.destination - destination).sqrMagnitude > 0.01f;
+
+            if (destinationChanged == true)
+            {
+                AIPath.destination = destination;
+                _navigationDestination = destination;
+                _hasNavigationDestination = true;
+            }
+
+            if ((destinationChanged == true || graphMaskChanged == true || AIPath.hasPath == false) && AIPath.pathPending == false)
+            {
+                AIPath.SearchPath();
+            }
+
+            AIPath.isStopped = false;
+        }
+
+        public bool HasReachedDestination(float tolerance)
+        {
+            if (AIPath != null)
+            {
+                if (AIPath.reachedDestination == true)
+                    return true;
+
+                if (tolerance > 0f)
+                {
+                    float sqrTolerance = tolerance * tolerance;
+                    Vector3 destination = _hasNavigationDestination == true ? _navigationDestination : AIPath.destination;
+                    float sqrDistance = (transform.position - destination).sqrMagnitude;
+                    return sqrDistance <= sqrTolerance;
+                }
+
+                return false;
+            }
+
+            if (_hasNavigationDestination == false)
+                return false;
+
+            float sqrToleranceFallback = tolerance * tolerance;
+            return (transform.position - _navigationDestination).sqrMagnitude <= sqrToleranceFallback;
         }
 
         public bool MoveTowardsXZ(Vector3 target, float speed, float deltaTime)
@@ -139,6 +218,45 @@ namespace TPSBR.Enemies
                 return true;
 
             return GetHorizontalDistanceFromSpawn(position) <= radius;
+        }
+
+        private GraphMask DetermineClosestGraphMask(Vector3 destination)
+        {
+            var astar = AstarPath.active;
+            if (astar == null || astar.graphs == null)
+                return GraphMask.everything;
+
+            Vector3 currentPosition = transform.position;
+            float bestScore = float.PositiveInfinity;
+            GraphMask bestMask = GraphMask.everything;
+
+            for (int i = 0; i < astar.graphs.Length; i++)
+            {
+                var graph = astar.graphs[i];
+                if (graph == null || graph.active == null || graph.isScanned == false)
+                    continue;
+
+                var constraint = NearestNodeConstraint.Walkable;
+                var startInfo = graph.GetNearest(currentPosition, constraint);
+                if (startInfo.node == null)
+                    continue;
+
+                var endInfo = graph.GetNearest(destination, constraint);
+                if (endInfo.node == null)
+                    continue;
+
+                float startDistance = (startInfo.position - currentPosition).sqrMagnitude;
+                float endDistance = (endInfo.position - destination).sqrMagnitude;
+                float score = startDistance + endDistance;
+
+                if (score < bestScore)
+                {
+                    bestScore = score;
+                    bestMask = GraphMask.FromGraph(graph);
+                }
+            }
+
+            return bestMask;
         }
     }
 }

@@ -20,6 +20,8 @@ namespace TPSBR.Enemies
 
             if (enemy.HasPlayerTarget == false)
             {
+                enemy.StopNavigation();
+
                 if (enemy.ReturnToPatrolZone != null)
                 {
                     Machine.ForceActivateState(enemy.ReturnToPatrolZone.StateId);
@@ -33,7 +35,16 @@ namespace TPSBR.Enemies
             }
 
             Vector3 playerPosition = enemy.GetTargetPosition();
-            enemy.MoveTowardsXZ(playerPosition, enemy.MovementSpeed, Runner.DeltaTime);
+            const float stoppingDistance = 0.25f;
+
+            if (enemy.AIPath != null && enemy.Seeker != null)
+            {
+                enemy.NavigateTo(playerPosition, stoppingDistance);
+            }
+            else
+            {
+                enemy.MoveTowardsXZ(playerPosition, enemy.MovementSpeed, Runner.DeltaTime);
+            }
 
             float distanceFromSpawn = enemy.GetHorizontalDistanceFromSpawn();
             if (distanceFromSpawn >= _maxChaseDistance)
@@ -51,7 +62,12 @@ namespace TPSBR.Enemies
 
         protected override void OnExitState()
         {
-            Controller.ClearTarget(); 
+            if (Controller is TestEnemy enemy)
+            {
+                enemy.StopNavigation();
+            }
+
+            Controller.ClearTarget();
             base.OnExitState();
         }
     }

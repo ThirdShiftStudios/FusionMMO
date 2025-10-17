@@ -12,6 +12,7 @@ namespace Fusion.Addons.FSM
     {
         public float MovementSpeed => _movementSpeed;
         public AIPath AIPath => _aiPath;
+        public Seeker Seeker => _seeker;
         public Transform Target
         {
             get => _target;
@@ -39,6 +40,7 @@ namespace Fusion.Addons.FSM
         private Vector3 _spawnPosition;
         private bool _hasSpawnPosition;
         private AIPath _aiPath;
+        private Seeker _seeker;
 
         protected IReadOnlyList<EnemyBehavior> Behaviors => _behaviors;
 
@@ -57,7 +59,7 @@ namespace Fusion.Addons.FSM
 
         private void Awake()
         {
-            _aiPath = GetComponent<AIPath>();
+            CacheNavigationComponents();
         }
 
         public override void Spawned()
@@ -65,6 +67,7 @@ namespace Fusion.Addons.FSM
             base.Spawned();
 
             CacheSpawnPosition();
+            CacheNavigationComponents();
         }
         public void ClearTarget()
         {
@@ -77,6 +80,17 @@ namespace Fusion.Addons.FSM
 
             _spawnPosition = transform.position;
             _hasSpawnPosition = true;
+        }
+
+        private void CacheNavigationComponents()
+        {
+            _aiPath = GetComponent<AIPath>();
+            _seeker = GetComponent<Seeker>();
+
+            if (_aiPath != null)
+            {
+                _aiPath.maxSpeed = _movementSpeed;
+            }
         }
     }
 }
