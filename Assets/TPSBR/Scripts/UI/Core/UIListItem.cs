@@ -115,16 +115,6 @@ namespace TPSBR.UI
                         base.OnDeinitialize();
                 }
 
-                protected override void OnDestroy()
-                {
-                        if (IsInitalized == true)
-                        {
-                                OnDeinitialize();
-                        }
-
-                        base.OnDestroy();
-                }
-
                 // PUBLIC METHODS
 
                 internal void InitializeSlot(IUIListItemOwner owner, int index)

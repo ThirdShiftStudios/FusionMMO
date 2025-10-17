@@ -179,15 +179,23 @@ namespace TPSBR.UI
 
 		// MONOBEHAVIOR
 
-		protected void OnEnable()
-		{
-			Visible();
-		}
+                protected void OnEnable()
+                {
+                        Visible();
+                }
 
-		protected void OnDisable()
-		{
-			Hidden();
-		}
+                protected void OnDisable()
+                {
+                        Hidden();
+                }
+
+                protected virtual void OnDestroy()
+                {
+                        if (IsInitalized == true)
+                        {
+                                Deinitialize();
+                        }
+                }
 
 		// UIWidget INTERFACE
 
