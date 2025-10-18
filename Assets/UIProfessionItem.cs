@@ -11,15 +11,44 @@ namespace TPSBR.UI
         [SerializeField] private TextMeshProUGUI _professionLevel;
         [SerializeField] private Image _professionIcon;
 
-        private int _professtionCurrentExperience;
-        private int _professtionExperienceNextLevel;
-        
-        public void SetData(string statCode, int level, int currentExperience, int nextLevelExpereince)
+        private int _professionCurrentExperience;
+        private int _professionExperienceNextLevel;
+
+        public void SetData(string professionCode, Professions.ProfessionSnapshot snapshot)
         {
-            _professtionCurrentExperience = currentExperience;
-            _professtionExperienceNextLevel = nextLevelExpereince;
-            _professionCode.SetTextSafe(statCode);
-            _professionLevel.SetTextSafe(level.ToString());
+            _professionCurrentExperience = snapshot.Experience;
+            _professionExperienceNextLevel = snapshot.ExperienceToNextLevel;
+
+            if (_professionCode != null)
+            {
+                _professionCode.SetTextSafe(professionCode);
+            }
+
+            if (_professionLevel != null)
+            {
+                int level = snapshot.Level;
+                if (string.IsNullOrEmpty(professionCode) == true || level <= 0)
+                {
+                    _professionLevel.SetTextSafe(string.Empty);
+                }
+                else
+                {
+                    _professionLevel.SetTextSafe(level.ToString());
+                }
+            }
+
+            if (_professionIcon != null)
+            {
+                float progress = snapshot.Progress;
+                if (string.IsNullOrEmpty(professionCode) == true)
+                {
+                    _professionIcon.fillAmount = 0f;
+                }
+                else
+                {
+                    _professionIcon.fillAmount = Mathf.Clamp01(progress);
+                }
+            }
         }
     }
 }

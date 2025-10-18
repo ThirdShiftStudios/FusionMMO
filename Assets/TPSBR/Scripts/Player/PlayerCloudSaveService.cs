@@ -22,6 +22,7 @@ namespace TPSBR
         public PlayerCharacterSaveData[] Characters;
         public string ActiveCharacterId;
         public PlayerCharacterInventorySaveData[] CharacterInventories;
+        public PlayerCharacterProfessionSaveData[] CharacterProfessions;
     }
 
     [Serializable]
@@ -60,6 +61,21 @@ namespace TPSBR
         public int Gold;
     }
 
+    [Serializable]
+    public class PlayerCharacterProfessionSaveData
+    {
+        public string CharacterId;
+        public PlayerProfessionSaveData[] Professions;
+    }
+
+    [Serializable]
+    public struct PlayerProfessionSaveData
+    {
+        public string ProfessionCode;
+        public byte Level;
+        public int Experience;
+    }
+
     public sealed class PlayerCloudSaveService : IGlobalService
     {
         // CONSTANTS
@@ -71,6 +87,9 @@ namespace TPSBR
         private Inventory _trackedInventory;
         private Inventory _pendingRegistration;
         private Inventory _pendingRestoreInventory;
+        private Professions _trackedProfessions;
+        private Professions _pendingProfessionsRegistration;
+        private Professions _pendingRestoreProfessions;
         private PlayerInventorySaveData _cachedData;
         private string _storageKey;
         private bool _isInitialized;
@@ -81,6 +100,7 @@ namespace TPSBR
         private bool _initialLoadComplete;
         private readonly List<PlayerCharacterSaveData> _characters = new List<PlayerCharacterSaveData>();
         private readonly List<PlayerCharacterInventorySaveData> _characterInventories = new List<PlayerCharacterInventorySaveData>();
+        private readonly List<PlayerCharacterProfessionSaveData> _characterProfessions = new List<PlayerCharacterProfessionSaveData>();
         private string _activeCharacterId;
 
         // PUBLIC PROPERTIES
@@ -97,9 +117,12 @@ namespace TPSBR
         void IGlobalService.Initialize()
         {
             var pendingInventory = _pendingRegistration;
+            var pendingProfessions = _pendingProfessionsRegistration;
 
             _trackedInventory = null;
             _pendingRestoreInventory = null;
+            _trackedProfessions = null;
+            _pendingRestoreProfessions = null;
             _pendingSave = false;
             _suppressTracking = false;
             _cachedData = null;
@@ -109,11 +132,14 @@ namespace TPSBR
             _initialLoadComplete = false;
             _characters.Clear();
             _characterInventories.Clear();
+            _characterProfessions.Clear();
             _activeCharacterId = null;
             _isInitialized = false;
 
             _pendingRegistration = pendingInventory;
             _pendingRestoreInventory = pendingInventory;
+            _pendingProfessionsRegistration = pendingProfessions;
+            _pendingRestoreProfessions = pendingProfessions;
 
             _ = InitializeAsync();
         }
@@ -130,7 +156,7 @@ namespace TPSBR
                 _saveTask = null;
             }
 
-            ProcessDeferredInventory();
+            ProcessDeferredComponents();
 
             if (_pendingSave == false)
                 return;
@@ -151,11 +177,14 @@ namespace TPSBR
             ObserveTask(saveTask);
 
             DetachInventory();
+            DetachProfessions();
 
             _storageKey = null;
             _cachedData = null;
             _pendingRegistration = null;
             _pendingRestoreInventory = null;
+            _pendingProfessionsRegistration = null;
+            _pendingRestoreProfessions = null;
             _saveTask = null;
             _isInitialized = false;
             _pendingSave = false;
@@ -228,6 +257,62 @@ namespace TPSBR
             DetachInventory();
         }
 
+        public void RegisterProfessions(Professions professions)
+        {
+            if (IsProfessionsEligible(professions) == false)
+                return;
+
+            if (_isInitialized == false)
+            {
+                _pendingProfessionsRegistration = professions;
+                return;
+            }
+
+            AttachProfessions(professions);
+        }
+
+        public bool RegisterProfessionsAndRestore(Professions professions)
+        {
+            if (IsProfessionsEligible(professions) == false)
+                return false;
+
+            if (_isInitialized == false)
+            {
+                _pendingProfessionsRegistration = professions;
+                _pendingRestoreProfessions = professions;
+                return false;
+            }
+
+            AttachProfessions(professions);
+
+            bool restored = TryRestoreProfessions(professions);
+
+            if (restored == true && ReferenceEquals(_pendingRestoreProfessions, professions) == true)
+            {
+                _pendingRestoreProfessions = null;
+            }
+
+            return restored;
+        }
+
+        public void UnregisterProfessions(Professions professions)
+        {
+            if (_pendingProfessionsRegistration == professions)
+            {
+                _pendingProfessionsRegistration = null;
+            }
+
+            if (_pendingRestoreProfessions == professions)
+            {
+                _pendingRestoreProfessions = null;
+            }
+
+            if (_trackedProfessions != professions)
+                return;
+
+            DetachProfessions();
+        }
+
         public IReadOnlyList<PlayerCharacterSaveData> GetCharacters()
         {
             return _characters;
@@ -276,6 +361,7 @@ namespace TPSBR
 
             _characters.Add(record);
             EnsureCharacterInventoryData(record.CharacterId);
+            EnsureCharacterProfessionData(record.CharacterId);
             _activeCharacterId = record.CharacterId;
 
             ApplyCharacterDataToCachedData();
@@ -300,6 +386,7 @@ namespace TPSBR
 
             _activeCharacterId = characterId;
             EnsureCharacterInventoryData(_activeCharacterId);
+            EnsureCharacterProfessionData(_activeCharacterId);
 
             ApplyCharacterDataToCachedData();
             UpdatePlayerActiveCharacter();
@@ -361,6 +448,43 @@ namespace TPSBR
             return hasInventoryData;
         }
 
+        private bool TryRestoreProfessions(Professions professions)
+        {
+            if (professions == null || professions.HasStateAuthority == false)
+                return false;
+
+            string characterId = _activeCharacterId;
+            PlayerCharacterProfessionSaveData professionData = null;
+
+            if (characterId.HasValue() == true)
+            {
+                professionData = GetCharacterProfessionData(characterId);
+
+                if (professionData == null)
+                {
+                    EnsureCharacterProfessionData(characterId);
+                }
+            }
+
+            bool hasProfessionData = professionData != null &&
+                                     professionData.Professions != null &&
+                                     professionData.Professions.Length > 0;
+
+            if (hasProfessionData == true)
+            {
+                _suppressTracking = true;
+                professions.ApplySaveData(professionData.Professions);
+                _suppressTracking = false;
+            }
+
+            if (ReferenceEquals(_pendingRestoreProfessions, professions) == true)
+            {
+                _pendingRestoreProfessions = null;
+            }
+
+            return hasProfessionData;
+        }
+
         // PRIVATE METHODS
 
         private bool IsInventoryEligible(Inventory inventory)
@@ -376,6 +500,21 @@ namespace TPSBR
                 return false;
 
             return runner.LocalPlayer == inventory.Object.InputAuthority;
+        }
+
+        private bool IsProfessionsEligible(Professions professions)
+        {
+            if (professions == null)
+                return false;
+
+            if (professions.Object == null)
+                return false;
+
+            var runner = professions.Runner;
+            if (runner == null)
+                return false;
+
+            return runner.LocalPlayer == professions.Object.InputAuthority;
         }
 
         private void AttachInventory(Inventory inventory)
@@ -403,6 +542,29 @@ namespace TPSBR
             _trackedInventory.HotbarSlotChanged -= OnHotbarSlotChanged;
             _trackedInventory.GoldChanged -= OnGoldChanged;
             _trackedInventory = null;
+        }
+
+        private void AttachProfessions(Professions professions)
+        {
+            if (_trackedProfessions == professions)
+                return;
+
+            DetachProfessions();
+
+            _trackedProfessions = professions;
+            if (_trackedProfessions != null)
+            {
+                _trackedProfessions.ProfessionChanged += OnProfessionChanged;
+            }
+        }
+
+        private void DetachProfessions()
+        {
+            if (_trackedProfessions == null)
+                return;
+
+            _trackedProfessions.ProfessionChanged -= OnProfessionChanged;
+            _trackedProfessions = null;
         }
 
         private PlayerCharacterInventorySaveData GetCharacterInventoryData(string characterId)
@@ -467,6 +629,67 @@ namespace TPSBR
             }
 
             _characterInventories.Add(snapshot);
+        }
+
+        private PlayerCharacterProfessionSaveData GetCharacterProfessionData(string characterId)
+        {
+            if (string.IsNullOrEmpty(characterId) == true)
+                return null;
+
+            for (int i = 0; i < _characterProfessions.Count; i++)
+            {
+                var professions = _characterProfessions[i];
+                if (professions == null)
+                    continue;
+
+                if (string.Equals(professions.CharacterId, characterId, StringComparison.Ordinal) == true)
+                {
+                    return professions;
+                }
+            }
+
+            return null;
+        }
+
+        private PlayerCharacterProfessionSaveData EnsureCharacterProfessionData(string characterId, bool markDirty = true)
+        {
+            if (string.IsNullOrEmpty(characterId) == true)
+                return null;
+
+            var professions = GetCharacterProfessionData(characterId);
+            if (professions != null)
+                return professions;
+
+            professions = new PlayerCharacterProfessionSaveData
+            {
+                CharacterId = characterId,
+                Professions = null,
+            };
+
+            _characterProfessions.Add(professions);
+            if (markDirty == true)
+            {
+                MarkDirty();
+            }
+            return professions;
+        }
+
+        private void StoreCharacterProfessionSnapshot(PlayerCharacterProfessionSaveData snapshot)
+        {
+            if (snapshot == null || snapshot.CharacterId.HasValue() == false)
+                return;
+
+            for (int i = 0; i < _characterProfessions.Count; i++)
+            {
+                var professions = _characterProfessions[i];
+                if (professions != null && string.Equals(professions.CharacterId, snapshot.CharacterId, StringComparison.Ordinal) == true)
+                {
+                    _characterProfessions[i] = snapshot;
+                    return;
+                }
+            }
+
+            _characterProfessions.Add(snapshot);
         }
 
         private void ResolveStorageKey()
@@ -612,6 +835,22 @@ namespace TPSBR
                     {
                         _pendingRestoreInventory = _pendingRegistration;
                     }
+
+                    if (_trackedProfessions != null)
+                    {
+                        if (_trackedProfessions.HasStateAuthority == true)
+                        {
+                            _pendingRestoreProfessions = _trackedProfessions;
+                        }
+                        else if (ReferenceEquals(_pendingRestoreProfessions, _trackedProfessions) == false)
+                        {
+                            _pendingRestoreProfessions = _trackedProfessions;
+                        }
+                    }
+                    else if (_pendingProfessionsRegistration != null)
+                    {
+                        _pendingRestoreProfessions = _pendingProfessionsRegistration;
+                    }
                 }
             }
             catch (Exception exception)
@@ -624,7 +863,7 @@ namespace TPSBR
             SyncCharactersFromCachedData(true);
         }
 
-        private void ProcessDeferredInventory()
+        private void ProcessDeferredComponents()
         {
             if (_pendingRegistration != null)
             {
@@ -666,6 +905,50 @@ namespace TPSBR
                     if (TryRestoreInventory(inventory) == true)
                     {
                         _pendingRestoreInventory = null;
+                    }
+                }
+            }
+
+            if (_pendingProfessionsRegistration != null)
+            {
+                var professions = _pendingProfessionsRegistration;
+                _pendingProfessionsRegistration = null;
+
+                if (IsProfessionsEligible(professions) == true)
+                {
+                    AttachProfessions(professions);
+
+                    if (_cachedData != null)
+                    {
+                        bool restored = TryRestoreProfessions(professions);
+                        if (restored == false)
+                        {
+                            _pendingRestoreProfessions = professions;
+                        }
+                    }
+                }
+            }
+
+            if (_pendingRestoreProfessions != null)
+            {
+                var professions = _pendingRestoreProfessions;
+
+                if (IsProfessionsEligible(professions) == false)
+                {
+                    _pendingRestoreProfessions = null;
+                }
+                else if (_cachedData == null)
+                {
+                    if (_initialLoadComplete == true)
+                    {
+                        _pendingRestoreProfessions = null;
+                    }
+                }
+                else if (professions.HasStateAuthority == true)
+                {
+                    if (TryRestoreProfessions(professions) == true)
+                    {
+                        _pendingRestoreProfessions = null;
                     }
                 }
             }
@@ -713,6 +996,20 @@ namespace TPSBR
             _pendingSave = true;
         }
 
+        private void OnProfessionChanged(Professions.ProfessionIndex profession, Professions.ProfessionSnapshot previousSnapshot, Professions.ProfessionSnapshot newSnapshot)
+        {
+            if (_suppressTracking == true)
+                return;
+
+            if (_trackedProfessions == null || _trackedProfessions.HasStateAuthority == false)
+                return;
+
+            if (ReferenceEquals(_pendingRestoreProfessions, _trackedProfessions) == true)
+                return;
+
+            _pendingSave = true;
+        }
+
         private void MarkDirty()
         {
             _pendingSave = true;
@@ -729,17 +1026,47 @@ namespace TPSBR
             if (AuthenticationService.Instance != null && AuthenticationService.Instance.IsSignedIn == false)
                 return;
 
+            PlayerCharacterInventorySaveData inventorySnapshot = null;
             if (_trackedInventory != null && _trackedInventory.HasStateAuthority == true)
             {
                 _suppressTracking = true;
-                var snapshot = _trackedInventory.CreateSaveData();
+                inventorySnapshot = _trackedInventory.CreateSaveData();
                 _suppressTracking = false;
 
-                if (snapshot != null && _activeCharacterId.HasValue() == true)
+                if (inventorySnapshot != null && _activeCharacterId.HasValue() == true)
                 {
-                    snapshot.CharacterId = _activeCharacterId;
-                    StoreCharacterInventorySnapshot(snapshot);
+                    inventorySnapshot.CharacterId = _activeCharacterId;
                 }
+            }
+
+            PlayerCharacterProfessionSaveData professionSnapshot = null;
+            if (_trackedProfessions != null && _trackedProfessions.HasStateAuthority == true && _activeCharacterId.HasValue() == true)
+            {
+                var professionData = _trackedProfessions.CreateSaveData();
+                if (professionData != null && professionData.Length > 0)
+                {
+                    professionSnapshot = new PlayerCharacterProfessionSaveData
+                    {
+                        CharacterId = _activeCharacterId,
+                        Professions = professionData,
+                    };
+                }
+            }
+
+            if (inventorySnapshot != null && inventorySnapshot.CharacterId.HasValue() == true)
+            {
+                StoreCharacterInventorySnapshot(inventorySnapshot);
+            }
+
+            if (professionSnapshot != null)
+            {
+                StoreCharacterProfessionSnapshot(professionSnapshot);
+            }
+
+            if (_activeCharacterId.HasValue() == true)
+            {
+                EnsureCharacterInventoryData(_activeCharacterId, false);
+                EnsureCharacterProfessionData(_activeCharacterId, false);
             }
 
             ApplyCharacterDataToCachedData();
@@ -813,6 +1140,15 @@ namespace TPSBR
                 _cachedData.CharacterInventories = null;
             }
 
+            if (_characterProfessions.Count > 0)
+            {
+                _cachedData.CharacterProfessions = _characterProfessions.ToArray();
+            }
+            else
+            {
+                _cachedData.CharacterProfessions = null;
+            }
+
             _cachedData.InventorySlots = null;
             _cachedData.HotbarSlots = null;
             _cachedData.CurrentWeaponSlot = 0;
@@ -874,6 +1210,7 @@ namespace TPSBR
         {
             _characters.Clear();
             _characterInventories.Clear();
+            _characterProfessions.Clear();
             _activeCharacterId = null;
 
             if (_cachedData != null)
@@ -945,6 +1282,21 @@ namespace TPSBR
                     }
                 }
 
+                if (_cachedData.CharacterProfessions != null && _cachedData.CharacterProfessions.Length > 0)
+                {
+                    for (int i = 0; i < _cachedData.CharacterProfessions.Length; i++)
+                    {
+                        var professions = _cachedData.CharacterProfessions[i];
+                        if (professions == null)
+                            continue;
+
+                        if (string.IsNullOrEmpty(professions.CharacterId) == true)
+                            continue;
+
+                        _characterProfessions.Add(professions);
+                    }
+                }
+
                 if (_cachedData.ActiveCharacterId.HasValue() == true)
                 {
                     _activeCharacterId = _cachedData.ActiveCharacterId;
@@ -958,6 +1310,7 @@ namespace TPSBR
                     continue;
 
                 EnsureCharacterInventoryData(character.CharacterId, false);
+                EnsureCharacterProfessionData(character.CharacterId, false);
             }
 
             if (_activeCharacterId.HasValue() == false && _characters.Count > 0)

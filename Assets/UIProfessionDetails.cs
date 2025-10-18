@@ -16,20 +16,20 @@ namespace TPSBR
 
             if (_professionTotalItems != null && _professionTotalItems.Length > 0)
             {
-                SetStats(null);
+                SetProfessions(null);
             }
         }
 
-        public void SetStats(IReadOnlyList<int> statValues)
+        public void SetProfessions(IReadOnlyList<Professions.ProfessionSnapshot> professions)
         {
             if (_professionTotalItems == null)
             {
                 return;
             }
 
-            int statCount = Mathf.Min(_professionTotalItems.Length, Stats.Count);
+            int professionCount = Mathf.Min(_professionTotalItems.Length, Professions.Count);
 
-            for (int index = 0; index < statCount; ++index)
+            for (int index = 0; index < professionCount; ++index)
             {
                 UIProfessionItem professionItem = _professionTotalItems[index];
                 if (professionItem == null)
@@ -37,26 +37,26 @@ namespace TPSBR
                     continue;
                 }
 
-                string professionCode = Stats.GetCode(index);
-                int statValue = 0;
+                string professionCode = Professions.GetCode(index);
+                Professions.ProfessionSnapshot snapshot = Professions.ProfessionSnapshot.Empty;
 
-                if (statValues != null && index < statValues.Count)
+                if (professions != null && index < professions.Count)
                 {
-                    statValue = statValues[index];
+                    snapshot = professions[index];
                 }
 
-                professionItem.SetData(professionCode, statValue, -1,-1);
+                professionItem.SetData(professionCode, snapshot);
             }
 
-            for (int index = statCount; index < _professionTotalItems.Length; ++index)
+            for (int index = professionCount; index < _professionTotalItems.Length; ++index)
             {
-                UIProfessionItem statItem = _professionTotalItems[index];
-                if (statItem == null)
+                UIProfessionItem professionItem = _professionTotalItems[index];
+                if (professionItem == null)
                 {
                     continue;
                 }
 
-                statItem.SetData(string.Empty, 0,-1,-1);
+                professionItem.SetData(string.Empty, Professions.ProfessionSnapshot.Empty);
             }
         }
     }
