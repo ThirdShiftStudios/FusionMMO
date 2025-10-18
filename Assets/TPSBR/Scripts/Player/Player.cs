@@ -109,6 +109,21 @@ namespace TPSBR
 			Statistics = statistics;
 		}
 
+		public void GrantExperience(int amount)
+		{
+			if (amount <= 0)
+				return;
+
+			if (HasStateAuthority == true)
+			{
+				RPC_AddExperience(amount);
+			}
+			else if (HasInputAuthority == true && Context?.PlayerData != null)
+			{
+				Context.PlayerData.AddExperience(amount);
+			}
+		}
+
                 public void OnReconnect(Player newPlayer)
                 {
                         UserID            = newPlayer.UserID;
@@ -287,6 +302,18 @@ namespace TPSBR
                 private void RPC_SetObservedPlayer(PlayerRef player)
                 {
                         _observePlayer = player;
+                }
+
+                [Rpc(RpcSources.StateAuthority, RpcTargets.InputAuthority, Channel = RpcChannel.Reliable)]
+                private void RPC_AddExperience(int amount)
+                {
+                        if (amount <= 0)
+                                return;
+
+                        if (Context?.PlayerData == null)
+                                return;
+
+                        Context.PlayerData.AddExperience(amount);
                 }
 
                 // DEBUG

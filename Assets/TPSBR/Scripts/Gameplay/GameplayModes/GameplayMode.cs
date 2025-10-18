@@ -212,10 +212,19 @@ namespace TPSBR
 			CheckWinCondition();
 		}
 
-		public virtual void EnemyDeath(EnemyHealth enemy, HitData hitData)
-		{
-			Debug.Log("[GameplayMode] Enemy Killed");
-		}
+                public virtual void EnemyDeath(EnemyHealth enemy, HitData hitData)
+                {
+                        if (Runner.IsServer == true && hitData.InstigatorRef.IsRealPlayer == true && Context?.NetworkGame != null)
+                        {
+                                var killerPlayer = Context.NetworkGame.GetPlayer(hitData.InstigatorRef);
+                                if (killerPlayer != null)
+                                {
+                                        killerPlayer.GrantExperience(10);
+                                }
+                        }
+
+                        Debug.Log("[GameplayMode] Enemy Killed");
+                }
 
 		public Transform GetRandomSpawnPoint(float minDistanceFromAgents)
 		{
