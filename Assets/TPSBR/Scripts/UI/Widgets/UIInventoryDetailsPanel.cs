@@ -14,11 +14,13 @@ namespace TPSBR.UI
         [SerializeField] private Image _iconImage;
 
         private UIStatDetails _statDetails;
+        private UIProfessionDetails _professionDetails;
         protected override void OnInitialize()
         {
             base.OnInitialize();
 
             _statDetails = GetComponentInChildren<UIStatDetails>();
+            _professionDetails = GetComponentInChildren<UIProfessionDetails>();
             Hide();
         }
 
