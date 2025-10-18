@@ -61,7 +61,7 @@ namespace TPSBR.UI
 		{
 			base.OnTick();
 
-			if (Keyboard.current.tabKey.isPressed == true && IsTopView(true) == true)
+			if (Keyboard.current.iKey.isPressed == true && IsTopView(true) == true)
 			{
 				Show();
 			}

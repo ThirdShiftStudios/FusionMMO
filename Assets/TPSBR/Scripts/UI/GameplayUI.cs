@@ -90,7 +90,7 @@ namespace TPSBR.UI
 				_deathView.Open();
 			}
 
-			bool toggleInventory = Keyboard.current.iKey.wasPressedThisFrame;
+			bool toggleInventory = Keyboard.current.tabKey.wasPressedThisFrame;
 			if (toggleInventory)
 			{
 				_inventoryView.Show(!_inventoryView.MenuVisible);
