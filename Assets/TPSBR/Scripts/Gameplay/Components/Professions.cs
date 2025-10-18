@@ -123,6 +123,27 @@ namespace TPSBR
             return _codes[index];
         }
 
+        public static bool TryGetIndex(string professionCode, out int index)
+        {
+            index = -1;
+
+            if (string.IsNullOrEmpty(professionCode) == true)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < _codes.Length; i++)
+            {
+                if (string.Equals(_codes[i], professionCode, StringComparison.OrdinalIgnoreCase) == true)
+                {
+                    index = i;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         public ProfessionSnapshot GetSnapshot(ProfessionIndex profession)
         {
             return GetSnapshot((int)profession);
@@ -322,6 +343,51 @@ namespace TPSBR
             OnProfessionChanged((ProfessionIndex)index, CreateSnapshot(startingLevel, startingExperience), CreateSnapshot(currentLevel, currentExperience));
         }
 
+        internal PlayerProfessionSaveData[] CreateSaveData()
+        {
+            EnsureCacheInitialized();
+
+            var records = new PlayerProfessionSaveData[Count];
+
+            for (int i = 0; i < Count; ++i)
+            {
+                records[i] = new PlayerProfessionSaveData
+                {
+                    ProfessionCode = GetCode(i),
+                    Level = (byte)Mathf.Clamp(_levels.Get(i), 0, byte.MaxValue),
+                    Experience = _experience.Get(i),
+                };
+            }
+
+            return records;
+        }
+
+        internal void ApplySaveData(PlayerProfessionSaveData[] data)
+        {
+            if (HasStateAuthority == false)
+                return;
+
+            if (data == null || data.Length == 0)
+                return;
+
+            EnsureCacheInitialized();
+
+            for (int i = 0; i < data.Length; ++i)
+            {
+                var entry = data[i];
+                if (string.IsNullOrEmpty(entry.ProfessionCode) == true)
+                    continue;
+
+                if (TryGetIndex(entry.ProfessionCode, out int index) == false)
+                    continue;
+
+                int level = Mathf.Clamp(entry.Level, MinLevel, MaxLevel);
+                int experience = Mathf.Max(0, entry.Experience);
+
+                SetProfessionLevel(index, level, experience);
+            }
+        }
+
         public override void CopyBackingFieldsToState(bool firstTime)
         {
             base.CopyBackingFieldsToState(firstTime);
@@ -356,6 +422,8 @@ namespace TPSBR
             base.Spawned();
 
             EnsureCacheInitialized();
+
+            Global.PlayerCloudSaveService?.RegisterProfessionsAndRestore(this);
         }
 
         public override void FixedUpdateNetwork()
@@ -373,6 +441,13 @@ namespace TPSBR
             base.Render();
 
             CheckForProfessionUpdates();
+        }
+
+        public override void Despawned(NetworkRunner runner, bool hasState)
+        {
+            Global.PlayerCloudSaveService?.UnregisterProfessions(this);
+
+            base.Despawned(runner, hasState);
         }
 
 #if UNITY_EDITOR
