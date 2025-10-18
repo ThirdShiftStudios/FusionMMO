@@ -1350,6 +1350,7 @@ namespace TPSBR
             bool toWoodAxe = toIndex == WOOD_AXE_SLOT_INDEX;
             bool fromSpecial = fromPickaxe || fromWoodAxe;
             bool toSpecial = toPickaxe || toWoodAxe;
+            bool generalToGeneralTransfer = fromSpecial == false && toSpecial == false;
 
             if (fromSpecial == false && fromIndex >= _items.Length)
                 return;
@@ -1485,6 +1486,12 @@ namespace TPSBR
 
             if (toSlot.IsEmpty == true)
             {
+                if (generalToGeneralTransfer == true)
+                {
+                    SuppressFeedForSlot(fromIndex);
+                    SuppressFeedForSlot(toIndex);
+                }
+
                 _items.Set(toIndex, generalSourceSlot);
                 _items.Set(fromIndex, default);
                 RefreshItems();
@@ -1506,6 +1513,12 @@ namespace TPSBR
                     byte space = (byte)Mathf.Min(clampedMaxStack - toSlot.Quantity, generalSourceSlot.Quantity);
                     if (space > 0)
                     {
+                        if (generalToGeneralTransfer == true)
+                        {
+                            SuppressFeedForSlot(fromIndex);
+                            SuppressFeedForSlot(toIndex);
+                        }
+
                         toSlot.Add(space);
                         generalSourceSlot.Remove(space);
 
@@ -1527,6 +1540,15 @@ namespace TPSBR
                         return;
                     }
                 }
+            }
+
+            if (generalToGeneralTransfer == true)
+            {
+                if (generalSourceSlot.Equals(toSlot) == true)
+                    return;
+
+                SuppressFeedForSlot(fromIndex);
+                SuppressFeedForSlot(toIndex);
             }
 
             _items.Set(toIndex, generalSourceSlot);
