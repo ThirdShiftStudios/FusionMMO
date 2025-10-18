@@ -1179,7 +1179,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5990956033835523603, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
       propertyPath: NetworkedBehaviours.Array.size
-      value: 11
+      value: 12
       objectReference: {fileID: 0}
     - target: {fileID: 5990956033835523603, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
       propertyPath: NetworkedBehaviours.Array.data[1]
@@ -1209,6 +1209,10 @@ PrefabInstance:
       propertyPath: NetworkedBehaviours.Array.data[10]
       value: 
       objectReference: {fileID: 3487654321098765432}
+    - target: {fileID: 5990956033835523603, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
+      propertyPath: NetworkedBehaviours.Array.data[11]
+      value: 
+      objectReference: {fileID: 169843189132604721}
     - target: {fileID: 5990956033835523603, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
       propertyPath: NetworkGuid.RawGuidValue.Array.data[0]
       value: 331921664710144185
@@ -1503,6 +1507,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 7625200539080901463, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
       insertIndex: -1
       addedObject: {fileID: 3487654321098765432}
+    - targetCorrespondingSourceObject: {fileID: 7625200539080901463, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 169843189132604721}
   m_SourcePrefab: {fileID: 100100000, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
 --- !u!4 &135246698218916311 stripped
 Transform:
@@ -1575,7 +1582,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c2467d0376bd4fa79f8d8b63f1445eec, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _initialValues: 0c0000000e000000100000000b0000000d0000000f000000
+  _initialValues: 050000000500000005000000050000000500000005000000
+--- !u!114 &169843189132604721
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4282139267378355678}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2ee36840b53a490eb17fd209c0f3860d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _initialValues: 050000000500000005000000050000000500000005000000050000000500000005000000
 --- !u!114 &4465000795099706769 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 8019168302190258968, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
