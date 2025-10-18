@@ -59,7 +59,7 @@ namespace Fusion.Addons.FSM
 
         private void Awake()
         {
-            CacheNavigationComponents();
+            //CacheNavigationComponents();
         }
 
         public override void Spawned()
