@@ -91,6 +91,9 @@ namespace TPSBR.UI
                         _slotCache.TryGetValue(index, out var previous);
                         _slotCache[index] = slot;
 
+                        if (_inventory.ConsumeFeedSuppression(index) == true)
+                                return;
+
                         HandleSlotChange(previous, slot);
                 }
 
