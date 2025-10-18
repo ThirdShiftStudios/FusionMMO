@@ -62,6 +62,12 @@ namespace TPSBR
             base.OnInteractionCompleted(agent);
             MiningCompleted?.Invoke(agent);
             EvaluateLootTable(agent);
+
+            if (agent != null)
+            {
+                Professions professions = agent.GetComponent<Professions>();
+                professions?.AddExperience(Professions.ProfessionIndex.Mining, 100);
+            }
         }
     }
 }
