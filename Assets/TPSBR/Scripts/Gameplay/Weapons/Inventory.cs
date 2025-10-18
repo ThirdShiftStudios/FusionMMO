@@ -160,6 +160,7 @@ namespace TPSBR
         private byte _weaponSlotBeforeWoodAxe = byte.MaxValue;
         private Dictionary<int, WeaponDefinition> _weaponDefinitionsBySlot = new Dictionary<int, WeaponDefinition>();
         private readonly Dictionary<WeaponSize, int> _weaponSizeToSlotIndex = new Dictionary<WeaponSize, int>();
+        private HashSet<int> _suppressedItemFeedSlots;
         private int _localGold;
         private ChangeDetector _changeDetector;
 
@@ -1559,8 +1560,12 @@ namespace TPSBR
             if (weaponPrefab == null)
                 return;
 
+            SuppressFeedForSlot(inventoryIndex);
             if (RemoveInventoryItemInternal(inventoryIndex, 1) == false)
+            {
+                ClearFeedSuppression(inventoryIndex);
                 return;
+            }
 
             var existingWeapon = _hotbar[slot];
             if (existingWeapon != null)
@@ -1611,6 +1616,7 @@ namespace TPSBR
 
             EnsureWeaponPrefabRegistered(definition, weapon);
 
+            SuppressFeedForSlot(inventoryIndex);
             if (slot == _currentWeaponSlot)
             {
                 byte bestWeaponSlot = _previousWeaponSlot;
@@ -1838,6 +1844,7 @@ namespace TPSBR
                 return;
 
             var slot = new InventorySlot(definition.ID, 1, configurationHash);
+            SuppressFeedForSlot(index);
             _items.Set(index, slot);
             UpdateWeaponDefinitionMapping(index, slot);
             RefreshItems();
@@ -1859,6 +1866,7 @@ namespace TPSBR
                 return false;
 
             var slot = new InventorySlot(definition.ID, 1, weapon.ConfigurationHash);
+            SuppressFeedForSlot(emptySlot);
             _items.Set(emptySlot, slot);
             UpdateWeaponDefinitionMapping(emptySlot, slot);
             RefreshItems();
@@ -1892,6 +1900,32 @@ namespace TPSBR
 
             RefreshPickaxeSlot();
             RefreshWoodAxeSlot();
+        }
+
+        internal bool ConsumeFeedSuppression(int index)
+        {
+            if (_suppressedItemFeedSlots == null)
+                return false;
+
+            return _suppressedItemFeedSlots.Remove(index);
+        }
+
+        private void SuppressFeedForSlot(int index)
+        {
+            if (_suppressedItemFeedSlots == null)
+            {
+                _suppressedItemFeedSlots = new HashSet<int>();
+            }
+
+            _suppressedItemFeedSlots.Add(index);
+        }
+
+        private void ClearFeedSuppression(int index)
+        {
+            if (_suppressedItemFeedSlots == null)
+                return;
+
+            _suppressedItemFeedSlots.Remove(index);
         }
 
         private void RefreshWeapons()
