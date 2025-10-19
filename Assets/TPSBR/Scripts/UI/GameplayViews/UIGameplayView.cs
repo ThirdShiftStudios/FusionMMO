@@ -19,6 +19,7 @@ namespace TPSBR.UI
         [SerializeField] private UIBehaviour _spectatingGroup;
         [SerializeField] private TextMeshProUGUI _spectatingText;
         [SerializeField] private UIHitDamageIndicator _hitDamage;
+        [SerializeField] private UIExperienceNumberIndicator _experienceIndicator;
         [SerializeField] private UIButton _menuButton;
 
         [Header("Events Setup")] [SerializeField]
@@ -37,6 +38,7 @@ namespace TPSBR.UI
         private NetworkBehaviourId _localAgentId;
         private bool _localAgentIsLocalPlayer;
         private int _lastKnownPlayerLevel = -1;
+        private bool _isExperienceSubscribed;
 
         // UIView INTERFACE
 
@@ -95,6 +97,8 @@ namespace TPSBR.UI
 
             _localAgentIsLocalPlayer = false;
             _lastKnownPlayerLevel = -1;
+
+            UnsubscribeExperienceEvents();
         }
 
         protected override void OnTick()
@@ -273,12 +277,16 @@ namespace TPSBR.UI
                 _inventoryFeed?.Bind(agent.Inventory);
                 _goldFeed?.Bind(agent.Inventory);
                 _lastKnownPlayerLevel = Context.PlayerData != null ? Context.PlayerData.Level : -1;
+
+                SubscribeExperienceEvents();
             }
             else
             {
                 _inventoryFeed?.Bind(null);
                 _goldFeed?.Bind(null);
                 _lastKnownPlayerLevel = -1;
+
+                UnsubscribeExperienceEvents();
             }
 
             agent.Health.HitPerformed += OnHitPerformed;
@@ -295,6 +303,8 @@ namespace TPSBR.UI
 
             _inventoryFeed?.Bind(null);
             _goldFeed?.Bind(null);
+
+            UnsubscribeExperienceEvents();
 
             if (_localAgent != null)
             {
@@ -324,6 +334,59 @@ namespace TPSBR.UI
                 Color = _interactionFailedColor,
                 Sound = _interactionFailedSound,
             }, false, true);
+        }
+
+        private void SubscribeExperienceEvents()
+        {
+            if (_isExperienceSubscribed == true)
+                return;
+
+            var playerData = Context.PlayerData;
+            if (playerData == null)
+                return;
+
+            playerData.ExperienceAdded += OnExperienceAdded;
+            _isExperienceSubscribed = true;
+        }
+
+        private void UnsubscribeExperienceEvents()
+        {
+            if (_isExperienceSubscribed == false)
+                return;
+
+            var playerData = Context.PlayerData;
+            if (playerData != null)
+            {
+                playerData.ExperienceAdded -= OnExperienceAdded;
+            }
+
+            _isExperienceSubscribed = false;
+        }
+
+        private void OnExperienceAdded(int amount)
+        {
+            if (_experienceIndicator == null)
+                return;
+
+            if (amount <= 0)
+                return;
+
+            Vector3 worldPosition = Vector3.zero;
+
+            if (_localAgent != null)
+            {
+                var hitTarget = _localAgent.Health as IHitTarget;
+                if (hitTarget != null)
+                {
+                    worldPosition = hitTarget.HitPivot.position;
+                }
+                else
+                {
+                    worldPosition = _localAgent.transform.position;
+                }
+            }
+
+            _experienceIndicator.ExperienceAdded(amount, worldPosition);
         }
 
         private void CheckLevelUpEvent()

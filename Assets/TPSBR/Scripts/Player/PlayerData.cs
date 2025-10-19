@@ -38,6 +38,8 @@ namespace TPSBR
 
                 public bool             IsDirty         { get; private set; }
 
+                public event Action<int> ExperienceAdded;
+
                 // PRIVATE MEMBERS
 
                 private const int MAX_LEVEL                    = 100;
@@ -117,6 +119,11 @@ namespace TPSBR
                         if (_level != previousLevel || _experience != previousExperience)
                         {
                                 IsDirty = true;
+                        }
+
+                        if (_level != previousLevel || _experience != previousExperience)
+                        {
+                                ExperienceAdded?.Invoke(amount);
                         }
 
                         return leveledUp;
