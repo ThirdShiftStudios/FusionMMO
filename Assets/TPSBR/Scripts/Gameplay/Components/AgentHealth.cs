@@ -6,14 +6,11 @@ namespace TPSBR
 
         public sealed class AgentHealth : Health
         {
-                [Header("Attributes")]
-                [SerializeField]
-                private float _healthPerStrength = 20f;
-
-                private Agent _agent;
-                private Stats _stats;
-                private float _baseMaxHealth;
-                private bool  _baseMaxHealthInitialized;
+        private Agent _agent;
+        private Stats _stats;
+        private float _baseMaxHealth;
+        private bool  _baseMaxHealthInitialized;
+        private float _lastStatHealthBonus;
 
                 public override void OnSpawned(Agent agent)
                 {
@@ -35,7 +32,7 @@ namespace TPSBR
                         if (_stats != null)
                         {
                                 _stats.StatChanged += OnStatChanged;
-                                UpdateMaxHealthFromStrength(_stats.Strength, false, _stats.Strength);
+                                UpdateMaxHealthFromStats(false, null);
                         }
                 }
 
@@ -50,6 +47,7 @@ namespace TPSBR
                         _agent = null;
                         _baseMaxHealthInitialized = false;
                         _baseMaxHealth = 0f;
+                        _lastStatHealthBonus = 0f;
 
                         base.OnDespawned();
                 }
@@ -74,33 +72,36 @@ namespace TPSBR
 
                 private void OnStatChanged(Stats.StatIndex stat, int previousValue, int newValue)
                 {
-                        if (stat != Stats.StatIndex.Strength)
+                        if (_stats == null)
                                 return;
 
-                        UpdateMaxHealthFromStrength(newValue, true, previousValue);
+                        float previousBonus = _stats.GetTotalHealth(stat, previousValue);
+                        UpdateMaxHealthFromStats(true, previousBonus);
                 }
 
-                private void InitializeBaseMaxHealth(int strength)
+                private void InitializeBaseMaxHealth()
                 {
                         if (_baseMaxHealthInitialized == true)
                                 return;
 
-                        _baseMaxHealth = _maxHealth - strength * _healthPerStrength;
+                        float currentBonus = _stats != null ? _stats.GetTotalHealth() : 0f;
+                        _baseMaxHealth = Mathf.Max(0f, _maxHealth - currentBonus);
+                        _lastStatHealthBonus = Mathf.Max(0f, currentBonus);
                         _baseMaxHealthInitialized = true;
                 }
 
-                private void UpdateMaxHealthFromStrength(int newStrength, bool preserveHealthPercentage, int? previousStrengthOverride = null)
+                private void UpdateMaxHealthFromStats(bool preserveHealthPercentage, float? previousBonusOverride)
                 {
                         if (_stats == null)
                                 return;
 
-                        InitializeBaseMaxHealth(newStrength);
+                        InitializeBaseMaxHealth();
 
-                        float previousMaxHealth = previousStrengthOverride.HasValue
-                                ? Mathf.Max(0f, _baseMaxHealth + previousStrengthOverride.Value * _healthPerStrength)
-                                : _maxHealth;
+                        float previousBonus = previousBonusOverride.HasValue ? Mathf.Max(0f, previousBonusOverride.Value) : _lastStatHealthBonus;
+                        float currentBonus = Mathf.Max(0f, _stats.GetTotalHealth());
 
-                        float targetMaxHealth = Mathf.Max(0f, _baseMaxHealth + newStrength * _healthPerStrength);
+                        float previousMaxHealth = Mathf.Max(0f, _baseMaxHealth + previousBonus);
+                        float targetMaxHealth   = Mathf.Max(0f, _baseMaxHealth + currentBonus);
 
                         float healthRatio = preserveHealthPercentage && previousMaxHealth > 0f ? CurrentHealth / previousMaxHealth : 1f;
                         float regenRatio  = previousMaxHealth > 0f ? _maxHealthFromRegen / previousMaxHealth : 1f;
@@ -117,6 +118,7 @@ namespace TPSBR
                         }
 
                         _maxHealthFromRegen = _maxHealth * regenRatio;
+                        _lastStatHealthBonus = currentBonus;
                 }
         }
 }
