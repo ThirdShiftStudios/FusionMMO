@@ -14,6 +14,7 @@ namespace TPSBR.UI
         [SerializeField] private UIAgentEffects _effects;
         [SerializeField] private UIGameplayEvents _events;
         [SerializeField] private UIKillFeed _killFeed;
+        [SerializeField] private UIGoldFeed _goldFeed;
         [SerializeField] private UIInventoryFeed _inventoryFeed;
         [SerializeField] private UIBehaviour _spectatingGroup;
         [SerializeField] private TextMeshProUGUI _spectatingText;
@@ -234,6 +235,7 @@ namespace TPSBR.UI
                 _localAgent.Interactions.InteractionFailed -= OnInteractionFailed;
 
                 _inventoryFeed?.Bind(null);
+                _goldFeed?.Bind(null);
             }
 
             _localAgent = agent;
@@ -255,10 +257,12 @@ namespace TPSBR.UI
             if (isLocalPlayer == true)
             {
                 _inventoryFeed?.Bind(agent.Inventory);
+                _goldFeed?.Bind(agent.Inventory);
             }
             else
             {
                 _inventoryFeed?.Bind(null);
+                _goldFeed?.Bind(null);
             }
 
             agent.Health.HitPerformed += OnHitPerformed;
@@ -274,6 +278,7 @@ namespace TPSBR.UI
             _spectatingGroup.SetActive(false);
 
             _inventoryFeed?.Bind(null);
+            _goldFeed?.Bind(null);
 
             if (_localAgent != null)
             {

@@ -23,6 +23,7 @@ namespace TPSBR
         public string ActiveCharacterId;
         public PlayerCharacterInventorySaveData[] CharacterInventories;
         public PlayerCharacterProfessionSaveData[] CharacterProfessions;
+        public PlayerCharacterStatsSaveData[] CharacterStats;
     }
 
     [Serializable]
@@ -69,6 +70,13 @@ namespace TPSBR
     }
 
     [Serializable]
+    public class PlayerCharacterStatsSaveData
+    {
+        public string CharacterId;
+        public PlayerStatSaveData[] Stats;
+    }
+
+    [Serializable]
     public struct PlayerProfessionSaveData
     {
         public string ProfessionCode;
@@ -90,6 +98,9 @@ namespace TPSBR
         private Professions _trackedProfessions;
         private Professions _pendingProfessionsRegistration;
         private Professions _pendingRestoreProfessions;
+        private Stats _trackedStats;
+        private Stats _pendingStatsRegistration;
+        private Stats _pendingRestoreStats;
         private PlayerInventorySaveData _cachedData;
         private string _storageKey;
         private bool _isInitialized;
@@ -101,6 +112,7 @@ namespace TPSBR
         private readonly List<PlayerCharacterSaveData> _characters = new List<PlayerCharacterSaveData>();
         private readonly List<PlayerCharacterInventorySaveData> _characterInventories = new List<PlayerCharacterInventorySaveData>();
         private readonly List<PlayerCharacterProfessionSaveData> _characterProfessions = new List<PlayerCharacterProfessionSaveData>();
+        private readonly List<PlayerCharacterStatsSaveData> _characterStats = new List<PlayerCharacterStatsSaveData>();
         private string _activeCharacterId;
 
         // PUBLIC PROPERTIES
@@ -118,11 +130,14 @@ namespace TPSBR
         {
             var pendingInventory = _pendingRegistration;
             var pendingProfessions = _pendingProfessionsRegistration;
+            var pendingStats = _pendingStatsRegistration;
 
             _trackedInventory = null;
             _pendingRestoreInventory = null;
             _trackedProfessions = null;
             _pendingRestoreProfessions = null;
+            _trackedStats = null;
+            _pendingRestoreStats = null;
             _pendingSave = false;
             _suppressTracking = false;
             _cachedData = null;
@@ -133,6 +148,7 @@ namespace TPSBR
             _characters.Clear();
             _characterInventories.Clear();
             _characterProfessions.Clear();
+            _characterStats.Clear();
             _activeCharacterId = null;
             _isInitialized = false;
 
@@ -140,6 +156,8 @@ namespace TPSBR
             _pendingRestoreInventory = pendingInventory;
             _pendingProfessionsRegistration = pendingProfessions;
             _pendingRestoreProfessions = pendingProfessions;
+            _pendingStatsRegistration = pendingStats;
+            _pendingRestoreStats = pendingStats;
 
             _ = InitializeAsync();
         }
@@ -178,6 +196,7 @@ namespace TPSBR
 
             DetachInventory();
             DetachProfessions();
+            DetachStats();
 
             _storageKey = null;
             _cachedData = null;
@@ -185,6 +204,8 @@ namespace TPSBR
             _pendingRestoreInventory = null;
             _pendingProfessionsRegistration = null;
             _pendingRestoreProfessions = null;
+            _pendingStatsRegistration = null;
+            _pendingRestoreStats = null;
             _saveTask = null;
             _isInitialized = false;
             _pendingSave = false;
@@ -313,6 +334,62 @@ namespace TPSBR
             DetachProfessions();
         }
 
+        public void RegisterStats(Stats stats)
+        {
+            if (IsStatsEligible(stats) == false)
+                return;
+
+            if (_isInitialized == false)
+            {
+                _pendingStatsRegistration = stats;
+                return;
+            }
+
+            AttachStats(stats);
+        }
+
+        public bool RegisterStatsAndRestore(Stats stats)
+        {
+            if (IsStatsEligible(stats) == false)
+                return false;
+
+            if (_isInitialized == false)
+            {
+                _pendingStatsRegistration = stats;
+                _pendingRestoreStats = stats;
+                return false;
+            }
+
+            AttachStats(stats);
+
+            bool restored = TryRestoreStats(stats);
+
+            if (restored == true && ReferenceEquals(_pendingRestoreStats, stats) == true)
+            {
+                _pendingRestoreStats = null;
+            }
+
+            return restored;
+        }
+
+        public void UnregisterStats(Stats stats)
+        {
+            if (_pendingStatsRegistration == stats)
+            {
+                _pendingStatsRegistration = null;
+            }
+
+            if (_pendingRestoreStats == stats)
+            {
+                _pendingRestoreStats = null;
+            }
+
+            if (_trackedStats != stats)
+                return;
+
+            DetachStats();
+        }
+
         public IReadOnlyList<PlayerCharacterSaveData> GetCharacters()
         {
             return _characters;
@@ -362,6 +439,7 @@ namespace TPSBR
             _characters.Add(record);
             EnsureCharacterInventoryData(record.CharacterId);
             EnsureCharacterProfessionData(record.CharacterId);
+            EnsureCharacterStatsData(record.CharacterId);
             _activeCharacterId = record.CharacterId;
 
             ApplyCharacterDataToCachedData();
@@ -387,6 +465,7 @@ namespace TPSBR
             _activeCharacterId = characterId;
             EnsureCharacterInventoryData(_activeCharacterId);
             EnsureCharacterProfessionData(_activeCharacterId);
+            EnsureCharacterStatsData(_activeCharacterId);
 
             ApplyCharacterDataToCachedData();
             UpdatePlayerActiveCharacter();
@@ -485,6 +564,43 @@ namespace TPSBR
             return hasProfessionData;
         }
 
+        private bool TryRestoreStats(Stats stats)
+        {
+            if (stats == null || stats.HasStateAuthority == false)
+                return false;
+
+            string characterId = _activeCharacterId;
+            PlayerCharacterStatsSaveData statData = null;
+
+            if (characterId.HasValue() == true)
+            {
+                statData = GetCharacterStatsData(characterId);
+
+                if (statData == null)
+                {
+                    EnsureCharacterStatsData(characterId);
+                }
+            }
+
+            bool hasStatData = statData != null &&
+                                statData.Stats != null &&
+                                statData.Stats.Length > 0;
+
+            if (hasStatData == true)
+            {
+                _suppressTracking = true;
+                stats.ApplySaveData(statData.Stats);
+                _suppressTracking = false;
+            }
+
+            if (ReferenceEquals(_pendingRestoreStats, stats) == true)
+            {
+                _pendingRestoreStats = null;
+            }
+
+            return hasStatData;
+        }
+
         // PRIVATE METHODS
 
         private bool IsInventoryEligible(Inventory inventory)
@@ -515,6 +631,21 @@ namespace TPSBR
                 return false;
 
             return runner.LocalPlayer == professions.Object.InputAuthority;
+        }
+
+        private bool IsStatsEligible(Stats stats)
+        {
+            if (stats == null)
+                return false;
+
+            if (stats.Object == null)
+                return false;
+
+            var runner = stats.Runner;
+            if (runner == null)
+                return false;
+
+            return runner.LocalPlayer == stats.Object.InputAuthority;
         }
 
         private void AttachInventory(Inventory inventory)
@@ -565,6 +696,29 @@ namespace TPSBR
 
             _trackedProfessions.ProfessionChanged -= OnProfessionChanged;
             _trackedProfessions = null;
+        }
+
+        private void AttachStats(Stats stats)
+        {
+            if (_trackedStats == stats)
+                return;
+
+            DetachStats();
+
+            _trackedStats = stats;
+            if (_trackedStats != null)
+            {
+                _trackedStats.StatChanged += OnStatChanged;
+            }
+        }
+
+        private void DetachStats()
+        {
+            if (_trackedStats == null)
+                return;
+
+            _trackedStats.StatChanged -= OnStatChanged;
+            _trackedStats = null;
         }
 
         private PlayerCharacterInventorySaveData GetCharacterInventoryData(string characterId)
@@ -690,6 +844,68 @@ namespace TPSBR
             }
 
             _characterProfessions.Add(snapshot);
+        }
+
+        private PlayerCharacterStatsSaveData GetCharacterStatsData(string characterId)
+        {
+            if (string.IsNullOrEmpty(characterId) == true)
+                return null;
+
+            for (int i = 0; i < _characterStats.Count; i++)
+            {
+                var stats = _characterStats[i];
+                if (stats == null)
+                    continue;
+
+                if (string.Equals(stats.CharacterId, characterId, StringComparison.Ordinal) == true)
+                {
+                    return stats;
+                }
+            }
+
+            return null;
+        }
+
+        private PlayerCharacterStatsSaveData EnsureCharacterStatsData(string characterId, bool markDirty = true)
+        {
+            if (string.IsNullOrEmpty(characterId) == true)
+                return null;
+
+            var stats = GetCharacterStatsData(characterId);
+            if (stats != null)
+                return stats;
+
+            stats = new PlayerCharacterStatsSaveData
+            {
+                CharacterId = characterId,
+                Stats = null,
+            };
+
+            _characterStats.Add(stats);
+            if (markDirty == true)
+            {
+                MarkDirty();
+            }
+
+            return stats;
+        }
+
+        private void StoreCharacterStatsSnapshot(PlayerCharacterStatsSaveData snapshot)
+        {
+            if (snapshot == null || snapshot.CharacterId.HasValue() == false)
+                return;
+
+            for (int i = 0; i < _characterStats.Count; i++)
+            {
+                var stats = _characterStats[i];
+                if (stats != null && string.Equals(stats.CharacterId, snapshot.CharacterId, StringComparison.Ordinal) == true)
+                {
+                    _characterStats[i] = snapshot;
+                    return;
+                }
+            }
+
+            _characterStats.Add(snapshot);
         }
 
         private void ResolveStorageKey()
@@ -851,6 +1067,22 @@ namespace TPSBR
                     {
                         _pendingRestoreProfessions = _pendingProfessionsRegistration;
                     }
+
+                    if (_trackedStats != null)
+                    {
+                        if (_trackedStats.HasStateAuthority == true)
+                        {
+                            _pendingRestoreStats = _trackedStats;
+                        }
+                        else if (ReferenceEquals(_pendingRestoreStats, _trackedStats) == false)
+                        {
+                            _pendingRestoreStats = _trackedStats;
+                        }
+                    }
+                    else if (_pendingStatsRegistration != null)
+                    {
+                        _pendingRestoreStats = _pendingStatsRegistration;
+                    }
                 }
             }
             catch (Exception exception)
@@ -952,6 +1184,50 @@ namespace TPSBR
                     }
                 }
             }
+
+            if (_pendingStatsRegistration != null)
+            {
+                var stats = _pendingStatsRegistration;
+                _pendingStatsRegistration = null;
+
+                if (IsStatsEligible(stats) == true)
+                {
+                    AttachStats(stats);
+
+                    if (_cachedData != null)
+                    {
+                        bool restored = TryRestoreStats(stats);
+                        if (restored == false)
+                        {
+                            _pendingRestoreStats = stats;
+                        }
+                    }
+                }
+            }
+
+            if (_pendingRestoreStats != null)
+            {
+                var stats = _pendingRestoreStats;
+
+                if (IsStatsEligible(stats) == false)
+                {
+                    _pendingRestoreStats = null;
+                }
+                else if (_cachedData == null)
+                {
+                    if (_initialLoadComplete == true)
+                    {
+                        _pendingRestoreStats = null;
+                    }
+                }
+                else if (stats.HasStateAuthority == true)
+                {
+                    if (TryRestoreStats(stats) == true)
+                    {
+                        _pendingRestoreStats = null;
+                    }
+                }
+            }
         }
 
         private void OnItemSlotChanged(int index, InventorySlot slot)
@@ -1010,6 +1286,20 @@ namespace TPSBR
             _pendingSave = true;
         }
 
+        private void OnStatChanged(Stats.StatIndex stat, int previousValue, int newValue)
+        {
+            if (_suppressTracking == true)
+                return;
+
+            if (_trackedStats == null || _trackedStats.HasStateAuthority == false)
+                return;
+
+            if (ReferenceEquals(_pendingRestoreStats, _trackedStats) == true)
+                return;
+
+            _pendingSave = true;
+        }
+
         private void MarkDirty()
         {
             _pendingSave = true;
@@ -1053,6 +1343,20 @@ namespace TPSBR
                 }
             }
 
+            PlayerCharacterStatsSaveData statsSnapshot = null;
+            if (_trackedStats != null && _trackedStats.HasStateAuthority == true && _activeCharacterId.HasValue() == true)
+            {
+                var statData = _trackedStats.CreateSaveData();
+                if (statData != null && statData.Length > 0)
+                {
+                    statsSnapshot = new PlayerCharacterStatsSaveData
+                    {
+                        CharacterId = _activeCharacterId,
+                        Stats = statData,
+                    };
+                }
+            }
+
             if (inventorySnapshot != null && inventorySnapshot.CharacterId.HasValue() == true)
             {
                 StoreCharacterInventorySnapshot(inventorySnapshot);
@@ -1063,10 +1367,16 @@ namespace TPSBR
                 StoreCharacterProfessionSnapshot(professionSnapshot);
             }
 
+            if (statsSnapshot != null)
+            {
+                StoreCharacterStatsSnapshot(statsSnapshot);
+            }
+
             if (_activeCharacterId.HasValue() == true)
             {
                 EnsureCharacterInventoryData(_activeCharacterId, false);
                 EnsureCharacterProfessionData(_activeCharacterId, false);
+                EnsureCharacterStatsData(_activeCharacterId, false);
             }
 
             ApplyCharacterDataToCachedData();
@@ -1149,6 +1459,15 @@ namespace TPSBR
                 _cachedData.CharacterProfessions = null;
             }
 
+            if (_characterStats.Count > 0)
+            {
+                _cachedData.CharacterStats = _characterStats.ToArray();
+            }
+            else
+            {
+                _cachedData.CharacterStats = null;
+            }
+
             _cachedData.InventorySlots = null;
             _cachedData.HotbarSlots = null;
             _cachedData.CurrentWeaponSlot = 0;
@@ -1211,6 +1530,7 @@ namespace TPSBR
             _characters.Clear();
             _characterInventories.Clear();
             _characterProfessions.Clear();
+            _characterStats.Clear();
             _activeCharacterId = null;
 
             if (_cachedData != null)
@@ -1297,6 +1617,21 @@ namespace TPSBR
                     }
                 }
 
+                if (_cachedData.CharacterStats != null && _cachedData.CharacterStats.Length > 0)
+                {
+                    for (int i = 0; i < _cachedData.CharacterStats.Length; i++)
+                    {
+                        var stats = _cachedData.CharacterStats[i];
+                        if (stats == null)
+                            continue;
+
+                        if (string.IsNullOrEmpty(stats.CharacterId) == true)
+                            continue;
+
+                        _characterStats.Add(stats);
+                    }
+                }
+
                 if (_cachedData.ActiveCharacterId.HasValue() == true)
                 {
                     _activeCharacterId = _cachedData.ActiveCharacterId;
@@ -1311,6 +1646,7 @@ namespace TPSBR
 
                 EnsureCharacterInventoryData(character.CharacterId, false);
                 EnsureCharacterProfessionData(character.CharacterId, false);
+                EnsureCharacterStatsData(character.CharacterId, false);
             }
 
             if (_activeCharacterId.HasValue() == false && _characters.Count > 0)
