@@ -4,8 +4,10 @@ namespace TPSBR
 {
         using UnityEngine;
 
-        public sealed class AgentHealth : Health
+        public sealed class AgentHealth : Health, IExperienceGiver
         {
+        public Vector3 ExperiencePosition => _hitIndicatorPivot != null ? _hitIndicatorPivot.position : transform.position;
+        
         private Agent _agent;
         private Stats _stats;
         private float _baseMaxHealth;

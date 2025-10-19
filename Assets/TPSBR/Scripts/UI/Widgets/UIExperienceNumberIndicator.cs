@@ -16,16 +16,18 @@ namespace TPSBR.UI
 
 		private readonly List<ExperienceData> _pendingExperience = new List<ExperienceData>(8);
 
-		public void ExperienceAdded(float amount, Vector3 worldPosition)
-		{
-			if (amount <= 0f)
-			{
-				return;
-			}
+                public void ExperienceAdded(float amount, IExperienceGiver experienceGiver)
+                {
+                        if (amount <= 0f)
+                        {
+                                return;
+                        }
 
-			_pendingExperience.Add(new ExperienceData
-			{
-				Amount   = amount,
+                        Vector3 worldPosition = experienceGiver != null ? experienceGiver.ExperiencePosition : Vector3.zero;
+
+                        _pendingExperience.Add(new ExperienceData
+                        {
+                                Amount   = amount,
 				Position = worldPosition,
 			});
 		}

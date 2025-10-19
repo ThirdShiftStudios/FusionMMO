@@ -363,7 +363,7 @@ namespace TPSBR.UI
             _isExperienceSubscribed = false;
         }
 
-        private void OnExperienceAdded(int amount)
+        private void OnExperienceAdded(int amount, IExperienceGiver experienceGiver)
         {
             if (_experienceIndicator == null)
                 return;
@@ -371,22 +371,24 @@ namespace TPSBR.UI
             if (amount <= 0)
                 return;
 
-            Vector3 worldPosition = Vector3.zero;
+            IExperienceGiver provider = experienceGiver;
 
-            if (_localAgent != null)
+            if (provider == null && _localAgent != null)
             {
-                var hitTarget = _localAgent.Health as IHitTarget;
-                if (hitTarget != null)
+                provider = _localAgent.Health as IExperienceGiver;
+
+                if (provider == null)
                 {
-                    worldPosition = hitTarget.HitPivot.position;
-                }
-                else
-                {
-                    worldPosition = _localAgent.transform.position;
+                    provider = new StaticExperienceGiver(_localAgent.transform.position);
                 }
             }
 
-            _experienceIndicator.ExperienceAdded(amount, worldPosition);
+            if (provider == null)
+            {
+                provider = new StaticExperienceGiver(Vector3.zero);
+            }
+
+            _experienceIndicator.ExperienceAdded(amount, provider);
         }
 
         private void CheckLevelUpEvent()

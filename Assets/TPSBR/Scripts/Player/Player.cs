@@ -109,20 +109,22 @@ namespace TPSBR
 			Statistics = statistics;
 		}
 
-		public void GrantExperience(int amount)
-		{
-			if (amount <= 0)
-				return;
+                public void GrantExperience(int amount, IExperienceGiver experienceGiver = null)
+                {
+                        if (amount <= 0)
+                                return;
 
-			if (HasStateAuthority == true)
-			{
-				RPC_AddExperience(amount);
-			}
-			else if (HasInputAuthority == true && Context?.PlayerData != null)
-			{
-				Context.PlayerData.AddExperience(amount);
-			}
-		}
+                        if (HasStateAuthority == true)
+                        {
+                                bool hasExperienceGiver = experienceGiver != null;
+                                Vector3 experiencePosition = hasExperienceGiver == true ? experienceGiver.ExperiencePosition : Vector3.zero;
+                                RPC_AddExperience(amount, experiencePosition, hasExperienceGiver);
+                        }
+                        else if (HasInputAuthority == true && Context?.PlayerData != null)
+                        {
+                                Context.PlayerData.AddExperience(amount, experienceGiver);
+                        }
+                }
 
                 public void OnReconnect(Player newPlayer)
                 {
@@ -305,7 +307,7 @@ namespace TPSBR
                 }
 
                 [Rpc(RpcSources.StateAuthority, RpcTargets.InputAuthority, Channel = RpcChannel.Reliable)]
-                private void RPC_AddExperience(int amount)
+                private void RPC_AddExperience(int amount, Vector3 experiencePosition, bool hasExperiencePosition)
                 {
                         if (amount <= 0)
                                 return;
@@ -313,7 +315,8 @@ namespace TPSBR
                         if (Context?.PlayerData == null)
                                 return;
 
-                        Context.PlayerData.AddExperience(amount);
+                        IExperienceGiver experienceGiver = hasExperiencePosition == true ? new StaticExperienceGiver(experiencePosition) : null;
+                        Context.PlayerData.AddExperience(amount, experienceGiver);
                 }
 
                 // DEBUG
@@ -326,7 +329,19 @@ namespace TPSBR
 
                         const int debugExperienceAmount = 500;
 
-                        Context.PlayerData.AddExperience(debugExperienceAmount);
+                        IExperienceGiver experienceGiver = null;
+
+                        if (_activeAgent != null)
+                        {
+                                experienceGiver = _activeAgent.Health as IExperienceGiver;
+                        }
+
+                        if (experienceGiver == null)
+                        {
+                                experienceGiver = new StaticExperienceGiver(transform.position);
+                        }
+
+                        Context.PlayerData.AddExperience(debugExperienceAmount, experienceGiver);
 
                         int experienceToNextLevel = Context.PlayerData.ExperienceToNextLevel;
                         if (experienceToNextLevel <= 0)

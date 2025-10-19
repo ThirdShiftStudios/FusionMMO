@@ -6,10 +6,27 @@ using UnityEngine;
 
 namespace TPSBR
 {
-	public interface IPlayer
-	{
-		string           UserID      { get; }
-		string           Nickname    { get; }
+        public interface IExperienceGiver
+        {
+                Vector3 ExperiencePosition { get; }
+        }
+
+        public readonly struct StaticExperienceGiver : IExperienceGiver
+        {
+                public StaticExperienceGiver(Vector3 position)
+                {
+                        _position = position;
+                }
+
+                public Vector3 ExperiencePosition => _position;
+
+                private readonly Vector3 _position;
+        }
+
+        public interface IPlayer
+        {
+                string           UserID      { get; }
+                string           Nickname    { get; }
 		NetworkPrefabRef AgentPrefab { get; }
 		string           CharacterName { get; }
 		string			 UnityID     { get; }
@@ -38,7 +55,7 @@ namespace TPSBR
 
                 public bool             IsDirty         { get; private set; }
 
-                public event Action<int> ExperienceAdded;
+                public event Action<int, IExperienceGiver> ExperienceAdded;
 
                 // PRIVATE MEMBERS
 
@@ -87,7 +104,7 @@ namespace TPSBR
                         IsDirty = false;
                 }
 
-                public bool AddExperience(int amount)
+                public bool AddExperience(int amount, IExperienceGiver experienceGiver = null)
                 {
                         if (amount <= 0 || _level >= MAX_LEVEL)
                                 return false;
@@ -123,7 +140,7 @@ namespace TPSBR
 
                         if (_level != previousLevel || _experience != previousExperience)
                         {
-                                ExperienceAdded?.Invoke(amount);
+                                ExperienceAdded?.Invoke(amount, experienceGiver);
                         }
 
                         return leveledUp;

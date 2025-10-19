@@ -219,7 +219,7 @@ namespace TPSBR
                                 var killerPlayer = Context.NetworkGame.GetPlayer(hitData.InstigatorRef);
                                 if (killerPlayer != null)
                                 {
-                                        killerPlayer.GrantExperience(10);
+                                        killerPlayer.GrantExperience(10, enemy);
                                 }
                         }
 
