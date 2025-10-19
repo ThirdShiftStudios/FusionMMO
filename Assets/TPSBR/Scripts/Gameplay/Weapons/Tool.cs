@@ -72,6 +72,9 @@ namespace TPSBR
         private Transform _equippedParent;
         private Transform _unequippedParent;
         private string _lastConfigurationHash = string.Empty;
+        private Renderer[] _visualRenderers;
+        private Collider[] _visualColliders;
+        private bool _visualsVisible = true;
 
         [Networked]
         private NetworkString<_32> _configurationHash { get; set; }
@@ -313,6 +316,8 @@ namespace TPSBR
             RefreshParent();
         }
 
+        protected virtual bool ShouldHideWhenUnequipped => false;
+
         protected virtual void OnConfigurationHashApplied(string configurationHash)
         {
             if (TryGetStatsFromConfiguration(configurationHash, out ToolTier tier, out int speed, out int itemYield, out int luck, out string configuredName) == false)
@@ -334,12 +339,14 @@ namespace TPSBR
                 return;
 
             Transform target = _isEquipped == true ? _equippedParent : _unequippedParent;
-            if (target == null)
-                return;
+            if (target != null)
+            {
+                transform.SetParent(target, false);
+                transform.localPosition = Vector3.zero;
+                transform.localRotation = Quaternion.identity;
+            }
 
-            transform.SetParent(target, false);
-            transform.localPosition = Vector3.zero;
-            transform.localRotation = Quaternion.identity;
+            RefreshVisibility();
         }
 
         private void ApplyConfigurationHash(NetworkString<_32> configurationHash)
@@ -349,6 +356,57 @@ namespace TPSBR
 
             _appliedConfigurationHash = configurationHash;
             OnConfigurationHashApplied(configurationHash.ToString());
+        }
+
+        private void RefreshVisibility()
+        {
+            if (ShouldHideWhenUnequipped == false)
+                return;
+
+            CacheVisualComponents();
+
+            bool shouldBeVisible = _isEquipped;
+            if (_visualsVisible == shouldBeVisible)
+                return;
+
+            _visualsVisible = shouldBeVisible;
+
+            if (_visualRenderers != null)
+            {
+                for (int i = 0; i < _visualRenderers.Length; ++i)
+                {
+                    var renderer = _visualRenderers[i];
+                    if (renderer != null)
+                    {
+                        renderer.enabled = shouldBeVisible;
+                    }
+                }
+            }
+
+            if (_visualColliders != null)
+            {
+                for (int i = 0; i < _visualColliders.Length; ++i)
+                {
+                    var collider = _visualColliders[i];
+                    if (collider != null)
+                    {
+                        collider.enabled = shouldBeVisible;
+                    }
+                }
+            }
+        }
+
+        private void CacheVisualComponents()
+        {
+            if (_visualRenderers == null || _visualRenderers.Length == 0)
+            {
+                _visualRenderers = GetComponentsInChildren<Renderer>(true);
+            }
+
+            if (_visualColliders == null || _visualColliders.Length == 0)
+            {
+                _visualColliders = GetComponentsInChildren<Collider>(true);
+            }
         }
 
         private void ApplyConfiguration(ToolTier tier, int speed, int itemYield, int luck, string configuredName)

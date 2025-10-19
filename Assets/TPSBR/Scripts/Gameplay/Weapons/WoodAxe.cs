@@ -10,6 +10,8 @@ namespace TPSBR
 
         public WoodAxeDefinition Definition => _woodAxeDefinition;
 
+        protected override bool ShouldHideWhenUnequipped => true;
+
         protected override string GetDefaultDisplayName()
         {
             if (_woodAxeDefinition != null)

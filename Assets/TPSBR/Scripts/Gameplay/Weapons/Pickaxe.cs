@@ -10,6 +10,8 @@ namespace TPSBR
 
         public PickaxeDefinition Definition => _pickaxeDefinition;
 
+        protected override bool ShouldHideWhenUnequipped => true;
+
         protected override string GetDefaultDisplayName()
         {
             if (_pickaxeDefinition != null)
