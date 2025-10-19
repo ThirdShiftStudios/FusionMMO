@@ -40,8 +40,10 @@ namespace TPSBR
 			_renderInput.MoveDirection     = moveDirection;
 			_renderInput.LookRotationDelta = lookRotationDelta;
 			_renderInput.Jump              = keyboard.spaceKey.isPressed;
-			_renderInput.Attack            = mouse.leftButton.isPressed;
-			_renderInput.Interact          = keyboard.fKey.isPressed;
+                        _renderInput.Attack            = mouse.leftButton.isPressed;
+                        _renderInput.HeavyAttack       = keyboard.qKey.isPressed;
+                        _renderInput.Block             = mouse.rightButton.isPressed;
+                        _renderInput.Interact          = keyboard.fKey.isPressed;
 			_renderInput.Weapon            = GetWeaponInput(keyboard);
 		}
 	}

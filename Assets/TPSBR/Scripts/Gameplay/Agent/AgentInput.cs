@@ -38,16 +38,26 @@ namespace TPSBR
 		/// They are accumulated after Fusion simulation and before Render(), effectively defering actions to first fixed simulation in following frames.
 		/// This makes fixed and render-predicted movement much more consistent (less prediction correction) at the cost of slight delay.
 		/// </summary>
-		[NonSerialized]
-		public EGameplayInputAction[] DeferredInputActions = new EGameplayInputAction[] { EGameplayInputAction.Attack, EGameplayInputAction.Jump};
+                [NonSerialized]
+                public EGameplayInputAction[] DeferredInputActions = new EGameplayInputAction[]
+                {
+                        EGameplayInputAction.Attack,
+                        EGameplayInputAction.HeavyAttack,
+                        EGameplayInputAction.Block,
+                        EGameplayInputAction.Jump
+                };
 
 		/// <summary>
 		/// These actions trigger sending interpolation data required for render-accurate lag compensation queries.
 		/// Like DeferredInputActions, these actions won't be accumulated and polled by Fusion if they are triggered in the same frame as the simulation.
 		/// They are accumulated after Fusion simulation and before Render(), effectively defering actions to first fixed simulation in following frames.
 		/// </summary>
-		[NonSerialized]
-		public EGameplayInputAction[] InterpolationDataActions = new EGameplayInputAction[] { EGameplayInputAction.Attack };
+                [NonSerialized]
+                public EGameplayInputAction[] InterpolationDataActions = new EGameplayInputAction[]
+                {
+                        EGameplayInputAction.Attack,
+                        EGameplayInputAction.HeavyAttack
+                };
 
 		// PRIVATE MEMBERS
 
