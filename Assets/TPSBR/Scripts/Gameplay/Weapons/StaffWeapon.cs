@@ -520,6 +520,8 @@ namespace TPSBR
                 return;
             }
 
+            CancelActiveLightAttack();
+
             _isBlocking = true;
             _blockAnimationActive = false;
 
@@ -541,6 +543,23 @@ namespace TPSBR
                 Debug.Log($"{LogPrefix} Block released.");
             }
             GetAttackLayer()?.StaffAttack.CancelCharge(this);
+        }
+
+        private void CancelActiveLightAttack()
+        {
+            if (_lightAttackActive == false)
+            {
+                return;
+            }
+
+            _lightAttackActive = false;
+
+            if (_attackHeld == true)
+            {
+                _pendingLightAttack = true;
+            }
+
+            GetAttackLayer()?.StaffAttack.ResetState(this);
         }
 
         private void PerformLightAttack()
