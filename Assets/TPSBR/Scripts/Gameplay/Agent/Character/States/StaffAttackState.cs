@@ -64,6 +64,7 @@ namespace TPSBR
 
                         _lightAttackState.SetAnimationTime(0.0f);
                         _lightAttackState.Activate(_blendInDuration);
+                        weapon?.NotifyLightAttackAnimationStarted();
                         Activate(_blendInDuration);
                 }
 
@@ -133,6 +134,7 @@ namespace TPSBR
 
                                 if (_lightAttackState.IsFinished(0.95f) == true)
                                 {
+                                        _activeWeapon?.NotifyLightAttackAnimationFinished();
                                         Finish();
                                 }
                         }

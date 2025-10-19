@@ -23,6 +23,7 @@ namespace TPSBR
         [Header("Combat")]
         private string _lastConfigurationHash = string.Empty;
         private bool _pendingLightAttack;
+        private bool _lightAttackActive;
         private bool _isBlocking;
         private bool _blockAnimationActive;
         private bool _attackHeld;
@@ -128,8 +129,10 @@ namespace TPSBR
                 return WeaponUseRequest.CreateAnimation(WeaponUseAnimation.HeavyAttack);
             }
 
-            if (_pendingLightAttack == true)
+            if (_pendingLightAttack == true && _lightAttackActive == false)
             {
+                _pendingLightAttack = false;
+                _lightAttackActive = true;
                 return WeaponUseRequest.CreateAnimation(WeaponUseAnimation.LightAttack);
             }
 
@@ -545,7 +548,6 @@ namespace TPSBR
             Character.Agent.Health?.ResetRegenDelay();
 
             Debug.Log($"{LogPrefix} Executing light staff attack.");
-            ResetAttackState(false, true);
         }
 
         public void ExecuteAbility(AbilityDefinition ability)
@@ -626,18 +628,12 @@ namespace TPSBR
             return null;
         }
 
-        private void ResetAttackState(bool notifyAnimation, bool preserveLightHold)
+        private void ResetAttackState(bool notifyAnimation, bool clearHeavy)
         {
-            if (preserveLightHold == true && _attackHeld == true)
-            {
-                _pendingLightAttack = true;
-            }
-            else if (preserveLightHold == false || _attackHeld == false)
-            {
-                _pendingLightAttack = false;
-            }
+            _pendingLightAttack = false;
+            _lightAttackActive = false;
 
-            if (preserveLightHold == false)
+            if (clearHeavy == true)
             {
                 _heavyAttackActivated = false;
             }
@@ -652,6 +648,27 @@ namespace TPSBR
             if (notifyAnimation == true)
             {
                 GetAttackLayer()?.StaffAttack.ResetState(this);
+            }
+        }
+
+        internal void NotifyLightAttackAnimationStarted()
+        {
+            _pendingLightAttack = false;
+            _lightAttackActive = true;
+        }
+
+        internal void NotifyLightAttackAnimationFinished()
+        {
+            if (_lightAttackActive == false)
+            {
+                return;
+            }
+
+            _lightAttackActive = false;
+
+            if (_attackHeld == true)
+            {
+                _pendingLightAttack = true;
             }
         }
 
