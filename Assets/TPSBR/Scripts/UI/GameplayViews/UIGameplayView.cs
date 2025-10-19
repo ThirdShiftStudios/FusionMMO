@@ -29,11 +29,14 @@ namespace TPSBR.UI
         [SerializeField] private AudioSetup _playerDeathSound;
         [SerializeField] private Color _interactionFailedColor = Color.white;
         [SerializeField] private AudioSetup _interactionFailedSound;
+        [SerializeField] private Color _levelUpColor = new Color(1f, 0.8431373f, 0f);
 
         [SerializeField] private UITeamPlayerPanels _teamPlayerPanels;
 
         private Agent _localAgent;
         private NetworkBehaviourId _localAgentId;
+        private bool _localAgentIsLocalPlayer;
+        private int _lastKnownPlayerLevel = -1;
 
         // UIView INTERFACE
 
@@ -42,6 +45,11 @@ namespace TPSBR.UI
             base.OnInitialize();
 
             ClearLocalAgent();
+
+            if (Context.PlayerData != null)
+            {
+                _lastKnownPlayerLevel = Context.PlayerData.Level;
+            }
 
             Context.GameplayMode.OnAgentDeath += OnAgentDeath;
             Context.GameplayMode.OnPlayerEliminated += OnPlayerEliminated;
@@ -84,6 +92,9 @@ namespace TPSBR.UI
             {
                 _menuButton.onClick.RemoveListener(OnMenuButton);
             }
+
+            _localAgentIsLocalPlayer = false;
+            _lastKnownPlayerLevel = -1;
         }
 
         protected override void OnTick()
@@ -119,6 +130,8 @@ namespace TPSBR.UI
 
             if (_localAgent == null)
                 return;
+
+            CheckLevelUpEvent();
 
             _health.UpdateHealth(_localAgent.Health);
             _effects.UpdateEffects(_localAgent);
@@ -240,6 +253,7 @@ namespace TPSBR.UI
 
             _localAgent = agent;
             _localAgentId = agent.Id;
+            _localAgentIsLocalPlayer = isLocalPlayer;
 
             _health.SetActive(true);
             _interactions.SetActive(true);
@@ -258,11 +272,13 @@ namespace TPSBR.UI
             {
                 _inventoryFeed?.Bind(agent.Inventory);
                 _goldFeed?.Bind(agent.Inventory);
+                _lastKnownPlayerLevel = Context.PlayerData != null ? Context.PlayerData.Level : -1;
             }
             else
             {
                 _inventoryFeed?.Bind(null);
                 _goldFeed?.Bind(null);
+                _lastKnownPlayerLevel = -1;
             }
 
             agent.Health.HitPerformed += OnHitPerformed;
@@ -289,6 +305,9 @@ namespace TPSBR.UI
                 _localAgent = null;
                 _localAgentId = default;
             }
+
+            _localAgentIsLocalPlayer = false;
+            _lastKnownPlayerLevel = -1;
         }
 
         private void OnHitTaken(HitData hitData)
@@ -305,6 +324,39 @@ namespace TPSBR.UI
                 Color = _interactionFailedColor,
                 Sound = _interactionFailedSound,
             }, false, true);
+        }
+
+        private void CheckLevelUpEvent()
+        {
+            if (_localAgentIsLocalPlayer == false)
+                return;
+
+            if (_events == null)
+                return;
+
+            var playerData = Context.PlayerData;
+            if (playerData == null)
+                return;
+
+            int currentLevel = playerData.Level;
+
+            if (_lastKnownPlayerLevel < 0)
+            {
+                _lastKnownPlayerLevel = currentLevel;
+                return;
+            }
+
+            if (currentLevel > _lastKnownPlayerLevel)
+            {
+                _events.ShowEvent(new GameplayEventData
+                {
+                    Name = "Level Up",
+                    Description = currentLevel.ToString(),
+                    Color = _levelUpColor,
+                });
+            }
+
+            _lastKnownPlayerLevel = currentLevel;
         }
     }
 }
