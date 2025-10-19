@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace TPSBR.UI
@@ -6,17 +5,11 @@ namespace TPSBR.UI
         public class UIGoldFeed : UIFeedBase
         {
                 [SerializeField]
-                private UIInventoryFeedItem _itemPrefab;
-                [SerializeField]
-                private int _poolSize = 5;
-                [SerializeField]
                 private Vector2 _bottomRightOffset = new Vector2(-50f, 140f);
                 [SerializeField]
                 private string _goldItemName = "Gold";
                 [SerializeField]
                 private Sprite _goldIcon;
-
-                private readonly List<UIFeedItemBase> _items = new List<UIFeedItemBase>();
 
                 private Inventory _inventory;
                 private int _previousGold;
@@ -44,8 +37,6 @@ namespace TPSBR.UI
 
                 protected override void OnInitialize()
                 {
-                        EnsureItems();
-
                         base.OnInitialize();
 
                         if (RectTransform != null)
@@ -65,28 +56,7 @@ namespace TPSBR.UI
 
                 protected override UIFeedItemBase[] GetFeedItems()
                 {
-                        EnsureItems();
-                        return _items.ToArray();
-                }
-
-                private void EnsureItems()
-                {
-                        if (_items.Count > 0)
-                                return;
-
-                        if (_itemPrefab == null)
-                                return;
-
-                        var parent = RectTransform != null ? RectTransform : (RectTransform)transform;
-                        int targetCount = Mathf.Max(1, _poolSize);
-
-                        for (int i = 0; i < targetCount; i++)
-                        {
-                                var item = Object.Instantiate(_itemPrefab, parent);
-                                item.name = $"{_goldItemName}FeedItem_{i}";
-                                item.SetActive(false);
-                                _items.Add(item);
-                        }
+                        return GetComponentsInChildren<UIInventoryFeedItem>();
                 }
 
                 private void OnGoldChanged(int value)
