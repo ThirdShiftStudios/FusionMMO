@@ -138,6 +138,7 @@ RectTransform:
   - {fileID: 3804573364985474130}
   - {fileID: 7390187282313421519}
   - {fileID: 3303790538160601666}
+  - {fileID: 5324660940395220402}
   - {fileID: 4287819379341532070}
   - {fileID: 1691498262254326092}
   - {fileID: 4373283029537046226}
@@ -196,6 +197,7 @@ MonoBehaviour:
   _effects: {fileID: 2779413618032897793}
   _events: {fileID: 5245633478296631636}
   _killFeed: {fileID: 7141240771637244402}
+  _goldFeed: {fileID: 5324660940395220403}
   _inventoryFeed: {fileID: 8428434097894060174}
   _spectatingGroup: {fileID: 6766994704101696196}
   _spectatingText: {fileID: 2888164552478215433}
@@ -1951,6 +1953,62 @@ MonoBehaviour:
   _moveTime: 0.3
   _fallbackIcon: {fileID: 0}
   _bottomRightOffset: {x: -50, y: 50}
+--- !u!1 &5324660940395220401
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5324660940395220402}
+  - component: {fileID: 5324660940395220403}
+  m_Layer: 5
+  m_Name: GoldFeed
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &5324660940395220402
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5324660940395220401}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 80474068889901857}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 1, y: 0}
+  m_AnchorMax: {x: 1, y: 0}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 500, y: 200}
+  m_Pivot: {x: 1, y: 0}
+--- !u!114 &5324660940395220403
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5324660940395220401}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ee0d4205f9964dc48a42bcaf88f06f0b, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  _minVisibilityTime: 1.5
+  _maxVisibilityTime: 6
+  _moveTime: 0.3
+  _itemPrefab: {fileID: 4283255416691184845, guid: 363ce950ef559b145857813ba5c2af27, type: 3}
+  _poolSize: 5
+  _bottomRightOffset: {x: -50, y: 140}
+  _goldItemName: Gold
+  _goldIcon: {fileID: 0}
 --- !u!1 &2607682802377330058
 GameObject:
   m_ObjectHideFlags: 0
