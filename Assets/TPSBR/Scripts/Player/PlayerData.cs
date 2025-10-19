@@ -240,6 +240,16 @@ namespace TPSBR
 
 		// PRIVATE METHODS
 
+                public string GetCharacterClassName()
+                { 
+                        var definition = CharacterDefinition.GetByStringCode(_activeCharacterDefinitionCode);
+                        if (definition)
+                        {
+                                return definition.Name;
+                        }
+
+                        return "ERROR";
+                }
                 private NetworkPrefabRef GetAgentPrefab()
                 {
                         if (_activeCharacterDefinitionCode.HasValue() == true)

@@ -29,7 +29,8 @@ namespace TPSBR.UI
         private Agent _boundAgent;
         private Inventory _boundInventory;
         private InventoryListPresenter _inventoryPresenter;
-
+        private UICharacterDetailsView _characterDetails;
+        
         internal SceneUI GameplaySceneUI => SceneUI;
 
         // PUBLIC METHODS
@@ -133,7 +134,10 @@ namespace TPSBR.UI
             base.OnTick();
 
             RefreshInventoryBinding();
+            RefreshCharacterDetails();
         }
+
+       
 
         protected override void OnCloseButton()
         {
@@ -696,6 +700,10 @@ namespace TPSBR.UI
             _boundInventory = agent != null ? agent.Inventory : null;
             _inventoryPresenter?.Bind(_boundInventory);
             _hotbar?.Bind(_boundInventory);
+        }
+        private void RefreshCharacterDetails()
+        {
+           
         }
     }
 }

@@ -329,6 +329,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4263026426291637213}
   - component: {fileID: 9218617815577035522}
+  - component: {fileID: 5914906078456727957}
   m_Layer: 5
   m_Name: CharacterInfo
   m_TagString: Untagged
@@ -384,6 +385,18 @@ MonoBehaviour:
   m_ChildScaleWidth: 0
   m_ChildScaleHeight: 0
   m_ReverseArrangement: 0
+--- !u!114 &5914906078456727957
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1214984923610171181}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3f4f1231dadabe545b10171de25cc1a9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1221958472966793992
 GameObject:
   m_ObjectHideFlags: 0
@@ -527,8 +540,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5785091504794702927}
-  - component: {fileID: 75161980483017118}
   - component: {fileID: 6746461181086105636}
+  - component: {fileID: 7558160317942166630}
   m_Layer: 5
   m_Name: SkillsSection
   m_TagString: Untagged
@@ -564,18 +577,6 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 322.7}
   m_Pivot: {x: 0.5, y: 0}
---- !u!114 &75161980483017118
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2303248029735518658}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fedcc4344e358a549abedc81d5fe729e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &6746461181086105636
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -600,6 +601,18 @@ MonoBehaviour:
   m_Spacing: {x: 5, y: 5}
   m_Constraint: 2
   m_ConstraintCount: 3
+--- !u!114 &7558160317942166630
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2303248029735518658}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 78664be4cd8240688f1a6660b0ed32e4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &3137849970121600685
 GameObject:
   m_ObjectHideFlags: 0
@@ -823,6 +836,7 @@ GameObject:
   m_Component:
   - component: {fileID: 292343980477383123}
   - component: {fileID: 6145802785174298642}
+  - component: {fileID: 7565138027333236606}
   m_Layer: 5
   m_Name: UICharacterDetailsPanel
   m_TagString: Untagged
@@ -878,6 +892,21 @@ MonoBehaviour:
   m_ChildScaleWidth: 0
   m_ChildScaleHeight: 0
   m_ReverseArrangement: 0
+--- !u!114 &7565138027333236606
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3963307997000983038}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e54719d14250bee409ef050089a2da92, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  characterDetails: {fileID: 5914906078456727957}
+  _statDetails: {fileID: 5909592810857168818}
+  _professionDetails: {fileID: 7558160317942166630}
 --- !u!1 &6348334659798643443
 GameObject:
   m_ObjectHideFlags: 0

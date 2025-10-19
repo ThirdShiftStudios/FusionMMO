@@ -565,5 +565,15 @@ namespace TPSBR
         {
             ProfessionChanged?.Invoke(profession, previousSnapshot, newSnapshot);
         }
+
+        public void OnSpawned(Agent agent)
+        {
+            
+        }
+
+        public void OnDespawned()
+        {
+            
+        }
     }
 }

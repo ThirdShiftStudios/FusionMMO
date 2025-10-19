@@ -243,5 +243,15 @@ namespace TPSBR
         {
             StatChanged?.Invoke(stat, previousValue, newValue);
         }
+
+        public void OnSpawned(Agent agent)
+        {
+            
+        }
+
+        public void OnDespawned()
+        {
+            
+        }
     }
 }

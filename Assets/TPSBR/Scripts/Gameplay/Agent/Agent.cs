@@ -20,6 +20,8 @@ namespace TPSBR
         public AgentSenses Senses => _senses;
         public AgentVFX Effects => _agentVFX;
         public AgentInterestView InterestView => _interestView;
+        public Stats Stats => _stats;
+        public Professions Professions => _professions;
 
         // PRIVATE MEMBERS
 
@@ -47,6 +49,8 @@ namespace TPSBR
         private SortedUpdateInvoker _sortedUpdateInvoker;
         private Quaternion _cachedLookRotation;
         private Quaternion _cachedPitchRotation;
+        private Stats _stats;
+        private Professions _professions;
 
         // NetworkBehaviour INTERFACE
 
@@ -61,7 +65,9 @@ namespace TPSBR
             _character.OnSpawned(this);
             _health.OnSpawned(this);
             _agentVFX.OnSpawned(this);
-
+            _stats.OnSpawned(this);
+            _professions.OnSpawned(this);
+            
             if (ApplicationSettings.IsStrippedBatch == true)
             {
                 gameObject.SetActive(false);
@@ -111,6 +117,17 @@ namespace TPSBR
             {
                 _agentVFX.OnDespawned();
             }
+            
+            if (_stats != null)
+            {
+                _stats.OnDespawned();
+            }
+            
+            if (_professions != null)
+            {
+                _professions.OnDespawned();
+            }
+            
         }
 
         public void EarlyFixedUpdateNetwork()
@@ -221,6 +238,8 @@ namespace TPSBR
             _agentVFX = GetComponent<AgentVFX>();
             _senses = GetComponent<AgentSenses>();
             _interestView = GetComponent<AgentInterestView>();
+            _stats = GetComponent<Stats>();
+            _professions = GetComponent<Professions>();
         }
 
         // PRIVATE METHODS
