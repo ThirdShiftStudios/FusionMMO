@@ -31,6 +31,8 @@
         [SerializeField, Range(0.0f, 1.0f)] private float _itemBoxOpenNormalizedTime = 0.8f;
         [SerializeField] private float _oreCancelMoveDistance = 0.35f;
         [SerializeField] private float _oreCancelInputThreshold = 0.1f;
+        [SerializeField] private float _herbCancelMoveDistance = 0.35f;
+        [SerializeField] private float _herbCancelInputThreshold = 0.1f;
         [SerializeField] private float _treeCancelMoveDistance = 0.35f;
         [SerializeField] private float _treeCancelInputThreshold = 0.1f;
 
@@ -126,6 +128,10 @@
             else if (InteractionTarget is OreNode oreNode)
             {
                 TryMineOreNode(oreNode);
+            }
+            else if (InteractionTarget is HerbNode herbNode)
+            {
+                TryHarvestHerbNode(herbNode);
             }
             else if (InteractionTarget is TreeNode treeNode)
             {
@@ -361,6 +367,28 @@
             {
                 _activeResourceNode = oreNode;
                 InteractionTarget = oreNode;
+            }
+        }
+
+        private void TryHarvestHerbNode(HerbNode herbNode)
+        {
+            if (herbNode == null)
+                return;
+
+            if (_animationController != null &&
+                _animationController.TryStartHerbInteraction(herbNode, _herbCancelMoveDistance, _herbCancelInputThreshold) == true)
+            {
+                _activeResourceNode = herbNode;
+                InteractionTarget = herbNode;
+                return;
+            }
+
+            Agent agent = _character != null ? _character.Agent : null;
+
+            if (agent != null && herbNode.TryBeginHarvesting(agent) == true)
+            {
+                _activeResourceNode = herbNode;
+                InteractionTarget = herbNode;
             }
         }
 

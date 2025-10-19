@@ -29,6 +29,10 @@ namespace TPSBR
         private Vector3 _oreStartPosition;
         private float _oreCancelDistanceSqr;
         private float _oreCancelInputThresholdSqr;
+        private HerbNode _activeHerbNode;
+        private Vector3 _herbStartPosition;
+        private float _herbCancelDistanceSqr;
+        private float _herbCancelInputThresholdSqr;
         private TreeNode _activeTreeNode;
         private Vector3 _treeStartPosition;
         private float _treeCancelDistanceSqr;
@@ -257,6 +261,53 @@ namespace TPSBR
             return true;
         }
 
+        public bool TryStartHerbInteraction(HerbNode herbNode, float cancelMoveDistance, float cancelInputThreshold)
+        {
+            if (herbNode == null)
+                return false;
+
+            if (_agent == null)
+                return false;
+
+            if (_interactionsLayer == null)
+                return false;
+
+            if (_interactionsLayer.TryBeginInteraction(InteractionsAnimationLayer.InteractionType.GatherHerbs) == false)
+                return false;
+
+            GatherHerbsState gatherHerbs = _interactionsLayer.GatherHerbs;
+            if (gatherHerbs == null)
+            {
+                _interactionsLayer.EndInteraction(InteractionsAnimationLayer.InteractionType.GatherHerbs);
+                return false;
+            }
+
+            if (gatherHerbs.Play() == false)
+            {
+                _interactionsLayer.EndInteraction(InteractionsAnimationLayer.InteractionType.GatherHerbs);
+                return false;
+            }
+
+            if (herbNode.TryBeginHarvesting(_agent) == false)
+            {
+                gatherHerbs.Stop();
+                _interactionsLayer.EndInteraction(InteractionsAnimationLayer.InteractionType.GatherHerbs);
+                return false;
+            }
+
+            _activeInteraction = herbNode;
+            _activeHerbNode = herbNode;
+
+            cancelMoveDistance = Mathf.Max(0.0f, cancelMoveDistance);
+            cancelInputThreshold = Mathf.Max(0.0f, cancelInputThreshold);
+
+            _herbCancelDistanceSqr = cancelMoveDistance * cancelMoveDistance;
+            _herbCancelInputThresholdSqr = cancelInputThreshold * cancelInputThreshold;
+            _herbStartPosition = _kcc != null ? _kcc.FixedData.TargetPosition : transform.position;
+
+            return true;
+        }
+
         // AnimationController INTERFACE
 
         protected override void OnSpawned()
@@ -308,6 +359,9 @@ namespace TPSBR
                     break;
                 case InteractionsAnimationLayer.InteractionType.MineOre:
                     UpdateOreInteraction();
+                    break;
+                case InteractionsAnimationLayer.InteractionType.GatherHerbs:
+                    UpdateHerbInteraction();
                     break;
                 case InteractionsAnimationLayer.InteractionType.ChopTree:
                     UpdateTreeInteraction();
@@ -448,6 +502,70 @@ namespace TPSBR
             _oreStartPosition = Vector3.zero;
             _oreCancelDistanceSqr = 0f;
             _oreCancelInputThresholdSqr = 0f;
+        }
+
+        private void UpdateHerbInteraction()
+        {
+            GatherHerbsState gatherHerbs = _interactionsLayer.GatherHerbs;
+
+            if (_activeHerbNode == null || gatherHerbs == null)
+            {
+                CancelHerbInteraction();
+                return;
+            }
+
+            if (gatherHerbs.IsPlaying == false)
+            {
+                FinishHerbInteraction();
+                return;
+            }
+
+            if (ShouldCancelInteraction(_herbStartPosition, _herbCancelDistanceSqr, _herbCancelInputThresholdSqr) == true)
+            {
+                CancelHerbInteraction();
+                return;
+            }
+
+            if (_agent == null)
+                return;
+
+            float deltaTime = Runner != null ? Runner.DeltaTime : Time.fixedDeltaTime;
+
+            if (_activeHerbNode.TickHarvesting(deltaTime, _agent) == true)
+            {
+                FinishHerbInteraction();
+            }
+        }
+
+        private void CancelHerbInteraction()
+        {
+            GatherHerbsState gatherHerbs = _interactionsLayer?.GatherHerbs;
+
+            gatherHerbs?.Stop();
+            _interactionsLayer?.EndInteraction(InteractionsAnimationLayer.InteractionType.GatherHerbs);
+
+            _activeHerbNode?.CancelHarvesting(_agent);
+
+            ResetHerbInteraction();
+        }
+
+        private void FinishHerbInteraction()
+        {
+            GatherHerbsState gatherHerbs = _interactionsLayer?.GatherHerbs;
+
+            gatherHerbs?.Stop();
+            _interactionsLayer?.EndInteraction(InteractionsAnimationLayer.InteractionType.GatherHerbs);
+
+            ResetHerbInteraction();
+        }
+
+        private void ResetHerbInteraction()
+        {
+            _activeInteraction = null;
+            _activeHerbNode = null;
+            _herbStartPosition = Vector3.zero;
+            _herbCancelDistanceSqr = 0f;
+            _herbCancelInputThresholdSqr = 0f;
         }
 
         private void UpdateTreeInteraction()
