@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using Fusion;
 using TPSBR.Abilities;
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 namespace TPSBR
 {
@@ -22,13 +21,14 @@ namespace TPSBR
         private string _configuredItemName;
 
         [Header("Combat")]
-        [SerializeField]
-        [Tooltip("Duration in seconds the left mouse button must be held to fully charge the heavy attack.")]
-        private float _heavyChargeDuration = 1.25f;
         private string _lastConfigurationHash = string.Empty;
-        private float _attackButtonDownTime;
         private bool _pendingLightAttack;
-        private bool _isChargingHeavy;
+        private bool _lightAttackActive;
+        private bool _isBlocking;
+        private bool _blockAnimationActive;
+        private bool _attackHeld;
+        private bool _heavyAttackActivated;
+        private bool _blockHeld;
         private readonly int[] _statBonuses = new int[Stats.Count];
 
         public float BaseDamage => _baseDamage;
@@ -70,19 +70,13 @@ namespace TPSBR
 
             if (Character == null || Character.Agent == null)
             {
-                ResetAttackState(true);
+                ResetAttackState(true, false);
                 return;
             }
 
             if (Character.Agent.Inventory.CurrentWeapon != this)
             {
-                ResetAttackState(true);
-                return;
-            }
-
-            if (_isChargingHeavy == true && CheckHeavyCancelRequested() == true)
-            {
-                CancelHeavyCharge();
+                ResetAttackState(true, false);
             }
         }
 
@@ -93,38 +87,53 @@ namespace TPSBR
 
         public override WeaponUseRequest EvaluateUse(bool attackActivated, bool attackHeld, bool attackReleased)
         {
-            bool hasCharge = _pendingLightAttack == true || _isChargingHeavy == true;
+            _attackHeld = attackHeld;
 
-            if (attackActivated == true)
-            {
-                return WeaponUseRequest.CreateAnimation(WeaponUseAnimation.Charge, false, 0f);
-            }
-
-            if (hasCharge == false)
+            if (Character == null || Character.Agent == null)
             {
                 return WeaponUseRequest.None;
             }
 
-            if (_isChargingHeavy == false)
+            if (_blockHeld == false && _isBlocking == true)
             {
-                if (attackHeld == true)
+                CancelBlock();
+            }
+
+            if (_blockHeld == true)
+            {
+                if (_isBlocking == false)
                 {
-                    float elapsed = GetCurrentTime() - _attackButtonDownTime;
-                    float progress = _heavyChargeDuration > 0f ? Mathf.Clamp01(elapsed / _heavyChargeDuration) : 1f;
-                    return WeaponUseRequest.CreateAnimation(WeaponUseAnimation.Charge, false, progress);
+                    BeginBlock();
                 }
 
-                if (attackReleased == true)
-                {
-                    return WeaponUseRequest.CreateAnimation(WeaponUseAnimation.LightAttack);
-                }
+                return WeaponUseRequest.CreateAnimation(WeaponUseAnimation.Charge, false, 1f);
             }
-            else
+
+            if (_isBlocking == true)
             {
-                if (attackReleased == true)
-                {
-                    return WeaponUseRequest.CreateAnimation(WeaponUseAnimation.HeavyAttack);
-                }
+                return WeaponUseRequest.None;
+            }
+
+            if (attackReleased == true)
+            {
+                _pendingLightAttack = false;
+            }
+
+            if (attackActivated == true)
+            {
+                _pendingLightAttack = true;
+            }
+
+            if (_heavyAttackActivated == true)
+            {
+                return WeaponUseRequest.CreateAnimation(WeaponUseAnimation.HeavyAttack);
+            }
+
+            if (_pendingLightAttack == true && _lightAttackActive == false)
+            {
+                _pendingLightAttack = false;
+                _lightAttackActive = true;
+                return WeaponUseRequest.CreateAnimation(WeaponUseAnimation.LightAttack);
             }
 
             return WeaponUseRequest.None;
@@ -135,15 +144,6 @@ namespace TPSBR
             switch (request.Animation)
             {
                 case WeaponUseAnimation.Charge:
-                    if (_pendingLightAttack == false && _isChargingHeavy == false)
-                    {
-                        BeginAttackCharge();
-                    }
-
-                    if (request.HasChargeProgress == true)
-                    {
-                        UpdateChargeProgress(request.ChargeProgress);
-                    }
                     break;
 
                 case WeaponUseAnimation.LightAttack:
@@ -173,14 +173,22 @@ namespace TPSBR
             switch (request.Animation)
             {
                 case WeaponUseAnimation.Charge:
-                    if (_pendingLightAttack == false && _isChargingHeavy == false)
+                    if (_isBlocking == true)
                     {
-                        staffAttack.BeginCharge(this);
-                    }
+                        if (_blockAnimationActive == false)
+                        {
+                            _blockAnimationActive = true;
+                            staffAttack.BeginCharge(this);
+                        }
 
-                    if (request.HasChargeProgress == true)
-                    {
-                        staffAttack.UpdateChargeProgress(this, request.ChargeProgress);
+                        if (request.HasChargeProgress == true)
+                        {
+                            staffAttack.UpdateChargeProgress(this, request.ChargeProgress);
+                        }
+                        else
+                        {
+                            staffAttack.UpdateChargeProgress(this, 1f);
+                        }
                     }
                     return true;
 
@@ -198,6 +206,16 @@ namespace TPSBR
             }
 
             return true;
+        }
+
+        public void ApplyExtendedInput(bool heavyAttackActivated, bool blockHeld)
+        {
+            if (heavyAttackActivated == true)
+            {
+                _heavyAttackActivated = true;
+            }
+
+            _blockHeld = blockHeld;
         }
 
         public override string GenerateRandomStats()
@@ -495,38 +513,34 @@ namespace TPSBR
             return condensed.Substring(0, 4).ToUpperInvariant();
         }
 
-        private void BeginAttackCharge()
+        private void BeginBlock()
         {
-            if (_pendingLightAttack == true || _isChargingHeavy == true)
+            if (_isBlocking == true)
             {
                 return;
             }
 
-            _pendingLightAttack = true;
-            _attackButtonDownTime = GetCurrentTime();
-            Debug.Log($"{LogPrefix} Left click pressed. Tracking for light attack and potential heavy charge.");
+            _isBlocking = true;
+            _blockAnimationActive = false;
+
+            Debug.Log($"{LogPrefix} Block initiated on right click hold.");
         }
 
-        private void UpdateChargeProgress(float normalizedProgress)
+        private void CancelBlock(bool silent = false)
         {
-            if (_pendingLightAttack == false && _isChargingHeavy == false)
+            if (_isBlocking == false)
             {
                 return;
             }
 
-            if (_isChargingHeavy == false && normalizedProgress >= 1f)
+            _isBlocking = false;
+            _blockAnimationActive = false;
+
+            if (silent == false)
             {
-                StartHeavyCharge();
+                Debug.Log($"{LogPrefix} Block released.");
             }
-        }
-
-        private void StartHeavyCharge()
-        {
-            _isChargingHeavy = true;
-            _pendingLightAttack = false;
-            Debug.Log($"{LogPrefix} Heavy charge started after holding left click for {_heavyChargeDuration:0.00}s.");
-
-            GetAttackLayer()?.StaffAttack.MarkChargeComplete(this);
+            GetAttackLayer()?.StaffAttack.CancelCharge(this);
         }
 
         private void PerformLightAttack()
@@ -534,7 +548,6 @@ namespace TPSBR
             Character.Agent.Health?.ResetRegenDelay();
 
             Debug.Log($"{LogPrefix} Executing light staff attack.");
-            ResetAttackState(false);
         }
 
         public void ExecuteAbility(AbilityDefinition ability)
@@ -577,14 +590,15 @@ namespace TPSBR
         {
             Character.Agent.Health?.ResetRegenDelay();
 
-            Debug.Log($"{LogPrefix} Heavy attack triggered on left click release.");
-            ResetAttackState(false);
+            Debug.Log($"{LogPrefix} Heavy attack triggered by heavy input.");
+            _heavyAttackActivated = false;
+            ResetAttackState(false, true);
         }
 
         private void PerformAbilityAttack()
         {
             Debug.Log($"{LogPrefix} Ability attack triggered.");
-            ResetAttackState(false);
+            ResetAttackState(false, false);
         }
 
         private StaffAbilityDefinition GetDefaultStaffAbility()
@@ -614,18 +628,22 @@ namespace TPSBR
             return null;
         }
 
-        private void CancelHeavyCharge()
-        {
-            Debug.Log($"{LogPrefix} Heavy charge cancelled by secondary input.");
-            GetAttackLayer()?.StaffAttack.CancelCharge(this);
-            ResetAttackState(true);
-        }
-
-        private void ResetAttackState(bool notifyAnimation)
+        private void ResetAttackState(bool notifyAnimation, bool clearHeavy)
         {
             _pendingLightAttack = false;
-            _isChargingHeavy = false;
-            _attackButtonDownTime = 0f;
+            _lightAttackActive = false;
+
+            if (clearHeavy == true)
+            {
+                _heavyAttackActivated = false;
+            }
+
+            if (_isBlocking == true)
+            {
+                CancelBlock(true);
+            }
+
+            _blockHeld = false;
 
             if (notifyAnimation == true)
             {
@@ -633,34 +651,30 @@ namespace TPSBR
             }
         }
 
-        private bool CheckHeavyCancelRequested()
+        internal void NotifyLightAttackAnimationStarted()
         {
-            if (HasInputAuthority == false)
+            _pendingLightAttack = false;
+            _lightAttackActive = true;
+        }
+
+        internal void NotifyLightAttackAnimationFinished()
+        {
+            if (_lightAttackActive == false)
             {
-                return false;
+                return;
             }
 
-            if (Mouse.current == null)
-            {
-                return false;
-            }
+            _lightAttackActive = false;
 
-            return Mouse.current.rightButton.wasPressedThisFrame;
+            if (_attackHeld == true)
+            {
+                _pendingLightAttack = true;
+            }
         }
 
         private AttackLayer GetAttackLayer()
         {
             return Character != null ? Character.AnimationController?.AttackLayer : null;
-        }
-
-        private float GetCurrentTime()
-        {
-            if (Runner != null && Runner.IsRunning == true)
-            {
-                return (float)Runner.SimulationTime;
-            }
-
-            return Time.time;
         }
 
         public override string GetDescription()

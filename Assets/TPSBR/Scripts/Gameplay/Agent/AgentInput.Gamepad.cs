@@ -27,9 +27,11 @@ namespace TPSBR
 				_renderInput.LookRotationDelta = InputUtility.GetSmoothLookRotationDelta(_smoothLookRotationDelta, lookRotationDelta, Global.RuntimeSettings.Sensitivity, _lookResponsivity);
 			}
 
-			_renderInput.Jump          |= gamepad.leftTrigger.isPressed;
-			_renderInput.Attack        |= gamepad.rightTrigger.isPressed;
-			_renderInput.Interact      |= gamepad.aButton.isPressed;
+                        _renderInput.Jump          |= gamepad.leftTrigger.isPressed;
+                        _renderInput.Attack        |= gamepad.rightTrigger.isPressed;
+                        _renderInput.HeavyAttack   |= gamepad.leftShoulder.isPressed;
+                        _renderInput.Block         |= gamepad.rightShoulder.isPressed;
+                        _renderInput.Interact      |= gamepad.aButton.isPressed;
 		}
 	}
 }

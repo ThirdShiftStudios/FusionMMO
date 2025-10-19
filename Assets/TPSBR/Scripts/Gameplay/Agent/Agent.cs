@@ -325,6 +325,13 @@ namespace TPSBR
             if (currentWeapon != null)
             {
                 bool attackReleased = _agentInput.WasDeactivated(EGameplayInputAction.Attack);
+                bool heavyAttackActivated = _agentInput.WasActivated(EGameplayInputAction.HeavyAttack);
+                bool blockHeld = _agentInput.FixedInput.Block;
+
+                if (currentWeapon is StaffWeapon staffWeapon)
+                {
+                    staffWeapon.ApplyExtendedInput(heavyAttackActivated, blockHeld);
+                }
 
                 // Evaluate how the weapon wants to handle the current input snapshot.
                 WeaponUseRequest useRequest = currentWeapon.EvaluateUse(attack, hold, attackReleased);

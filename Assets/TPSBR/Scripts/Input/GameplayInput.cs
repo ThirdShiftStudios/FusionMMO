@@ -4,12 +4,14 @@ namespace TPSBR
 {
 	using UnityEngine;
 
-	public enum EGameplayInputAction
-	{
-		Jump          = 1,
-		Attack        = 2,
-		Interact      = 3,
-	}
+        public enum EGameplayInputAction
+        {
+                Jump          = 1,
+                Attack        = 2,
+                Interact      = 3,
+                HeavyAttack   = 4,
+                Block         = 5,
+        }
 
 	public struct GameplayInput : INetworkInput
 	{
@@ -24,9 +26,11 @@ namespace TPSBR
 		public int            InterpolationFromTick; // This value is used for render-accurate lag compensated casts.
 		public int            InterpolationToTick;   // This value is used for render-accurate lag compensated casts.
 
-		public bool Jump          { get { return Actions.IsSet(EGameplayInputAction.Jump);          } set { Actions.Set(EGameplayInputAction.Jump,          value); } }
-		public bool Attack        { get { return Actions.IsSet(EGameplayInputAction.Attack);        } set { Actions.Set(EGameplayInputAction.Attack,        value); } }
-		public bool Interact      { get { return Actions.IsSet(EGameplayInputAction.Interact);      } set { Actions.Set(EGameplayInputAction.Interact,      value); } }
+                public bool Jump          { get { return Actions.IsSet(EGameplayInputAction.Jump);          } set { Actions.Set(EGameplayInputAction.Jump,          value); } }
+                public bool Attack        { get { return Actions.IsSet(EGameplayInputAction.Attack);        } set { Actions.Set(EGameplayInputAction.Attack,        value); } }
+                public bool Interact      { get { return Actions.IsSet(EGameplayInputAction.Interact);      } set { Actions.Set(EGameplayInputAction.Interact,      value); } }
+                public bool HeavyAttack   { get { return Actions.IsSet(EGameplayInputAction.HeavyAttack);   } set { Actions.Set(EGameplayInputAction.HeavyAttack,   value); } }
+                public bool Block         { get { return Actions.IsSet(EGameplayInputAction.Block);         } set { Actions.Set(EGameplayInputAction.Block,         value); } }
 	}
 
 	public static class GameplayInputActionExtensions
