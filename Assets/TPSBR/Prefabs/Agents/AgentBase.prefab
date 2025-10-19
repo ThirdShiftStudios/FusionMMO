@@ -3924,6 +3924,7 @@ GameObject:
   - component: {fileID: 2084853432409141758}
   - component: {fileID: 42101657442118405}
   - component: {fileID: 8453197996839227471}
+  - component: {fileID: 3174698249364052105}
   m_Layer: 8
   m_Name: AgentBase
   m_TagString: Untagged
@@ -4328,6 +4329,22 @@ MonoBehaviour:
   _regenTickPerSecond: 0
   _regenCombatDelay: 0
   _healthPerStrength: 20
+--- !u!114 &3174698249364052105
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7625200539080901463}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2f9f68f1d7cf4d05888630e204f352a8, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  _CurrentMana: 0
+  _TotalMana: 0
+  _baseMana: 100
+  _manaPerIntelligence: 20
 --- !u!1 &8107021845495828554
 GameObject:
   m_ObjectHideFlags: 0
