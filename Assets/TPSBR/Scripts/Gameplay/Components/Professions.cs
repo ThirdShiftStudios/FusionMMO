@@ -14,20 +14,15 @@ namespace TPSBR
 
         public enum ProfessionIndex
         {
-            // Gathering
-            Mining       = 0,
-            Fishing      = 1,
-            Woodcutting  = 2,
-
-            // Crafting
-            Blacksmithing = 3,
-            Alchemy       = 4,
-            Cooking       = 5,
-
-            // Specialized
-            Herbalism    = 6,
-            Hunting      = 7,
-            Runecrafting = 8,
+            Mining      = 0,
+            Woodcutting = 1,
+            Fishing     = 2,
+            Luck        = 3,
+            Runecrafting = 4,
+            Herbalism   = 5,
+            Smithing    = 6,
+            Carpentry   = 7,
+            Alchemy     = 8,
         }
 
         public readonly struct ProfessionSnapshot
@@ -49,27 +44,27 @@ namespace TPSBR
             public float Progress => ExperienceToNextLevel > 0 ? Mathf.Clamp01((float)Experience / ExperienceToNextLevel) : (Level > 0 ? 1f : 0f);
         }
 
-        public const string MiningCode        = "MIN";
-        public const string FishingCode       = "FSH";
-        public const string WoodcuttingCode   = "WDC";
-        public const string BlacksmithingCode = "BSM";
-        public const string AlchemyCode       = "ALC";
-        public const string CookingCode       = "CKG";
-        public const string HerbalismCode     = "HRB";
-        public const string HuntingCode       = "HNT";
-        public const string RunecraftingCode  = "RNC";
+        public const string MiningCode       = "MIN";
+        public const string WoodcuttingCode  = "WDC";
+        public const string FishingCode      = "FSH";
+        public const string LuckCode         = "LCK";
+        public const string RunecraftingCode = "RNC";
+        public const string HerbalismCode    = "HRB";
+        public const string SmithingCode     = "SMT";
+        public const string CarpentryCode    = "CRP";
+        public const string AlchemyCode      = "ALC";
 
         private static readonly string[] _codes =
         {
             MiningCode,
-            FishingCode,
             WoodcuttingCode,
-            BlacksmithingCode,
-            AlchemyCode,
-            CookingCode,
-            HerbalismCode,
-            HuntingCode,
+            FishingCode,
+            LuckCode,
             RunecraftingCode,
+            HerbalismCode,
+            SmithingCode,
+            CarpentryCode,
+            AlchemyCode,
         };
 
         [SerializeField]
@@ -94,15 +89,15 @@ namespace TPSBR
 
         public event Action<ProfessionIndex, ProfessionSnapshot, ProfessionSnapshot> ProfessionChanged;
 
-        public ProfessionSnapshot Mining       => GetSnapshot(ProfessionIndex.Mining);
-        public ProfessionSnapshot Fishing      => GetSnapshot(ProfessionIndex.Fishing);
-        public ProfessionSnapshot Woodcutting  => GetSnapshot(ProfessionIndex.Woodcutting);
-        public ProfessionSnapshot Blacksmithing => GetSnapshot(ProfessionIndex.Blacksmithing);
-        public ProfessionSnapshot Alchemy      => GetSnapshot(ProfessionIndex.Alchemy);
-        public ProfessionSnapshot Cooking      => GetSnapshot(ProfessionIndex.Cooking);
-        public ProfessionSnapshot Herbalism    => GetSnapshot(ProfessionIndex.Herbalism);
-        public ProfessionSnapshot Hunting      => GetSnapshot(ProfessionIndex.Hunting);
+        public ProfessionSnapshot Mining      => GetSnapshot(ProfessionIndex.Mining);
+        public ProfessionSnapshot Woodcutting => GetSnapshot(ProfessionIndex.Woodcutting);
+        public ProfessionSnapshot Fishing     => GetSnapshot(ProfessionIndex.Fishing);
+        public ProfessionSnapshot Luck        => GetSnapshot(ProfessionIndex.Luck);
         public ProfessionSnapshot Runecrafting => GetSnapshot(ProfessionIndex.Runecrafting);
+        public ProfessionSnapshot Herbalism   => GetSnapshot(ProfessionIndex.Herbalism);
+        public ProfessionSnapshot Smithing    => GetSnapshot(ProfessionIndex.Smithing);
+        public ProfessionSnapshot Carpentry   => GetSnapshot(ProfessionIndex.Carpentry);
+        public ProfessionSnapshot Alchemy     => GetSnapshot(ProfessionIndex.Alchemy);
 
         private int[] _cachedLevels;
         private int[] _cachedExperience;
