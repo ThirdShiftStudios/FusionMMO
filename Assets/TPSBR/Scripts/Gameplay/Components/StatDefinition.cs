@@ -64,46 +64,4 @@ namespace TPSBR
             return trimmed.Length <= 3 ? trimmed : trimmed.Substring(0, 3);
         }
     }
-
-    [CreateAssetMenu(fileName = "IntelligenceDefinition", menuName = "TSS/Stats/Intelligence")]
-    public sealed class IntelligenceDefinition : StatDefinition
-    {
-    }
-
-    [CreateAssetMenu(fileName = "StrengthDefinition", menuName = "TSS/Stats/Strength")]
-    public sealed class StrengthDefinition : StatDefinition
-    {
-        public override float GetTotalHealth(int statLevel)
-        {
-            return Mathf.Max(0, statLevel) * 10f;
-        }
-    }
-
-    [CreateAssetMenu(fileName = "DexterityDefinition", menuName = "TSS/Stats/Dexterity")]
-    public sealed class DexterityDefinition : StatDefinition
-    {
-        public override float GetMovementSpeedMultiplier(int statLevel)
-        {
-            return Mathf.Max(0, statLevel) * 0.01f;
-        }
-    }
-
-    [CreateAssetMenu(fileName = "EnduranceDefinition", menuName = "TSS/Stats/Endurance")]
-    public sealed class EnduranceDefinition : StatDefinition
-    {
-        public override float GetTotalHealth(int statLevel)
-        {
-            return Mathf.Max(0, statLevel) * 20f;
-        }
-    }
-
-    [CreateAssetMenu(fileName = "LuckDefinition", menuName = "TSS/Stats/Luck")]
-    public sealed class LuckDefinition : StatDefinition
-    {
-    }
-
-    [CreateAssetMenu(fileName = "WillpowerDefinition", menuName = "TSS/Stats/Willpower")]
-    public sealed class WillpowerDefinition : StatDefinition
-    {
-    }
 }
