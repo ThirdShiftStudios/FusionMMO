@@ -3925,6 +3925,7 @@ GameObject:
   - component: {fileID: 42101657442118405}
   - component: {fileID: 8453197996839227471}
   - component: {fileID: 3174698249364052105}
+  - component: {fileID: 5840191850077280441}
   m_Layer: 8
   m_Name: AgentBase
   m_TagString: Untagged
@@ -3970,7 +3971,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   SortKey: 735592846
   ObjectInterest: 0
-  Flags: 264449
+  Flags: 262145
   NestedObjects: []
   NetworkedBehaviours:
   - {fileID: 8106659039670942066}
@@ -3983,6 +3984,8 @@ MonoBehaviour:
   - {fileID: 4264704789929423561}
   - {fileID: 2084853432409141758}
   - {fileID: 8453197996839227471}
+  - {fileID: 3174698249364052105}
+  - {fileID: 5840191850077280441}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &8106659039670942066
 MonoBehaviour:
@@ -4144,7 +4147,7 @@ MonoBehaviour:
   m_Script: {fileID: 1039544458, guid: e725a070cec140c4caffb81624c8c787, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Config: 3
+  Config: -1
   BroadRadius: 2
   Offset: {x: 0, y: 1, z: 0}
   GizmosColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
@@ -4328,7 +4331,6 @@ MonoBehaviour:
   _maxHealthFromRegen: 0
   _regenTickPerSecond: 0
   _regenCombatDelay: 0
-  _healthPerStrength: 20
 --- !u!114 &3174698249364052105
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4339,12 +4341,27 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2f9f68f1d7cf4d05888630e204f352a8, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
-  _CurrentMana: 0
-  _TotalMana: 0
+  m_Name: 
+  m_EditorClassIdentifier: 
   _baseMana: 100
   _manaPerIntelligence: 20
+  _CurrentMana: 0
+  _TotalMana: 0
+--- !u!114 &5840191850077280441
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7625200539080901463}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e453b62ea2194749b1e5b877e6dd11c3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _totalStamina: 100
+  _startStamina: 100
+  _CurrentStamina: 0
 --- !u!1 &8107021845495828554
 GameObject:
   m_ObjectHideFlags: 0
