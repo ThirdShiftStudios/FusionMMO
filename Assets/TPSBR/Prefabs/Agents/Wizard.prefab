@@ -186,6 +186,7 @@ Transform:
   - {fileID: 8580298945777777752}
   - {fileID: 1665529059198149339}
   - {fileID: 8192433467757690401}
+  - {fileID: 7660454391549149806}
   m_Father: {fileID: 135246698218916311}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &332447353462035941
@@ -205,7 +206,8 @@ MonoBehaviour:
   _initialWeight: 1
   _openChest: {fileID: 7343985262696150129}
   _mineOre: {fileID: 2539961083027717555}
-  _gatherHerbs: {fileID: 0}
+  _harvestRunes: {fileID: 6729442906275426427}
+  _gatherHerbs: {fileID: 7929588155980347470}
   _chopTree: {fileID: 204545855386098831}
 --- !u!1 &2607543021013749022
 GameObject:
@@ -305,6 +307,56 @@ MonoBehaviour:
     IsLooping: 0
   _ability: {fileID: 0}
   _abilityTriggerNormalizedTime: 0.5
+--- !u!1 &3745952408766224433
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7660454391549149806}
+  - component: {fileID: 6729442906275426427}
+  m_Layer: 8
+  m_Name: HarvestRune
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7660454391549149806
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3745952408766224433}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 7923445001256126210}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &6729442906275426427
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3745952408766224433}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e6cf5b480d99bf8489c391a6f3c2def0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _node:
+    Clip: {fileID: 8993902097722301239, guid: 1e152d3817fad6f4da4f7e4e93863e64, type: 3}
+    Speed: 1
+    IsLooping: 1
+  _blendInDuration: 0.1
+  _blendOutDuration: 0.1
 --- !u!1 &4445815982237870121
 GameObject:
   m_ObjectHideFlags: 0

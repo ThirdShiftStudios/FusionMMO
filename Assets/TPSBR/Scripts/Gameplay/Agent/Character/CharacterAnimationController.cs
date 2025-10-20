@@ -25,6 +25,10 @@ namespace TPSBR
         private float _itemBoxCancelDistanceSqr;
         private float _itemBoxCancelInputThresholdSqr;
         private bool _itemBoxOpened;
+        private RuneNode _activeRuneNode;
+        private Vector3 _runeStartPosition;
+        private float _runeCancelDistanceSqr;
+        private float _runeCancelInputThresholdSqr;
         private OreNode _activeOreNode;
         private Vector3 _oreStartPosition;
         private float _oreCancelDistanceSqr;
@@ -159,6 +163,55 @@ namespace TPSBR
             _itemBoxCancelDistanceSqr = cancelMoveDistance * cancelMoveDistance;
             _itemBoxCancelInputThresholdSqr = cancelInputThreshold * cancelInputThreshold;
             _itemBoxStartPosition = _kcc != null ? _kcc.FixedData.TargetPosition : transform.position;
+
+            return true;
+        }
+
+        public bool TryStartRuneInteraction(RuneNode runeNode, float cancelMoveDistance, float cancelInputThreshold)
+        {
+            if (runeNode == null)
+                return false;
+
+            if (_agent == null)
+                return false;
+
+            if (_interactionsLayer == null)
+                return false;
+
+            if (_interactionsLayer.TryBeginInteraction(InteractionsAnimationLayer.InteractionType.HarvestRunes) == false)
+                return false;
+
+            HarvestRunesState harvestRunes = _interactionsLayer.HarvestRunes;
+            if (harvestRunes == null)
+            {
+                _interactionsLayer.EndInteraction(InteractionsAnimationLayer.InteractionType.HarvestRunes);
+                return false;
+            }
+
+            if (harvestRunes.Play() == false)
+            {
+                _interactionsLayer.EndInteraction(InteractionsAnimationLayer.InteractionType.HarvestRunes);
+                return false;
+            }
+
+            if (runeNode.TryBeginHarvesting(_agent) == false)
+            {
+                harvestRunes.Stop();
+                _interactionsLayer.EndInteraction(InteractionsAnimationLayer.InteractionType.HarvestRunes);
+                return false;
+            }
+
+            _inventory?.BeginPickaxeUse();
+
+            _activeInteraction = runeNode;
+            _activeRuneNode = runeNode;
+
+            cancelMoveDistance = Mathf.Max(0.0f, cancelMoveDistance);
+            cancelInputThreshold = Mathf.Max(0.0f, cancelInputThreshold);
+
+            _runeCancelDistanceSqr = cancelMoveDistance * cancelMoveDistance;
+            _runeCancelInputThresholdSqr = cancelInputThreshold * cancelInputThreshold;
+            _runeStartPosition = _kcc != null ? _kcc.FixedData.TargetPosition : transform.position;
 
             return true;
         }
@@ -357,6 +410,9 @@ namespace TPSBR
                 case InteractionsAnimationLayer.InteractionType.OpenChest:
                     UpdateOpenChestInteraction();
                     break;
+                case InteractionsAnimationLayer.InteractionType.HarvestRunes:
+                    UpdateRuneInteraction();
+                    break;
                 case InteractionsAnimationLayer.InteractionType.MineOre:
                     UpdateOreInteraction();
                     break;
@@ -436,6 +492,72 @@ namespace TPSBR
 
                 _activeItemBox.Open();
             }
+        }
+
+        private void UpdateRuneInteraction()
+        {
+            HarvestRunesState harvestRunes = _interactionsLayer.HarvestRunes;
+
+            if (_activeRuneNode == null || harvestRunes == null)
+            {
+                CancelRuneInteraction();
+                return;
+            }
+
+            if (harvestRunes.IsPlaying == false)
+            {
+                FinishRuneInteraction();
+                return;
+            }
+
+            if (ShouldCancelInteraction(_runeStartPosition, _runeCancelDistanceSqr, _runeCancelInputThresholdSqr) == true)
+            {
+                CancelRuneInteraction();
+                return;
+            }
+
+            if (_agent == null)
+                return;
+
+            float deltaTime = Runner != null ? Runner.DeltaTime : Time.fixedDeltaTime;
+
+            if (_activeRuneNode.TickHarvesting(deltaTime, _agent) == true)
+            {
+                FinishRuneInteraction();
+            }
+        }
+
+        private void CancelRuneInteraction()
+        {
+            HarvestRunesState harvestRunes = _interactionsLayer?.HarvestRunes;
+
+            harvestRunes?.Stop();
+            _interactionsLayer?.EndInteraction(InteractionsAnimationLayer.InteractionType.HarvestRunes);
+
+            _activeRuneNode?.CancelHarvesting(_agent);
+
+            ResetRuneInteraction();
+        }
+
+        private void FinishRuneInteraction()
+        {
+            HarvestRunesState harvestRunes = _interactionsLayer?.HarvestRunes;
+
+            harvestRunes?.Stop();
+            _interactionsLayer?.EndInteraction(InteractionsAnimationLayer.InteractionType.HarvestRunes);
+
+            ResetRuneInteraction();
+        }
+
+        private void ResetRuneInteraction()
+        {
+            _inventory?.EndPickaxeUse();
+
+            _activeInteraction = null;
+            _activeRuneNode = null;
+            _runeStartPosition = Vector3.zero;
+            _runeCancelDistanceSqr = 0f;
+            _runeCancelInputThresholdSqr = 0f;
         }
 
         private void UpdateOreInteraction()
