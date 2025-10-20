@@ -69,5 +69,15 @@ namespace TPSBR
                 professions?.AddExperience(Professions.ProfessionIndex.Mining, 100);
             }
         }
+
+        public void PlayHitEffect()
+        {
+            Debug.Log($"{this.name} PlayEffect");
+            var node = GetComponentInChildren<ShatterStone.OreNode>();
+            if (node)
+            {
+                node.Interact(1);
+            }
+        }
     }
 }

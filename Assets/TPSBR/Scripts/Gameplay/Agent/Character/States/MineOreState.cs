@@ -13,6 +13,49 @@ namespace TPSBR
         public bool IsPlaying => _isPlaying;
 
         
+        private Agent _agent;
+        private int _effectCounter;
+        private int _currentAnimationCount;
+
+        private void Awake()
+        {
+            //_agent = Controller.GetComponentNoAlloc<Agent>();
+        }
+
+        protected override void OnSpawned()
+        {
+            base.OnSpawned();
+            _agent = Controller.GetComponentNoAlloc<Agent>();
+            _effectCounter = 0;
+            _currentAnimationCount = 0;
+        }
+        
+        protected override void OnInterpolate()
+        {
+            base.OnInterpolate();
+
+            if (this.InterpolatedAnimationTime < 0.5f)
+            {
+                if (_effectCounter == _currentAnimationCount)
+                {
+                    _currentAnimationCount++;
+                }
+            }
+            
+            if(this.InterpolatedAnimationTime > 0.5f)
+            {
+                if (_effectCounter != _currentAnimationCount)
+                {
+                    _effectCounter++;
+                    var resource = _agent.Interactions.ActiveResourceNode;
+                    if (resource  is OreNode oreNode)
+                    {
+                        oreNode.PlayHitEffect();
+                    }   
+                }
+            }
+        }
+        
 
         public bool Play()
         {

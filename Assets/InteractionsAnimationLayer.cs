@@ -1,3 +1,4 @@
+using System;
 using Fusion.Addons.AnimationController;
 using UnityEngine;
 
@@ -27,6 +28,7 @@ namespace TPSBR
         private ChopTreeState _chopTree;
 
         private InteractionType _activeInteraction = InteractionType.None;
+        
 
         public OpenChestState OpenChest
         {

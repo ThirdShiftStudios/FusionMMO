@@ -42,7 +42,9 @@
         private Inventory _inventory;
         private Character _character;
         private CharacterAnimationController _animationController;
-        private ResourceNode _activeResourceNode;
+
+        [Networked]
+        public ResourceNode ActiveResourceNode { get; set; }
         private RaycastHit[] _interactionHits = new RaycastHit[10];
         private Transform _interactionCameraTransform;
 
@@ -55,7 +57,7 @@
                 InteractionTarget = _animationController.ActiveInteraction;
                 if (InteractionTarget is ResourceNode resourceNode)
                 {
-                    _activeResourceNode = resourceNode;
+                    ActiveResourceNode = resourceNode;
                 }
                 return;
             }
@@ -218,7 +220,7 @@
             {
                 ClearInteractionCameraAuthority();
                 InteractionTarget = null;
-                _activeResourceNode = null;
+                ActiveResourceNode = null;
                 return;
             }
 
@@ -226,23 +228,23 @@
             {
                 ClearInteractionCameraAuthority();
                 InteractionTarget = null;
-                _activeResourceNode = null;
+                ActiveResourceNode = null;
                 return;
             }
 
-            if (_activeResourceNode == null && _animationController != null)
+            if (ActiveResourceNode == null && _animationController != null)
             {
                 if (_animationController.ActiveInteraction is ResourceNode activeResource)
                 {
-                    _activeResourceNode = activeResource;
+                    ActiveResourceNode = activeResource;
                 }
             }
 
             UpdateActiveResourceNode();
 
-            if (_activeResourceNode != null)
+            if (ActiveResourceNode != null)
             {
-                InteractionTarget = _activeResourceNode;
+                InteractionTarget = ActiveResourceNode;
             }
             else
             {
@@ -331,13 +333,13 @@
 
         private void UpdateActiveResourceNode()
         {
-            if (_activeResourceNode == null)
+            if (ActiveResourceNode == null)
                 return;
 
             Agent agent = _character != null ? _character.Agent : null;
-            if (agent == null || _activeResourceNode.IsInteracting(agent) == false)
+            if (agent == null || ActiveResourceNode.IsInteracting(agent) == false)
             {
-                _activeResourceNode = null;
+                ActiveResourceNode = null;
             }
         }
 
@@ -363,7 +365,7 @@
                 _animationController.TryStartRuneInteraction(runeNode, _runeCancelMoveDistance, _runeCancelInputThreshold) ==
                     true)
             {
-                _activeResourceNode = runeNode;
+                ActiveResourceNode = runeNode;
                 InteractionTarget = runeNode;
                 return;
             }
@@ -372,7 +374,7 @@
 
             if (agent != null && runeNode.TryBeginHarvesting(agent) == true)
             {
-                _activeResourceNode = runeNode;
+                ActiveResourceNode = runeNode;
                 InteractionTarget = runeNode;
             }
         }
@@ -385,7 +387,7 @@
             if (_animationController != null &&
                 _animationController.TryStartOreInteraction(oreNode, _oreCancelMoveDistance, _oreCancelInputThreshold) == true)
             {
-                _activeResourceNode = oreNode;
+                ActiveResourceNode = oreNode;
                 InteractionTarget = oreNode;
                 return;
             }
@@ -394,7 +396,7 @@
 
             if (agent != null && oreNode.TryBeginMining(agent) == true)
             {
-                _activeResourceNode = oreNode;
+                ActiveResourceNode = oreNode;
                 InteractionTarget = oreNode;
             }
         }
@@ -407,7 +409,7 @@
             if (_animationController != null &&
                 _animationController.TryStartHerbInteraction(herbNode, _herbCancelMoveDistance, _herbCancelInputThreshold) == true)
             {
-                _activeResourceNode = herbNode;
+                ActiveResourceNode = herbNode;
                 InteractionTarget = herbNode;
                 return;
             }
@@ -416,7 +418,7 @@
 
             if (agent != null && herbNode.TryBeginHarvesting(agent) == true)
             {
-                _activeResourceNode = herbNode;
+                ActiveResourceNode = herbNode;
                 InteractionTarget = herbNode;
             }
         }
@@ -429,7 +431,7 @@
             if (_animationController != null &&
                 _animationController.TryStartTreeInteraction(treeNode, _treeCancelMoveDistance, _treeCancelInputThreshold) == true)
             {
-                _activeResourceNode = treeNode;
+                ActiveResourceNode = treeNode;
                 InteractionTarget = treeNode;
                 return;
             }
@@ -438,7 +440,7 @@
 
             if (agent != null && treeNode.TryBeginChopping(agent) == true)
             {
-                _activeResourceNode = treeNode;
+                ActiveResourceNode = treeNode;
                 InteractionTarget = treeNode;
             }
         }
