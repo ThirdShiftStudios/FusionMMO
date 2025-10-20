@@ -6,7 +6,6 @@ namespace TPSBR
 {
     public class FireNova : ContextBehaviour
     {
-        private static readonly Collider[] _colliderCache = new Collider[32];
 
         [SerializeField] private Transform _visualsRoot;
         [SerializeField] private Transform _scalarRoot;
@@ -25,24 +24,21 @@ namespace TPSBR
         private NetworkObject _owner;
         private LayerMask _hitMask;
         private EHitType _hitType;
+        private float _visualTimer;
 
         public override void Spawned()
         {
             base.Spawned();
 
             CacheInitialReferences();
-            if (_scalarRoot != null)
-            {
-                _scalarRoot.localScale = Vector3.zero;
-            }
-            UpdateVisualScale();
+            ResetVisualState();
         }
 
         public override void FixedUpdateNetwork()
         {
             base.FixedUpdateNetwork();
 
-            UpdateVisualScale();
+            AdvanceVisualTimer(true);
 
             if (HasStateAuthority == true)
             {
@@ -62,6 +58,7 @@ namespace TPSBR
         {
             base.Render();
 
+            AdvanceVisualTimer(false);
             UpdateVisualScale();
         }
 
@@ -83,6 +80,18 @@ namespace TPSBR
             }
         }
 
+        private void ResetVisualState()
+        {
+            _visualTimer = 0f;
+
+            if (_scalarRoot != null)
+            {
+                _scalarRoot.localScale = Vector3.zero;
+            }
+
+            UpdateVisualScale();
+        }
+
         public override void Despawned(NetworkRunner runner, bool hasState)
         {
             _processedTargets.Clear();
@@ -91,6 +100,13 @@ namespace TPSBR
             _hitMask = default;
             _hitType = default;
             _lifeTimer = default;
+            _visualTimer = 0f;
+
+            if (_scalarRoot != null)
+            {
+                _scalarRoot.localScale = _initialScalarScale;
+            }
+
             base.Despawned(runner, hasState);
         }
 
@@ -103,10 +119,7 @@ namespace TPSBR
 
             transform.SetPositionAndRotation(firePosition, Quaternion.identity);
 
-            if (_scalarRoot != null)
-            {
-                _scalarRoot.localScale = Vector3.zero;
-            }
+            ResetVisualState();
 
             if (Runner != null && Runner.IsRunning == true)
             {
@@ -118,6 +131,7 @@ namespace TPSBR
                 _lifeTimer = default;
             }
 
+            AdvanceVisualTimer(true);
             UpdateVisualScale();
 
             if (HasStateAuthority == true)
@@ -135,14 +149,14 @@ namespace TPSBR
 
             _damageApplied = true;
 
-            if (Runner == null)
+            if (Runner == null || Runner.IsRunning == false)
             {
                 return;
             }
 
-            PhysicsScene physicsScene = Runner.SimulationUnityScene.GetPhysicsScene();
+            LagCompensation lagCompensation = Runner.LagCompensation;
 
-            if (physicsScene.IsValid() == false)
+            if (lagCompensation == null)
             {
                 return;
             }
@@ -154,34 +168,45 @@ namespace TPSBR
             }
 
             Vector3 position = transform.position;
-            int hitCount = physicsScene.OverlapSphere(position, _radius, _colliderCache, mask, QueryTriggerInteraction.UseGlobal);
+
+            PlayerRef authority = _owner != null ? _owner.InputAuthority : (Object != null ? Object.InputAuthority : PlayerRef.None);
+            var hits = ListPool.Get<LagCompensatedHit>(32);
+            int hitCount = lagCompensation.OverlapSphere(position, _radius, authority, hits, mask);
 
             if (hitCount <= 0)
             {
+                ListPool.Return(hits);
                 return;
             }
 
-            PlayerRef instigatorRef = _owner != null ? _owner.InputAuthority : (Object != null ? Object.InputAuthority : PlayerRef.None);
-            IHitInstigator instigator = _owner != null ? _owner.GetComponent<IHitInstigator>() : GetComponent<IHitInstigator>();
-            EHitType hitType = _hitType != EHitType.None ? _hitType : EHitType.Grenade;
-
             _processedTargets.Clear();
+
+            NetworkObject ownerObject = _owner;
+            NetworkObject fireNovaObject = Object;
+            EHitType hitType = _hitType != EHitType.None ? _hitType : EHitType.Grenade;
 
             for (int i = 0; i < hitCount; i++)
             {
-                Collider collider = _colliderCache[i];
+                LagCompensatedHit hit = hits[i];
 
-                if (collider == null)
+                if (hit.Hitbox == null)
                 {
                     continue;
                 }
 
-                if (_owner != null && collider.transform.IsChildOf(_owner.transform) == true)
+                NetworkObject hitRoot = hit.Hitbox.Root;
+
+                if (hitRoot == null)
                 {
                     continue;
                 }
 
-                IHitTarget target = collider.GetComponentInParent<IHitTarget>();
+                if (ownerObject != null && hitRoot == ownerObject)
+                {
+                    continue;
+                }
+
+                IHitTarget target = hitRoot.GetComponent<IHitTarget>();
 
                 if (target == null)
                 {
@@ -193,29 +218,62 @@ namespace TPSBR
                     continue;
                 }
 
-                Vector3 targetPosition = collider.transform.position;
-                Vector3 direction = (targetPosition - position).normalized;
+                Vector3 point = hit.Point;
+                if (point == default)
+                {
+                    point = hitRoot.transform.position;
+                }
 
+                Vector3 direction = point - position;
                 if (direction.sqrMagnitude < 0.0001f)
                 {
                     direction = Vector3.up;
                 }
-
-                HitData hitData = new HitData
+                else
                 {
-                    Action = EHitAction.Damage,
-                    Amount = _damage,
-                    Position = targetPosition,
-                    Normal = -direction,
-                    Direction = direction,
-                    Target = target,
-                    InstigatorRef = instigatorRef,
-                    Instigator = instigator,
-                    HitType = hitType,
-                };
+                    direction.Normalize();
+                }
 
-                HitUtility.ProcessHit(ref hitData);
+                if (ownerObject != null)
+                {
+                    HitUtility.ProcessHit(ownerObject, direction, hit, _damage, hitType, out HitData _);
+                }
+                else if (fireNovaObject != null)
+                {
+                    HitUtility.ProcessHit(fireNovaObject.InputAuthority, direction, hit, _damage, hitType, out HitData _);
+                }
             }
+
+            ListPool.Return(hits);
+        }
+
+        private void AdvanceVisualTimer(bool clampToNetworkTime)
+        {
+            if (_duration <= 0f)
+            {
+                _visualTimer = _duration;
+                return;
+            }
+
+            if (Runner != null && Runner.IsRunning == true && _lifeTimer.IsRunning == true)
+            {
+                float remaining = _lifeTimer.RemainingTime(Runner) ?? 0f;
+                _visualTimer = Mathf.Clamp(_duration - remaining, 0f, _duration);
+                return;
+            }
+
+            if (clampToNetworkTime == true)
+            {
+                return;
+            }
+
+            float deltaTime = Runner != null && Runner.IsRunning == true ? Runner.DeltaTime : Time.deltaTime;
+            if (deltaTime <= 0f)
+            {
+                return;
+            }
+
+            _visualTimer = Mathf.Min(_visualTimer + deltaTime, _duration);
         }
 
         private void UpdateVisualScale()
@@ -225,7 +283,7 @@ namespace TPSBR
                 return;
             }
 
-            float normalizedLifetime = GetNormalizedLifetime();
+            float normalizedLifetime = _duration > 0f ? Mathf.Clamp01(_visualTimer / _duration) : 1f;
             float scaleMultiplier = _scaleCurve != null && _scaleCurve.length > 0 ? _scaleCurve.Evaluate(normalizedLifetime) : normalizedLifetime;
             scaleMultiplier = Mathf.Max(0f, scaleMultiplier);
 
@@ -233,21 +291,6 @@ namespace TPSBR
             _scalarRoot.localScale = new Vector3(baseScale.x * scaleMultiplier, baseScale.y, baseScale.z * scaleMultiplier);
         }
 
-        private float GetNormalizedLifetime()
-        {
-            if (_duration <= 0f || Runner == null)
-            {
-                return 1f;
-            }
 
-            if (_lifeTimer.IsRunning == false)
-            {
-                return 0f;
-            }
-
-            float remaining = _lifeTimer.RemainingTime(Runner) ?? 0f;
-            float elapsed = Mathf.Max(0f, _duration - remaining);
-            return Mathf.Clamp01(elapsed / _duration);
-        }
     }
 }
