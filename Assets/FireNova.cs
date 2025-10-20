@@ -77,6 +77,7 @@ namespace TPSBR
             if (_scalarRoot != null)
             {
                 _initialScalarScale = _scalarRoot.localScale;
+                _initialScalarScale = new Vector3(_radius, 1, _radius);
             }
         }
 
@@ -125,6 +126,7 @@ namespace TPSBR
             {
                 float lifeDuration = Mathf.Max(0.01f, _duration);
                 _lifeTimer = TickTimer.CreateFromSeconds(Runner, lifeDuration);
+                Debug.Log("Starting Nova");
             }
             else
             {
@@ -154,7 +156,7 @@ namespace TPSBR
                 return;
             }
 
-            LagCompensation lagCompensation = Runner.LagCompensation;
+            HitboxManager lagCompensation = Runner.LagCompensation;
 
             if (lagCompensation == null)
             {
@@ -194,7 +196,7 @@ namespace TPSBR
                     continue;
                 }
 
-                NetworkObject hitRoot = hit.Hitbox.Root;
+                NetworkObject hitRoot = hit.Hitbox.Root.Object;
 
                 if (hitRoot == null)
                 {
@@ -289,6 +291,7 @@ namespace TPSBR
 
             Vector3 baseScale = _initialScalarScale;
             _scalarRoot.localScale = new Vector3(baseScale.x * scaleMultiplier, baseScale.y, baseScale.z * scaleMultiplier);
+            Debug.Log($"Update Nova Scale:  t={normalizedLifetime} | s={scaleMultiplier} | {baseScale}");
         }
 
 
