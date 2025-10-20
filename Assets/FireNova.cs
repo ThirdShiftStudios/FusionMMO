@@ -26,5 +26,10 @@ namespace TPSBR
             _enemiesNearby = default;
             base.Despawned(runner, hasState);
         }
+
+        public void StartNova(NetworkObject owner, Vector3 firePosition, LayerMask hitMask, EHitType staffWeaponHitType)
+        {
+            
+        }
     }
 }

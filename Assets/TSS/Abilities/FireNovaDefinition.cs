@@ -60,25 +60,14 @@ namespace TPSBR.Abilities
             }
 
             Transform fireTransform = character.ThirdPersonView.FireTransform;
-            Transform cameraTransform = character.ThirdPersonView.DefaultCameraTransform;
 
-            if (fireTransform == null || cameraTransform == null)
+            if (fireTransform == null)
             {
                 return;
             }
 
-            Vector3 firePosition = fireTransform.position;
-            Vector3 targetPoint = cameraTransform.position + cameraTransform.forward * _targetDistance;
-            Vector3 direction = targetPoint - firePosition;
+            Vector3 firePosition = character.transform.position;
 
-            if (direction.sqrMagnitude < 0.0001f)
-            {
-                direction = fireTransform.forward;
-            }
-
-            direction.Normalize();
-
-            Vector3 initialVelocity = direction * _projectileSpeed;
             LayerMask hitMask = character.Agent != null && character.Agent.Inventory != null ? character.Agent.Inventory.HitMask : default;
             NetworkObject owner = staffWeapon.Owner;
 
@@ -87,16 +76,16 @@ namespace TPSBR.Abilities
                 return;
             }
 
-            runner.Spawn(_fireNovaPrefab, firePosition, Quaternion.LookRotation(direction), owner.InputAuthority, (spawnRunner, spawnedObject) =>
+            runner.Spawn(_fireNovaPrefab, firePosition, default, owner.InputAuthority, (spawnRunner, spawnedObject) =>
             {
-                FireballProjectile projectile = spawnedObject.GetComponent<FireballProjectile>();
+                FireNova projectile = spawnedObject.GetComponent<FireNova>();
 
                 if (projectile == null)
                 {
                     return;
                 }
 
-                projectile.Fire(owner, firePosition, initialVelocity, hitMask, staffWeapon.HitType);
+                projectile.StartNova(owner, firePosition, hitMask, staffWeapon.HitType);
             });
         }
     }
