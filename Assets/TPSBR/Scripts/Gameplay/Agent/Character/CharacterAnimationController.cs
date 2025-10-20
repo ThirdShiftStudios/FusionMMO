@@ -237,8 +237,11 @@ namespace TPSBR
                 return false;
             }
 
+            mineOre.SetMiningTarget(oreNode, _agent);
+
             if (mineOre.Play() == false)
             {
+                mineOre.ClearMiningTarget();
                 _interactionsLayer.EndInteraction(InteractionsAnimationLayer.InteractionType.MineOre);
                 return false;
             }
@@ -624,6 +627,9 @@ namespace TPSBR
             _oreStartPosition = Vector3.zero;
             _oreCancelDistanceSqr = 0f;
             _oreCancelInputThresholdSqr = 0f;
+
+            MineOreState mineOre = _interactionsLayer?.MineOre;
+            mineOre?.ClearMiningTarget();
         }
 
         private void UpdateHerbInteraction()

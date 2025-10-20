@@ -9,6 +9,7 @@ namespace TPSBR
         public event Action<Agent> MiningStarted;
         public event Action<Agent> MiningCancelled;
         public event Action<Agent> MiningCompleted;
+        public event Action<Agent> MiningImpact;
 
         public bool TryBeginMining(Agent agent)
         {
@@ -28,6 +29,11 @@ namespace TPSBR
         public void ResetNode()
         {
             ResetResource();
+        }
+
+        public void TriggerMiningImpact(Agent agent)
+        {
+            MiningImpact?.Invoke(agent);
         }
 
         protected override string GetDefaultInteractionName()
