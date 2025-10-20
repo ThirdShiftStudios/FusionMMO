@@ -60,6 +60,7 @@ namespace TPSBR
         protected override void OnInteractionCompleted(Agent agent)
         {
             base.OnInteractionCompleted(agent);
+            EvaluateLootTable(agent);
             ChoppingCompleted?.Invoke(agent);
         }
     }
