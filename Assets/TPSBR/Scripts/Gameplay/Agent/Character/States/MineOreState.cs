@@ -12,6 +12,8 @@ namespace TPSBR
 
         public bool IsPlaying => _isPlaying;
 
+        
+
         public bool Play()
         {
             if (_isPlaying == true)
