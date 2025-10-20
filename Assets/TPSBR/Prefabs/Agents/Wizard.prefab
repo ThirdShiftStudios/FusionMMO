@@ -668,6 +668,37 @@ MonoBehaviour:
     IsLooping: 1
   _blendInDuration: 0.1
   _blendOutDuration: 0.1
+--- !u!1 &8504675271889870947
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1712438840785774644}
+  m_Layer: 0
+  m_Name: PickaxeSlot_Active
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1712438840785774644
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8504675271889870947}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0.0460554, y: -0.72283864, z: -0.67942184, w: 0.11734268}
+  m_LocalPosition: {x: -0.00972, y: -0.00576, z: -0.00455}
+  m_LocalScale: {x: 0.124999955, y: 0.12499992, z: 0.12499997}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 678607880997112393}
+  m_LocalEulerAnglesHint: {x: -83.233, y: -114.697, z: 307.989}
 --- !u!1 &9213887584847571045
 GameObject:
   m_ObjectHideFlags: 0
@@ -784,6 +815,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 2638712253334006665, guid: 31a4fb56c558cb5498a0f4c7d3ae2b66, type: 3}
       insertIndex: -1
       addedObject: {fileID: 6388543282259232068}
+    - targetCorrespondingSourceObject: {fileID: 2638712253334006665, guid: 31a4fb56c558cb5498a0f4c7d3ae2b66, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1712438840785774644}
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 8712423211156135522, guid: 31a4fb56c558cb5498a0f4c7d3ae2b66, type: 3}
       insertIndex: -1

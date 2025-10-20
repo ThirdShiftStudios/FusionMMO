@@ -77,7 +77,7 @@ namespace TPSBR
             if (_scalarRoot != null)
             {
                 _initialScalarScale = _scalarRoot.localScale;
-                _initialScalarScale = new Vector3(_radius, 1, _radius);
+                _initialScalarScale = new Vector3(_radius * 2, 1, _radius * 2);
             }
         }
 
