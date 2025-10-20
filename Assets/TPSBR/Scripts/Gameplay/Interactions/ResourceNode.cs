@@ -87,6 +87,11 @@ namespace TPSBR
             RefreshInteractionState();
         }
 
+        public override void Despawned(NetworkRunner runner, bool hasState)
+        {
+            base.Despawned(runner, hasState);
+        }
+
         public override void FixedUpdateNetwork()
         {
             if(Object == false)
@@ -99,12 +104,13 @@ namespace TPSBR
                 if (DespawnTimer.Expired(Runner) == false)
                     return;
 
+                DespawnTimer = default;
+                
                 if (Object != null && Object.IsValid == true)
                 {
                     Runner.Despawn(Object);
                 }
-
-                DespawnTimer = default;
+                
                 return;
             }
 

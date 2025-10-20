@@ -6,6 +6,7 @@ namespace TPSBR
 {
     public sealed class OreNode : ResourceNode
     {
+        private ShatterStone.OreNode _oreNode;
         public event Action<Agent> MiningStarted;
         public event Action<Agent> MiningCancelled;
         public event Action<Agent> MiningCompleted;
@@ -23,6 +24,13 @@ namespace TPSBR
         public bool TickMining(float deltaTime, Agent agent)
         {
             return TickInteraction(deltaTime, agent);
+        }
+
+        public override void Spawned()
+        {
+            base.Spawned();
+            _oreNode ??= GetComponentInChildren<ShatterStone.OreNode>();
+            _oreNode.ResetNode(0);
         }
 
         public void ResetNode()
@@ -68,6 +76,9 @@ namespace TPSBR
                 Professions professions = agent.GetComponent<Professions>();
                 professions?.AddExperience(Professions.ProfessionIndex.Mining, 100);
             }
+
+            _oreNode ??= GetComponentInChildren<ShatterStone.OreNode>();
+            _oreNode.DestroyNode();
         }
 
         public void PlayHitEffect()

@@ -16,23 +16,6 @@ using Random = UnityEngine.Random;
 namespace ShatterStone
 {
     /// <summary>
-    /// A cache for the visual node bounds
-    /// </summary>
-    public struct OreNodeBounds
-    {
-        public float minX, maxX, minZ, maxZ, centerY;
-
-        public OreNodeBounds(float minX, float maxX, float minZ, float maxZ, float centerY)
-        {
-            this.minX = minX;
-            this.maxX = maxX;
-            this.minZ = minZ;
-            this.maxZ = maxZ;
-            this.centerY = centerY;
-        }
-    }
-
-    /// <summary>
     /// Represents a generic ore node that can be gathered via interactions
     /// </summary>
     public class OreNode : MonoBehaviour
@@ -42,9 +25,6 @@ namespace ShatterStone
         [Header("Drop Settings")]
         [SerializeField] protected GameObject pieces;
         [SerializeField] protected GameObject refinedPickup;
-        [SerializeField, Min(0)] protected int dropOnHit;
-        [SerializeField, Min(1)] protected int hitsToDestroy;
-        [SerializeField, Min(0)] protected int dropOnDestroy;
 
         [Header("Knockback Settings")]
         [SerializeField] protected Vector3 knockAngle;
@@ -84,30 +64,11 @@ namespace ShatterStone
         {
             if (ShouldCalculateNodeBounds())
                 nodeBounds = CalculateNodeBounds();
-
-            InflictHit(GetDropCount(hits));
-
-            if (hitIndex < hitsToDestroy)
-            {
-                StartCoroutine(Animate());
-                nodeAudio?.PlayImpactSound();
-            }
-            else
-            {
-                ReplaceNodeVisualsWithBrokenOne();
-            }
+            
+            StartCoroutine(Animate());
+            nodeAudio?.PlayImpactSound();
         }
-
-        [Obsolete("Use Interact(hits) instead")]
-        public void oreHit() => Interact(1);
-
-        protected virtual int GetDropCount(int hits)
-        {
-            int total = dropOnHit * hits;
-            if (hitIndex + hits >= hitsToDestroy)
-                total += dropOnDestroy;
-            return total;
-        }
+        
 
         protected virtual bool ShouldCalculateNodeBounds()
         {
@@ -143,6 +104,7 @@ namespace ShatterStone
             );
         }
 
+        public void DestroyNode() => ReplaceNodeVisualsWithBrokenOne();
         protected virtual void ReplaceNodeVisualsWithBrokenOne()
         {
             pieces.transform.localScale = transform.localScale;

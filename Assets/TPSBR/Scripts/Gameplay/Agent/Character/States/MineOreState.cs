@@ -8,6 +8,7 @@ namespace TPSBR
         [SerializeField] private float _blendInDuration  = 0.1f;
         [SerializeField] private float _blendOutDuration = 0.1f;
 
+        [SerializeField, Range(0f,1f)] private float _animationHitTime = 0.4f;
         private bool _isPlaying;
 
         public bool IsPlaying => _isPlaying;
@@ -34,7 +35,7 @@ namespace TPSBR
         {
             base.OnInterpolate();
 
-            if (this.InterpolatedAnimationTime < 0.5f)
+            if (this.InterpolatedAnimationTime < _animationHitTime)
             {
                 if (_effectCounter == _currentAnimationCount)
                 {
@@ -42,7 +43,7 @@ namespace TPSBR
                 }
             }
             
-            if(this.InterpolatedAnimationTime > 0.5f)
+            if(this.InterpolatedAnimationTime > _animationHitTime)
             {
                 if (_effectCounter != _currentAnimationCount)
                 {
