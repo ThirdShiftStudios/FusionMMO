@@ -80,10 +80,16 @@ namespace TPSBR
                 _hasTriggeredThisLoop = false;
             }
 
+            bool canSendImpact = Controller != null && (Controller.HasInputAuthority == true || Controller.HasStateAuthority == true);
+
             if (_hasTriggeredThisLoop == false && normalizedTime >= _impactTriggerNormalizedTime)
             {
                 _hasTriggeredThisLoop = true;
-                _activeOreNode.TriggerMiningImpact(_activeAgent);
+
+                if (canSendImpact == true)
+                {
+                    _activeOreNode.TriggerMiningImpact(_activeAgent);
+                }
             }
 
             _previousNormalizedTime = normalizedTime;
