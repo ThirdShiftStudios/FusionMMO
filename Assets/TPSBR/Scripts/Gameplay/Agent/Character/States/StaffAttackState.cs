@@ -11,7 +11,7 @@ namespace TPSBR
                 [Header("States")]
                 [SerializeField] private ClipState _chargeState;
                 [SerializeField] private AbilityClipState _lightAttackState;
-                [SerializeField] private ClipState _heavyAttackState;
+                [SerializeField] private AbilityClipState _heavyAttackState;
                 [SerializeField] private AbilityClipState _abilityAttackState;
 
                 [Header("Timing")]
@@ -21,6 +21,7 @@ namespace TPSBR
                 private StaffWeapon _activeWeapon;
                 private bool _isCharging;
                 private bool _lightAttackAbilityTriggered;
+                private bool _heavyAttackAbilityTriggered;
                 private bool _abilityAttackTriggered;
 
                 // PUBLIC METHODS
@@ -74,6 +75,7 @@ namespace TPSBR
                                 return;
 
                         _isCharging = false;
+                        _heavyAttackAbilityTriggered = false;
                         _abilityAttackTriggered = false;
 
                         _heavyAttackState.SetAnimationTime(0.0f);
@@ -140,6 +142,8 @@ namespace TPSBR
                         }
                         else if (activeState == _heavyAttackState)
                         {
+                                TryTriggerAbility(_heavyAttackState, ref _heavyAttackAbilityTriggered);
+
                                 if (_heavyAttackState.IsFinished(0.95f) == true)
                                 {
                                         Finish();
@@ -185,6 +189,7 @@ namespace TPSBR
                 {
                         _activeWeapon = null;
                         _lightAttackAbilityTriggered = false;
+                        _heavyAttackAbilityTriggered = false;
                         _abilityAttackTriggered = false;
 
                         if (IsActive(true) == true)
