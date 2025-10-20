@@ -10,6 +10,7 @@ namespace TPSBR
             None,
             OpenChest,
             MineOre,
+            HarvestRunes,
             GatherHerbs,
             ChopTree,
         }
@@ -18,6 +19,8 @@ namespace TPSBR
         private OpenChestState _openChest;
         [SerializeField]
         private MineOreState _mineOre;
+        [SerializeField]
+        private HarvestRunesState _harvestRunes;
         [SerializeField]
         private GatherHerbsState _gatherHerbs;
         [SerializeField]
@@ -48,6 +51,19 @@ namespace TPSBR
                 }
 
                 return _mineOre;
+            }
+        }
+
+        public HarvestRunesState HarvestRunes
+        {
+            get
+            {
+                if (_harvestRunes == null)
+                {
+                    FindState(out _harvestRunes, true);
+                }
+
+                return _harvestRunes;
             }
         }
 

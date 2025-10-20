@@ -31,6 +31,8 @@
         [SerializeField, Range(0.0f, 1.0f)] private float _itemBoxOpenNormalizedTime = 0.8f;
         [SerializeField] private float _oreCancelMoveDistance = 0.35f;
         [SerializeField] private float _oreCancelInputThreshold = 0.1f;
+        [SerializeField] private float _runeCancelMoveDistance = 0.35f;
+        [SerializeField] private float _runeCancelInputThreshold = 0.1f;
         [SerializeField] private float _herbCancelMoveDistance = 0.35f;
         [SerializeField] private float _herbCancelInputThreshold = 0.1f;
         [SerializeField] private float _treeCancelMoveDistance = 0.35f;
@@ -124,6 +126,10 @@
             {
                 Agent agent = _character != null ? _character.Agent : null;
                 itemVendor.Interact(agent);
+            }
+            else if (InteractionTarget is RuneNode runeNode)
+            {
+                TryHarvestRuneNode(runeNode);
             }
             else if (InteractionTarget is OreNode oreNode)
             {
@@ -345,6 +351,29 @@
                     _itemBoxCancelMoveDistance, _itemBoxCancelInputThreshold) == false)
             {
                 itemBox.Open();
+            }
+        }
+
+        private void TryHarvestRuneNode(RuneNode runeNode)
+        {
+            if (runeNode == null)
+                return;
+
+            if (_animationController != null &&
+                _animationController.TryStartRuneInteraction(runeNode, _runeCancelMoveDistance, _runeCancelInputThreshold) ==
+                    true)
+            {
+                _activeResourceNode = runeNode;
+                InteractionTarget = runeNode;
+                return;
+            }
+
+            Agent agent = _character != null ? _character.Agent : null;
+
+            if (agent != null && runeNode.TryBeginHarvesting(agent) == true)
+            {
+                _activeResourceNode = runeNode;
+                InteractionTarget = runeNode;
             }
         }
 
