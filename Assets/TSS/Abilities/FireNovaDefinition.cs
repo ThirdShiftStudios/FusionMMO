@@ -1,20 +1,18 @@
-using Fusion;
-using TPSBR;
+﻿using Fusion;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace TPSBR.Abilities
 {
-    [CreateAssetMenu(fileName = "FireballAbilityDefinition", menuName = "TSS/Abilities/Fireball Ability")]
-    public class FireballAbilityDefinition : StaffAbilityDefinition
+    [CreateAssetMenu(fileName = "FireNovaAbilityDefinition", menuName = "TSS/Abilities/Fire Nova Ability")]
+    public class FireNovaDefinition : StaffAbilityDefinition
     {
-        public const string AbilityCode = "FIREBALL";
+        public const string AbilityCode = "FIRENOVA";
 
-        private const string LogPrefix = "[<color=#FFA500>FireballAbility</color>]";
-
+        private const string LogPrefix = "[<color=#FFA500>FireNovaAbility</color>]";
+        
         [Header("Projectile")]
         [SerializeField]
-        private NetworkPrefabRef _projectilePrefab;
+        private NetworkPrefabRef _fireNovaPrefab;
         [SerializeField]
         private float _projectileSpeed = 30f;
         [SerializeField]
@@ -41,9 +39,9 @@ namespace TPSBR.Abilities
                 return;
             }
 
-            if (_projectilePrefab.IsValid == false)
+            if (_fireNovaPrefab.IsValid == false)
             {
-                Debug.LogWarning($"{LogPrefix} Fireball projectile prefab is not assigned.");
+                Debug.LogWarning($"{LogPrefix} Fire Nova projectile prefab is not assigned.");
                 return;
             }
 
@@ -89,7 +87,7 @@ namespace TPSBR.Abilities
                 return;
             }
 
-            runner.Spawn(_projectilePrefab, firePosition, Quaternion.LookRotation(direction), owner.InputAuthority, (spawnRunner, spawnedObject) =>
+            runner.Spawn(_fireNovaPrefab, firePosition, Quaternion.LookRotation(direction), owner.InputAuthority, (spawnRunner, spawnedObject) =>
             {
                 FireballProjectile projectile = spawnedObject.GetComponent<FireballProjectile>();
 
