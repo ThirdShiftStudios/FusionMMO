@@ -218,7 +218,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 312359650988125200}
-  - component: {fileID: 5579581518062479706}
+  - component: {fileID: 3191152985599960717}
   m_Layer: 8
   m_Name: Heavy
   m_TagString: Untagged
@@ -241,7 +241,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 4986138306111044870}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &5579581518062479706
+--- !u!114 &3191152985599960717
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -250,13 +250,15 @@ MonoBehaviour:
   m_GameObject: {fileID: 2607543021013749022}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3721801b5fc53e942a7112883e5665f6, type: 3}
+  m_Script: {fileID: 11500000, guid: 33382dc73c29409bb44f761134880718, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   _node:
     Clip: {fileID: 8993902097722301239, guid: d1ba0105a3e2d164a9e9affd1a448484, type: 3}
     Speed: 1
     IsLooping: 0
+  _ability: {fileID: 11400000, guid: 43c15da4045778649882b0a3683bd566, type: 2}
+  _abilityTriggerNormalizedTime: 0.5
 --- !u!1 &2640745800688205192
 GameObject:
   m_ObjectHideFlags: 0
@@ -1346,10 +1348,6 @@ PrefabInstance:
       propertyPath: _chargeState
       value: 
       objectReference: {fileID: 8286909057997534430}
-    - target: {fileID: 6393532497836863752, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
-      propertyPath: _heavyAttackState
-      value: 
-      objectReference: {fileID: 5579581518062479706}
     - target: {fileID: 6393532497836863752, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
       propertyPath: _lightAttackState
       value: 
