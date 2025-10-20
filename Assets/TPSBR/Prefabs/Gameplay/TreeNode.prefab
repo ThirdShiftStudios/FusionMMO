@@ -320,7 +320,10 @@ MonoBehaviour:
   _requiredInteractionTime: 3
   _respawnTime: 0
   _toolSpeedMultiplier: 0.05
-  _lootTableItems: []
+  _lootTableItems:
+  - ItemDefinition: {fileID: 11400000, guid: 6aca90e2fcb6edd46a43313a718016d9, type: 2}
+    Probability: 0
+    MinimumLuck: 0
   _despawnDelay: 2
 --- !u!1 &7173359131901375928
 GameObject:
