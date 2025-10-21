@@ -291,7 +291,6 @@ namespace TPSBR
 
             Vector3 baseScale = _initialScalarScale;
             _scalarRoot.localScale = new Vector3(baseScale.x * scaleMultiplier, baseScale.y, baseScale.z * scaleMultiplier);
-            Debug.Log($"Update Nova Scale:  t={normalizedLifetime} | s={scaleMultiplier} | {baseScale}");
         }
 
 
