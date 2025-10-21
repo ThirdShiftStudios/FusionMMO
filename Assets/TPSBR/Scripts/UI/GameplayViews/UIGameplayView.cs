@@ -34,6 +34,8 @@ namespace TPSBR.UI
 
         [SerializeField] private UITeamPlayerPanels _teamPlayerPanels;
 
+        private UIMana _mana;
+        private UIStamina _stamina;
         private Agent _localAgent;
         private NetworkBehaviourId _localAgentId;
         private bool _localAgentIsLocalPlayer;
@@ -45,6 +47,14 @@ namespace TPSBR.UI
         protected override void OnInitialize()
         {
             base.OnInitialize();
+
+            if (_health != null)
+            {
+                var healthGameObject = _health.gameObject;
+
+                _mana = healthGameObject.GetComponent<UIMana>();
+                _stamina = healthGameObject.GetComponent<UIStamina>();
+            }
 
             ClearLocalAgent();
 
@@ -138,6 +148,8 @@ namespace TPSBR.UI
             CheckLevelUpEvent();
 
             _health.UpdateHealth(_localAgent.Health);
+            _mana?.UpdateMana(_localAgent.Mana);
+            _stamina?.UpdateStamina(_localAgent.Stamina);
             _effects.UpdateEffects(_localAgent);
             _interactions.UpdateInteractions(Context, _localAgent);
             _teamPlayerPanels.UpdateTeamPlayerPanels(Context, _localAgent);
@@ -260,6 +272,8 @@ namespace TPSBR.UI
             _localAgentIsLocalPlayer = isLocalPlayer;
 
             _health.SetActive(true);
+            _mana?.SetActive(true);
+            _stamina?.SetActive(true);
             _interactions.SetActive(true);
             _effects.SetActive(true);
             _spectatingGroup.SetActive(isLocalPlayer == false);
@@ -289,6 +303,9 @@ namespace TPSBR.UI
                 UnsubscribeExperienceEvents();
             }
 
+            _mana?.UpdateMana(agent.Mana);
+            _stamina?.UpdateStamina(agent.Stamina);
+
             agent.Health.HitPerformed += OnHitPerformed;
             agent.Health.HitTaken += OnHitTaken;
             agent.Interactions.InteractionFailed += OnInteractionFailed;
@@ -297,6 +314,8 @@ namespace TPSBR.UI
         private void ClearLocalAgent()
         {
             _health.SetActive(false);
+            _mana?.SetActive(false);
+            _stamina?.SetActive(false);
             _interactions.SetActive(false);
             _effects.SetActive(false);
             _spectatingGroup.SetActive(false);
@@ -305,6 +324,9 @@ namespace TPSBR.UI
             _goldFeed?.Bind(null);
 
             UnsubscribeExperienceEvents();
+
+            _mana?.UpdateMana(null);
+            _stamina?.UpdateStamina(null);
 
             if (_localAgent != null)
             {

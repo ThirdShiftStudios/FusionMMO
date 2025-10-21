@@ -18,6 +18,7 @@ namespace TPSBR
         public Inventory Inventory => _inventory;
         public Health Health => _health;
         public AgentMana Mana => _mana;
+        public AgentStamina Stamina => _stamina;
         public AgentSenses Senses => _senses;
         public AgentVFX Effects => _agentVFX;
         public AgentInterestView InterestView => _interestView;
@@ -46,6 +47,7 @@ namespace TPSBR
         private AgentSenses _senses;
         private Health _health;
         private AgentMana _mana;
+        private AgentStamina _stamina;
         private AgentVFX _agentVFX;
         private AgentInterestView _interestView;
         private SortedUpdateInvoker _sortedUpdateInvoker;
@@ -67,6 +69,7 @@ namespace TPSBR
             _character.OnSpawned(this);
             _health.OnSpawned(this);
             _mana.OnSpawned(this);
+            _stamina?.OnSpawned(this);
             _agentVFX.OnSpawned(this);
             _stats.OnSpawned(this);
             _professions.OnSpawned(this);
@@ -119,6 +122,11 @@ namespace TPSBR
             if (_mana != null)
             {
                 _mana.OnDespawned();
+            }
+
+            if (_stamina != null)
+            {
+                _stamina.OnDespawned();
             }
 
             if (_agentVFX != null)
@@ -244,6 +252,7 @@ namespace TPSBR
             _inventory = GetComponent<Inventory>();
             _health = GetComponent<Health>();
             _mana = GetComponent<AgentMana>();
+            _stamina = GetComponent<AgentStamina>();
             _agentVFX = GetComponent<AgentVFX>();
             _senses = GetComponent<AgentSenses>();
             _interestView = GetComponent<AgentInterestView>();

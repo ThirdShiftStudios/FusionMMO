@@ -2550,8 +2550,14 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ffb592b8f2808c84182403f3542a46c3, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
+  _staminaText: {fileID: 2893746809281583327}
+  _maxStaminaText: {fileID: 0}
+  _staminaProgress: {fileID: 1661943817539924919}
+  _staminaIcon: {fileID: 537627357819508682}
+  _animationDuration: 0.2
+  _exhaustedColor: {r: 0.3137255, g: 0.3137255, b: 0.3137255, a: 1}
 --- !u!114 &4531832894765956042
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2562,8 +2568,14 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a2b654e31032fe049a43e2998bbf8fdc, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
+  _manaText: {fileID: 7758456872500695888}
+  _maxManaText: {fileID: 0}
+  _manaProgress: {fileID: 4781394025399019891}
+  _manaIcon: {fileID: 7334590241288026713}
+  _animationDuration: 0.2
+  _depletedColor: {r: 0.3137255, g: 0.3137255, b: 0.3137255, a: 1}
 --- !u!114 &3395495825317599733
 MonoBehaviour:
   m_ObjectHideFlags: 0

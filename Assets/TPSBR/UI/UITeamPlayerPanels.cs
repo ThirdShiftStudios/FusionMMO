@@ -39,9 +39,14 @@ namespace TPSBR.UI
                 if(allPlayers[i].ActiveAgent == observedAgent) continue;
 
                 
-                _teamPlayerPanels[playerCounter].GameObject.SetActive(true);
-                _teamPlayerPanels[playerCounter].Health.UpdateHealth(allPlayers[i].ActiveAgent.Health);
-                _teamPlayerPanels[playerCounter].Player.SetData(context, allPlayers[i]);
+                var panel = _teamPlayerPanels[playerCounter];
+                var agent = allPlayers[i].ActiveAgent;
+
+                panel.GameObject.SetActive(true);
+                panel.Health.UpdateHealth(agent.Health);
+                panel.Mana?.UpdateMana(agent.Mana);
+                panel.Stamina?.UpdateStamina(agent.Stamina);
+                panel.Player.SetData(context, allPlayers[i]);
                 playerCounter++;
             }
         }
@@ -63,16 +68,22 @@ namespace TPSBR.UI
         {
             public GameObject GameObject => _gameObject;
             public UIHealth Health => _health;
+            public UIMana Mana => _mana;
+            public UIStamina Stamina => _stamina;
             public UIPlayer Player => _player;
-            
+
             private GameObject _gameObject;
             private UIHealth  _health;
+            private UIMana    _mana;
+            private UIStamina _stamina;
             private UIPlayer  _player;
 
             public UITeamPlayerPanel(GameObject gameObject)
             {
                 _gameObject = gameObject;
                 _health = gameObject.GetComponent<UIHealth>();
+                _mana = gameObject.GetComponent<UIMana>();
+                _stamina = gameObject.GetComponent<UIStamina>();
                 _player = gameObject.GetComponent<UIPlayer>();
             }
         }
