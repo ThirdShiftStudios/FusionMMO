@@ -65,6 +65,7 @@ GameObject:
   - component: {fileID: 1425729390039991296}
   - component: {fileID: 8430423530934186912}
   - component: {fileID: 7906244902350635517}
+  - component: {fileID: -2279922576052894421}
   m_Layer: 12
   m_Name: HerbNode
   m_TagString: Untagged
@@ -133,6 +134,7 @@ MonoBehaviour:
   NestedObjects: []
   NetworkedBehaviours:
   - {fileID: 1425729390039991296}
+  - {fileID: -2279922576052894421}
   ForceRemoteRenderTimeframe: 0
 --- !u!65 &7906244902350635517
 BoxCollider:
@@ -155,6 +157,23 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1.02, z: 1}
   m_Center: {x: 0, y: 1, z: 0}
+--- !u!114 &-2279922576052894421
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2591564877390741912}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 158639473, guid: e725a070cec140c4caffb81624c8c787, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _stateAuthorityChangeErrorCorrectionDelta: 0
+  SyncScale: 0
+  SyncParent: 0
+  _autoAOIOverride: 1
+  DisableSharedModeInterpolation: 0
 --- !u!1 &3558114889510616518
 GameObject:
   m_ObjectHideFlags: 0

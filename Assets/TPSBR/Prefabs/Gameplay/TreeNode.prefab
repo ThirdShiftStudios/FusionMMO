@@ -235,6 +235,7 @@ GameObject:
   - component: {fileID: 4123100836407598736}
   - component: {fileID: 2028555137643022272}
   - component: {fileID: 9017700212224612649}
+  - component: {fileID: -7066505955176190584}
   m_Layer: 12
   m_Name: TreeNode
   m_TagString: Untagged
@@ -279,6 +280,7 @@ MonoBehaviour:
   NestedObjects: []
   NetworkedBehaviours:
   - {fileID: 9017700212224612649}
+  - {fileID: -7066505955176190584}
   ForceRemoteRenderTimeframe: 0
 --- !u!65 &2028555137643022272
 BoxCollider:
@@ -325,6 +327,23 @@ MonoBehaviour:
     Probability: 0
     MinimumLuck: 0
   _despawnDelay: 2
+--- !u!114 &-7066505955176190584
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5824131471492522100}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 158639473, guid: e725a070cec140c4caffb81624c8c787, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _stateAuthorityChangeErrorCorrectionDelta: 0
+  SyncScale: 0
+  SyncParent: 0
+  _autoAOIOverride: 1
+  DisableSharedModeInterpolation: 0
 --- !u!1 &7173359131901375928
 GameObject:
   m_ObjectHideFlags: 0
