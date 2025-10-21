@@ -26,6 +26,10 @@ namespace TPSBR
                 [Header("Filtering")]
                 public DataDefinition[] FilterDefinitions; // items must match any of these to be shown
 
+                [Header("Recipes")]
+                [SerializeField]
+                private RecipeDefinition[] _recipes;
+
                 [Networked]
                 private int SelectedItemDefinitionId { get; set; }
                 [Networked]
@@ -40,6 +44,8 @@ namespace TPSBR
                 private ItemSourceType _currentSelectedSourceType = ItemSourceType.None;
                 private int _currentSelectedSourceIndex = -1;
                 private ChangeDetector _changeDetector;
+
+                public IReadOnlyList<RecipeDefinition> Recipes => _recipes ?? Array.Empty<RecipeDefinition>();
 
                 string  IInteraction.Name        => _interactionName;
                 string  IInteraction.Description => _interactionDescription;
