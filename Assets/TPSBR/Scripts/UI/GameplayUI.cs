@@ -24,14 +24,17 @@ namespace TPSBR.UI
 		{
 			bool showCursor = false;
 
-			for (int i = 0; i < _views.Length; i++)
+			if (_views != null)
 			{
-				var view = _views[i];
-
-				if (view.IsOpen == true && view.NeedsCursor == true)
+				for (int i = 0; i < _views.Count; i++)
 				{
-					showCursor = true;
-					break;
+					var view = _views[i];
+
+					if (view.IsOpen == true && view.NeedsCursor == true)
+					{
+						showCursor = true;
+						break;
+					}
 				}
 			}
 
@@ -43,6 +46,8 @@ namespace TPSBR.UI
 		protected override void OnInitializeInternal()
 		{
 			base.OnInitializeInternal();
+
+			EnsureCraftingStationView();
 
 			_deathView = Get<UIDeathView>();
 			_inventoryView = Get<UIGameplayInventory>();
@@ -114,7 +119,15 @@ namespace TPSBR.UI
 		}
 		
 		// PRIVATE METHODS
-		
+
+		private void EnsureCraftingStationView()
+		{
+			if (Get<UICraftingStationView>() != null)
+				return;
+
+			CreateViewFromResource<UICraftingStationView>(UICraftingStationView.ResourcePath);
+		}
+
 		private IEnumerator ShowGameOver_Coroutine(float delay)
 		{
 			yield return new WaitForSeconds(delay);

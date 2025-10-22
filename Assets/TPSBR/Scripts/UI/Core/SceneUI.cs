@@ -24,7 +24,7 @@ namespace TPSBR.UI
 
 		// SceneUI INTERFACE
 
-		protected UIView[] _views;
+		protected List<UIView> _views;
 
 		protected virtual void OnInitializeInternal()   { }
 		protected virtual void OnDeinitializeInternal() { }
@@ -40,7 +40,7 @@ namespace TPSBR.UI
 			if (_views == null)
 				return null;
 
-			for (int i = 0; i < _views.Length; ++i)
+			for (int i = 0; i < _views.Count; ++i)
 			{
 				T view = _views[i] as T;
 
@@ -56,7 +56,7 @@ namespace TPSBR.UI
 			if (_views == null)
 				return null;
 
-			for (int i = 0; i < _views.Length; ++i)
+			for (int i = 0; i < _views.Count; ++i)
 			{
 				T view = _views[i] as T;
 				if (view != null)
@@ -74,7 +74,7 @@ namespace TPSBR.UI
 			if (_views == null)
 				return;
 
-			int index = Array.IndexOf(_views, view);
+			int index = _views.IndexOf(view);
 
 			if (index < 0)
 			{
@@ -104,7 +104,7 @@ namespace TPSBR.UI
 			if (_views == null)
 				return null;
 
-			for (int i = 0; i < _views.Length; ++i)
+			for (int i = 0; i < _views.Count; ++i)
 			{
 				T view = _views[i] as T;
 				if (view != null)
@@ -122,7 +122,7 @@ namespace TPSBR.UI
 			if (_views == null)
 				return;
 
-			int index = Array.IndexOf(_views, view);
+			int index = _views.IndexOf(view);
 
 			if (index < 0)
 			{
@@ -138,7 +138,7 @@ namespace TPSBR.UI
 			if (_views == null)
 				return null;
 
-			for (int i = 0; i < _views.Length; ++i)
+			for (int i = 0; i < _views.Count; ++i)
 			{
 				T view = _views[i] as T;
 				if (view != null)
@@ -164,7 +164,7 @@ namespace TPSBR.UI
 			if (_views == null)
 				return false;
 
-			for (int i = 0; i < _views.Length; ++i)
+			for (int i = 0; i < _views.Count; ++i)
 			{
 				T view = _views[i] as T;
 				if (view != null)
@@ -186,7 +186,7 @@ namespace TPSBR.UI
 
 			int highestPriority = -1;
 
-			for (int i = 0; i < _views.Length; ++i)
+			for (int i = 0; i < _views.Count; ++i)
 			{
 				var otherView = _views[i];
 
@@ -210,10 +210,60 @@ namespace TPSBR.UI
 			if (_views == null)
 				return;
 
-			for (int i = 0; i < _views.Length; ++i)
+			for (int i = 0; i < _views.Count; ++i)
 			{
 				CloseView(_views[i]);
 			}
+		}
+
+		public T CreateViewFromPrefab<T>(T prefab) where T : UIView
+		{
+			if (prefab == null)
+				return null;
+
+			T instance = Instantiate(prefab, transform, false);
+			instance.name = prefab.name;
+
+			RegisterView(instance);
+
+			return instance;
+		}
+
+		public T CreateViewFromResource<T>(string resourcePath) where T : UIView
+		{
+			if (string.IsNullOrEmpty(resourcePath) == true)
+				return null;
+
+			T prefab = Resources.Load<T>(resourcePath);
+			if (prefab == null)
+			{
+				Debug.LogError($"Failed to load view resource of type {typeof(T).Name} at path '{resourcePath}'.", this);
+				return null;
+			}
+
+			return CreateViewFromPrefab(prefab);
+		}
+
+		protected bool RegisterView(UIView view)
+		{
+			if (view == null)
+				return false;
+
+			if (_views == null)
+			{
+				_views = new List<UIView>();
+			}
+
+			if (_views.Contains(view) == true)
+				return false;
+
+			view.Initialize(this, null);
+			view.SetPriority(_views.Count);
+			view.gameObject.SetActive(false);
+
+			_views.Add(view);
+
+			return true;
 		}
 
 		public void GetAll<T>(List<T> list)
@@ -221,7 +271,7 @@ namespace TPSBR.UI
 			if (_views == null)
 				return;
 
-			for (int i = 0; i < _views.Length; ++i)
+			for (int i = 0; i < _views.Count; ++i)
 			{
 				if (_views[i] is T element)
 				{
@@ -252,16 +302,13 @@ namespace TPSBR.UI
 		{
 			Canvas   = GetComponent<Canvas>();
 			UICamera = Canvas.worldCamera;
-			_views   = GetComponentsInChildren<UIView>(true);
 
-			for (int i = 0; i < _views.Length; ++i)
+			UIView[] initialViews = GetComponentsInChildren<UIView>(true);
+			_views = new List<UIView>(initialViews.Length);
+
+			for (int i = 0; i < initialViews.Length; ++i)
 			{
-				UIView view = _views[i];
-
-				view.Initialize(this, null);
-				view.SetPriority(i);
-
-				view.gameObject.SetActive(false);
+				RegisterView(initialViews[i]);
 			}
 
 			OnInitializeInternal();
@@ -275,7 +322,7 @@ namespace TPSBR.UI
 
 			if (_views != null)
 			{
-				for (int i = 0; i < _views.Length; ++i)
+				for (int i = 0; i < _views.Count; ++i)
 				{
 					_views[i].Deinitialize();
 				}
@@ -335,7 +382,7 @@ namespace TPSBR.UI
 
 			if (_views != null)
 			{
-				for (int i = 0; i < _views.Length; ++i)
+				for (int i = 0; i < _views.Count; ++i)
 				{
 					UIView view = _views[i];
 					if (view.IsOpen == true)
@@ -357,7 +404,7 @@ namespace TPSBR.UI
 
 			if (_views != null)
 			{
-				for (int i = 0; i < _views.Length; ++i)
+				for (int i = 0; i < _views.Count; ++i)
 				{
 					_views[i].UpdateSafeArea();
 				}
