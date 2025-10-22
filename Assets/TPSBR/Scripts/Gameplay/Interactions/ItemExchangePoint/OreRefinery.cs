@@ -1,6 +1,6 @@
 namespace TPSBR
 {
-        public sealed class OreRefinery : UpgradeStation
+        public sealed class OreRefinery : CraftingStation
         {
         }
 }

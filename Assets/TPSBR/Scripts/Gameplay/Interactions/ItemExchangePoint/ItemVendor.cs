@@ -9,17 +9,9 @@ using UnityEngine.Serialization;
 
 namespace TPSBR
 {
-        public sealed class ItemVendor : ItemExchangePoint, IInteraction
+        public sealed class ItemVendor : ItemExchangePoint
         {
-                [Header("Interaction")]
-                [SerializeField]
-                private string _interactionName = "Item Vendor";
-                [SerializeField, TextArea]
-                private string _interactionDescription = "Browse and purchase configured items.";
-                [SerializeField]
-                private Transform _hudPivot;
-                [SerializeField]
-                private Collider _interactionCollider;
+              
                 [Header("Filtering")]
                 [FormerlySerializedAs("ItemDefinitions")]
                 public DataDefinition[] FilterDefinitions;
@@ -37,11 +29,6 @@ namespace TPSBR
                 private static WeaponDefinition[] _cachedWeaponDefinitions;
                 private static PickaxeDefinition[] _cachedPickaxeDefinitions;
                 private static WoodAxeDefinition[] _cachedWoodAxeDefinitions;
-
-                string  IInteraction.Name        => _interactionName;
-                string  IInteraction.Description => _interactionDescription;
-                Vector3 IInteraction.HUDPosition => _hudPivot != null ? _hudPivot.position : transform.position;
-                bool    IInteraction.IsActive    => isActiveAndEnabled == true && (_interactionCollider == null || (_interactionCollider.enabled == true && _interactionCollider.gameObject.activeInHierarchy == true));
 
                 public override void Spawned()
                 {

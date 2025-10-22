@@ -4,12 +4,11 @@ using UnityEngine;
 
 namespace TPSBR
 {
-        public abstract class CraftingStation : ItemExchangePoint
-        {
-                [Header("Recipes")]
-                [SerializeField]
-                private RecipeDefinition[] _recipes;
-
-                public IReadOnlyList<RecipeDefinition> Recipes => _recipes ?? Array.Empty<RecipeDefinition>();
-        }
+    public abstract class CraftingStation : ItemExchangePoint
+    {
+        public IReadOnlyList<RecipeDefinition> Recipes => _recipes ?? Array.Empty<RecipeDefinition>();
+        [Header("Recipes")]
+        [SerializeField]
+        private RecipeDefinition[] _recipes;
+ }
 }
