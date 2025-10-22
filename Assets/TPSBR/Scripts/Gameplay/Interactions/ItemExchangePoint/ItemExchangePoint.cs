@@ -1,7 +1,6 @@
-using System;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Serialization;
+using TPSBR.UI;
 
 namespace TPSBR
 {
@@ -27,9 +26,12 @@ namespace TPSBR
         private Transform _cameraTransform;
 
         private Agent _cameraAgent;
+        private UIView _activeUIView;
 
         protected Transform CameraTransform => _cameraTransform;
         protected Agent CurrentCameraAgent => _cameraAgent;
+        protected virtual UIView _uiView => null;
+        protected UIView ActiveUIView => _activeUIView;
 
         protected void ApplyCameraAuthority(Agent agent)
         {
@@ -62,8 +64,93 @@ namespace TPSBR
             _cameraAgent = null;
         }
 
+        protected bool OpenExchangeView(Agent agent)
+        {
+            if (agent == null)
+                return false;
+
+            if (Context == null || Context.UI == null)
+                return false;
+
+            UIView view = _uiView;
+
+            if (view == null)
+            {
+                Debug.LogWarning($"{GetType().Name} could not resolve {nameof(UIView)} via {nameof(_uiView)} override.");
+                return false;
+            }
+
+            if (ConfigureExchangeView(agent, view) == false)
+                return false;
+
+            if (_activeUIView != null && _activeUIView != view)
+            {
+                _activeUIView.HasClosed -= HandleActiveViewClosed;
+                UnsubscribeFromViewEvents(_activeUIView);
+            }
+
+            _activeUIView = view;
+
+            UnsubscribeFromViewEvents(_activeUIView);
+            SubscribeToViewEvents(_activeUIView);
+
+            _activeUIView.HasClosed -= HandleActiveViewClosed;
+            _activeUIView.HasClosed += HandleActiveViewClosed;
+
+            Context.UI.Open(_activeUIView);
+            ApplyCameraAuthority(agent);
+
+            OnExchangeViewOpened(_activeUIView, agent);
+
+            return true;
+        }
+
+        protected void CloseExchangeView()
+        {
+            if (_activeUIView == null)
+                return;
+
+            if (Context != null && Context.UI != null)
+            {
+                Context.UI.Close(_activeUIView);
+            }
+            else
+            {
+                _activeUIView.Close();
+            }
+        }
+
+        protected virtual bool ConfigureExchangeView(Agent agent, UIView view)
+        {
+            _ = agent;
+            _ = view;
+            return true;
+        }
+
+        protected virtual void SubscribeToViewEvents(UIView view)
+        {
+            _ = view;
+        }
+
+        protected virtual void UnsubscribeFromViewEvents(UIView view)
+        {
+            _ = view;
+        }
+
+        protected virtual void OnExchangeViewOpened(UIView view, Agent agent)
+        {
+            _ = view;
+            _ = agent;
+        }
+
+        protected virtual void OnExchangeViewClosed(UIView view)
+        {
+            _ = view;
+        }
+
         protected virtual void OnDisable()
         {
+            CloseExchangeView();
             RestoreCameraAuthority();
         }
 
@@ -75,6 +162,19 @@ namespace TPSBR
             {
                 ApplyCameraAuthority(_cameraAgent);
             }
+        }
+
+        private void HandleActiveViewClosed()
+        {
+            if (_activeUIView != null)
+            {
+                _activeUIView.HasClosed -= HandleActiveViewClosed;
+                UnsubscribeFromViewEvents(_activeUIView);
+                OnExchangeViewClosed(_activeUIView);
+                _activeUIView = null;
+            }
+
+            RestoreCameraAuthority();
         }
     }
 }

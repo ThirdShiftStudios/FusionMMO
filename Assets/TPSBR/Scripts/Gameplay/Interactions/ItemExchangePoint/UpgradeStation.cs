@@ -16,6 +16,7 @@ namespace TPSBR
 
         [Header("Filtering")]
         public DataDefinition[] FilterDefinitions;
+        private UIItemContextView _itemContextView;
 
         [Networked]
         private int SelectedItemDefinitionId { get; set; }
@@ -24,7 +25,6 @@ namespace TPSBR
         [Networked]
         private int SelectedItemSourceIndex { get; set; }
 
-        private UIItemContextView _activeItemContextView;
         private Weapon _weaponPreviewInstance;
         private int _currentPreviewDefinitionId;
         private ItemSourceType _currentSelectedSourceType = ItemSourceType.None;
@@ -72,31 +72,61 @@ namespace TPSBR
 
         private void OpenItemContextView(Agent agent)
         {
-            if (Context == null || Context.UI == null)
-                return;
+            OpenExchangeView(agent);
+        }
 
-            UIItemContextView view = Context.UI.Get<UIItemContextView>();
+        protected override UIView _uiView => GetItemContextView();
 
-            if (view == null)
+        private UIItemContextView GetItemContextView()
+        {
+            if (_itemContextView == null && Context != null && Context.UI != null)
             {
-                Debug.LogWarning($"{nameof(UIItemContextView)} is not available in the current UI setup.");
-                return;
+                _itemContextView = Context.UI.Get<UIItemContextView>();
             }
 
-            view.Configure(agent, destination => PopulateItems(agent, destination));
+            return _itemContextView;
+        }
 
-            if (_activeItemContextView != null)
+        protected override bool ConfigureExchangeView(Agent agent, UIView view)
+        {
+            if (view is UIItemContextView itemContextView)
             {
-                _activeItemContextView.ItemSelected -= HandleItemSelected;
-                _activeItemContextView.HasClosed -= HandleItemContextViewClosed;
+                itemContextView.Configure(agent, destination => PopulateItems(agent, destination));
+                return true;
             }
 
-            _activeItemContextView = view;
-            _activeItemContextView.ItemSelected += HandleItemSelected;
-            _activeItemContextView.HasClosed += HandleItemContextViewClosed;
+            Debug.LogWarning($"{nameof(UIItemContextView)} is not available in the current UI setup.");
+            return false;
+        }
 
-            Context.UI.Open(view);
-            ApplyCameraAuthority(agent);
+        protected override void SubscribeToViewEvents(UIView view)
+        {
+            if (view is UIItemContextView itemContextView)
+            {
+                itemContextView.ItemSelected += HandleItemSelected;
+            }
+        }
+
+        protected override void UnsubscribeFromViewEvents(UIView view)
+        {
+            if (view is UIItemContextView itemContextView)
+            {
+                itemContextView.ItemSelected -= HandleItemSelected;
+            }
+        }
+
+        protected override void OnExchangeViewClosed(UIView view)
+        {
+            UpdateLocalWeaponPreview(null);
+            RequestSetSelectedItem(0, ItemSourceType.None, -1);
+
+            if (HasStateAuthority == false)
+            {
+                _currentSelectedSourceType = ItemSourceType.None;
+                _currentSelectedSourceIndex = -1;
+            }
+
+            base.OnExchangeViewClosed(view);
         }
 
         private ItemStatus PopulateItems(Agent agent, List<ItemData> destination)
@@ -240,16 +270,8 @@ namespace TPSBR
 
         protected override void OnDisable()
         {
-            if (_activeItemContextView != null)
-            {
-                _activeItemContextView.ItemSelected -= HandleItemSelected;
-                _activeItemContextView.HasClosed -= HandleItemContextViewClosed;
-                _activeItemContextView = null;
-            }
-
-            RestoreCameraAuthority();
-
             UpdateLocalWeaponPreview(null);
+
             if (HasStateAuthority == true)
             {
                 RequestSetSelectedItem(0, ItemSourceType.None, -1);
@@ -286,20 +308,6 @@ namespace TPSBR
             UpdateLocalWeaponPreview(data.Definition);
             RequestSetSelectedItem(data.Definition != null ? data.Definition.ID : 0, data.SourceType, data.SourceIndex);
             ApplyCameraAuthority(CurrentCameraAgent);
-        }
-
-        private void HandleItemContextViewClosed()
-        {
-            if (_activeItemContextView != null)
-            {
-                _activeItemContextView.ItemSelected -= HandleItemSelected;
-                _activeItemContextView.HasClosed -= HandleItemContextViewClosed;
-                _activeItemContextView = null;
-            }
-
-            UpdateLocalWeaponPreview(null);
-            RequestSetSelectedItem(0, ItemSourceType.None, -1);
-            RestoreCameraAuthority();
         }
 
         private void ShowWeaponPreview(WeaponDefinition definition)

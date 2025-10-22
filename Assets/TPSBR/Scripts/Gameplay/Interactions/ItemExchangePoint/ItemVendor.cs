@@ -17,14 +17,13 @@ namespace TPSBR
         public DataDefinition[] FilterDefinitions;
         [SerializeField]
         private int _itemsPerDefinition = 3;
+        private UIVendorView _vendorView;
 
         [Networked, Capacity(64)]
         private NetworkLinkedList<InventorySlot> _availableItems { get; }
 
         public const int ITEM_COST = 10;
         private const int SELL_REWARD = 5;
-
-        private UIVendorView _activeVendorView;
 
         private static WeaponDefinition[] _cachedWeaponDefinitions;
         private static PickaxeDefinition[] _cachedPickaxeDefinitions;
@@ -75,36 +74,47 @@ namespace TPSBR
             if (agent == null)
                 return;
 
-            OpenVendorView(agent);
+            OpenExchangeView(agent);
         }
 
-        private void OpenVendorView(Agent agent)
+        protected override UIView _uiView => GetVendorView();
+
+        private UIVendorView GetVendorView()
         {
-            if (Context == null || Context.UI == null)
-                return;
-
-            UIVendorView view = Context.UI.Get<UIVendorView>();
-
-            if (view == null)
+            if (_vendorView == null && Context != null && Context.UI != null)
             {
-                Debug.LogWarning($"{nameof(UIVendorView)} is not available in the current UI setup.");
-                return;
+                _vendorView = Context.UI.Get<UIVendorView>();
             }
 
-            view.Configure(agent, this, PopulateItems);
+            return _vendorView;
+        }
 
-            if (_activeVendorView != null)
+        protected override bool ConfigureExchangeView(Agent agent, UIView view)
+        {
+            if (view is UIVendorView vendorView)
             {
-                _activeVendorView.ItemSelected -= HandleItemSelected;
-                _activeVendorView.HasClosed -= HandleVendorViewClosed;
+                vendorView.Configure(agent, this, PopulateItems);
+                return true;
             }
 
-            _activeVendorView = view;
-            _activeVendorView.ItemSelected += HandleItemSelected;
-            _activeVendorView.HasClosed += HandleVendorViewClosed;
+            Debug.LogWarning($"{nameof(UIVendorView)} is not available in the current UI setup.");
+            return false;
+        }
 
-            Context.UI.Open(view);
-            ApplyCameraAuthority(agent);
+        protected override void SubscribeToViewEvents(UIView view)
+        {
+            if (view is UIVendorView vendorView)
+            {
+                vendorView.ItemSelected += HandleItemSelected;
+            }
+        }
+
+        protected override void UnsubscribeFromViewEvents(UIView view)
+        {
+            if (view is UIVendorView vendorView)
+            {
+                vendorView.ItemSelected -= HandleItemSelected;
+            }
         }
 
         private VendorItemStatus PopulateItems(List<VendorItemData> destination)
@@ -483,28 +493,8 @@ namespace TPSBR
             ApplyCameraAuthority(CurrentCameraAgent);
         }
 
-        private void HandleVendorViewClosed()
-        {
-            if (_activeVendorView != null)
-            {
-                _activeVendorView.ItemSelected -= HandleItemSelected;
-                _activeVendorView.HasClosed -= HandleVendorViewClosed;
-                _activeVendorView = null;
-            }
-
-            RestoreCameraAuthority();
-        }
-
         protected override void OnDisable()
         {
-            if (_activeVendorView != null)
-            {
-                _activeVendorView.ItemSelected -= HandleItemSelected;
-                _activeVendorView.HasClosed -= HandleVendorViewClosed;
-                _activeVendorView = null;
-            }
-
-            RestoreCameraAuthority();
             if (HasStateAuthority == true)
             {
                 _availableItems.Clear();
