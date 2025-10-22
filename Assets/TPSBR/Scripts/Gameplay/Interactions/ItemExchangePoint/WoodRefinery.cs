@@ -1,6 +1,6 @@
 namespace TPSBR
 {
-        public sealed class WoodRefinery : CraftingStation
+        public sealed class WoodRefinery : UpgradeStation
         {
         }
 }

@@ -1,6 +1,6 @@
 namespace TPSBR
 {
-        public sealed class ArcaneConduit : CraftingStation
+        public sealed class ArcaneConduit : UpgradeStation
         {
         }
 }

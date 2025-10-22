@@ -20,9 +20,6 @@ namespace TPSBR
                 private Transform _hudPivot;
                 [SerializeField]
                 private Collider _interactionCollider;
-                [SerializeField]
-                private Transform _cameraTransform;
-
                 [Header("Filtering")]
                 [FormerlySerializedAs("ItemDefinitions")]
                 public DataDefinition[] FilterDefinitions;
@@ -36,7 +33,6 @@ namespace TPSBR
                 private const int SELL_REWARD = 5;
 
                 private UIVendorView _activeVendorView;
-                private Agent _cameraAgent;
 
                 private static WeaponDefinition[] _cachedWeaponDefinitions;
                 private static PickaxeDefinition[] _cachedPickaxeDefinitions;
@@ -497,7 +493,7 @@ namespace TPSBR
                 private void HandleItemSelected(VendorItemData data)
                 {
                         _ = data;
-                        ApplyCameraAuthority(_cameraAgent);
+                        ApplyCameraAuthority(CurrentCameraAgent);
                 }
 
                 private void HandleVendorViewClosed()
@@ -512,7 +508,7 @@ namespace TPSBR
                         RestoreCameraAuthority();
                 }
 
-                private void OnDisable()
+                protected override void OnDisable()
                 {
                         if (_activeVendorView != null)
                         {
@@ -526,44 +522,8 @@ namespace TPSBR
                         {
                                 _availableItems.Clear();
                         }
-                }
 
-                private void ApplyCameraAuthority(Agent agent)
-                {
-                        if (_cameraTransform == null || agent == null)
-                                return;
-
-                        if (agent.Interactions == null)
-                                return;
-
-                        if (_cameraAgent != null && _cameraAgent != agent)
-                        {
-                                RestoreCameraAuthority();
-                        }
-
-                        _cameraAgent = agent;
-                        agent.Interactions.SetInteractionCameraAuthority(_cameraTransform);
-                }
-
-                private void RestoreCameraAuthority()
-                {
-                        if (_cameraAgent == null)
-                                return;
-
-                        Interactions interactions = _cameraAgent.Interactions;
-                        if (interactions != null)
-                        {
-                                interactions.ClearInteractionCameraAuthority(_cameraTransform);
-                        }
-
-                        _cameraAgent = null;
-                }
-
-                public override void Render()
-                {
-                        base.Render();
-
-                        ApplyCameraAuthority(_cameraAgent);
+                        base.OnDisable();
                 }
 
                 public enum VendorItemStatus

@@ -24,15 +24,15 @@ namespace TPSBR.UI
                 private Color _selectedSlotColor = Color.white;
 
                 private readonly List<UIListItem> _spawnedSlots = new List<UIListItem>();
-                private readonly List<CraftingStation.ItemData> _currentItems = new List<CraftingStation.ItemData>();
-                private readonly List<CraftingStation.ItemData> _lastItems = new List<CraftingStation.ItemData>();
-                private Func<List<CraftingStation.ItemData>, CraftingStation.ItemStatus> _itemProvider;
-                private CraftingStation.ItemStatus _lastStatus = CraftingStation.ItemStatus.NoAgent;
+                private readonly List<UpgradeStation.ItemData> _currentItems = new List<UpgradeStation.ItemData>();
+                private readonly List<UpgradeStation.ItemData> _lastItems = new List<UpgradeStation.ItemData>();
+                private Func<List<UpgradeStation.ItemData>, UpgradeStation.ItemStatus> _itemProvider;
+                private UpgradeStation.ItemStatus _lastStatus = UpgradeStation.ItemStatus.NoAgent;
                 private int _selectedIndex = -1;
 
-                public event Action<CraftingStation.ItemData> ItemSelected;
+                public event Action<UpgradeStation.ItemData> ItemSelected;
 
-                public void Configure(Agent agent, Func<List<CraftingStation.ItemData>, CraftingStation.ItemStatus> itemProvider)
+                public void Configure(Agent agent, Func<List<UpgradeStation.ItemData>, UpgradeStation.ItemStatus> itemProvider)
                 {
                         _ = agent;
                         _itemProvider = itemProvider;
@@ -54,7 +54,7 @@ namespace TPSBR.UI
                         _itemProvider = null;
                         _currentItems.Clear();
                         _lastItems.Clear();
-                        _lastStatus = CraftingStation.ItemStatus.NoAgent;
+                        _lastStatus = UpgradeStation.ItemStatus.NoAgent;
                         _selectedIndex = -1;
                         ClearSlots();
                         SetEmptyState(string.Empty);
@@ -72,7 +72,7 @@ namespace TPSBR.UI
                         if (_itemSlotPrefab == null || _slotContainer == null)
                                 return;
 
-                        CraftingStation.ItemStatus status = CraftingStation.ItemStatus.NoAgent;
+                        UpgradeStation.ItemStatus status = UpgradeStation.ItemStatus.NoAgent;
 
                         if (_itemProvider != null)
                         {
@@ -85,7 +85,7 @@ namespace TPSBR.UI
 
                         _lastStatus = status;
 
-                        if (status != CraftingStation.ItemStatus.Success || _currentItems.Count == 0)
+                        if (status != UpgradeStation.ItemStatus.Success || _currentItems.Count == 0)
                         {
                                 ClearSlots();
                                 HandleEmptyState(status);
@@ -97,7 +97,7 @@ namespace TPSBR.UI
                         for (int i = 0; i < _currentItems.Count; ++i)
                         {
                                 UIListItem slot = _spawnedSlots[i];
-                                CraftingStation.ItemData data = _currentItems[i];
+                                UpgradeStation.ItemData data = _currentItems[i];
 
                                 slot.InitializeSlot(this, i);
                                 slot.SetItem(data.Icon, data.Quantity);
@@ -149,17 +149,17 @@ namespace TPSBR.UI
                         UpdateSelectionVisuals();
                 }
 
-                private void HandleEmptyState(CraftingStation.ItemStatus status)
+                private void HandleEmptyState(UpgradeStation.ItemStatus status)
                 {
                         switch (status)
                         {
-                                case CraftingStation.ItemStatus.NoAgent:
+                                case UpgradeStation.ItemStatus.NoAgent:
                                         SetEmptyState(_noAgentText);
                                         break;
-                                case CraftingStation.ItemStatus.NoInventory:
+                                case UpgradeStation.ItemStatus.NoInventory:
                                         SetEmptyState(_noInventoryText);
                                         break;
-                                case CraftingStation.ItemStatus.NoItems:
+                                case UpgradeStation.ItemStatus.NoItems:
                                 default:
                                         SetEmptyState(_noItemsText);
                                         break;
@@ -175,7 +175,7 @@ namespace TPSBR.UI
                         _emptyStateLabel.gameObject.SetActive(string.IsNullOrWhiteSpace(message) == false);
                 }
 
-                private static bool AreItemListsEqual(List<CraftingStation.ItemData> current, List<CraftingStation.ItemData> previous)
+                private static bool AreItemListsEqual(List<UpgradeStation.ItemData> current, List<UpgradeStation.ItemData> previous)
                 {
                         if (current == null || previous == null)
                                 return false;
@@ -192,7 +192,7 @@ namespace TPSBR.UI
                         return true;
                 }
 
-                private static void CopyItems(List<CraftingStation.ItemData> source, List<CraftingStation.ItemData> destination)
+                private static void CopyItems(List<UpgradeStation.ItemData> source, List<UpgradeStation.ItemData> destination)
                 {
                         destination.Clear();
 
