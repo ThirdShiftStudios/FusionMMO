@@ -9,7 +9,7 @@ using UnityEngine.Serialization;
 
 namespace TPSBR
 {
-        public sealed class ItemVendor : ContextBehaviour, IInteraction
+        public sealed class ItemVendor : ItemExchangePoint, IInteraction
         {
                 [Header("Interaction")]
                 [SerializeField]

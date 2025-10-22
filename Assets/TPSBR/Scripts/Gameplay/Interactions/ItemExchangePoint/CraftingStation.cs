@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace TPSBR
 {
-        public abstract class CraftingStation : ContextBehaviour, IInteraction
+        public abstract class CraftingStation : ItemExchangePoint, IInteraction
         {
                 [Header("Interaction")]
                 [SerializeField]
