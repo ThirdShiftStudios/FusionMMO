@@ -129,6 +129,11 @@
                 Agent agent = _character != null ? _character.Agent : null;
                 itemVendor.Interact(agent);
             }
+            else if (InteractionTarget is CraftingStation craftingStation)
+            {
+                Agent agent = _character != null ? _character.Agent : null;
+                craftingStation.Interact(agent);
+            }
             else if (InteractionTarget is RuneNode runeNode)
             {
                 TryHarvestRuneNode(runeNode);
