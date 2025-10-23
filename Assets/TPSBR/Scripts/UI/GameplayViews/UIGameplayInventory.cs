@@ -271,6 +271,9 @@ namespace TPSBR.UI
                 var generalSlots = new List<UIListItem>(discoveredSlots.Length);
                 UIListItem pickaxeSlot = null;
                 UIListItem woodAxeSlot = null;
+                UIListItem wizardHatSlot = null;
+                UIListItem wizardRobeSlot = null;
+                UIListItem wizardBootSlot = null;
 
                 for (int i = 0; i < discoveredSlots.Length; i++)
                 {
@@ -283,13 +286,30 @@ namespace TPSBR.UI
                     {
                         woodAxeSlot = slot;
                     }
+                    else if (IsWizardHatUISlot(slot) == true)
+                    {
+                        wizardHatSlot = slot;
+                    }
+                    else if (IsWizardRobeUISlot(slot) == true)
+                    {
+                        wizardRobeSlot = slot;
+                    }
+                    else if (IsWizardBootUISlot(slot) == true)
+                    {
+                        wizardBootSlot = slot;
+                    }
                     else
                     {
                         generalSlots.Add(slot);
                     }
                 }
 
-                var orderedSlots = new List<UIListItem>(generalSlots.Count + (pickaxeSlot != null ? 1 : 0) + (woodAxeSlot != null ? 1 : 0));
+                var orderedSlots = new List<UIListItem>(generalSlots.Count +
+                                                         (pickaxeSlot != null ? 1 : 0) +
+                                                         (woodAxeSlot != null ? 1 : 0) +
+                                                         (wizardHatSlot != null ? 1 : 0) +
+                                                         (wizardRobeSlot != null ? 1 : 0) +
+                                                         (wizardBootSlot != null ? 1 : 0));
                 var indices = new List<int>(orderedSlots.Capacity);
                 _slotLookup = new Dictionary<int, UIListItem>(orderedSlots.Capacity);
 
@@ -327,6 +347,48 @@ namespace TPSBR.UI
                 else
                 {
                     Debug.LogWarning($"{nameof(UIList)} inventory list is missing a wood axe inventory slot.");
+                }
+#endif
+
+                if (wizardHatSlot != null)
+                {
+                    wizardHatSlot.InitializeSlot(this, Inventory.WIZARD_HAT_SLOT_INDEX);
+                    orderedSlots.Add(wizardHatSlot);
+                    indices.Add(Inventory.WIZARD_HAT_SLOT_INDEX);
+                    _slotLookup[Inventory.WIZARD_HAT_SLOT_INDEX] = wizardHatSlot;
+                }
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                else
+                {
+                    Debug.LogWarning($"{nameof(UIList)} inventory list is missing a wizard hat inventory slot.");
+                }
+#endif
+
+                if (wizardRobeSlot != null)
+                {
+                    wizardRobeSlot.InitializeSlot(this, Inventory.WIZARD_ROBE_SLOT_INDEX);
+                    orderedSlots.Add(wizardRobeSlot);
+                    indices.Add(Inventory.WIZARD_ROBE_SLOT_INDEX);
+                    _slotLookup[Inventory.WIZARD_ROBE_SLOT_INDEX] = wizardRobeSlot;
+                }
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                else
+                {
+                    Debug.LogWarning($"{nameof(UIList)} inventory list is missing a wizard robe inventory slot.");
+                }
+#endif
+
+                if (wizardBootSlot != null)
+                {
+                    wizardBootSlot.InitializeSlot(this, Inventory.WIZARD_BOOT_SLOT_INDEX);
+                    orderedSlots.Add(wizardBootSlot);
+                    indices.Add(Inventory.WIZARD_BOOT_SLOT_INDEX);
+                    _slotLookup[Inventory.WIZARD_BOOT_SLOT_INDEX] = wizardBootSlot;
+                }
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                else
+                {
+                    Debug.LogWarning($"{nameof(UIList)} inventory list is missing a wizard boot inventory slot.");
                 }
 #endif
 
@@ -454,7 +516,9 @@ namespace TPSBR.UI
 
                 if (source.Owner is UIHotbar)
                 {
-                    if (target.Index == Inventory.PICKAXE_SLOT_INDEX || target.Index == Inventory.WOOD_AXE_SLOT_INDEX)
+                    if (target.Index == Inventory.PICKAXE_SLOT_INDEX || target.Index == Inventory.WOOD_AXE_SLOT_INDEX ||
+                        target.Index == Inventory.WIZARD_HAT_SLOT_INDEX || target.Index == Inventory.WIZARD_ROBE_SLOT_INDEX ||
+                        target.Index == Inventory.WIZARD_BOOT_SLOT_INDEX)
                         return;
 
                     _inventory.RequestStoreHotbar(source.Index, target.Index);
@@ -680,6 +744,57 @@ namespace TPSBR.UI
 
                 var normalizedName = slotName.Replace(" ", string.Empty).Replace("_", string.Empty);
                 return normalizedName.IndexOf("woodaxe", StringComparison.OrdinalIgnoreCase) >= 0;
+            }
+
+            private static bool IsWizardHatUISlot(UIListItem slot)
+            {
+                if (slot == null)
+                    return false;
+
+                var slotObject = slot.gameObject;
+                if (slotObject == null)
+                    return false;
+
+                var slotName = slotObject.name;
+                if (string.IsNullOrEmpty(slotName))
+                    return false;
+
+                var normalizedName = slotName.Replace(" ", string.Empty).Replace("_", string.Empty);
+                return normalizedName.IndexOf("wizardhat", StringComparison.OrdinalIgnoreCase) >= 0;
+            }
+
+            private static bool IsWizardRobeUISlot(UIListItem slot)
+            {
+                if (slot == null)
+                    return false;
+
+                var slotObject = slot.gameObject;
+                if (slotObject == null)
+                    return false;
+
+                var slotName = slotObject.name;
+                if (string.IsNullOrEmpty(slotName))
+                    return false;
+
+                var normalizedName = slotName.Replace(" ", string.Empty).Replace("_", string.Empty);
+                return normalizedName.IndexOf("wizardrobe", StringComparison.OrdinalIgnoreCase) >= 0;
+            }
+
+            private static bool IsWizardBootUISlot(UIListItem slot)
+            {
+                if (slot == null)
+                    return false;
+
+                var slotObject = slot.gameObject;
+                if (slotObject == null)
+                    return false;
+
+                var slotName = slotObject.name;
+                if (string.IsNullOrEmpty(slotName))
+                    return false;
+
+                var normalizedName = slotName.Replace(" ", string.Empty).Replace("_", string.Empty);
+                return normalizedName.IndexOf("wizardboot", StringComparison.OrdinalIgnoreCase) >= 0;
             }
         }
 

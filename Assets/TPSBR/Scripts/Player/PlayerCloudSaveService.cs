@@ -18,6 +18,9 @@ namespace TPSBR
         public byte CurrentWeaponSlot;
         public PlayerInventoryItemData PickaxeSlot;
         public PlayerInventoryItemData WoodAxeSlot;
+        public PlayerInventoryItemData WizardHatSlot;
+        public PlayerInventoryItemData WizardRobeSlot;
+        public PlayerInventoryItemData WizardBootSlot;
         public int Gold;
         public PlayerCharacterSaveData[] Characters;
         public string ActiveCharacterId;
@@ -59,6 +62,9 @@ namespace TPSBR
         public byte CurrentWeaponSlot;
         public PlayerInventoryItemData PickaxeSlot;
         public PlayerInventoryItemData WoodAxeSlot;
+        public PlayerInventoryItemData WizardHatSlot;
+        public PlayerInventoryItemData WizardRobeSlot;
+        public PlayerInventoryItemData WizardBootSlot;
         public int Gold;
     }
 
@@ -755,6 +761,9 @@ namespace TPSBR
                 CharacterId = characterId,
                 PickaxeSlot = default,
                 WoodAxeSlot = default,
+                WizardHatSlot = default,
+                WizardRobeSlot = default,
+                WizardBootSlot = default,
                 CurrentWeaponSlot = 0,
                 Gold = 0,
             };
@@ -1473,6 +1482,9 @@ namespace TPSBR
             _cachedData.CurrentWeaponSlot = 0;
             _cachedData.PickaxeSlot = default;
             _cachedData.WoodAxeSlot = default;
+            _cachedData.WizardHatSlot = default;
+            _cachedData.WizardRobeSlot = default;
+            _cachedData.WizardBootSlot = default;
             _cachedData.Gold = 0;
 
             _cachedData.ActiveCharacterId = _activeCharacterId;
@@ -1568,6 +1580,9 @@ namespace TPSBR
                          (_cachedData.HotbarSlots != null && _cachedData.HotbarSlots.Length > 0) ||
                          _cachedData.PickaxeSlot.ItemDefinitionId != 0 ||
                          _cachedData.WoodAxeSlot.ItemDefinitionId != 0 ||
+                         _cachedData.WizardHatSlot.ItemDefinitionId != 0 ||
+                         _cachedData.WizardRobeSlot.ItemDefinitionId != 0 ||
+                         _cachedData.WizardBootSlot.ItemDefinitionId != 0 ||
                          _cachedData.Gold != 0)
                 {
                     string legacyCharacterId = _cachedData.ActiveCharacterId;
@@ -1594,6 +1609,9 @@ namespace TPSBR
                             CurrentWeaponSlot = _cachedData.CurrentWeaponSlot,
                             PickaxeSlot = _cachedData.PickaxeSlot,
                             WoodAxeSlot = _cachedData.WoodAxeSlot,
+                            WizardHatSlot = _cachedData.WizardHatSlot,
+                            WizardRobeSlot = _cachedData.WizardRobeSlot,
+                            WizardBootSlot = _cachedData.WizardBootSlot,
                             Gold = _cachedData.Gold,
                         };
 
