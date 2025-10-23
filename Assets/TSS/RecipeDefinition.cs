@@ -21,6 +21,8 @@ namespace TPSBR
         private ItemQuantity[] _inputs;
         [SerializeField]
         private ItemQuantity[] _outputs;
+        [SerializeField, Min(0f)]
+        private float _craftingTime = 0f;
         [SerializeField]
         private Professions.ProfessionIndex _requiredProfession = Professions.ProfessionIndex.Mining;
         [SerializeField, Min(0)]
@@ -35,6 +37,7 @@ namespace TPSBR
 
         public IReadOnlyList<ItemQuantity> Inputs => _inputs ?? Array.Empty<ItemQuantity>();
         public IReadOnlyList<ItemQuantity> Outputs => _outputs ?? Array.Empty<ItemQuantity>();
+        public float CraftingTime => Mathf.Max(0f, _craftingTime);
         public Professions.ProfessionIndex RequiredProfession => _requiredProfession;
         public int MinimumProfessionLevel => Mathf.Max(0, _minimumProfessionLevel);
         public bool HasProfessionRequirement => MinimumProfessionLevel > 0;

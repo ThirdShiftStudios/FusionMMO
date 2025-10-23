@@ -39,13 +39,30 @@ namespace TPSBR.UI
                 [SerializeField]
                 private string _craftAllButtonCountFormat = "Craft All ({0})";
 
+                [Header("Crafting")]
+                [SerializeField]
+                private GameObject _craftingProgressRoot;
+                [SerializeField]
+                private Image _craftingProgressImage;
+                [SerializeField]
+                private Button _cancelButton;
+                [SerializeField]
+                private TextMeshProUGUI _cancelButtonLabel;
+                [SerializeField]
+                private string _cancelButtonText = "Cancel";
+
                 private readonly List<UIRecipeItemIcon> _inputIcons = new List<UIRecipeItemIcon>();
                 private readonly List<UIRecipeItemIcon> _outputIcons = new List<UIRecipeItemIcon>();
 
                 private RecipeDefinition _recipe;
+                private int _currentCraftableCount;
+                private bool _isCrafting;
+                private float _craftStartTime;
+                private float _craftDuration;
 
                 public event Action<RecipeDefinition> CraftRequested;
                 public event Action<RecipeDefinition> CraftAllRequested;
+                public event Action<RecipeDefinition> CancelRequested;
 
                 private void Awake()
                 {
@@ -57,6 +74,17 @@ namespace TPSBR.UI
                         if (_craftAllButton != null)
                         {
                                 _craftAllButton.onClick.AddListener(HandleCraftAllClicked);
+                        }
+
+                        if (_cancelButton != null)
+                        {
+                                _cancelButton.onClick.AddListener(HandleCancelClicked);
+                                _cancelButton.gameObject.SetActive(false);
+                        }
+
+                        if (_craftingProgressRoot != null)
+                        {
+                                _craftingProgressRoot.SetActive(false);
                         }
                 }
 
@@ -71,6 +99,19 @@ namespace TPSBR.UI
                         {
                                 _craftAllButton.onClick.RemoveListener(HandleCraftAllClicked);
                         }
+
+                        if (_cancelButton != null)
+                        {
+                                _cancelButton.onClick.RemoveListener(HandleCancelClicked);
+                        }
+                }
+
+                private void Update()
+                {
+                        if (_isCrafting == true)
+                        {
+                                UpdateCraftingProgress();
+                        }
                 }
 
                 public void Configure(RecipeDefinition recipe, int craftableCount)
@@ -81,6 +122,24 @@ namespace TPSBR.UI
                         PopulateIcons(recipe != null ? recipe.Inputs : Array.Empty<RecipeDefinition.ItemQuantity>(), _inputContainer, _inputIcons);
                         PopulateIcons(recipe != null ? recipe.Outputs : Array.Empty<RecipeDefinition.ItemQuantity>(), _outputContainer, _outputIcons);
                         UpdateCraftButtons(craftableCount);
+                }
+
+                public void ApplyCraftingState(bool isCrafting, float startTime, float duration)
+                {
+                        _isCrafting = isCrafting;
+
+                        if (_isCrafting == true)
+                        {
+                                _craftStartTime = startTime;
+                                _craftDuration = Mathf.Max(0.0001f, duration);
+                        }
+                        else
+                        {
+                                _craftStartTime = 0f;
+                                _craftDuration = 0f;
+                        }
+
+                        UpdateCraftButtons(_currentCraftableCount);
                 }
 
                 private void UpdateRecipeHeader(RecipeDefinition recipe)
@@ -187,7 +246,10 @@ namespace TPSBR.UI
 
                 private void UpdateCraftButtons(int craftableCount)
                 {
-                        bool canCraft = craftableCount > 0;
+                        _currentCraftableCount = craftableCount;
+
+                        bool canCraft = craftableCount > 0 && _isCrafting == false;
+                        bool canCraftAll = craftableCount > 0 && _isCrafting == false;
 
                         if (_craftButton != null)
                         {
@@ -196,7 +258,7 @@ namespace TPSBR.UI
 
                         if (_craftAllButton != null)
                         {
-                                _craftAllButton.interactable = canCraft;
+                                _craftAllButton.interactable = canCraftAll;
                         }
 
                         if (_craftButtonLabel != null)
@@ -215,6 +277,24 @@ namespace TPSBR.UI
                                         _craftAllButtonLabel.text = _craftAllButtonText;
                                 }
                         }
+
+                        if (_cancelButtonLabel != null)
+                        {
+                                _cancelButtonLabel.text = _cancelButtonText;
+                        }
+
+                        if (_cancelButton != null)
+                        {
+                                _cancelButton.gameObject.SetActive(_isCrafting);
+                                _cancelButton.interactable = true;
+                        }
+
+                        if (_craftingProgressRoot != null)
+                        {
+                                _craftingProgressRoot.SetActive(_isCrafting);
+                        }
+
+                        UpdateCraftingProgress();
                 }
 
                 private void HandleCraftClicked()
@@ -231,6 +311,32 @@ namespace TPSBR.UI
                                 return;
 
                         CraftAllRequested?.Invoke(_recipe);
+                }
+
+                private void HandleCancelClicked()
+                {
+                        if (_recipe == null || _isCrafting == false)
+                                return;
+
+                        CancelRequested?.Invoke(_recipe);
+                }
+
+                private void UpdateCraftingProgress()
+                {
+                        if (_craftingProgressImage == null)
+                                return;
+
+                        if (_isCrafting == false)
+                        {
+                                _craftingProgressImage.fillAmount = 0f;
+                                return;
+                        }
+
+                        float duration = Mathf.Max(0.0001f, _craftDuration);
+                        float elapsed = Time.unscaledTime - _craftStartTime;
+                        float progress = Mathf.Clamp01(duration > 0f ? (elapsed / duration) : 1f);
+
+                        _craftingProgressImage.fillAmount = progress;
                 }
         }
 }
