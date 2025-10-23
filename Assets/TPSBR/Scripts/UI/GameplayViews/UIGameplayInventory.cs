@@ -820,7 +820,7 @@ namespace TPSBR.UI
                     return false;
 
                 var normalizedName = slotName.Replace(" ", string.Empty).Replace("_", string.Empty);
-                return normalizedName.IndexOf("wizardhat", StringComparison.OrdinalIgnoreCase) >= 0;
+                return normalizedName.IndexOf("Head", StringComparison.OrdinalIgnoreCase) >= 0;
             }
 
             private static bool IsWizardRobeUISlot(UIListItem slot)
@@ -837,7 +837,7 @@ namespace TPSBR.UI
                     return false;
 
                 var normalizedName = slotName.Replace(" ", string.Empty).Replace("_", string.Empty);
-                return normalizedName.IndexOf("wizardrobe", StringComparison.OrdinalIgnoreCase) >= 0;
+                return normalizedName.IndexOf("Robe", StringComparison.OrdinalIgnoreCase) >= 0;
             }
 
             private static bool IsWizardBootUISlot(UIListItem slot)
@@ -854,7 +854,7 @@ namespace TPSBR.UI
                     return false;
 
                 var normalizedName = slotName.Replace(" ", string.Empty).Replace("_", string.Empty);
-                return normalizedName.IndexOf("wizardboot", StringComparison.OrdinalIgnoreCase) >= 0;
+                return normalizedName.IndexOf("Boots", StringComparison.OrdinalIgnoreCase) >= 0;
             }
         }
 
