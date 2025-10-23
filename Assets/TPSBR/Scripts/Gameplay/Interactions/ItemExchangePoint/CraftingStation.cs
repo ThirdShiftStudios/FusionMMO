@@ -17,7 +17,20 @@ namespace TPSBR
         [SerializeField]
         private RecipeDefinition[] _recipes;
 
+        public event Action<RecipeDefinition, float, float, int> CraftStarted;
+        public event Action<RecipeDefinition> CraftCompleted;
+        public event Action<RecipeDefinition> CraftCancelled;
+
         private UICraftingStationView _craftingView;
+        private readonly Dictionary<NetworkId, ActiveCraft> _activeCrafts = new Dictionary<NetworkId, ActiveCraft>();
+        private readonly List<NetworkId> _craftsToFinalize = new List<NetworkId>();
+
+        private RecipeDefinition _localActiveRecipe;
+        private float _localCraftStartTime;
+        private float _localCraftDuration;
+        private int _localCraftQuantity;
+        private NetworkId _localCraftAgentId;
+        private bool _localCraftInProgress;
 
         public void Interact(Agent agent)
         {
@@ -47,6 +60,21 @@ namespace TPSBR
             }
         }
 
+        public void RequestCancelCraft(Agent agent)
+        {
+            if (agent == null)
+                return;
+
+            if (HasStateAuthority == true)
+            {
+                CancelCraft(agent);
+            }
+            else
+            {
+                RPC_RequestCancel(agent.Object.InputAuthority, agent.Object.Id);
+            }
+        }
+
         public int GetCraftableCount(Agent agent, RecipeDefinition recipe)
         {
             if (agent == null || recipe == null)
@@ -57,6 +85,51 @@ namespace TPSBR
                 return 0;
 
             return CalculateCraftableCount(inventory, recipe);
+        }
+
+        public override void FixedUpdateNetwork()
+        {
+            base.FixedUpdateNetwork();
+
+            if (HasStateAuthority == false)
+                return;
+
+            if (Runner == null || _activeCrafts.Count == 0)
+                return;
+
+            foreach (KeyValuePair<NetworkId, ActiveCraft> pair in _activeCrafts)
+            {
+                ActiveCraft craft = pair.Value;
+                if (craft.Timer.IsRunning == false || craft.Timer.Expired(Runner) == true)
+                {
+                    _craftsToFinalize.Add(pair.Key);
+                }
+            }
+
+            if (_craftsToFinalize.Count == 0)
+                return;
+
+            for (int i = 0; i < _craftsToFinalize.Count; ++i)
+            {
+                NetworkId agentId = _craftsToFinalize[i];
+                if (_activeCrafts.TryGetValue(agentId, out ActiveCraft craft) == false)
+                    continue;
+
+                CompleteCraft(craft);
+                _activeCrafts.Remove(agentId);
+            }
+
+            _craftsToFinalize.Clear();
+        }
+
+        public bool TryGetLocalCraftState(out RecipeDefinition recipe, out float startTime, out float duration, out int quantity)
+        {
+            recipe = _localCraftInProgress ? _localActiveRecipe : null;
+            startTime = _localCraftInProgress ? _localCraftStartTime : 0f;
+            duration = _localCraftInProgress ? _localCraftDuration : 0f;
+            quantity = _localCraftInProgress ? _localCraftQuantity : 0;
+
+            return _localCraftInProgress;
         }
 
         [Rpc(RpcSources.StateAuthority, RpcTargets.All, Channel = RpcChannel.Reliable)]
@@ -101,22 +174,107 @@ namespace TPSBR
             ProcessCraft(agent, recipe, quantity);
         }
 
+        [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority, Channel = RpcChannel.Reliable)]
+        private void RPC_RequestCancel(PlayerRef playerRef, NetworkId agentId)
+        {
+            if (TryResolveAgent(playerRef, agentId, out Agent agent) == false)
+                return;
+
+            CancelCraft(agent);
+        }
+
+        [Rpc(RpcSources.StateAuthority, RpcTargets.All, Channel = RpcChannel.Reliable)]
+        private void RPC_CraftStarted(PlayerRef playerRef, NetworkId agentId, int recipeId, int quantity, float duration)
+        {
+            if (Runner == null || Runner.LocalPlayer != playerRef)
+                return;
+
+            RecipeDefinition recipe = FindRecipe(recipeId);
+            if (recipe == null)
+                return;
+
+            _localCraftInProgress = true;
+            _localActiveRecipe = recipe;
+            _localCraftStartTime = Time.unscaledTime;
+            _localCraftDuration = Mathf.Max(0f, duration);
+            _localCraftQuantity = quantity;
+            _localCraftAgentId = agentId;
+
+            CraftStarted?.Invoke(recipe, _localCraftStartTime, _localCraftDuration, quantity);
+        }
+
+        [Rpc(RpcSources.StateAuthority, RpcTargets.All, Channel = RpcChannel.Reliable)]
+        private void RPC_CraftCompleted(PlayerRef playerRef, NetworkId agentId, int recipeId)
+        {
+            if (Runner == null || Runner.LocalPlayer != playerRef)
+                return;
+
+            RecipeDefinition recipe = FindRecipe(recipeId);
+            RecipeDefinition previousRecipe = _localActiveRecipe;
+            bool wasActive = _localCraftInProgress == true && agentId == _localCraftAgentId;
+
+            if (wasActive == true)
+            {
+                _localCraftInProgress = false;
+                _localActiveRecipe = null;
+                _localCraftStartTime = 0f;
+                _localCraftDuration = 0f;
+                _localCraftQuantity = 0;
+                _localCraftAgentId = default;
+            }
+
+            RecipeDefinition targetRecipe = recipe != null ? recipe : previousRecipe;
+
+            if (targetRecipe != null && wasActive == true)
+            {
+                CraftCompleted?.Invoke(targetRecipe);
+            }
+        }
+
+        [Rpc(RpcSources.StateAuthority, RpcTargets.All, Channel = RpcChannel.Reliable)]
+        private void RPC_CraftCancelled(PlayerRef playerRef, NetworkId agentId, int recipeId)
+        {
+            if (Runner == null || Runner.LocalPlayer != playerRef)
+                return;
+
+            RecipeDefinition recipe = FindRecipe(recipeId);
+            RecipeDefinition previousRecipe = _localActiveRecipe;
+            bool wasActive = _localCraftInProgress == true && agentId == _localCraftAgentId;
+
+            if (wasActive == true)
+            {
+                _localCraftInProgress = false;
+                _localActiveRecipe = null;
+                _localCraftStartTime = 0f;
+                _localCraftDuration = 0f;
+                _localCraftQuantity = 0;
+                _localCraftAgentId = default;
+            }
+
+            RecipeDefinition targetRecipe = recipe != null ? recipe : previousRecipe;
+
+            if (targetRecipe != null && wasActive == true)
+            {
+                CraftCancelled?.Invoke(targetRecipe);
+            }
+        }
+
         protected override UIView _uiView => GetCraftingView();
 
-private UICraftingStationView GetCraftingView()
-{
-if (_craftingView == null && Context != null && Context.UI != null)
-{
-_craftingView = Context.UI.Get<UICraftingStationView>();
+        private UICraftingStationView GetCraftingView()
+        {
+            if (_craftingView == null && Context != null && Context.UI != null)
+            {
+                _craftingView = Context.UI.Get<UICraftingStationView>();
 
-if (_craftingView == null)
-{
-_craftingView = Context.UI.CreateViewFromResource<UICraftingStationView>(UICraftingStationView.ResourcePath);
-}
-}
+                if (_craftingView == null)
+                {
+                    _craftingView = Context.UI.CreateViewFromResource<UICraftingStationView>(UICraftingStationView.ResourcePath);
+                }
+            }
 
-return _craftingView;
-}
+            return _craftingView;
+        }
 
         protected override bool ConfigureExchangeView(Agent agent, UIView view)
         {
@@ -150,8 +308,30 @@ return _craftingView;
             if (craftCount <= 0)
                 return;
 
+            float craftingTime = recipe.CraftingTime;
+
+            if (craftingTime <= 0f || Runner == null)
+            {
+                ConsumeInputs(inventory, recipe, craftCount);
+                GrantOutputs(inventory, recipe, craftCount);
+                return;
+            }
+
+            NetworkObject agentObject = agent.Object;
+            if (agentObject == null)
+                return;
+
+            NetworkId agentId = agentObject.Id;
+
+            if (_activeCrafts.ContainsKey(agentId) == true)
+                return;
+
             ConsumeInputs(inventory, recipe, craftCount);
-            GrantOutputs(inventory, recipe, craftCount);
+
+            if (StartCraft(agent, inventory, recipe, craftCount, craftingTime) == false)
+            {
+                ReturnInputs(inventory, recipe, craftCount);
+            }
         }
 
         private int CalculateCraftableCount(Inventory inventory, RecipeDefinition recipe)
@@ -418,6 +598,126 @@ return _craftingView;
             return total;
         }
 
+        private bool StartCraft(Agent agent, Inventory inventory, RecipeDefinition recipe, int crafts, float craftingTimePerCraft)
+        {
+            if (Runner == null || agent == null || recipe == null)
+                return false;
+
+            NetworkObject agentObject = agent.Object;
+            if (agentObject == null)
+                return false;
+
+            NetworkId agentId = agentObject.Id;
+
+            if (_activeCrafts.ContainsKey(agentId) == true)
+                return false;
+
+            float duration = Mathf.Max(0.01f, craftingTimePerCraft * crafts);
+
+            ActiveCraft craft = new ActiveCraft
+            {
+                Agent = agent,
+                Inventory = inventory,
+                Recipe = recipe,
+                Crafts = crafts,
+                AgentId = agentId,
+                PlayerRef = agentObject.InputAuthority,
+                Duration = duration,
+                Timer = TickTimer.CreateFromSeconds(Runner, duration),
+            };
+
+            _activeCrafts[agentId] = craft;
+
+            RPC_CraftStarted(craft.PlayerRef, agentId, recipe.ID, crafts, duration);
+
+            return true;
+        }
+
+        private void CompleteCraft(ActiveCraft craft)
+        {
+            if (craft == null)
+                return;
+
+            Inventory inventory = ResolveInventory(craft);
+
+            if (inventory != null && craft.Recipe != null)
+            {
+                GrantOutputs(inventory, craft.Recipe, craft.Crafts);
+            }
+            else if (craft.Recipe != null)
+            {
+                Debug.LogWarning($"{nameof(CraftingStation)} failed to grant crafted outputs for recipe '{craft.Recipe.Name}' because the inventory could not be resolved.");
+            }
+
+            RPC_CraftCompleted(craft.PlayerRef, craft.AgentId, craft.Recipe != null ? craft.Recipe.ID : 0);
+        }
+
+        private void CancelCraft(Agent agent)
+        {
+            if (agent == null || agent.Object == null)
+                return;
+
+            NetworkId agentId = agent.Object.Id;
+
+            if (_activeCrafts.TryGetValue(agentId, out ActiveCraft craft) == false)
+                return;
+
+            Inventory inventory = ResolveInventory(craft);
+
+            if (inventory != null && craft.Recipe != null)
+            {
+                ReturnInputs(inventory, craft.Recipe, craft.Crafts);
+            }
+            else if (craft.Recipe != null)
+            {
+                Debug.LogWarning($"{nameof(CraftingStation)} failed to refund inputs for recipe '{craft.Recipe.Name}' because the inventory could not be resolved.");
+            }
+
+            _activeCrafts.Remove(agentId);
+            if (_craftsToFinalize.Count > 0)
+            {
+                _craftsToFinalize.Remove(agentId);
+            }
+
+            RPC_CraftCancelled(craft.PlayerRef, craft.AgentId, craft.Recipe != null ? craft.Recipe.ID : 0);
+        }
+
+        private sealed class ActiveCraft
+        {
+            public Agent Agent;
+            public Inventory Inventory;
+            public RecipeDefinition Recipe;
+            public int Crafts;
+            public NetworkId AgentId;
+            public PlayerRef PlayerRef;
+            public float Duration;
+            public TickTimer Timer;
+        }
+
+        private Inventory ResolveInventory(ActiveCraft craft)
+        {
+            if (craft == null)
+                return null;
+
+            if (craft.Inventory != null)
+                return craft.Inventory;
+
+            if (craft.Agent != null && craft.Agent.Inventory != null)
+            {
+                craft.Inventory = craft.Agent.Inventory;
+                return craft.Inventory;
+            }
+
+            if (TryResolveAgent(craft.PlayerRef, craft.AgentId, out Agent resolvedAgent) == true)
+            {
+                craft.Agent = resolvedAgent;
+                craft.Inventory = resolvedAgent != null ? resolvedAgent.Inventory : null;
+                return craft.Inventory;
+            }
+
+            return null;
+        }
+
         private void ConsumeInputs(Inventory inventory, RecipeDefinition recipe, int crafts)
         {
             IReadOnlyList<RecipeDefinition.ItemQuantity> inputs = recipe.Inputs;
@@ -459,15 +759,26 @@ return _craftingView;
 
         private void GrantOutputs(Inventory inventory, RecipeDefinition recipe, int crafts)
         {
-            IReadOnlyList<RecipeDefinition.ItemQuantity> outputs = recipe.Outputs;
-            if (outputs == null || outputs.Count == 0)
+            GrantItems(inventory, recipe != null ? recipe.Outputs : null, crafts, recipe, "crafted output");
+        }
+
+        private void ReturnInputs(Inventory inventory, RecipeDefinition recipe, int crafts)
+        {
+            GrantItems(inventory, recipe != null ? recipe.Inputs : null, crafts, recipe, "refunded input");
+        }
+
+        private void GrantItems(Inventory inventory, IReadOnlyList<RecipeDefinition.ItemQuantity> items, int crafts, RecipeDefinition recipe, string failureDescriptor)
+        {
+            if (inventory == null || items == null || items.Count == 0 || crafts <= 0)
                 return;
 
-            for (int i = 0; i < outputs.Count; ++i)
+            string recipeName = recipe != null ? recipe.Name : "Unknown";
+
+            for (int i = 0; i < items.Count; ++i)
             {
-                RecipeDefinition.ItemQuantity output = outputs[i];
-                ItemDefinition item = output.Item;
-                int perCraft = output.Quantity;
+                RecipeDefinition.ItemQuantity entry = items[i];
+                ItemDefinition item = entry.Item;
+                int perCraft = entry.Quantity;
 
                 if (item == null || perCraft <= 0)
                     continue;
@@ -483,7 +794,7 @@ return _craftingView;
 
                     if (remainder > 0)
                     {
-                        Debug.LogWarning($"{nameof(CraftingStation)} failed to add crafted output '{item.Name}' for recipe '{recipe.Name}'. Remainder: {remainder}");
+                        Debug.LogWarning($"{nameof(CraftingStation)} failed to add {failureDescriptor} '{item.Name}' for recipe '{recipeName}'. Remainder: {remainder}");
                         break;
                     }
                 }

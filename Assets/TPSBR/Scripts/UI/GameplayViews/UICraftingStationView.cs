@@ -15,9 +15,14 @@ namespace TPSBR.UI
                 private RectTransform _listContainer;
 
                 private readonly List<RecipeDefinition> _recipes = new List<RecipeDefinition>();
+                private readonly Dictionary<RecipeDefinition, UIRecipeListItem> _recipeItems = new Dictionary<RecipeDefinition, UIRecipeListItem>();
 
                 private CraftingStation _station;
                 private Agent _agent;
+                private RecipeDefinition _activeRecipe;
+                private float _activeCraftStartTime;
+                private float _activeCraftDuration;
+                private int _activeCraftQuantity;
 
                 protected override void OnInitialize()
                 {
@@ -54,9 +59,30 @@ namespace TPSBR.UI
 
                         UnsubscribeFromInventory();
 
+                        if (_station != null)
+                        {
+                                _station.CraftStarted -= HandleCraftStarted;
+                                _station.CraftCompleted -= HandleCraftCompleted;
+                                _station.CraftCancelled -= HandleCraftCancelled;
+                        }
+
                         _station = null;
                         _agent = null;
+                        ClearActiveCraftState();
                         _recipes.Clear();
+
+                        foreach (KeyValuePair<RecipeDefinition, UIRecipeListItem> pair in _recipeItems)
+                        {
+                                UIRecipeListItem item = pair.Value;
+                                if (item == null)
+                                        continue;
+
+                                item.CancelRequested -= HandleCancelRequested;
+                                item.CraftRequested -= HandleCraftRequested;
+                                item.CraftAllRequested -= HandleCraftAllRequested;
+                        }
+
+                        _recipeItems.Clear();
 
                         if (_recipeList != null)
                         {
@@ -66,8 +92,30 @@ namespace TPSBR.UI
 
                 public void Configure(CraftingStation station, Agent agent)
                 {
+                        if (_station != null)
+                        {
+                                _station.CraftStarted -= HandleCraftStarted;
+                                _station.CraftCompleted -= HandleCraftCompleted;
+                                _station.CraftCancelled -= HandleCraftCancelled;
+                        }
+
                         _station = station;
                         _agent = agent;
+
+                        if (_station != null)
+                        {
+                                _station.CraftStarted -= HandleCraftStarted;
+                                _station.CraftStarted += HandleCraftStarted;
+                                _station.CraftCompleted -= HandleCraftCompleted;
+                                _station.CraftCompleted += HandleCraftCompleted;
+                                _station.CraftCancelled -= HandleCraftCancelled;
+                                _station.CraftCancelled += HandleCraftCancelled;
+                                SyncActiveCraftState();
+                        }
+                        else
+                        {
+                                ClearActiveCraftState();
+                        }
 
                         _recipes.Clear();
 
@@ -96,6 +144,7 @@ namespace TPSBR.UI
                         if (_recipeList == null)
                                 return;
 
+                        _recipeItems.Clear();
                         _recipeList.Refresh(_recipes.Count);
                 }
 
@@ -151,6 +200,11 @@ namespace TPSBR.UI
                                 recipeItem.CraftRequested += HandleCraftRequested;
                                 recipeItem.CraftAllRequested -= HandleCraftAllRequested;
                                 recipeItem.CraftAllRequested += HandleCraftAllRequested;
+                                recipeItem.CancelRequested -= HandleCancelRequested;
+                                recipeItem.CancelRequested += HandleCancelRequested;
+
+                                _recipeItems[recipe] = recipeItem;
+                                ApplyCraftState(recipe, recipeItem);
                         }
                 }
 
@@ -175,6 +229,102 @@ namespace TPSBR.UI
                         }
 
                         _station.RequestCraft(_agent, recipe, craftable);
+                }
+
+                private void HandleCancelRequested(RecipeDefinition recipe)
+                {
+                        if (recipe == null || _agent == null || _station == null)
+                                return;
+
+                        if (_activeRecipe != null && _activeRecipe != recipe)
+                                return;
+
+                        _station.RequestCancelCraft(_agent);
+                }
+
+                private void HandleCraftStarted(RecipeDefinition recipe, float startTime, float duration, int quantity)
+                {
+                        if (recipe == null)
+                                return;
+
+                        RecipeDefinition previous = _activeRecipe;
+
+                        _activeRecipe = recipe;
+                        _activeCraftStartTime = startTime;
+                        _activeCraftDuration = duration;
+                        _activeCraftQuantity = quantity;
+
+                        if (previous != null && previous != recipe && _recipeItems.TryGetValue(previous, out UIRecipeListItem previousItem) == true)
+                        {
+                                previousItem.ApplyCraftingState(false, 0f, 0f);
+                        }
+
+                        if (_activeRecipe != null && _recipeItems.TryGetValue(_activeRecipe, out UIRecipeListItem activeItem) == true)
+                        {
+                                activeItem.ApplyCraftingState(true, _activeCraftStartTime, _activeCraftDuration);
+                        }
+                }
+
+                private void HandleCraftCompleted(RecipeDefinition recipe)
+                {
+                        if (_activeRecipe != null && _recipeItems.TryGetValue(_activeRecipe, out UIRecipeListItem item) == true)
+                        {
+                                item.ApplyCraftingState(false, 0f, 0f);
+                        }
+
+                        ClearActiveCraftState();
+                        RefreshRecipeList();
+                }
+
+                private void HandleCraftCancelled(RecipeDefinition recipe)
+                {
+                        if (_activeRecipe != null && _recipeItems.TryGetValue(_activeRecipe, out UIRecipeListItem item) == true)
+                        {
+                                item.ApplyCraftingState(false, 0f, 0f);
+                        }
+
+                        ClearActiveCraftState();
+                        RefreshRecipeList();
+                }
+
+                private void ApplyCraftState(RecipeDefinition recipe, UIRecipeListItem item)
+                {
+                        if (item == null)
+                                return;
+
+                        bool isActive = _activeRecipe != null && _activeRecipe == recipe;
+
+                        if (isActive == true)
+                        {
+                                item.ApplyCraftingState(true, _activeCraftStartTime, _activeCraftDuration);
+                        }
+                        else
+                        {
+                                item.ApplyCraftingState(false, 0f, 0f);
+                        }
+                }
+
+                private void SyncActiveCraftState()
+                {
+                        if (_station != null && _station.TryGetLocalCraftState(out RecipeDefinition recipe, out float startTime, out float duration, out int quantity) == true)
+                        {
+                                _activeRecipe = recipe;
+                                _activeCraftStartTime = startTime;
+                                _activeCraftDuration = duration;
+                                _activeCraftQuantity = quantity;
+                        }
+                        else
+                        {
+                                ClearActiveCraftState();
+                        }
+                }
+
+                private void ClearActiveCraftState()
+                {
+                        _activeRecipe = null;
+                        _activeCraftStartTime = 0f;
+                        _activeCraftDuration = 0f;
+                        _activeCraftQuantity = 0;
                 }
         }
 }
