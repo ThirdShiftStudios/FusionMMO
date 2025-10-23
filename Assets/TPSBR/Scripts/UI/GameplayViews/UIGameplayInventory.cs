@@ -304,6 +304,36 @@ namespace TPSBR.UI
                     }
                 }
 
+                if (wizardHatSlot == null)
+                {
+                    var template = woodAxeSlot ?? pickaxeSlot ?? (generalSlots.Count > 0 ? generalSlots[generalSlots.Count - 1] : null);
+                    if (template != null)
+                    {
+                        int siblingIndex = template.transform.GetSiblingIndex() + 1;
+                        wizardHatSlot = CreateSpecialSlot(template, "Wizard Hat", siblingIndex);
+                    }
+                }
+
+                if (wizardRobeSlot == null)
+                {
+                    var template = wizardHatSlot ?? woodAxeSlot ?? pickaxeSlot ?? (generalSlots.Count > 0 ? generalSlots[generalSlots.Count - 1] : null);
+                    if (template != null)
+                    {
+                        int siblingIndex = template.transform.GetSiblingIndex() + 1;
+                        wizardRobeSlot = CreateSpecialSlot(template, "Wizard Robe", siblingIndex);
+                    }
+                }
+
+                if (wizardBootSlot == null)
+                {
+                    var template = wizardRobeSlot ?? wizardHatSlot ?? woodAxeSlot ?? pickaxeSlot ?? (generalSlots.Count > 0 ? generalSlots[generalSlots.Count - 1] : null);
+                    if (template != null)
+                    {
+                        int siblingIndex = template.transform.GetSiblingIndex() + 1;
+                        wizardBootSlot = CreateSpecialSlot(template, "Wizard Boot", siblingIndex);
+                    }
+                }
+
                 var orderedSlots = new List<UIListItem>(generalSlots.Count +
                                                          (pickaxeSlot != null ? 1 : 0) +
                                                          (woodAxeSlot != null ? 1 : 0) +
@@ -396,6 +426,36 @@ namespace TPSBR.UI
                 _slotIndices = indices.ToArray();
 
                 UpdateSelectionHighlight();
+            }
+
+            private static UIListItem CreateSpecialSlot(UIListItem template, string displayName, int siblingIndex)
+            {
+                if (template == null)
+                    return null;
+
+                var clone = UnityEngine.Object.Instantiate(template, template.transform.parent);
+                string slotName = $"UIListItem ({displayName})";
+                clone.gameObject.name = slotName;
+                clone.name = slotName;
+
+                var parent = clone.transform.parent;
+                if (parent != null)
+                {
+                    int targetIndex = siblingIndex;
+                    if (targetIndex < 0)
+                    {
+                        targetIndex = parent.childCount - 1;
+                    }
+                    else
+                    {
+                        targetIndex = Mathf.Clamp(targetIndex, 0, parent.childCount - 1);
+                    }
+
+                    clone.transform.SetSiblingIndex(targetIndex);
+                }
+
+                clone.gameObject.SetActive(template.gameObject.activeSelf);
+                return clone;
             }
 
             internal void Bind(Inventory inventory)
