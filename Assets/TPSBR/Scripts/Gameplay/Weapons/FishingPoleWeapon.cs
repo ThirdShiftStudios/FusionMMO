@@ -1,3 +1,4 @@
+using Fusion;
 using UnityEngine;
 
 namespace TPSBR
@@ -6,12 +7,20 @@ namespace TPSBR
     {
         [SerializeField]
         private float _holdToCastDuration = 1f;
+        [SerializeField]
+        private Transform _lureFireTransform;
+        [SerializeField]
+        private NetworkPrefabRef _lureProjectilePrefab;
+        [SerializeField]
+        private float _lureProjectileSpeed = 12f;
 
         private float _primaryHoldTime;
         private bool _isPrimaryHeld;
         private bool _castRequested;
         private bool _castActive;
         private bool _waitingForPrimaryRelease;
+        private FishingLureProjectile _activeLureProjectile;
+        private bool _lureLaunched;
 
         public override bool CanFire(bool keyDown)
         {
@@ -100,6 +109,8 @@ namespace TPSBR
         {
             _castRequested = false;
             _castActive = true;
+            _lureLaunched = false;
+            CleanupLure(false);
         }
 
         internal void NotifyCastThrown()
@@ -112,6 +123,7 @@ namespace TPSBR
             _castActive = false;
             _castRequested = false;
             ResetHoldTracking();
+            CleanupLure(true);
         }
 
         internal void NotifyCastCancelled()
@@ -120,6 +132,84 @@ namespace TPSBR
             _castRequested = false;
             ResetHoldTracking();
             _waitingForPrimaryRelease = true;
+            CleanupLure(true);
+        }
+
+        internal void LaunchLure()
+        {
+            if (_castActive == false || _lureLaunched == true)
+                return;
+
+            if (HasStateAuthority == false)
+                return;
+
+            if (_lureFireTransform == null)
+                return;
+
+            if (_lureProjectilePrefab.IsValid == false)
+                return;
+
+            NetworkRunner runner = Runner;
+
+            if (runner == null || runner.IsRunning == false)
+                return;
+
+            NetworkObject owner = Owner;
+
+            if (owner == null)
+                return;
+
+            Vector3 firePosition = _lureFireTransform.position;
+            Vector3 direction = _lureFireTransform.forward;
+
+            if (direction.sqrMagnitude < 0.0001f)
+            {
+                direction = Character != null ? Character.transform.forward : Vector3.forward;
+            }
+
+            direction.Normalize();
+
+            Vector3 initialVelocity = direction * _lureProjectileSpeed;
+            LayerMask hitMask = Character != null && Character.Agent != null && Character.Agent.Inventory != null ? Character.Agent.Inventory.HitMask : default;
+
+            _lureLaunched = true;
+
+            runner.Spawn(_lureProjectilePrefab, firePosition, Quaternion.LookRotation(direction), owner.InputAuthority, (spawnRunner, spawnedObject) =>
+            {
+                FishingLureProjectile projectile = spawnedObject.GetComponent<FishingLureProjectile>();
+
+                if (projectile == null)
+                {
+                    _lureLaunched = false;
+                    return;
+                }
+
+                _activeLureProjectile = projectile;
+                projectile.Initialize(this);
+                projectile.Fire(owner, firePosition, initialVelocity, hitMask, HitType);
+            });
+        }
+
+        internal void OnLureImpacted(FishingLureProjectile projectile, in LagCompensatedHit hit)
+        {
+            _ = hit;
+
+            if (_castActive == false)
+                return;
+
+            if (projectile != null && projectile == _activeLureProjectile)
+            {
+                _activeLureProjectile = null;
+            }
+
+            UseLayer layer = GetUseLayer();
+
+            if (layer?.FishingPoleUseState != null)
+            {
+                layer.FishingPoleUseState.EnterWaitingPhase(this);
+            }
+
+            CleanupLure(false);
         }
 
         private void ResetHoldTracking()
@@ -136,6 +226,31 @@ namespace TPSBR
             }
 
             return Time.deltaTime;
+        }
+
+        private void CleanupLure(bool forceDespawn)
+        {
+            if (_activeLureProjectile != null)
+            {
+                if (forceDespawn == true && Runner != null && Runner.IsRunning == true)
+                {
+                    NetworkObject projectileObject = _activeLureProjectile.Object;
+
+                    if (projectileObject != null && projectileObject.IsValid == true)
+                    {
+                        Runner.Despawn(projectileObject);
+                    }
+                }
+
+                _activeLureProjectile = null;
+            }
+
+            _lureLaunched = false;
+        }
+
+        private UseLayer GetUseLayer()
+        {
+            return Character != null ? Character.AnimationController?.AttackLayer : null;
         }
     }
 }

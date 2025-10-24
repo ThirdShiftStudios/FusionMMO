@@ -14,6 +14,7 @@ namespace TPSBR
         [SerializeField] private float _blendOutDuration = 0.15f;
 
         private FishingPoleWeapon _activeWeapon;
+        private bool _isWaiting;
 
         public bool BeginCast(FishingPoleWeapon weapon)
         {
@@ -24,6 +25,10 @@ namespace TPSBR
                 return false;
 
             _activeWeapon = weapon;
+            _isWaiting = false;
+
+            _castState.SetActiveWeapon(weapon);
+            _waiting?.SetActiveWeapon(weapon);
 
             _castState.PlayBegin(_blendInDuration);
             Activate(_blendInDuration);
@@ -52,6 +57,7 @@ namespace TPSBR
 
             bool beginActive = _castState.IsBeginActive;
             bool throwActive = _castState.IsThrowActive;
+            bool waitingActive = _isWaiting == true && _waiting != null && _waiting.IsActive(true) == true;
 
             if (beginActive == true)
             {
@@ -78,11 +84,42 @@ namespace TPSBR
                     CompleteCast();
                 }
             }
+            else if (waitingActive == true)
+            {
+                bool secondaryActivated = agentInput.WasActivated(EGameplayInputAction.Block) ||
+                                          agentInput.WasActivated(EGameplayInputAction.HeavyAttack);
+
+                if (secondaryActivated == true)
+                {
+                    CancelCast();
+                }
+            }
             else
             {
                 // No active cast clips, ensure the layer is reset.
                 CompleteCast();
             }
+        }
+
+        internal void EnterWaitingPhase(FishingPoleWeapon weapon)
+        {
+            if (_waiting == null || weapon == null || _activeWeapon != weapon)
+                return;
+
+            if (_isWaiting == true)
+                return;
+
+            _isWaiting = true;
+
+            _waiting.SetActiveWeapon(weapon);
+            _waiting.Play(_blendInDuration);
+
+            if (_castState != null)
+            {
+                _castState.Stop(_blendOutDuration);
+            }
+
+            Activate(_blendInDuration);
         }
 
         private void CompleteCast()
@@ -91,6 +128,14 @@ namespace TPSBR
             {
                 _castState.Stop(_blendOutDuration);
             }
+
+            if (_waiting != null)
+            {
+                _waiting.Stop(_blendOutDuration);
+                _waiting.ClearActiveWeapon(_activeWeapon);
+            }
+
+            _isWaiting = false;
 
             if (_activeWeapon != null)
             {
@@ -107,6 +152,14 @@ namespace TPSBR
                 _castState.Stop(_blendOutDuration);
             }
 
+            if (_waiting != null)
+            {
+                _waiting.Stop(_blendOutDuration);
+                _waiting.ClearActiveWeapon(_activeWeapon);
+            }
+
+            _isWaiting = false;
+
             if (_activeWeapon != null)
             {
                 _activeWeapon.NotifyCastCancelled();
@@ -117,7 +170,18 @@ namespace TPSBR
 
         private void Finish()
         {
+            if (_castState != null && _activeWeapon != null)
+            {
+                _castState.ClearActiveWeapon(_activeWeapon);
+            }
+
+            if (_waiting != null && _activeWeapon != null)
+            {
+                _waiting.ClearActiveWeapon(_activeWeapon);
+            }
+
             _activeWeapon = null;
+            _isWaiting = false;
 
             if (IsActive(true) == true)
             {
