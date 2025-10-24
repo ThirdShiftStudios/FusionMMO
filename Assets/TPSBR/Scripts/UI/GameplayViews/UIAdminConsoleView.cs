@@ -33,6 +33,8 @@ namespace TPSBR.UI
         [SerializeField]
         private TMP_Dropdown _inventoryActionDropdown;
         [SerializeField]
+        private UIButton _printInventoryButton;
+        [SerializeField]
         private RectTransform _addItemContainer;
         [SerializeField]
         private TMP_InputField _itemSearchInput;
@@ -92,6 +94,11 @@ namespace TPSBR.UI
                 _inventoryActionDropdown.onValueChanged.AddListener(HandleInventoryActionChanged);
             }
 
+            if (_printInventoryButton != null)
+            {
+                _printInventoryButton.onClick.AddListener(HandlePrintInventoryClicked);
+            }
+
             if (_itemSearchInput != null)
             {
                 _itemSearchInput.onValueChanged.AddListener(HandleItemSearchChanged);
@@ -132,6 +139,11 @@ namespace TPSBR.UI
             if (_inventoryActionDropdown != null)
             {
                 _inventoryActionDropdown.onValueChanged.RemoveListener(HandleInventoryActionChanged);
+            }
+
+            if (_printInventoryButton != null)
+            {
+                _printInventoryButton.onClick.RemoveListener(HandlePrintInventoryClicked);
             }
 
             if (_itemSearchInput != null)
@@ -196,6 +208,99 @@ namespace TPSBR.UI
         {
             _currentInventoryAction = (InventoryAction)Mathf.Clamp(value, 0, Enum.GetValues(typeof(InventoryAction)).Length - 1);
             ApplyInventoryActionState();
+        }
+
+        private void HandlePrintInventoryClicked()
+        {
+            Inventory inventory = GetLocalInventory();
+            if (inventory == null)
+            {
+                AppendSystemLog("No controlled agent to inspect inventory.", LogType.Warning);
+                return;
+            }
+
+            StringBuilder builder = new StringBuilder(512);
+            builder.AppendLine("Inventory snapshot:");
+
+            builder.AppendLine("Hotbar Slots:");
+            int hotbarSize = inventory.HotbarSize;
+            for (int i = 0; i < hotbarSize; ++i)
+            {
+                Weapon weapon = inventory.GetHotbarWeapon(i);
+                ItemDefinition definition = weapon != null ? weapon.Definition : null;
+                string fallbackName = weapon != null ? (!string.IsNullOrEmpty(weapon.DisplayName) ? weapon.DisplayName : weapon.name) : null;
+                int? fallbackId = weapon != null ? weapon.WeaponID : (int?)null;
+                AppendInventorySlotLine(builder, "Hotbar", i, definition, 0, fallbackName, fallbackId);
+            }
+
+            builder.AppendLine();
+            builder.AppendLine("General Inventory Slots:");
+            int inventorySize = inventory.InventorySize;
+            for (int i = 0; i < inventorySize; ++i)
+            {
+                InventorySlot slot = inventory.GetItemSlot(i);
+                ItemDefinition definition = slot.GetDefinition();
+                AppendInventorySlotLine(builder, "General", i, definition, slot.Quantity);
+            }
+
+            builder.AppendLine();
+            builder.AppendLine("Equipment Slots:");
+            AppendEquipmentSlotLine(builder, inventory, "Pickaxe", Inventory.PICKAXE_SLOT_INDEX);
+            AppendEquipmentSlotLine(builder, inventory, "Wood Axe", Inventory.WOOD_AXE_SLOT_INDEX);
+            AppendEquipmentSlotLine(builder, inventory, "Fishing Pole", Inventory.FISHING_POLE_SLOT_INDEX);
+            AppendEquipmentSlotLine(builder, inventory, "Head", Inventory.HEAD_SLOT_INDEX);
+            AppendEquipmentSlotLine(builder, inventory, "Upper Body", Inventory.UPPER_BODY_SLOT_INDEX);
+            AppendEquipmentSlotLine(builder, inventory, "Lower Body", Inventory.LOWER_BODY_SLOT_INDEX);
+
+            AppendSystemLog(builder.ToString(), LogType.Log);
+        }
+
+        private static void AppendEquipmentSlotLine(StringBuilder builder, Inventory inventory, string slotType, int slotIndex)
+        {
+            InventorySlot slot = inventory.GetItemSlot(slotIndex);
+            ItemDefinition definition = slot.GetDefinition();
+            AppendInventorySlotLine(builder, slotType, slotIndex, definition, slot.Quantity);
+        }
+
+        private static void AppendInventorySlotLine(StringBuilder builder, string slotType, int slotIndex, ItemDefinition definition, byte quantity = 0, string fallbackName = null, int? fallbackId = null)
+        {
+            builder.Append("  - ");
+            builder.Append(slotType);
+            builder.Append(" (Index ");
+            builder.Append(slotIndex);
+            builder.Append("): ");
+
+            if (definition == null && string.IsNullOrEmpty(fallbackName) == true)
+            {
+                builder.Append("Empty");
+                builder.AppendLine();
+                return;
+            }
+
+            string name = definition != null ? (!string.IsNullOrEmpty(definition.Name) ? definition.Name : definition.name) : fallbackName;
+            if (string.IsNullOrEmpty(name) == true)
+            {
+                name = "Unnamed Item";
+            }
+
+            int id = definition != null ? definition.ID : (fallbackId ?? 0);
+
+            builder.Append(name);
+
+            if (id != 0)
+            {
+                builder.Append(" (ID: ");
+                builder.Append(id);
+                builder.Append(')');
+            }
+
+            if (quantity > 1)
+            {
+                builder.Append(" x");
+                builder.Append(quantity);
+            }
+
+            builder.AppendLine();
         }
 
         private void HandleItemSearchChanged(string value)
