@@ -105,9 +105,9 @@ namespace TPSBR
         public const int INVENTORY_SIZE = 10;
         public const int PICKAXE_SLOT_INDEX = byte.MaxValue;
         public const int WOOD_AXE_SLOT_INDEX = byte.MaxValue - 1;
-        public const int WIZARD_HAT_SLOT_INDEX = byte.MaxValue - 2;
-        public const int WIZARD_ROBE_SLOT_INDEX = byte.MaxValue - 3;
-        public const int WIZARD_BOOT_SLOT_INDEX = byte.MaxValue - 4;
+        public const int HEAD_SLOT_INDEX = byte.MaxValue - 2;
+        public const int UPPER_BODY_SLOT_INDEX = byte.MaxValue - 3;
+        public const int LOWER_BODY_SLOT_INDEX = byte.MaxValue - 4;
         public const int HOTBAR_CAPACITY = 3;
         public const int HOTBAR_VISIBLE_SLOTS = HOTBAR_CAPACITY - 1;
         // PRIVATE MEMBERS
@@ -131,9 +131,9 @@ namespace TPSBR
         [Networked, Capacity(INVENTORY_SIZE)] private NetworkArray<InventorySlot> _items { get; }
         [Networked] private InventorySlot _pickaxeSlot { get; set; }
         [Networked] private InventorySlot _woodAxeSlot { get; set; }
-        [Networked] private InventorySlot _wizardHatSlot { get; set; }
-        [Networked] private InventorySlot _wizardRobeSlot { get; set; }
-        [Networked] private InventorySlot _wizardBootSlot { get; set; }
+        [Networked] private InventorySlot _headSlot { get; set; }
+        [Networked] private InventorySlot _upperBodySlot { get; set; }
+        [Networked] private InventorySlot _lowerBodySlot { get; set; }
         [Networked] private byte _currentWeaponSlot { get; set; }
 
         [Networked]
@@ -158,9 +158,9 @@ namespace TPSBR
         private InventorySlot[] _localItems;
         private InventorySlot _localPickaxeSlot;
         private InventorySlot _localWoodAxeSlot;
-        private InventorySlot _localWizardHatSlot;
-        private InventorySlot _localWizardRobeSlot;
-        private InventorySlot _localWizardBootSlot;
+        private InventorySlot _localHeadSlot;
+        private InventorySlot _localUpperBodySlot;
+        private InventorySlot _localLowerBodySlot;
         private Pickaxe _localPickaxe;
         private bool _localPickaxeEquipped;
         private byte _weaponSlotBeforePickaxe = byte.MaxValue;
@@ -295,28 +295,28 @@ namespace TPSBR
                 ConfigurationHash = string.IsNullOrEmpty(woodAxeConfigurationHash) == false ? woodAxeConfigurationHash : null
             };
 
-            string wizardHatConfigurationHash = _wizardHatSlot.ConfigurationHash.ToString();
-            data.WizardHatSlot = new PlayerInventoryItemData
+            string headConfigurationHash = _headSlot.ConfigurationHash.ToString();
+            data.HeadSlot = new PlayerInventoryItemData
             {
-                ItemDefinitionId = _wizardHatSlot.ItemDefinitionId,
-                Quantity = _wizardHatSlot.Quantity,
-                ConfigurationHash = string.IsNullOrEmpty(wizardHatConfigurationHash) == false ? wizardHatConfigurationHash : null
+                ItemDefinitionId = _headSlot.ItemDefinitionId,
+                Quantity = _headSlot.Quantity,
+                ConfigurationHash = string.IsNullOrEmpty(headConfigurationHash) == false ? headConfigurationHash : null
             };
 
-            string wizardRobeConfigurationHash = _wizardRobeSlot.ConfigurationHash.ToString();
-            data.WizardRobeSlot = new PlayerInventoryItemData
+            string upperBodyConfigurationHash = _upperBodySlot.ConfigurationHash.ToString();
+            data.UpperBodySlot = new PlayerInventoryItemData
             {
-                ItemDefinitionId = _wizardRobeSlot.ItemDefinitionId,
-                Quantity = _wizardRobeSlot.Quantity,
-                ConfigurationHash = string.IsNullOrEmpty(wizardRobeConfigurationHash) == false ? wizardRobeConfigurationHash : null
+                ItemDefinitionId = _upperBodySlot.ItemDefinitionId,
+                Quantity = _upperBodySlot.Quantity,
+                ConfigurationHash = string.IsNullOrEmpty(upperBodyConfigurationHash) == false ? upperBodyConfigurationHash : null
             };
 
-            string wizardBootConfigurationHash = _wizardBootSlot.ConfigurationHash.ToString();
-            data.WizardBootSlot = new PlayerInventoryItemData
+            string lowerBodyConfigurationHash = _lowerBodySlot.ConfigurationHash.ToString();
+            data.LowerBodySlot = new PlayerInventoryItemData
             {
-                ItemDefinitionId = _wizardBootSlot.ItemDefinitionId,
-                Quantity = _wizardBootSlot.Quantity,
-                ConfigurationHash = string.IsNullOrEmpty(wizardBootConfigurationHash) == false ? wizardBootConfigurationHash : null
+                ItemDefinitionId = _lowerBodySlot.ItemDefinitionId,
+                Quantity = _lowerBodySlot.Quantity,
+                ConfigurationHash = string.IsNullOrEmpty(lowerBodyConfigurationHash) == false ? lowerBodyConfigurationHash : null
             };
 
             return data;
@@ -341,12 +341,12 @@ namespace TPSBR
             RefreshPickaxeSlot();
             _woodAxeSlot = default;
             RefreshWoodAxeSlot();
-            _wizardHatSlot = default;
-            RefreshWizardHatSlot();
-            _wizardRobeSlot = default;
-            RefreshWizardRobeSlot();
-            _wizardBootSlot = default;
-            RefreshWizardBootSlot();
+            _headSlot = default;
+            RefreshHeadSlot();
+            _upperBodySlot = default;
+            RefreshUpperBodySlot();
+            _lowerBodySlot = default;
+            RefreshLowerBodySlot();
 
             for (int i = 0; i < _items.Length; i++)
             {
@@ -399,40 +399,40 @@ namespace TPSBR
                 RefreshWoodAxeSlot();
             }
 
-            if (data.WizardHatSlot.ItemDefinitionId != 0 && data.WizardHatSlot.Quantity != 0)
+            if (data.HeadSlot.ItemDefinitionId != 0 && data.HeadSlot.Quantity != 0)
             {
-                NetworkString<_32> wizardHatHash = default;
-                if (string.IsNullOrEmpty(data.WizardHatSlot.ConfigurationHash) == false)
+                NetworkString<_32> headHash = default;
+                if (string.IsNullOrEmpty(data.HeadSlot.ConfigurationHash) == false)
                 {
-                    wizardHatHash = data.WizardHatSlot.ConfigurationHash;
+                    headHash = data.HeadSlot.ConfigurationHash;
                 }
 
-                _wizardHatSlot = new InventorySlot(data.WizardHatSlot.ItemDefinitionId, data.WizardHatSlot.Quantity, wizardHatHash);
-                RefreshWizardHatSlot();
+                _headSlot = new InventorySlot(data.HeadSlot.ItemDefinitionId, data.HeadSlot.Quantity, headHash);
+                RefreshHeadSlot();
             }
 
-            if (data.WizardRobeSlot.ItemDefinitionId != 0 && data.WizardRobeSlot.Quantity != 0)
+            if (data.UpperBodySlot.ItemDefinitionId != 0 && data.UpperBodySlot.Quantity != 0)
             {
-                NetworkString<_32> wizardRobeHash = default;
-                if (string.IsNullOrEmpty(data.WizardRobeSlot.ConfigurationHash) == false)
+                NetworkString<_32> upperBodyHash = default;
+                if (string.IsNullOrEmpty(data.UpperBodySlot.ConfigurationHash) == false)
                 {
-                    wizardRobeHash = data.WizardRobeSlot.ConfigurationHash;
+                    upperBodyHash = data.UpperBodySlot.ConfigurationHash;
                 }
 
-                _wizardRobeSlot = new InventorySlot(data.WizardRobeSlot.ItemDefinitionId, data.WizardRobeSlot.Quantity, wizardRobeHash);
-                RefreshWizardRobeSlot();
+                _upperBodySlot = new InventorySlot(data.UpperBodySlot.ItemDefinitionId, data.UpperBodySlot.Quantity, upperBodyHash);
+                RefreshUpperBodySlot();
             }
 
-            if (data.WizardBootSlot.ItemDefinitionId != 0 && data.WizardBootSlot.Quantity != 0)
+            if (data.LowerBodySlot.ItemDefinitionId != 0 && data.LowerBodySlot.Quantity != 0)
             {
-                NetworkString<_32> wizardBootHash = default;
-                if (string.IsNullOrEmpty(data.WizardBootSlot.ConfigurationHash) == false)
+                NetworkString<_32> lowerBodyHash = default;
+                if (string.IsNullOrEmpty(data.LowerBodySlot.ConfigurationHash) == false)
                 {
-                    wizardBootHash = data.WizardBootSlot.ConfigurationHash;
+                    lowerBodyHash = data.LowerBodySlot.ConfigurationHash;
                 }
 
-                _wizardBootSlot = new InventorySlot(data.WizardBootSlot.ItemDefinitionId, data.WizardBootSlot.Quantity, wizardBootHash);
-                RefreshWizardBootSlot();
+                _lowerBodySlot = new InventorySlot(data.LowerBodySlot.ItemDefinitionId, data.LowerBodySlot.Quantity, lowerBodyHash);
+                RefreshLowerBodySlot();
             }
 
             if (data.HotbarSlots != null)
@@ -493,19 +493,32 @@ namespace TPSBR
             if (index == WOOD_AXE_SLOT_INDEX)
                 return _woodAxeSlot;
 
-            if (index == WIZARD_HAT_SLOT_INDEX)
-                return _wizardHatSlot;
+            if (index == HEAD_SLOT_INDEX)
+                return _headSlot;
 
-            if (index == WIZARD_ROBE_SLOT_INDEX)
-                return _wizardRobeSlot;
+            if (index == UPPER_BODY_SLOT_INDEX)
+                return _upperBodySlot;
 
-            if (index == WIZARD_BOOT_SLOT_INDEX)
-                return _wizardBootSlot;
+            if (index == LOWER_BODY_SLOT_INDEX)
+                return _lowerBodySlot;
 
             if (index < 0 || index >= _items.Length)
                 return default;
 
             return _items[index];
+        }
+
+        public InventorySlot GetEquipmentSlot(ESlotCategory category)
+        {
+            return category switch
+            {
+                ESlotCategory.Head => _headSlot,
+                ESlotCategory.UpperBody => _upperBodySlot,
+                ESlotCategory.LowerBody => _lowerBodySlot,
+                ESlotCategory.Pickaxe => _pickaxeSlot,
+                ESlotCategory.WoodAxe => _woodAxeSlot,
+                _ => default,
+            };
         }
 
         public byte AddItem(ItemDefinition definition, byte quantity, NetworkString<_32> configurationHash = default)
@@ -540,8 +553,8 @@ namespace TPSBR
                 return false;
 
             if (IsPickaxeSlotItem(slot) == true || IsWoodAxeSlotItem(slot) == true ||
-                IsWizardHatSlotItem(slot) == true || IsWizardRobeSlotItem(slot) == true ||
-                IsWizardBootSlotItem(slot) == true)
+                IsHeadSlotItem(slot) == true || IsUpperBodySlotItem(slot) == true ||
+                IsLowerBodySlotItem(slot) == true)
                 return false;
 
             removedSlot = new InventorySlot(slot.ItemDefinitionId, quantity, slot.ConfigurationHash);
@@ -1015,12 +1028,12 @@ namespace TPSBR
             _localPickaxeSlot = default;
             _woodAxeSlot = default;
             _localWoodAxeSlot = default;
-            _wizardHatSlot = default;
-            _localWizardHatSlot = default;
-            _wizardRobeSlot = default;
-            _localWizardRobeSlot = default;
-            _wizardBootSlot = default;
-            _localWizardBootSlot = default;
+            _headSlot = default;
+            _localHeadSlot = default;
+            _upperBodySlot = default;
+            _localUpperBodySlot = default;
+            _lowerBodySlot = default;
+            _localLowerBodySlot = default;
             _localWoodAxe = null;
 
             ItemSlotChanged = null;
@@ -1361,11 +1374,17 @@ namespace TPSBR
 
         private byte AddItemInternal(ItemDefinition definition, byte quantity, NetworkString<_32> configurationHash)
         {
-            bool isPickaxe = definition is PickaxeDefinition;
-            bool isWoodAxe = definition is WoodAxeDefinition;
-            bool isWizardHat = definition is WizardHatDefinition;
-            bool isWizardRobe = definition is WizardRobeDefinition;
-            bool isWizardBoot = definition is WizardBootDefinition;
+            if (definition == null)
+            {
+                return quantity;
+            }
+
+            ESlotCategory slotCategory = definition.SlotCategory;
+            bool isPickaxe = slotCategory == ESlotCategory.Pickaxe;
+            bool isWoodAxe = slotCategory == ESlotCategory.WoodAxe;
+            bool isHead = slotCategory == ESlotCategory.Head;
+            bool isUpperBody = slotCategory == ESlotCategory.UpperBody;
+            bool isLowerBody = slotCategory == ESlotCategory.LowerBody;
 
             ushort maxStack = ItemDefinition.GetMaxStack(definition.ID);
             if (maxStack == 0)
@@ -1388,19 +1407,19 @@ namespace TPSBR
                 remaining = AddToWoodAxeSlot(definition, remaining, configurationHash);
             }
 
-            if (isWizardHat == true && remaining > 0)
+            if (isHead == true && remaining > 0)
             {
-                remaining = AddToWizardHatSlot(definition, remaining, configurationHash);
+                remaining = AddToHeadSlot(definition, remaining, configurationHash);
             }
 
-            if (isWizardRobe == true && remaining > 0)
+            if (isUpperBody == true && remaining > 0)
             {
-                remaining = AddToWizardRobeSlot(definition, remaining, configurationHash);
+                remaining = AddToUpperBodySlot(definition, remaining, configurationHash);
             }
 
-            if (isWizardBoot == true && remaining > 0)
+            if (isLowerBody == true && remaining > 0)
             {
-                remaining = AddToWizardBootSlot(definition, remaining, configurationHash);
+                remaining = AddToLowerBodySlot(definition, remaining, configurationHash);
             }
 
             for (int i = 0; i < _items.Length && remaining > 0; i++)
@@ -1458,14 +1477,14 @@ namespace TPSBR
             bool toPickaxe = toIndex == PICKAXE_SLOT_INDEX;
             bool fromWoodAxe = fromIndex == WOOD_AXE_SLOT_INDEX;
             bool toWoodAxe = toIndex == WOOD_AXE_SLOT_INDEX;
-            bool fromWizardHat = fromIndex == WIZARD_HAT_SLOT_INDEX;
-            bool toWizardHat = toIndex == WIZARD_HAT_SLOT_INDEX;
-            bool fromWizardRobe = fromIndex == WIZARD_ROBE_SLOT_INDEX;
-            bool toWizardRobe = toIndex == WIZARD_ROBE_SLOT_INDEX;
-            bool fromWizardBoot = fromIndex == WIZARD_BOOT_SLOT_INDEX;
-            bool toWizardBoot = toIndex == WIZARD_BOOT_SLOT_INDEX;
-            bool fromSpecial = fromPickaxe || fromWoodAxe || fromWizardHat || fromWizardRobe || fromWizardBoot;
-            bool toSpecial = toPickaxe || toWoodAxe || toWizardHat || toWizardRobe || toWizardBoot;
+            bool fromHead = fromIndex == HEAD_SLOT_INDEX;
+            bool toHead = toIndex == HEAD_SLOT_INDEX;
+            bool fromUpperBody = fromIndex == UPPER_BODY_SLOT_INDEX;
+            bool toUpperBody = toIndex == UPPER_BODY_SLOT_INDEX;
+            bool fromLowerBody = fromIndex == LOWER_BODY_SLOT_INDEX;
+            bool toLowerBody = toIndex == LOWER_BODY_SLOT_INDEX;
+            bool fromSpecial = fromPickaxe || fromWoodAxe || fromHead || fromUpperBody || fromLowerBody;
+            bool toSpecial = toPickaxe || toWoodAxe || toHead || toUpperBody || toLowerBody;
             bool generalToGeneralTransfer = fromSpecial == false && toSpecial == false;
 
             if (fromSpecial == false && fromIndex >= _items.Length)
@@ -1594,159 +1613,159 @@ namespace TPSBR
                 return;
             }
 
-            if (fromWizardHat == true)
+            if (fromHead == true)
             {
-                var wizardHatSourceSlot = _wizardHatSlot;
-                if (wizardHatSourceSlot.IsEmpty == true)
+                var headSourceSlot = _headSlot;
+                if (headSourceSlot.IsEmpty == true)
                     return;
-                if (toWizardHat == true)
+                if (toHead == true)
                     return;
                 var targetSlot = _items[toIndex];
-                if (targetSlot.IsEmpty == false && IsWizardHatSlotItem(targetSlot) == false)
+                if (targetSlot.IsEmpty == false && IsHeadSlotItem(targetSlot) == false)
                     return;
-                _items.Set(toIndex, wizardHatSourceSlot);
-                UpdateWeaponDefinitionMapping(toIndex, wizardHatSourceSlot);
+                _items.Set(toIndex, headSourceSlot);
+                UpdateWeaponDefinitionMapping(toIndex, headSourceSlot);
 
-                if (targetSlot.IsEmpty == false && IsWizardHatSlotItem(targetSlot) == true)
+                if (targetSlot.IsEmpty == false && IsHeadSlotItem(targetSlot) == true)
                 {
-                    _wizardHatSlot = targetSlot;
+                    _headSlot = targetSlot;
                 }
                 else
                 {
-                    _wizardHatSlot = default;
+                    _headSlot = default;
                 }
 
-                RefreshWizardHatSlot();
+                RefreshHeadSlot();
                 RefreshItems();
                 return;
             }
 
-            if (toWizardHat == true)
+            if (toHead == true)
             {
                 var sourceSlot = _items[fromIndex];
                 if (sourceSlot.IsEmpty == true)
                     return;
-                if (IsWizardHatSlotItem(sourceSlot) == false)
+                if (IsHeadSlotItem(sourceSlot) == false)
                     return;
-                var previousWizardHat = _wizardHatSlot;
-                _wizardHatSlot = sourceSlot;
-                RefreshWizardHatSlot();
+                var previousHead = _headSlot;
+                _headSlot = sourceSlot;
+                RefreshHeadSlot();
 
-                if (previousWizardHat.IsEmpty == true)
+                if (previousHead.IsEmpty == true)
                 {
                     _items.Set(fromIndex, default);
                     UpdateWeaponDefinitionMapping(fromIndex, default);
                 }
                 else
                 {
-                    _items.Set(fromIndex, previousWizardHat);
-                    UpdateWeaponDefinitionMapping(fromIndex, previousWizardHat);
+                    _items.Set(fromIndex, previousHead);
+                    UpdateWeaponDefinitionMapping(fromIndex, previousHead);
                 }
 
                 RefreshItems();
                 return;
             }
 
-            if (fromWizardRobe == true)
+            if (fromUpperBody == true)
             {
-                var wizardRobeSourceSlot = _wizardRobeSlot;
-                if (wizardRobeSourceSlot.IsEmpty == true)
+                var upperBodySourceSlot = _upperBodySlot;
+                if (upperBodySourceSlot.IsEmpty == true)
                     return;
-                if (toWizardRobe == true)
+                if (toUpperBody == true)
                     return;
                 var targetSlot = _items[toIndex];
-                if (targetSlot.IsEmpty == false && IsWizardRobeSlotItem(targetSlot) == false)
+                if (targetSlot.IsEmpty == false && IsUpperBodySlotItem(targetSlot) == false)
                     return;
-                _items.Set(toIndex, wizardRobeSourceSlot);
-                UpdateWeaponDefinitionMapping(toIndex, wizardRobeSourceSlot);
+                _items.Set(toIndex, upperBodySourceSlot);
+                UpdateWeaponDefinitionMapping(toIndex, upperBodySourceSlot);
 
-                if (targetSlot.IsEmpty == false && IsWizardRobeSlotItem(targetSlot) == true)
+                if (targetSlot.IsEmpty == false && IsUpperBodySlotItem(targetSlot) == true)
                 {
-                    _wizardRobeSlot = targetSlot;
+                    _upperBodySlot = targetSlot;
                 }
                 else
                 {
-                    _wizardRobeSlot = default;
+                    _upperBodySlot = default;
                 }
 
-                RefreshWizardRobeSlot();
+                RefreshUpperBodySlot();
                 RefreshItems();
                 return;
             }
 
-            if (toWizardRobe == true)
+            if (toUpperBody == true)
             {
                 var sourceSlot = _items[fromIndex];
                 if (sourceSlot.IsEmpty == true)
                     return;
-                if (IsWizardRobeSlotItem(sourceSlot) == false)
+                if (IsUpperBodySlotItem(sourceSlot) == false)
                     return;
-                var previousWizardRobe = _wizardRobeSlot;
-                _wizardRobeSlot = sourceSlot;
-                RefreshWizardRobeSlot();
+                var previousUpperBody = _upperBodySlot;
+                _upperBodySlot = sourceSlot;
+                RefreshUpperBodySlot();
 
-                if (previousWizardRobe.IsEmpty == true)
+                if (previousUpperBody.IsEmpty == true)
                 {
                     _items.Set(fromIndex, default);
                     UpdateWeaponDefinitionMapping(fromIndex, default);
                 }
                 else
                 {
-                    _items.Set(fromIndex, previousWizardRobe);
-                    UpdateWeaponDefinitionMapping(fromIndex, previousWizardRobe);
+                    _items.Set(fromIndex, previousUpperBody);
+                    UpdateWeaponDefinitionMapping(fromIndex, previousUpperBody);
                 }
 
                 RefreshItems();
                 return;
             }
 
-            if (fromWizardBoot == true)
+            if (fromLowerBody == true)
             {
-                var wizardBootSourceSlot = _wizardBootSlot;
-                if (wizardBootSourceSlot.IsEmpty == true)
+                var lowerBodySourceSlot = _lowerBodySlot;
+                if (lowerBodySourceSlot.IsEmpty == true)
                     return;
-                if (toWizardBoot == true)
+                if (toLowerBody == true)
                     return;
                 var targetSlot = _items[toIndex];
-                if (targetSlot.IsEmpty == false && IsWizardBootSlotItem(targetSlot) == false)
+                if (targetSlot.IsEmpty == false && IsLowerBodySlotItem(targetSlot) == false)
                     return;
-                _items.Set(toIndex, wizardBootSourceSlot);
-                UpdateWeaponDefinitionMapping(toIndex, wizardBootSourceSlot);
+                _items.Set(toIndex, lowerBodySourceSlot);
+                UpdateWeaponDefinitionMapping(toIndex, lowerBodySourceSlot);
 
-                if (targetSlot.IsEmpty == false && IsWizardBootSlotItem(targetSlot) == true)
+                if (targetSlot.IsEmpty == false && IsLowerBodySlotItem(targetSlot) == true)
                 {
-                    _wizardBootSlot = targetSlot;
+                    _lowerBodySlot = targetSlot;
                 }
                 else
                 {
-                    _wizardBootSlot = default;
+                    _lowerBodySlot = default;
                 }
 
-                RefreshWizardBootSlot();
+                RefreshLowerBodySlot();
                 RefreshItems();
                 return;
             }
 
-            if (toWizardBoot == true)
+            if (toLowerBody == true)
             {
                 var sourceSlot = _items[fromIndex];
                 if (sourceSlot.IsEmpty == true)
                     return;
-                if (IsWizardBootSlotItem(sourceSlot) == false)
+                if (IsLowerBodySlotItem(sourceSlot) == false)
                     return;
-                var previousWizardBoot = _wizardBootSlot;
-                _wizardBootSlot = sourceSlot;
-                RefreshWizardBootSlot();
+                var previousLowerBody = _lowerBodySlot;
+                _lowerBodySlot = sourceSlot;
+                RefreshLowerBodySlot();
 
-                if (previousWizardBoot.IsEmpty == true)
+                if (previousLowerBody.IsEmpty == true)
                 {
                     _items.Set(fromIndex, default);
                     UpdateWeaponDefinitionMapping(fromIndex, default);
                 }
                 else
                 {
-                    _items.Set(fromIndex, previousWizardBoot);
-                    UpdateWeaponDefinitionMapping(fromIndex, previousWizardBoot);
+                    _items.Set(fromIndex, previousLowerBody);
+                    UpdateWeaponDefinitionMapping(fromIndex, previousLowerBody);
                 }
 
                 RefreshItems();
@@ -2033,57 +2052,57 @@ namespace TPSBR
                 return;
             }
 
-            if (index == WIZARD_HAT_SLOT_INDEX)
+            if (index == HEAD_SLOT_INDEX)
             {
-                var wizardHatSlotData = _wizardHatSlot;
-                if (wizardHatSlotData.IsEmpty == true)
+                var headSlotData = _headSlot;
+                if (headSlotData.IsEmpty == true)
                     return;
-                var wizardHatDefinition = wizardHatSlotData.GetDefinition();
-                if (wizardHatDefinition == null)
+                var headDefinition = headSlotData.GetDefinition();
+                if (headDefinition == null)
                     return;
-                byte wizardHatQuantity = wizardHatSlotData.Quantity;
-                if (wizardHatQuantity == 0)
+                byte headQuantity = headSlotData.Quantity;
+                if (headQuantity == 0)
                     return;
-                _wizardHatSlot = default;
-                RefreshWizardHatSlot();
+                _headSlot = default;
+                RefreshHeadSlot();
 
-                SpawnInventoryItemPickup(wizardHatDefinition, wizardHatQuantity, wizardHatSlotData.ConfigurationHash);
+                SpawnInventoryItemPickup(headDefinition, headQuantity, headSlotData.ConfigurationHash);
                 return;
             }
 
-            if (index == WIZARD_ROBE_SLOT_INDEX)
+            if (index == UPPER_BODY_SLOT_INDEX)
             {
-                var wizardRobeSlotData = _wizardRobeSlot;
-                if (wizardRobeSlotData.IsEmpty == true)
+                var upperBodySlotData = _upperBodySlot;
+                if (upperBodySlotData.IsEmpty == true)
                     return;
-                var wizardRobeDefinition = wizardRobeSlotData.GetDefinition();
-                if (wizardRobeDefinition == null)
+                var upperBodyDefinition = upperBodySlotData.GetDefinition();
+                if (upperBodyDefinition == null)
                     return;
-                byte wizardRobeQuantity = wizardRobeSlotData.Quantity;
-                if (wizardRobeQuantity == 0)
+                byte upperBodyQuantity = upperBodySlotData.Quantity;
+                if (upperBodyQuantity == 0)
                     return;
-                _wizardRobeSlot = default;
-                RefreshWizardRobeSlot();
+                _upperBodySlot = default;
+                RefreshUpperBodySlot();
 
-                SpawnInventoryItemPickup(wizardRobeDefinition, wizardRobeQuantity, wizardRobeSlotData.ConfigurationHash);
+                SpawnInventoryItemPickup(upperBodyDefinition, upperBodyQuantity, upperBodySlotData.ConfigurationHash);
                 return;
             }
 
-            if (index == WIZARD_BOOT_SLOT_INDEX)
+            if (index == LOWER_BODY_SLOT_INDEX)
             {
-                var wizardBootSlotData = _wizardBootSlot;
-                if (wizardBootSlotData.IsEmpty == true)
+                var lowerBodySlotData = _lowerBodySlot;
+                if (lowerBodySlotData.IsEmpty == true)
                     return;
-                var wizardBootDefinition = wizardBootSlotData.GetDefinition();
-                if (wizardBootDefinition == null)
+                var lowerBodyDefinition = lowerBodySlotData.GetDefinition();
+                if (lowerBodyDefinition == null)
                     return;
-                byte wizardBootQuantity = wizardBootSlotData.Quantity;
-                if (wizardBootQuantity == 0)
+                byte lowerBodyQuantity = lowerBodySlotData.Quantity;
+                if (lowerBodyQuantity == 0)
                     return;
-                _wizardBootSlot = default;
-                RefreshWizardBootSlot();
+                _lowerBodySlot = default;
+                RefreshLowerBodySlot();
 
-                SpawnInventoryItemPickup(wizardBootDefinition, wizardBootQuantity, wizardBootSlotData.ConfigurationHash);
+                SpawnInventoryItemPickup(lowerBodyDefinition, lowerBodyQuantity, lowerBodySlotData.ConfigurationHash);
                 return;
             }
 
@@ -2158,72 +2177,72 @@ namespace TPSBR
                 return true;
             }
 
-            if (index == WIZARD_HAT_SLOT_INDEX)
+            if (index == HEAD_SLOT_INDEX)
             {
                 if (quantity == 0)
                     return false;
 
-                var wizardHatSlotData = _wizardHatSlot;
-                if (wizardHatSlotData.IsEmpty == true)
+                var headSlotData = _headSlot;
+                if (headSlotData.IsEmpty == true)
                     return false;
 
-                if (wizardHatSlotData.Quantity <= quantity)
+                if (headSlotData.Quantity <= quantity)
                 {
-                    _wizardHatSlot = default;
+                    _headSlot = default;
                 }
                 else
                 {
-                    wizardHatSlotData.Remove(quantity);
-                    _wizardHatSlot = wizardHatSlotData;
+                    headSlotData.Remove(quantity);
+                    _headSlot = headSlotData;
                 }
 
-                RefreshWizardHatSlot();
+                RefreshHeadSlot();
                 return true;
             }
 
-            if (index == WIZARD_ROBE_SLOT_INDEX)
+            if (index == UPPER_BODY_SLOT_INDEX)
             {
                 if (quantity == 0)
                     return false;
 
-                var wizardRobeSlotData = _wizardRobeSlot;
-                if (wizardRobeSlotData.IsEmpty == true)
+                var upperBodySlotData = _upperBodySlot;
+                if (upperBodySlotData.IsEmpty == true)
                     return false;
 
-                if (wizardRobeSlotData.Quantity <= quantity)
+                if (upperBodySlotData.Quantity <= quantity)
                 {
-                    _wizardRobeSlot = default;
+                    _upperBodySlot = default;
                 }
                 else
                 {
-                    wizardRobeSlotData.Remove(quantity);
-                    _wizardRobeSlot = wizardRobeSlotData;
+                    upperBodySlotData.Remove(quantity);
+                    _upperBodySlot = upperBodySlotData;
                 }
 
-                RefreshWizardRobeSlot();
+                RefreshUpperBodySlot();
                 return true;
             }
 
-            if (index == WIZARD_BOOT_SLOT_INDEX)
+            if (index == LOWER_BODY_SLOT_INDEX)
             {
                 if (quantity == 0)
                     return false;
 
-                var wizardBootSlotData = _wizardBootSlot;
-                if (wizardBootSlotData.IsEmpty == true)
+                var lowerBodySlotData = _lowerBodySlot;
+                if (lowerBodySlotData.IsEmpty == true)
                     return false;
 
-                if (wizardBootSlotData.Quantity <= quantity)
+                if (lowerBodySlotData.Quantity <= quantity)
                 {
-                    _wizardBootSlot = default;
+                    _lowerBodySlot = default;
                 }
                 else
                 {
-                    wizardBootSlotData.Remove(quantity);
-                    _wizardBootSlot = wizardBootSlotData;
+                    lowerBodySlotData.Remove(quantity);
+                    _lowerBodySlot = lowerBodySlotData;
                 }
 
-                RefreshWizardBootSlot();
+                RefreshLowerBodySlot();
                 return true;
             }
 
@@ -2235,8 +2254,8 @@ namespace TPSBR
                 return false;
 
             bool removedSpecialItem = IsPickaxeSlotItem(inventorySlot) || IsWoodAxeSlotItem(inventorySlot) ||
-                                      IsWizardHatSlotItem(inventorySlot) || IsWizardRobeSlotItem(inventorySlot) ||
-                                      IsWizardBootSlotItem(inventorySlot);
+                                      IsHeadSlotItem(inventorySlot) || IsUpperBodySlotItem(inventorySlot) ||
+                                      IsLowerBodySlotItem(inventorySlot);
 
             if (inventorySlot.Quantity <= quantity)
             {
@@ -2322,9 +2341,9 @@ namespace TPSBR
 
             RefreshPickaxeSlot();
             RefreshWoodAxeSlot();
-            RefreshWizardHatSlot();
-            RefreshWizardRobeSlot();
-            RefreshWizardBootSlot();
+            RefreshHeadSlot();
+            RefreshUpperBodySlot();
+            RefreshLowerBodySlot();
         }
 
         internal bool ConsumeFeedSuppression(int index)
@@ -2879,17 +2898,17 @@ namespace TPSBR
             }
         }
 
-        private byte AddToWizardHatSlot(ItemDefinition definition, byte quantity, NetworkString<_32> configurationHash)
+        private byte AddToHeadSlot(ItemDefinition definition, byte quantity, NetworkString<_32> configurationHash)
         {
             if (quantity == 0)
                 return 0;
 
-            var slot = _wizardHatSlot;
+            var slot = _headSlot;
 
-            if (slot.IsEmpty == false && IsWizardHatSlotItem(slot) == false)
+            if (slot.IsEmpty == false && IsHeadSlotItem(slot) == false)
             {
-                _wizardHatSlot = default;
-                RefreshWizardHatSlot();
+                _headSlot = default;
+                RefreshHeadSlot();
                 slot = default;
             }
 
@@ -2901,8 +2920,8 @@ namespace TPSBR
                 if (addAmount > 0)
                 {
                     slot = new InventorySlot(definition.ID, addAmount, configurationHash);
-                    _wizardHatSlot = slot;
-                    RefreshWizardHatSlot();
+                    _headSlot = slot;
+                    RefreshHeadSlot();
                     quantity -= addAmount;
                 }
 
@@ -2923,33 +2942,33 @@ namespace TPSBR
                 return quantity;
 
             slot.Add(space);
-            _wizardHatSlot = slot;
-            RefreshWizardHatSlot();
+            _headSlot = slot;
+            RefreshHeadSlot();
 
             return (byte)(quantity - space);
         }
 
-        private void RefreshWizardHatSlot()
+        private void RefreshHeadSlot()
         {
-            var slot = _wizardHatSlot;
-            if (_localWizardHatSlot.Equals(slot) == false)
+            var slot = _headSlot;
+            if (_localHeadSlot.Equals(slot) == false)
             {
-                _localWizardHatSlot = slot;
-                ItemSlotChanged?.Invoke(WIZARD_HAT_SLOT_INDEX, slot);
+                _localHeadSlot = slot;
+                ItemSlotChanged?.Invoke(HEAD_SLOT_INDEX, slot);
             }
         }
 
-        private byte AddToWizardRobeSlot(ItemDefinition definition, byte quantity, NetworkString<_32> configurationHash)
+        private byte AddToUpperBodySlot(ItemDefinition definition, byte quantity, NetworkString<_32> configurationHash)
         {
             if (quantity == 0)
                 return 0;
 
-            var slot = _wizardRobeSlot;
+            var slot = _upperBodySlot;
 
-            if (slot.IsEmpty == false && IsWizardRobeSlotItem(slot) == false)
+            if (slot.IsEmpty == false && IsUpperBodySlotItem(slot) == false)
             {
-                _wizardRobeSlot = default;
-                RefreshWizardRobeSlot();
+                _upperBodySlot = default;
+                RefreshUpperBodySlot();
                 slot = default;
             }
 
@@ -2961,8 +2980,8 @@ namespace TPSBR
                 if (addAmount > 0)
                 {
                     slot = new InventorySlot(definition.ID, addAmount, configurationHash);
-                    _wizardRobeSlot = slot;
-                    RefreshWizardRobeSlot();
+                    _upperBodySlot = slot;
+                    RefreshUpperBodySlot();
                     quantity -= addAmount;
                 }
 
@@ -2983,33 +3002,33 @@ namespace TPSBR
                 return quantity;
 
             slot.Add(space);
-            _wizardRobeSlot = slot;
-            RefreshWizardRobeSlot();
+            _upperBodySlot = slot;
+            RefreshUpperBodySlot();
 
             return (byte)(quantity - space);
         }
 
-        private void RefreshWizardRobeSlot()
+        private void RefreshUpperBodySlot()
         {
-            var slot = _wizardRobeSlot;
-            if (_localWizardRobeSlot.Equals(slot) == false)
+            var slot = _upperBodySlot;
+            if (_localUpperBodySlot.Equals(slot) == false)
             {
-                _localWizardRobeSlot = slot;
-                ItemSlotChanged?.Invoke(WIZARD_ROBE_SLOT_INDEX, slot);
+                _localUpperBodySlot = slot;
+                ItemSlotChanged?.Invoke(UPPER_BODY_SLOT_INDEX, slot);
             }
         }
 
-        private byte AddToWizardBootSlot(ItemDefinition definition, byte quantity, NetworkString<_32> configurationHash)
+        private byte AddToLowerBodySlot(ItemDefinition definition, byte quantity, NetworkString<_32> configurationHash)
         {
             if (quantity == 0)
                 return 0;
 
-            var slot = _wizardBootSlot;
+            var slot = _lowerBodySlot;
 
-            if (slot.IsEmpty == false && IsWizardBootSlotItem(slot) == false)
+            if (slot.IsEmpty == false && IsLowerBodySlotItem(slot) == false)
             {
-                _wizardBootSlot = default;
-                RefreshWizardBootSlot();
+                _lowerBodySlot = default;
+                RefreshLowerBodySlot();
                 slot = default;
             }
 
@@ -3021,8 +3040,8 @@ namespace TPSBR
                 if (addAmount > 0)
                 {
                     slot = new InventorySlot(definition.ID, addAmount, configurationHash);
-                    _wizardBootSlot = slot;
-                    RefreshWizardBootSlot();
+                    _lowerBodySlot = slot;
+                    RefreshLowerBodySlot();
                     quantity -= addAmount;
                 }
 
@@ -3043,19 +3062,19 @@ namespace TPSBR
                 return quantity;
 
             slot.Add(space);
-            _wizardBootSlot = slot;
-            RefreshWizardBootSlot();
+            _lowerBodySlot = slot;
+            RefreshLowerBodySlot();
 
             return (byte)(quantity - space);
         }
 
-        private void RefreshWizardBootSlot()
+        private void RefreshLowerBodySlot()
         {
-            var slot = _wizardBootSlot;
-            if (_localWizardBootSlot.Equals(slot) == false)
+            var slot = _lowerBodySlot;
+            if (_localLowerBodySlot.Equals(slot) == false)
             {
-                _localWizardBootSlot = slot;
-                ItemSlotChanged?.Invoke(WIZARD_BOOT_SLOT_INDEX, slot);
+                _localLowerBodySlot = slot;
+                ItemSlotChanged?.Invoke(LOWER_BODY_SLOT_INDEX, slot);
             }
         }
 
@@ -3532,52 +3551,44 @@ namespace TPSBR
         private bool IsValidInventoryIndex(int index)
         {
             return IsGeneralInventoryIndex(index) || index == PICKAXE_SLOT_INDEX || index == WOOD_AXE_SLOT_INDEX ||
-                   index == WIZARD_HAT_SLOT_INDEX || index == WIZARD_ROBE_SLOT_INDEX || index == WIZARD_BOOT_SLOT_INDEX;
+                   index == HEAD_SLOT_INDEX || index == UPPER_BODY_SLOT_INDEX || index == LOWER_BODY_SLOT_INDEX;
         }
 
         private static bool IsPickaxeSlotItem(InventorySlot slot)
         {
-            if (slot.IsEmpty == true)
-                return false;
-
-            var definition = slot.GetDefinition();
-            return definition is PickaxeDefinition;
+            return HasSlotCategory(slot, ESlotCategory.Pickaxe);
         }
 
         private static bool IsWoodAxeSlotItem(InventorySlot slot)
         {
-            if (slot.IsEmpty == true)
-                return false;
-
-            var definition = slot.GetDefinition();
-            return definition is WoodAxeDefinition;
+            return HasSlotCategory(slot, ESlotCategory.WoodAxe);
         }
 
-        private static bool IsWizardHatSlotItem(InventorySlot slot)
+        private static bool IsHeadSlotItem(InventorySlot slot)
+        {
+            return HasSlotCategory(slot, ESlotCategory.Head);
+        }
+
+        private static bool IsUpperBodySlotItem(InventorySlot slot)
+        {
+            return HasSlotCategory(slot, ESlotCategory.UpperBody);
+        }
+
+        private static bool IsLowerBodySlotItem(InventorySlot slot)
+        {
+            return HasSlotCategory(slot, ESlotCategory.LowerBody);
+        }
+
+        private static bool HasSlotCategory(InventorySlot slot, ESlotCategory category)
         {
             if (slot.IsEmpty == true)
                 return false;
 
-            var definition = slot.GetDefinition();
-            return definition is WizardHatDefinition;
-        }
-
-        private static bool IsWizardRobeSlotItem(InventorySlot slot)
-        {
-            if (slot.IsEmpty == true)
+            ItemDefinition definition = slot.GetDefinition();
+            if (definition == null)
                 return false;
 
-            var definition = slot.GetDefinition();
-            return definition is WizardRobeDefinition;
-        }
-
-        private static bool IsWizardBootSlotItem(InventorySlot slot)
-        {
-            if (slot.IsEmpty == true)
-                return false;
-
-            var definition = slot.GetDefinition();
-            return definition is WizardBootDefinition;
+            return definition.SlotCategory == category;
         }
 
         private void SpawnInventoryItemPickup(ItemDefinition definition, byte quantity, NetworkString<_32> configurationHash = default)

@@ -17,6 +17,7 @@ namespace Unity.Template.CompetitiveActionMultiplayer
         public Weapon WeaponPrefab => _weaponPrefab;
         public IReadOnlyList<AbilityDefinition> AvailableAbilities => _availableAbilities ?? Array.Empty<AbilityDefinition>();
         public override ushort MaxStack => 1;
+        public override ESlotCategory SlotCategory => ESlotCategory.Weapon;
 
         public bool HasAbility(AbilityDefinition ability)
         {

@@ -10,5 +10,6 @@ namespace Unity.Template.CompetitiveActionMultiplayer
         private Pickaxe _pickaxePrefab;
         public Pickaxe PickaxePrefab => _pickaxePrefab;
         public override ushort MaxStack => 1;
+        public override ESlotCategory SlotCategory => ESlotCategory.Pickaxe;
     }
 }

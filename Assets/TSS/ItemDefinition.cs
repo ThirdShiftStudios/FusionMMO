@@ -16,6 +16,7 @@ namespace TSS.Data
         [SerializeField] private Sprite _iconSprite;
         [SerializeField] private ushort maxStack = 100;
         [SerializeField] private string _shortCode;
+        [SerializeField] private ESlotCategory _slotCategory = ESlotCategory.General;
 
         [NonSerialized]
         private Sprite _generatedSprite;
@@ -31,6 +32,7 @@ namespace TSS.Data
         public override string Name => displayName;
         public override Texture2D Icon => _iconSprite != null ? _iconSprite.texture : _iconTexture;
         public virtual ushort MaxStack => maxStack;
+        public virtual ESlotCategory SlotCategory => _slotCategory;
         public Sprite IconSprite => _iconSprite != null ? _iconSprite : GetOrCreateSprite();
 
         public static ushort GetMaxStack(int id)

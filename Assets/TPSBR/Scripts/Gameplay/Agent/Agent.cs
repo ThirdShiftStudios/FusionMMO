@@ -55,6 +55,7 @@ namespace TPSBR
         private Quaternion _cachedPitchRotation;
         private Stats _stats;
         private Professions _professions;
+        private EquipmentVisualsManager _equipmentVisuals;
 
         // NetworkBehaviour INTERFACE
 
@@ -73,6 +74,7 @@ namespace TPSBR
             _agentVFX.OnSpawned(this);
             _stats.OnSpawned(this);
             _professions.OnSpawned(this);
+            _equipmentVisuals?.Initialize(_inventory);
             
             if (ApplicationSettings.IsStrippedBatch == true)
             {
@@ -143,6 +145,8 @@ namespace TPSBR
             {
                 _professions.OnDespawned();
             }
+
+            _equipmentVisuals?.Initialize(null);
             
         }
 
@@ -258,6 +262,7 @@ namespace TPSBR
             _interestView = GetComponent<AgentInterestView>();
             _stats = GetComponent<Stats>();
             _professions = GetComponent<Professions>();
+            _equipmentVisuals = GetComponentInChildren<EquipmentVisualsManager>();
         }
 
         // PRIVATE METHODS

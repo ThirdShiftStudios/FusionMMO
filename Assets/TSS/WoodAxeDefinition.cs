@@ -10,5 +10,6 @@ namespace Unity.Template.CompetitiveActionMultiplayer
         private WoodAxe _woodAxePrefab;
         public WoodAxe WoodAxePrefab => _woodAxePrefab;
         public override ushort MaxStack => 1;
+        public override ESlotCategory SlotCategory => ESlotCategory.WoodAxe;
     }
 }
