@@ -49,10 +49,12 @@ namespace TPSBR.UI
 		{
 			base.OnInitializeInternal();
 
-			EnsureCraftingStationView();
+                        EnsureCraftingStationView();
+                        EnsureFishingView();
 
-			_deathView = Get<UIDeathView>();
-			_inventoryView = Get<UIGameplayInventory>();
+                        _deathView = Get<UIDeathView>();
+                        _inventoryView = Get<UIGameplayInventory>();
+                        Get<UIFishingView>();
             _adminConsoleView = Get<UIAdminConsoleView>();
         }
 
@@ -133,13 +135,21 @@ namespace TPSBR.UI
 		
 		// PRIVATE METHODS
 
-		private void EnsureCraftingStationView()
-		{
-			if (Get<UICraftingStationView>() != null)
-				return;
+                private void EnsureCraftingStationView()
+                {
+                        if (Get<UICraftingStationView>() != null)
+                                return;
 
-			CreateViewFromResource<UICraftingStationView>(UICraftingStationView.ResourcePath);
-		}
+                        CreateViewFromResource<UICraftingStationView>(UICraftingStationView.ResourcePath);
+                }
+
+                private void EnsureFishingView()
+                {
+                        if (Get<UIFishingView>() != null)
+                                return;
+
+                        CreateViewFromResource<UIFishingView>(UIFishingView.ResourcePath);
+                }
 
 		private IEnumerator ShowGameOver_Coroutine(float delay)
 		{
