@@ -17,6 +17,7 @@ namespace TPSBR
         private LowerBodyLayer _lowerBody;
         private UpperBodyLayer _upperBody;
         private AttackLayer _attack;
+        private UseLayer _useLayer;
         private InteractionsAnimationLayer _interactionsLayer;
 
         private IInteraction _activeInteraction;
@@ -73,7 +74,12 @@ namespace TPSBR
 
             if (_upperBody.IsActive() == true)
             {
-                
+
+            }
+
+            if (_useLayer != null && _useLayer.HasActiveCast() == true)
+            {
+                return false;
             }
 
             return true;
@@ -110,6 +116,16 @@ namespace TPSBR
                 return false;
             if (_upperBody.HasActiveState() == true)
                 return false;
+
+            bool handledByUseLayer = false;
+            if (_useLayer != null && request.ShouldUse == true)
+            {
+                if (_useLayer.TryHandleUse(weapon, request, out handledByUseLayer) == false)
+                    return false;
+
+                if (handledByUseLayer == true)
+                    return true;
+            }
 
             if (_attack != null && request.ShouldUse == true)
             {
@@ -395,6 +411,7 @@ namespace TPSBR
             _lowerBody = FindLayer<LowerBodyLayer>();
             _upperBody = FindLayer<UpperBodyLayer>();
             _attack = FindLayer<AttackLayer>();
+            _useLayer = FindLayer<UseLayer>();
             _interactionsLayer = FindLayer<InteractionsAnimationLayer>();
 
             _kcc.MoveState = _locomotion.FindState<MoveState>();
