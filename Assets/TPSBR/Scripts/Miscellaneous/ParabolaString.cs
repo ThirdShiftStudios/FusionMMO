@@ -75,15 +75,15 @@ namespace TPSBR
 
         private Vector3 SampleParabola(Vector3 start, Vector3 end, float height, float t)
         {
+            Vector3 travelDirection = end - start;
+            Vector3 result = start + t * travelDirection;
             if (Mathf.Abs(start.y - end.y) < 0.1f)
             {
-                Vector3 travelDirection = end - start;
-                Vector3 result = start + t * travelDirection;
                 result.y += Mathf.Sin(t * Mathf.PI) * height;
                 return result;
             }
 
-            Vector3 travelDirection = end - start;
+            travelDirection = end - start;
             Vector3 levelDirection = end - new Vector3(start.x, end.y, start.z);
             Vector3 right = Vector3.Cross(travelDirection, levelDirection);
             Vector3 up = Vector3.Cross(right, levelDirection);
@@ -93,7 +93,7 @@ namespace TPSBR
                 up = -up;
             }
 
-            Vector3 result = start + t * travelDirection;
+            result = start + t * travelDirection;
             result += Mathf.Sin(t * Mathf.PI) * height * up.normalized;
             return result;
         }

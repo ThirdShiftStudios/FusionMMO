@@ -267,6 +267,7 @@ MonoBehaviour:
   _lureProjectilePrefab:
     RawGuidValue: 6b8b2b3c11cfd9941a0f8b6c1de2d4ac
   _lureProjectileSpeed: 12
+  _parabolaString: {fileID: 0}
 --- !u!114 &-23164802236645595
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -279,12 +280,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dfcc7678899c4eb4cb3ce9bdf8f702ea, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  rodString: {fileID: 7150576548185425517}
-  arabolaStep: 0
-  someObject: {fileID: 0}
-  Ta: {fileID: 0}
-  Tb: {fileID: 0}
-  h: 0
+  _lineRenderer: {fileID: 7150576548185425517}
+  _segmentCount: 20
+  _height: 1
 --- !u!1 &6506986435312117417
 GameObject:
   m_ObjectHideFlags: 0
