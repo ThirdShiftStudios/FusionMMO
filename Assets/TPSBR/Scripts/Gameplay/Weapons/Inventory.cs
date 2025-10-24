@@ -519,6 +519,36 @@ namespace TPSBR
             return AddItemInternal(definition, quantity, configurationHash);
         }
 
+        public void RequestAddItem(ItemDefinition definition, byte quantity, NetworkString<_32> configurationHash = default)
+        {
+            if (definition == null || quantity == 0)
+                return;
+
+            if (HasStateAuthority == true)
+            {
+                AddItem(definition, quantity, configurationHash);
+            }
+            else
+            {
+                RPC_RequestAddItem(definition.ID, quantity, configurationHash);
+            }
+        }
+
+        public void RequestAddGold(int amount)
+        {
+            if (amount <= 0)
+                return;
+
+            if (HasStateAuthority == true)
+            {
+                AddGold(amount);
+            }
+            else
+            {
+                RPC_RequestAddGold(amount);
+            }
+        }
+
         public bool TryExtractInventoryItem(int inventoryIndex, byte quantity, out InventorySlot removedSlot)
         {
             removedSlot = default;
@@ -1357,6 +1387,25 @@ namespace TPSBR
         private void RPC_RequestDropHotbar(byte weaponSlot)
         {
             DropWeapon(weaponSlot);
+        }
+
+        [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
+        private void RPC_RequestAddItem(int definitionId, byte quantity, NetworkString<_32> configurationHash)
+        {
+            if (quantity == 0)
+                return;
+
+            var definition = ItemDefinition.Get(definitionId);
+            if (definition == null)
+                return;
+
+            AddItem(definition, quantity, configurationHash);
+        }
+
+        [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
+        private void RPC_RequestAddGold(int amount)
+        {
+            AddGold(amount);
         }
 
         private byte AddItemInternal(ItemDefinition definition, byte quantity, NetworkString<_32> configurationHash)
