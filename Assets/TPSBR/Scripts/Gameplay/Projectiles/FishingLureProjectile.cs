@@ -6,8 +6,11 @@ namespace TPSBR
     public class FishingLureProjectile : KinematicProjectile
     {
         private FishingPoleWeapon _weapon;
-        [SerializeField] 
-        Transform _lineRendererEndPoint;
+
+        [SerializeField]
+        private Transform _lineRendererEndPoint;
+
+        public Transform LineRendererEndPoint => _lineRendererEndPoint;
         public void Initialize(FishingPoleWeapon weapon)
         {
             _weapon = weapon;

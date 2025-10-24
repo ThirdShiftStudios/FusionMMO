@@ -14,6 +14,8 @@ namespace TPSBR
         private NetworkPrefabRef _lureProjectilePrefab;
         [SerializeField]
         private float _lureProjectileSpeed = 12f;
+        [SerializeField]
+        private ParabolaString _parabolaString;
 
         private float _primaryHoldTime;
         private bool _isPrimaryHeld;
@@ -22,6 +24,21 @@ namespace TPSBR
         private bool _waitingForPrimaryRelease;
         private FishingLureProjectile _activeLureProjectile;
         private bool _lureLaunched;
+
+        private void OnEnable()
+        {
+            if (_parabolaString == null)
+            {
+                _parabolaString = GetComponent<ParabolaString>();
+            }
+
+            _parabolaString?.ClearEndpoints();
+        }
+
+        private void OnDisable()
+        {
+            _parabolaString?.ClearEndpoints();
+        }
 
         public override bool CanFire(bool keyDown)
         {
@@ -191,12 +208,14 @@ namespace TPSBR
                 if (projectile == null)
                 {
                     _lureLaunched = false;
+                    UpdateParabolaString();
                     return;
                 }
 
                 _activeLureProjectile = projectile;
                 projectile.Initialize(this);
                 projectile.Fire(owner, firePosition, initialVelocity, hitMask, HitType);
+                UpdateParabolaString();
             });
         }
 
@@ -256,11 +275,27 @@ namespace TPSBR
             }
 
             _lureLaunched = false;
+            UpdateParabolaString();
         }
 
         private UseLayer GetUseLayer()
         {
             return Character != null ? Character.AnimationController?.AttackLayer : null;
+        }
+
+        private void UpdateParabolaString()
+        {
+            if (_parabolaString == null)
+                return;
+
+            if (_activeLureProjectile != null && _activeLureProjectile.LineRendererEndPoint != null && _lureFireTransform != null)
+            {
+                _parabolaString.SetEndpoints(_lureFireTransform, _activeLureProjectile.LineRendererEndPoint);
+            }
+            else
+            {
+                _parabolaString.ClearEndpoints();
+            }
         }
     }
 }
