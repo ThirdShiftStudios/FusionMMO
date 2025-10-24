@@ -1046,6 +1046,7 @@ namespace TPSBR
                 RefreshItems();
                 RefreshPickaxeVisuals();
                 RefreshWoodAxeVisuals();
+                RefreshFishingPoleVisuals();
                 HandleGoldChanged(_gold);
                 return;
             }
@@ -1056,6 +1057,7 @@ namespace TPSBR
                 RefreshItems();
                 RefreshPickaxeVisuals();
                 RefreshWoodAxeVisuals();
+                RefreshFishingPoleVisuals();
                 HandleGoldChanged(_gold);
                 return;
             }
@@ -1095,6 +1097,7 @@ namespace TPSBR
             EnsureToolAvailability();
             RefreshPickaxeVisuals();
             RefreshWoodAxeVisuals();
+            RefreshFishingPoleVisuals();
             HandleGoldChanged(_gold);
         }
 
@@ -1200,6 +1203,7 @@ namespace TPSBR
             RefreshItems();
             RefreshPickaxeVisuals();
             RefreshWoodAxeVisuals();
+            RefreshFishingPoleVisuals();
 
             if (_changeDetector != null)
             {
