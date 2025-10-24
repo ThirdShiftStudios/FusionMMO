@@ -1180,6 +1180,8 @@ MonoBehaviour:
   _waiting: {fileID: 2797897202733265890}
   _fighting: {fileID: 330444618167657851}
   _catch: {fileID: 1619185603032873582}
+  _blendInDuration: 0.1
+  _blendOutDuration: 0.1
 --- !u!1 &8504675271889870947
 GameObject:
   m_ObjectHideFlags: 0
@@ -1396,7 +1398,7 @@ PrefabInstance:
     - target: {fileID: 170174630284608723, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
       propertyPath: _sets.Array.data[0]._nodes.Array.data[0].Clip
       value: 
-      objectReference: {fileID: 8993902097722301239, guid: b841db0763aa51447bf4a3119b5d956a, type: 3}
+      objectReference: {fileID: 8993902097722301239, guid: 5e2801555eb2d1f449bb2ad66c467a8e, type: 3}
     - target: {fileID: 170174630284608723, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
       propertyPath: _sets.Array.data[0]._nodes.Array.data[1].Clip
       value: 
@@ -2204,7 +2206,7 @@ MonoBehaviour:
   _chargeState: {fileID: 8286909057997534430}
   _lightAttackState: {fileID: 4351186955281125842}
   _heavyAttackState: {fileID: 3191152985599960717}
-  _abilityAttackState: {fileID: 7017657832660007047}
+  _abilityAttackState: {fileID: 3191152985599960717}
   _blendInDuration: 0.1
   _blendOutDuration: 0.15
 --- !u!114 &2878041293676285638 stripped
@@ -2262,7 +2264,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0581eede9c6a3ac40b5ef37dee37b426, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _avatarMask: {fileID: 0}
+  _avatarMask: {fileID: 101100000, guid: 3dc9b6ccb8716a847b75ead8f5603ceb, type: 2}
   _isAdditive: 0
   _initialWeight: 1
   staffAttack: {fileID: 3954794708403379349}
