@@ -10,7 +10,8 @@ namespace TPSBR
         Charge,
         LightAttack,
         HeavyAttack,
-        Ability
+        Ability,
+        FishingCast
     }
 
     public readonly struct WeaponUseRequest

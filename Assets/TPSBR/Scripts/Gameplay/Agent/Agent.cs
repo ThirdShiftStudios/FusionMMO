@@ -354,11 +354,17 @@ namespace TPSBR
             {
                 bool attackReleased = _agentInput.WasDeactivated(EGameplayInputAction.Attack);
                 bool heavyAttackActivated = _agentInput.WasActivated(EGameplayInputAction.HeavyAttack);
+                bool blockActivated = _agentInput.WasActivated(EGameplayInputAction.Block);
                 bool blockHeld = _agentInput.FixedInput.Block;
 
                 if (currentWeapon is StaffWeapon staffWeapon)
                 {
                     staffWeapon.ApplyExtendedInput(heavyAttackActivated, blockHeld);
+                }
+
+                if (currentWeapon is FishingPoleWeapon fishingPoleWeapon)
+                {
+                    fishingPoleWeapon.ApplyExtendedInput(blockActivated);
                 }
 
                 // Evaluate how the weapon wants to handle the current input snapshot.
