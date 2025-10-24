@@ -393,6 +393,8 @@ namespace TPSBR.UI
 
             if (_logText != null)
             {
+                bool shouldAutoScroll = ShouldAutoScrollToBottom();
+
                 _logBuilder.Clear();
                 for (int i = 0, count = _logLines.Count; i < count; ++i)
                 {
@@ -405,13 +407,39 @@ namespace TPSBR.UI
                 }
 
                 _logText.text = _logBuilder.ToString();
-                _shouldScrollToBottom = true;
+                _shouldScrollToBottom = shouldAutoScroll;
             }
         }
 
         private void AppendSystemLog(string message, LogType type)
         {
             HandleLogMessageReceived(message, string.Empty, type);
+        }
+
+        private bool ShouldAutoScrollToBottom()
+        {
+            if (_logScrollRect == null)
+            {
+                return true;
+            }
+
+            RectTransform content = _logScrollRect.content;
+            RectTransform viewport = _logScrollRect.viewport != null ? _logScrollRect.viewport : _logScrollRect.transform as RectTransform;
+
+            if (content == null || viewport == null)
+            {
+                return true;
+            }
+
+            float contentHeight = content.rect.height;
+            float viewportHeight = viewport.rect.height;
+
+            if (contentHeight <= viewportHeight)
+            {
+                return true;
+            }
+
+            return _logScrollRect.verticalNormalizedPosition <= 0.001f;
         }
 
         private void ApplyTabState()
