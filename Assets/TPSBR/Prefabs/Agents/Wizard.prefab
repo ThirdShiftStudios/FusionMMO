@@ -1437,7 +1437,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8019168302190258968, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
       propertyPath: _slots.Array.size
-      value: 3
+      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 8019168302190258968, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
       propertyPath: _pickaxeEquippedParent
@@ -1453,6 +1453,10 @@ PrefabInstance:
       objectReference: {fileID: 1867873543316851787}
     - target: {fileID: 8019168302190258968, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
       propertyPath: _woodAxeUnequippedParent
+      value: 
+      objectReference: {fileID: 1867873543316851787}
+    - target: {fileID: 8019168302190258968, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
+      propertyPath: _fishingPoleEquippedParent
       value: 
       objectReference: {fileID: 1867873543316851787}
     - target: {fileID: 8019168302190258968, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
@@ -1482,7 +1486,11 @@ PrefabInstance:
     - target: {fileID: 8019168302190258968, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
       propertyPath: _slots.Array.data[4].Active
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 6388543282259232068}
+    - target: {fileID: 8019168302190258968, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
+      propertyPath: _fishingPoleUnequippedParent
+      value: 
+      objectReference: {fileID: 1867873543316851787}
     - target: {fileID: 8019168302190258968, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
       propertyPath: _initialWeapons.Array.data[0]
       value: 
@@ -1514,7 +1522,7 @@ PrefabInstance:
     - target: {fileID: 8019168302190258968, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
       propertyPath: _slots.Array.data[4].Inactive
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 1867873543316851787}
     - target: {fileID: 8256672327747089232, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
       propertyPath: m_LocalPosition.y
       value: 1.686813
