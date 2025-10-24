@@ -43,7 +43,7 @@ namespace TPSBR
                         _renderInput.Attack            = mouse.leftButton.isPressed;
                         _renderInput.HeavyAttack       = keyboard.qKey.isPressed;
                         _renderInput.Block             = mouse.rightButton.isPressed;
-                        _renderInput.FishingPoleToggle = keyboard.f2Key.isPressed;
+                        _renderInput.FishingPoleToggle = false;
                         _renderInput.Interact          = keyboard.fKey.isPressed;
 			_renderInput.Weapon            = GetWeaponInput(keyboard);
 		}

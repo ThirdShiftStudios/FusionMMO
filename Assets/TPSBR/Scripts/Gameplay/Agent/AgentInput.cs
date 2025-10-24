@@ -641,15 +641,45 @@ namespace TPSBR
 				}
 			}
 
-			int weaponSlot = -1;
+                        if (keyboard.f2Key.wasPressedThisFrame == true)
+                        {
+                                int fishingSlot = Inventory.HOTBAR_FISHING_POLE_SLOT;
 
-			if (Inventory.HOTBAR_VISIBLE_SLOTS >= 1 && keyboard.digit1Key.wasPressedThisFrame == true) { weaponSlot = 0; }
-			if (Inventory.HOTBAR_VISIBLE_SLOTS >= 2 && keyboard.digit2Key.wasPressedThisFrame == true) { weaponSlot = 1; }
+                                if (_agent != null)
+                                {
+                                        var inventory = _agent.Inventory;
+                                        if (inventory != null)
+                                        {
+                                                if (inventory.CurrentWeaponSlot == fishingSlot)
+                                                {
+                                                        int previousSlot = inventory.PreviousWeaponSlot;
+                                                        if (previousSlot > 0)
+                                                        {
+                                                                return (byte)previousSlot;
+                                                        }
 
-			if (weaponSlot < 0)
-			{
-				return 0;
-			}
+                                                        return WeaponDeselectValue;
+                                                }
+
+                                                if (inventory.GetHotbarWeapon(fishingSlot) == null)
+                                                {
+                                                        return 0;
+                                                }
+                                        }
+                                }
+
+                                return (byte)fishingSlot;
+                        }
+
+                        int weaponSlot = -1;
+
+                        if (Inventory.HOTBAR_VISIBLE_SLOTS >= 1 && keyboard.digit1Key.wasPressedThisFrame == true) { weaponSlot = 0; }
+                        if (Inventory.HOTBAR_VISIBLE_SLOTS >= 2 && keyboard.digit2Key.wasPressedThisFrame == true) { weaponSlot = 1; }
+
+                        if (weaponSlot < 0)
+                        {
+                                return 0;
+                        }
 
 			return (byte)(weaponSlot + 1);
 		}
