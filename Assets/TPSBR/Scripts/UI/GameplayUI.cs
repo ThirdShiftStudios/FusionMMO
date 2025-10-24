@@ -10,6 +10,7 @@ namespace TPSBR.UI
 
 		[SerializeField]
 		private float _gameOverScreenDelay = 3f;
+
 		
 		private UIDeathView _deathView;
 		private UIGameplayInventory _inventoryView;
@@ -17,6 +18,7 @@ namespace TPSBR.UI
 		private bool _gameOverShown;
 		private Coroutine _gameOverCoroutine;
 		
+		private UIAdminConsoleView _adminConsoleView;
 
 		// PUBLIC METHODS
 
@@ -51,7 +53,8 @@ namespace TPSBR.UI
 
 			_deathView = Get<UIDeathView>();
 			_inventoryView = Get<UIGameplayInventory>();
-		}
+            _adminConsoleView = Get<UIAdminConsoleView>();
+        }
 
 		protected override void OnActivate()
 		{
@@ -61,7 +64,8 @@ namespace TPSBR.UI
 			{
 				Open<UIDedicatedServerView>();
 			}
-		}
+            _adminConsoleView.Close();
+        }
 
 		protected override void OnDeactivate()
 		{
@@ -100,9 +104,18 @@ namespace TPSBR.UI
 			{
 				_inventoryView.Show(!_inventoryView.MenuVisible);
 			}
-			
-			
-			if (Context.GameplayMode.State == GameplayMode.EState.Finished && _gameOverCoroutine == null)
+
+            bool toggleConsole = Keyboard.current.backquoteKey.wasPressedThisFrame;
+            if (toggleConsole)
+            {
+				if (_adminConsoleView.IsOpen)
+					_adminConsoleView.Close();
+				else
+					_adminConsoleView.Open();
+
+            }
+
+            if (Context.GameplayMode.State == GameplayMode.EState.Finished && _gameOverCoroutine == null)
 			{
 				_gameOverCoroutine = StartCoroutine(ShowGameOver_Coroutine(_gameOverScreenDelay));
 			}

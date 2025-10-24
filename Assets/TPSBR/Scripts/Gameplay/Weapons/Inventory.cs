@@ -1366,7 +1366,7 @@ namespace TPSBR
             };
         }
 
-        [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
+
         [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
         private void RPC_RequestAddGold(int amount)
         {
