@@ -105,9 +105,10 @@ namespace TPSBR
         public const int INVENTORY_SIZE = 10;
         public const int PICKAXE_SLOT_INDEX = byte.MaxValue;
         public const int WOOD_AXE_SLOT_INDEX = byte.MaxValue - 1;
-        public const int HEAD_SLOT_INDEX = byte.MaxValue - 2;
-        public const int UPPER_BODY_SLOT_INDEX = byte.MaxValue - 3;
-        public const int LOWER_BODY_SLOT_INDEX = byte.MaxValue - 4;
+        public const int FISHING_POLE_SLOT_INDEX = byte.MaxValue - 2;
+        public const int HEAD_SLOT_INDEX = byte.MaxValue - 3;
+        public const int UPPER_BODY_SLOT_INDEX = byte.MaxValue - 4;
+        public const int LOWER_BODY_SLOT_INDEX = byte.MaxValue - 5;
         public const int HOTBAR_CAPACITY = 3;
         public const int HOTBAR_VISIBLE_SLOTS = HOTBAR_CAPACITY - 1;
         // PRIVATE MEMBERS
@@ -124,6 +125,8 @@ namespace TPSBR
         [SerializeField] private Transform _pickaxeUnequippedParent;
         [SerializeField] private Transform _woodAxeEquippedParent;
         [SerializeField] private Transform _woodAxeUnequippedParent;
+        [SerializeField] private Transform _fishingPoleEquippedParent;
+        [SerializeField] private Transform _fishingPoleUnequippedParent;
 
         [Header("Audio")] [SerializeField] private Transform _fireAudioEffectsRoot;
 
@@ -131,6 +134,7 @@ namespace TPSBR
         [Networked, Capacity(INVENTORY_SIZE)] private NetworkArray<InventorySlot> _items { get; }
         [Networked] private InventorySlot _pickaxeSlot { get; set; }
         [Networked] private InventorySlot _woodAxeSlot { get; set; }
+        [Networked] private InventorySlot _fishingPoleSlot { get; set; }
         [Networked] private InventorySlot _headSlot { get; set; }
         [Networked] private InventorySlot _upperBodySlot { get; set; }
         [Networked] private InventorySlot _lowerBodySlot { get; set; }
@@ -144,6 +148,8 @@ namespace TPSBR
         [Networked] private NetworkBool _isPickaxeEquipped { get; set; }
         [Networked] private WoodAxe _woodAxe { get; set; }
         [Networked] private NetworkBool _isWoodAxeEquipped { get; set; }
+        [Networked] private FishingPoleWeapon _fishingPole { get; set; }
+        [Networked] private NetworkBool _isFishingPoleEquipped { get; set; }
 
         private Health _health;
         private Character _character;
@@ -158,6 +164,7 @@ namespace TPSBR
         private InventorySlot[] _localItems;
         private InventorySlot _localPickaxeSlot;
         private InventorySlot _localWoodAxeSlot;
+        private InventorySlot _localFishingPoleSlot;
         private InventorySlot _localHeadSlot;
         private InventorySlot _localUpperBodySlot;
         private InventorySlot _localLowerBodySlot;
@@ -167,6 +174,9 @@ namespace TPSBR
         private WoodAxe _localWoodAxe;
         private bool _localWoodAxeEquipped;
         private byte _weaponSlotBeforeWoodAxe = byte.MaxValue;
+        private FishingPoleWeapon _localFishingPole;
+        private bool _localFishingPoleEquipped;
+        private byte _weaponSlotBeforeFishingPole = byte.MaxValue;
         private Dictionary<int, WeaponDefinition> _weaponDefinitionsBySlot = new Dictionary<int, WeaponDefinition>();
         private readonly Dictionary<WeaponSize, int> _weaponSizeToSlotIndex = new Dictionary<WeaponSize, int>();
         private HashSet<int> _suppressedItemFeedSlots;
@@ -508,6 +518,9 @@ namespace TPSBR
             if (index == WOOD_AXE_SLOT_INDEX)
                 return _woodAxeSlot;
 
+            if (index == FISHING_POLE_SLOT_INDEX)
+                return _fishingPoleSlot;
+
             if (index == HEAD_SLOT_INDEX)
                 return _headSlot;
 
@@ -532,6 +545,7 @@ namespace TPSBR
                 ESlotCategory.LowerBody => _lowerBodySlot,
                 ESlotCategory.Pickaxe => _pickaxeSlot,
                 ESlotCategory.WoodAxe => _woodAxeSlot,
+                ESlotCategory.FishingPole => _fishingPoleSlot,
                 _ => default,
             };
         }
@@ -718,6 +732,18 @@ namespace TPSBR
             ArmCurrentWeapon();
         }
 
+        public void ToggleFishingPole()
+        {
+            if (HasStateAuthority == true)
+            {
+                ToggleFishingPoleInternal();
+            }
+            else
+            {
+                RPC_RequestToggleFishingPole();
+            }
+        }
+
         public void SetCurrentWeapon(int slot)
         {
             slot = Mathf.Clamp(slot, 0, _hotbar.Length - 1);
@@ -867,6 +893,79 @@ namespace TPSBR
             _weaponSlotBeforeWoodAxe = byte.MaxValue;
 
             RefreshWoodAxeVisuals();
+        }
+
+        private void ToggleFishingPoleInternal()
+        {
+            if (_isFishingPoleEquipped == true || (_hotbar[0] != null && _hotbar[0] == _fishingPole))
+            {
+                UnequipFishingPoleInternal();
+            }
+            else
+            {
+                EquipFishingPoleInternal();
+            }
+        }
+
+        private void EquipFishingPoleInternal()
+        {
+            EnsureToolAvailability();
+
+            if (_fishingPoleSlot.IsEmpty == true || IsFishingPoleSlotItem(_fishingPoleSlot) == false)
+                return;
+
+            EnsureFishingPoleInstance();
+
+            var fishingPole = _fishingPole;
+            if (fishingPole == null)
+                return;
+
+            if (_weaponSlotBeforeFishingPole == byte.MaxValue)
+            {
+                _weaponSlotBeforeFishingPole = _currentWeaponSlot;
+            }
+
+            if (_hotbar[0] != null && _hotbar[0] != fishingPole)
+            {
+                RemoveWeapon(0);
+            }
+
+            AddWeapon(fishingPole, 0);
+
+            _isFishingPoleEquipped = true;
+
+            SetCurrentWeapon(0);
+            ArmCurrentWeapon();
+
+            RefreshFishingPoleVisuals();
+        }
+
+        private void UnequipFishingPoleInternal()
+        {
+            if (_isFishingPoleEquipped == true)
+            {
+                _isFishingPoleEquipped = false;
+            }
+
+            if (_hotbar[0] != null && _hotbar[0] == _fishingPole)
+            {
+                RemoveWeapon(0);
+            }
+
+            byte previousSlot = _weaponSlotBeforeFishingPole;
+            _weaponSlotBeforeFishingPole = byte.MaxValue;
+
+            if (previousSlot != byte.MaxValue)
+            {
+                SetCurrentWeapon(previousSlot);
+            }
+            else
+            {
+                SetCurrentWeapon(0);
+            }
+
+            ArmCurrentWeapon();
+            RefreshFishingPoleVisuals();
         }
 
         public int GetPickaxeSpeed()
@@ -1424,6 +1523,12 @@ namespace TPSBR
             DropWeapon(weaponSlot);
         }
 
+        [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
+        private void RPC_RequestToggleFishingPole()
+        {
+            ToggleFishingPoleInternal();
+        }
+
         private byte AddItemInternal(ItemDefinition definition, byte quantity, NetworkString<_32> configurationHash)
         {
             if (definition == null)
@@ -1434,6 +1539,7 @@ namespace TPSBR
             ESlotCategory slotCategory = definition.SlotCategory;
             bool isPickaxe = slotCategory == ESlotCategory.Pickaxe;
             bool isWoodAxe = slotCategory == ESlotCategory.WoodAxe;
+            bool isFishingPole = slotCategory == ESlotCategory.FishingPole;
             bool isHead = slotCategory == ESlotCategory.Head;
             bool isUpperBody = slotCategory == ESlotCategory.UpperBody;
             bool isLowerBody = slotCategory == ESlotCategory.LowerBody;
@@ -1457,6 +1563,11 @@ namespace TPSBR
             if (isWoodAxe == true && remaining > 0)
             {
                 remaining = AddToWoodAxeSlot(definition, remaining, configurationHash);
+            }
+
+            if (isFishingPole == true && remaining > 0)
+            {
+                remaining = AddToFishingPoleSlot(definition, remaining, configurationHash);
             }
 
             if (isHead == true && remaining > 0)
@@ -1529,14 +1640,16 @@ namespace TPSBR
             bool toPickaxe = toIndex == PICKAXE_SLOT_INDEX;
             bool fromWoodAxe = fromIndex == WOOD_AXE_SLOT_INDEX;
             bool toWoodAxe = toIndex == WOOD_AXE_SLOT_INDEX;
+            bool fromFishingPole = fromIndex == FISHING_POLE_SLOT_INDEX;
+            bool toFishingPole = toIndex == FISHING_POLE_SLOT_INDEX;
             bool fromHead = fromIndex == HEAD_SLOT_INDEX;
             bool toHead = toIndex == HEAD_SLOT_INDEX;
             bool fromUpperBody = fromIndex == UPPER_BODY_SLOT_INDEX;
             bool toUpperBody = toIndex == UPPER_BODY_SLOT_INDEX;
             bool fromLowerBody = fromIndex == LOWER_BODY_SLOT_INDEX;
             bool toLowerBody = toIndex == LOWER_BODY_SLOT_INDEX;
-            bool fromSpecial = fromPickaxe || fromWoodAxe || fromHead || fromUpperBody || fromLowerBody;
-            bool toSpecial = toPickaxe || toWoodAxe || toHead || toUpperBody || toLowerBody;
+            bool fromSpecial = fromPickaxe || fromWoodAxe || fromFishingPole || fromHead || fromUpperBody || fromLowerBody;
+            bool toSpecial = toPickaxe || toWoodAxe || toFishingPole || toHead || toUpperBody || toLowerBody;
             bool generalToGeneralTransfer = fromSpecial == false && toSpecial == false;
 
             if (fromSpecial == false && fromIndex >= _items.Length)
@@ -1636,6 +1749,37 @@ namespace TPSBR
                 return;
             }
 
+            if (fromFishingPole == true)
+            {
+                var fishingSourceSlot = _fishingPoleSlot;
+                if (fishingSourceSlot.IsEmpty == true)
+                    return;
+
+                if (toFishingPole == true)
+                    return;
+
+                var targetSlot = _items[toIndex];
+                if (targetSlot.IsEmpty == false && IsFishingPoleSlotItem(targetSlot) == false)
+                    return;
+
+                _items.Set(toIndex, fishingSourceSlot);
+                UpdateWeaponDefinitionMapping(toIndex, fishingSourceSlot);
+
+                if (targetSlot.IsEmpty == false && IsFishingPoleSlotItem(targetSlot) == true)
+                {
+                    _fishingPoleSlot = targetSlot;
+                }
+                else
+                {
+                    _fishingPoleSlot = default;
+                }
+
+                RefreshFishingPoleSlot();
+                RefreshItems();
+                EnsureToolAvailability();
+                return;
+            }
+
             if (toWoodAxe == true)
             {
                 var sourceSlot = _items[fromIndex];
@@ -1658,6 +1802,35 @@ namespace TPSBR
                 {
                     _items.Set(fromIndex, previousWoodAxe);
                     UpdateWeaponDefinitionMapping(fromIndex, previousWoodAxe);
+                }
+
+                RefreshItems();
+                EnsureToolAvailability();
+                return;
+            }
+
+            if (toFishingPole == true)
+            {
+                var sourceSlot = _items[fromIndex];
+                if (sourceSlot.IsEmpty == true)
+                    return;
+
+                if (IsFishingPoleSlotItem(sourceSlot) == false)
+                    return;
+
+                var previousFishingPole = _fishingPoleSlot;
+                _fishingPoleSlot = sourceSlot;
+                RefreshFishingPoleSlot();
+
+                if (previousFishingPole.IsEmpty == true)
+                {
+                    _items.Set(fromIndex, default);
+                    UpdateWeaponDefinitionMapping(fromIndex, default);
+                }
+                else
+                {
+                    _items.Set(fromIndex, previousFishingPole);
+                    UpdateWeaponDefinitionMapping(fromIndex, previousFishingPole);
                 }
 
                 RefreshItems();
@@ -2104,6 +2277,30 @@ namespace TPSBR
                 return;
             }
 
+            if (index == FISHING_POLE_SLOT_INDEX)
+            {
+                var fishingSlotData = _fishingPoleSlot;
+                if (fishingSlotData.IsEmpty == true)
+                    return;
+
+                var fishingDefinition = fishingSlotData.GetDefinition();
+                if (fishingDefinition == null)
+                    return;
+
+                byte fishingQuantity = fishingSlotData.Quantity;
+                if (fishingQuantity == 0)
+                    return;
+
+                UnequipFishingPoleInternal();
+
+                _fishingPoleSlot = default;
+                RefreshFishingPoleSlot();
+
+                SpawnInventoryItemPickup(fishingDefinition, fishingQuantity, fishingSlotData.ConfigurationHash);
+                EnsureToolAvailability();
+                return;
+            }
+
             if (index == HEAD_SLOT_INDEX)
             {
                 var headSlotData = _headSlot;
@@ -2393,6 +2590,7 @@ namespace TPSBR
 
             RefreshPickaxeSlot();
             RefreshWoodAxeSlot();
+            RefreshFishingPoleSlot();
             RefreshHeadSlot();
             RefreshUpperBodySlot();
             RefreshLowerBodySlot();
@@ -2950,6 +3148,66 @@ namespace TPSBR
             }
         }
 
+        private byte AddToFishingPoleSlot(ItemDefinition definition, byte quantity, NetworkString<_32> configurationHash)
+        {
+            if (quantity == 0)
+                return 0;
+
+            var slot = _fishingPoleSlot;
+
+            if (slot.IsEmpty == false && IsFishingPoleSlotItem(slot) == false)
+            {
+                _fishingPoleSlot = default;
+                RefreshFishingPoleSlot();
+                slot = default;
+            }
+
+            int clampedMaxStack = Mathf.Clamp((int)ItemDefinition.GetMaxStack(definition.ID), 1, byte.MaxValue);
+
+            if (slot.IsEmpty == true)
+            {
+                byte addAmount = (byte)Mathf.Min(quantity, clampedMaxStack);
+                if (addAmount > 0)
+                {
+                    slot = new InventorySlot(definition.ID, addAmount, configurationHash);
+                    _fishingPoleSlot = slot;
+                    RefreshFishingPoleSlot();
+                    quantity -= addAmount;
+                }
+
+                return quantity;
+            }
+
+            if (slot.ItemDefinitionId != definition.ID)
+                return quantity;
+
+            if (slot.ConfigurationHash != configurationHash)
+                return quantity;
+
+            if (slot.Quantity >= clampedMaxStack)
+                return quantity;
+
+            byte space = (byte)Mathf.Min(clampedMaxStack - slot.Quantity, quantity);
+            if (space == 0)
+                return quantity;
+
+            slot.Add(space);
+            _fishingPoleSlot = slot;
+            RefreshFishingPoleSlot();
+
+            return (byte)(quantity - space);
+        }
+
+        private void RefreshFishingPoleSlot()
+        {
+            var slot = _fishingPoleSlot;
+            if (_localFishingPoleSlot.Equals(slot) == false)
+            {
+                _localFishingPoleSlot = slot;
+                ItemSlotChanged?.Invoke(FISHING_POLE_SLOT_INDEX, slot);
+            }
+        }
+
         private byte AddToHeadSlot(ItemDefinition definition, byte quantity, NetworkString<_32> configurationHash)
         {
             if (quantity == 0)
@@ -3363,6 +3621,7 @@ namespace TPSBR
         {
             EnsurePickaxeAvailabilityInternal();
             EnsureWoodAxeAvailability();
+            EnsureFishingPoleAvailability();
         }
 
         private void EnsurePickaxeAvailabilityInternal()
@@ -3464,6 +3723,143 @@ namespace TPSBR
             _woodAxeSlot = new InventorySlot(defaultWoodAxe.ID, 1, defaultConfiguration);
             RefreshWoodAxeSlot();
             EnsureWoodAxeInstance();
+        }
+
+        private void EnsureFishingPoleAvailability()
+        {
+            if (HasStateAuthority == false)
+            {
+                RefreshFishingPoleVisuals();
+                return;
+            }
+
+            if (_fishingPoleSlot.IsEmpty == false && IsFishingPoleSlotItem(_fishingPoleSlot) == false)
+            {
+                _fishingPoleSlot = default;
+                RefreshFishingPoleSlot();
+                DespawnFishingPole();
+            }
+
+            if (IsFishingPoleSlotItem(_fishingPoleSlot) == false)
+            {
+                DespawnFishingPole();
+                return;
+            }
+
+            EnsureFishingPoleInstance();
+        }
+
+        private void EnsureFishingPoleInstance()
+        {
+            if (HasStateAuthority == false)
+            {
+                RefreshFishingPoleVisuals();
+                return;
+            }
+
+            if (_fishingPoleSlot.IsEmpty == true || IsFishingPoleSlotItem(_fishingPoleSlot) == false)
+            {
+                DespawnFishingPole();
+                return;
+            }
+
+            var definition = _fishingPoleSlot.GetDefinition() as FishingPoleDefinition;
+            if (definition == null || Runner == null)
+            {
+                DespawnFishingPole();
+                return;
+            }
+
+            var prefab = definition.FishingPolePrefab ?? definition.WeaponPrefab as FishingPoleWeapon;
+            if (prefab == null)
+            {
+                DespawnFishingPole();
+                return;
+            }
+
+            var fishingPole = _fishingPole;
+            if (fishingPole != null && fishingPole.Definition != definition)
+            {
+                DespawnFishingPole();
+                fishingPole = null;
+            }
+
+            if (fishingPole == null)
+            {
+                fishingPole = Runner.Spawn(prefab, inputAuthority: Object.InputAuthority);
+                _fishingPole = fishingPole;
+            }
+
+            if (fishingPole != null)
+            {
+                fishingPole.SetConfigurationHash(_fishingPoleSlot.ConfigurationHash);
+                EnsureWeaponPrefabRegistered(definition, fishingPole);
+            }
+
+            RefreshFishingPoleVisuals();
+        }
+
+        private void DespawnFishingPole()
+        {
+            if ((_weaponSlotBeforeFishingPole != byte.MaxValue || _isFishingPoleEquipped == true) &&
+                (_fishingPole != null || _localFishingPole != null))
+            {
+                UnequipFishingPoleInternal();
+            }
+
+            if (HasStateAuthority == true)
+            {
+                var fishingPole = _fishingPole;
+                if (fishingPole != null)
+                {
+                    Runner.Despawn(fishingPole.Object);
+                }
+
+                _fishingPole = null;
+                _isFishingPoleEquipped = false;
+            }
+
+            if (_localFishingPole != null)
+            {
+                _localFishingPole.Deinitialize(Object);
+                _localFishingPole = null;
+            }
+
+            _localFishingPoleEquipped = false;
+            _weaponSlotBeforeFishingPole = byte.MaxValue;
+        }
+
+        private void RefreshFishingPoleVisuals()
+        {
+            var networkFishingPole = _fishingPole;
+
+            if (_localFishingPole != networkFishingPole)
+            {
+                if (_localFishingPole != null)
+                {
+                    _localFishingPole.Deinitialize(Object);
+                }
+
+                _localFishingPole = networkFishingPole;
+
+                if (_localFishingPole != null)
+                {
+                    Transform equippedParent = _fishingPoleEquippedParent;
+                    Transform unequippedParent = _fishingPoleUnequippedParent;
+
+                    if ((_slots?.Length ?? 0) > 0)
+                    {
+                        WeaponSlot baseSlot = _slots[0];
+                        equippedParent ??= baseSlot.Active;
+                        unequippedParent ??= baseSlot.Inactive;
+                    }
+
+                    _localFishingPole.Initialize(Object, equippedParent, unequippedParent);
+                    _localFishingPole.AssignFireAudioEffects(_fireAudioEffectsRoot, _fireAudioEffects);
+                }
+            }
+
+            _localFishingPoleEquipped = _isFishingPoleEquipped;
         }
 
         private static PickaxeDefinition ResolveDefaultPickaxe()
@@ -3603,7 +3999,8 @@ namespace TPSBR
         private bool IsValidInventoryIndex(int index)
         {
             return IsGeneralInventoryIndex(index) || index == PICKAXE_SLOT_INDEX || index == WOOD_AXE_SLOT_INDEX ||
-                   index == HEAD_SLOT_INDEX || index == UPPER_BODY_SLOT_INDEX || index == LOWER_BODY_SLOT_INDEX;
+                   index == FISHING_POLE_SLOT_INDEX || index == HEAD_SLOT_INDEX || index == UPPER_BODY_SLOT_INDEX ||
+                   index == LOWER_BODY_SLOT_INDEX;
         }
 
         private static bool IsPickaxeSlotItem(InventorySlot slot)
@@ -3614,6 +4011,11 @@ namespace TPSBR
         private static bool IsWoodAxeSlotItem(InventorySlot slot)
         {
             return HasSlotCategory(slot, ESlotCategory.WoodAxe);
+        }
+
+        private static bool IsFishingPoleSlotItem(InventorySlot slot)
+        {
+            return HasSlotCategory(slot, ESlotCategory.FishingPole);
         }
 
         private static bool IsHeadSlotItem(InventorySlot slot)

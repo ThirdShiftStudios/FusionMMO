@@ -308,6 +308,11 @@ namespace TPSBR
                 //_character.AnimationController.SwitchWeapons();
             }
 
+            if (_agentInput.WasActivated(EGameplayInputAction.FishingPoleToggle, input) == true)
+            {
+                _inventory.ToggleFishingPole();
+            }
+
             _agentInput.SetFixedInput(input, false);
         }
 
