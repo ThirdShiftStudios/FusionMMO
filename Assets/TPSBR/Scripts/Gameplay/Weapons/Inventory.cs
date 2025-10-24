@@ -226,6 +226,21 @@ namespace TPSBR
             SetGold(_gold + amount);
         }
 
+        public void RequestAddGold(int amount)
+        {
+            if (amount <= 0)
+                return;
+
+            if (HasStateAuthority == true)
+            {
+                AddGold(amount);
+            }
+            else
+            {
+                RPC_RequestAddGold(amount);
+            }
+        }
+
         public bool TrySpendGold(int amount)
         {
             if (amount <= 0)
@@ -530,6 +545,21 @@ namespace TPSBR
                 return quantity;
 
             return AddItemInternal(definition, quantity, configurationHash);
+        }
+
+        public void RequestAddItem(ItemDefinition definition, byte quantity, NetworkString<_32> configurationHash = default)
+        {
+            if (definition == null || quantity == 0)
+                return;
+
+            if (HasStateAuthority == true)
+            {
+                AddItemInternal(definition, quantity, configurationHash);
+            }
+            else
+            {
+                RPC_RequestAddItem(definition.ID, quantity, configurationHash);
+            }
         }
 
         public bool TryExtractInventoryItem(int inventoryIndex, byte quantity, out InventorySlot removedSlot)
@@ -1337,6 +1367,28 @@ namespace TPSBR
         }
 
         [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
+        [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
+        private void RPC_RequestAddGold(int amount)
+        {
+            if (amount <= 0)
+                return;
+
+            AddGold(amount);
+        }
+
+        [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
+        private void RPC_RequestAddItem(int itemDefinitionId, byte quantity, NetworkString<_32> configurationHash)
+        {
+            if (quantity == 0)
+                return;
+
+            ItemDefinition definition = ItemDefinition.Get(itemDefinitionId);
+            if (definition == null)
+                return;
+
+            AddItemInternal(definition, quantity, configurationHash);
+        }
+
         private void RPC_RequestMoveItem(byte fromIndex, byte toIndex)
         {
             MoveItem(fromIndex, toIndex);
