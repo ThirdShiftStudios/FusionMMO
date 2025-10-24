@@ -126,6 +126,8 @@ namespace TPSBR
             _waiting.SetActiveWeapon(weapon);
             _waiting.Play(_blendInDuration);
 
+            weapon.NotifyWaitingPhaseEntered();
+
             if (_castState != null)
             {
                 _castState.Stop(_blendOutDuration);

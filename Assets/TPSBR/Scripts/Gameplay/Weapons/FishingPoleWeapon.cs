@@ -153,6 +153,11 @@ namespace TPSBR
             CleanupLure(true);
         }
 
+        internal void NotifyWaitingPhaseEntered()
+        {
+            _castActive = false;
+        }
+
         internal void LaunchLure()
         {
             if (_castActive == false || _lureLaunched == true)
