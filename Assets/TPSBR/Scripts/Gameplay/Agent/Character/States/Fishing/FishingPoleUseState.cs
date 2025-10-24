@@ -15,6 +15,7 @@ namespace TPSBR
 
         private FishingPoleWeapon _activeWeapon;
         private bool _isWaiting;
+        private bool _awaitingLureImpact;
 
         public bool BeginCast(FishingPoleWeapon weapon)
         {
@@ -26,6 +27,7 @@ namespace TPSBR
 
             _activeWeapon = weapon;
             _isWaiting = false;
+            _awaitingLureImpact = false;
 
             _castState.SetActiveWeapon(weapon);
             _waiting?.SetActiveWeapon(weapon);
@@ -75,13 +77,19 @@ namespace TPSBR
                 {
                     _castState.PlayThrow(_blendInDuration);
                     _activeWeapon.NotifyCastThrown();
+                    _awaitingLureImpact = true;
                 }
             }
             else if (throwActive == true)
             {
-                if (_castState.IsThrowFinished == true)
+                bool secondaryActivated = agentInput.WasActivated(EGameplayInputAction.Block) ||
+                                          agentInput.WasActivated(EGameplayInputAction.HeavyAttack);
+
+                if (secondaryActivated == true)
                 {
-                    CompleteCast();
+                    _awaitingLureImpact = false;
+                    CancelCast();
+                    return;
                 }
             }
             else if (waitingActive == true)
@@ -96,6 +104,9 @@ namespace TPSBR
             }
             else
             {
+                if (_awaitingLureImpact == true)
+                    return;
+
                 // No active cast clips, ensure the layer is reset.
                 CompleteCast();
             }
@@ -110,6 +121,7 @@ namespace TPSBR
                 return;
 
             _isWaiting = true;
+            _awaitingLureImpact = false;
 
             _waiting.SetActiveWeapon(weapon);
             _waiting.Play(_blendInDuration);
@@ -136,6 +148,7 @@ namespace TPSBR
             }
 
             _isWaiting = false;
+            _awaitingLureImpact = false;
 
             if (_activeWeapon != null)
             {
@@ -159,6 +172,7 @@ namespace TPSBR
             }
 
             _isWaiting = false;
+            _awaitingLureImpact = false;
 
             if (_activeWeapon != null)
             {
@@ -182,6 +196,7 @@ namespace TPSBR
 
             _activeWeapon = null;
             _isWaiting = false;
+            _awaitingLureImpact = false;
 
             if (IsActive(true) == true)
             {

@@ -10,7 +10,6 @@ namespace TPSBR
 
         public bool IsBeginActive => _begin != null && _begin.IsActive(true);
         public bool IsThrowActive => _throw != null && _throw.IsActive(true);
-        public bool IsThrowFinished => _throw != null && _throw.IsFinished(0.95f);
         public FishingPoleWeapon ActiveWeapon => _activeWeapon;
 
         private FishingPoleWeapon _activeWeapon;
