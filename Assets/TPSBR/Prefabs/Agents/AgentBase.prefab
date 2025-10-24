@@ -2534,7 +2534,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1697087244603040655}
-  - component: {fileID: 6393532497836863752}
   m_Layer: 8
   m_Name: Shoot
   m_TagString: Untagged
@@ -2557,24 +2556,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1489436706626510999}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &6393532497836863752
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5759263036869587392}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: bce9cb28486c8e143bbdca2e279bfa65, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _chargeState: {fileID: 0}
-  _lightAttackState: {fileID: 0}
-  _heavyAttackState: {fileID: 0}
-  _abilityAttackState: {fileID: 0}
-  _blendInDuration: 0.1
-  _blendOutDuration: 0.15
 --- !u!1 &6299571402256045430
 GameObject:
   m_ObjectHideFlags: 0
@@ -3463,9 +3444,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1489436706626510999}
-  - component: {fileID: 6051681582930538601}
   m_Layer: 8
-  m_Name: Shoot
+  m_Name: Use
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -3487,22 +3467,6 @@ Transform:
   - {fileID: 1697087244603040655}
   m_Father: {fileID: 6007643176418695006}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &6051681582930538601
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7076454502811517915}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9957d131ea5260b49bf5a85a75b14533, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _avatarMask: {fileID: 101100000, guid: 196c2a4d35623c44d901ca411b9557df, type: 2}
-  _isAdditive: 1
-  _initialWeight: 1
-  staffAttack: {fileID: 6393532497836863752}
 --- !u!1 &7584108064808970602
 GameObject:
   m_ObjectHideFlags: 0
@@ -4134,6 +4098,8 @@ MonoBehaviour:
   _pickaxeUnequippedParent: {fileID: 0}
   _woodAxeEquippedParent: {fileID: 0}
   _woodAxeUnequippedParent: {fileID: 0}
+  _fishingPoleEquippedParent: {fileID: 0}
+  _fishingPoleUnequippedParent: {fileID: 0}
   _fireAudioEffectsRoot: {fileID: 5519487549885795405}
 --- !u!114 &1018819908989435078
 MonoBehaviour:
@@ -4260,8 +4226,13 @@ MonoBehaviour:
   _itemBoxOpenNormalizedTime: 0.8
   _oreCancelMoveDistance: 0.35
   _oreCancelInputThreshold: 0.1
+  _runeCancelMoveDistance: 0.35
+  _runeCancelInputThreshold: 0.1
+  _herbCancelMoveDistance: 0.35
+  _herbCancelInputThreshold: 0.1
   _treeCancelMoveDistance: 0.35
   _treeCancelInputThreshold: 0.1
+  _ActiveResourceNode: {fileID: 0}
 --- !u!114 &2084853432409141758
 MonoBehaviour:
   m_ObjectHideFlags: 0

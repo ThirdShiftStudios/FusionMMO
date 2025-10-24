@@ -189,7 +189,7 @@ namespace TPSBR
         {
         }
 
-        public virtual bool HandleAnimationRequest(AttackLayer attackLayer, in WeaponUseRequest request)
+        public virtual bool HandleAnimationRequest(UseLayer attackLayer, in WeaponUseRequest request)
         {
             return true;
         }

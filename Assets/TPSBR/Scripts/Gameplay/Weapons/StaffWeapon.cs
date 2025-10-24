@@ -160,12 +160,12 @@ namespace TPSBR
             }
         }
 
-        public override bool HandleAnimationRequest(AttackLayer attackLayer, in WeaponUseRequest request)
+        public override bool HandleAnimationRequest(UseLayer attackLayer, in WeaponUseRequest request)
         {
             if (attackLayer == null)
                 return false;
 
-            StaffAttackState staffAttack = attackLayer.StaffAttack;
+            StaffUseState staffAttack = attackLayer.StaffAttack;
 
             if (staffAttack == null)
                 return false;
@@ -691,7 +691,7 @@ namespace TPSBR
             }
         }
 
-        private AttackLayer GetAttackLayer()
+        private UseLayer GetAttackLayer()
         {
             return Character != null ? Character.AnimationController?.AttackLayer : null;
         }

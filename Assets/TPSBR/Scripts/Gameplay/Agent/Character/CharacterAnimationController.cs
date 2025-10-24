@@ -16,7 +16,7 @@ namespace TPSBR
         private FullBodyLayer _fullBody;
         private LowerBodyLayer _lowerBody;
         private UpperBodyLayer _upperBody;
-        private AttackLayer _attack;
+        private UseLayer _attack;
         private InteractionsAnimationLayer _interactionsLayer;
 
         private IInteraction _activeInteraction;
@@ -44,7 +44,7 @@ namespace TPSBR
 
         // PUBLIC METHODS
 
-        public AttackLayer AttackLayer => _attack;
+        public UseLayer AttackLayer => _attack;
         public bool HasActiveInteraction => _interactionsLayer != null && _interactionsLayer.HasActiveInteraction;
         public IInteraction ActiveInteraction => _activeInteraction;
 
@@ -394,7 +394,7 @@ namespace TPSBR
             _fullBody = FindLayer<FullBodyLayer>();
             _lowerBody = FindLayer<LowerBodyLayer>();
             _upperBody = FindLayer<UpperBodyLayer>();
-            _attack = FindLayer<AttackLayer>();
+            _attack = FindLayer<UseLayer>();
             _interactionsLayer = FindLayer<InteractionsAnimationLayer>();
 
             _kcc.MoveState = _locomotion.FindState<MoveState>();
