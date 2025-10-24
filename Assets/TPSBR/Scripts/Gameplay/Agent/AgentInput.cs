@@ -632,19 +632,30 @@ namespace TPSBR
 				return WeaponDeselectValue;
 			}
 
-			if (keyboard.qKey.wasPressedThisFrame == true)
-			{
-				int previousSlot = _agent.Inventory.PreviousWeaponSlot;
-				if (previousSlot > 0)
-				{
-					return (byte)previousSlot; // Fast switch
-				}
-			}
+                        if (keyboard.qKey.wasPressedThisFrame == true)
+                        {
+                                int previousSlot = _agent.Inventory.PreviousWeaponSlot;
+                                if (previousSlot > 0)
+                                {
+                                        return (byte)previousSlot; // Fast switch
+                                }
+                        }
 
-			int weaponSlot = -1;
+                        if (keyboard.f2Key.wasPressedThisFrame == true)
+                        {
+                                var inventory = _agent != null ? _agent.Inventory : null;
+                                if (inventory != null && (inventory.CanEquipFishingPole == true || inventory.IsFishingPoleEquipped == true))
+                                {
+                                        return (byte)Inventory.FISHING_POLE_HOTBAR_SLOT;
+                                }
 
-			if (Inventory.HOTBAR_VISIBLE_SLOTS >= 1 && keyboard.digit1Key.wasPressedThisFrame == true) { weaponSlot = 0; }
-			if (Inventory.HOTBAR_VISIBLE_SLOTS >= 2 && keyboard.digit2Key.wasPressedThisFrame == true) { weaponSlot = 1; }
+                                return 0;
+                        }
+
+                        int weaponSlot = -1;
+
+                        if (Inventory.HOTBAR_VISIBLE_SLOTS >= 1 && keyboard.digit1Key.wasPressedThisFrame == true) { weaponSlot = 0; }
+                        if (Inventory.HOTBAR_VISIBLE_SLOTS >= 2 && keyboard.digit2Key.wasPressedThisFrame == true) { weaponSlot = 1; }
 
 			if (weaponSlot < 0)
 			{

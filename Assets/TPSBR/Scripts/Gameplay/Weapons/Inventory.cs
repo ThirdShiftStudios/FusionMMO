@@ -102,6 +102,8 @@ namespace TPSBR
         public int CurrentWeaponSlot => _currentWeaponSlot;
         public int PreviousWeaponSlot => _previousWeaponSlot;
         public WeaponSize CurrentWeaponSize => CurrentWeapon != null ? CurrentWeapon.Size : WeaponSize.Unarmed;
+        public bool IsFishingPoleEquipped => _isFishingPoleEquipped;
+        public bool CanEquipFishingPole => _fishingPoleSlot.IsEmpty == false && IsFishingPoleSlotItem(_fishingPoleSlot);
         public const int INVENTORY_SIZE = 10;
         public const int PICKAXE_SLOT_INDEX = byte.MaxValue;
         public const int WOOD_AXE_SLOT_INDEX = byte.MaxValue - 1;
@@ -109,8 +111,9 @@ namespace TPSBR
         public const int HEAD_SLOT_INDEX = byte.MaxValue - 3;
         public const int UPPER_BODY_SLOT_INDEX = byte.MaxValue - 4;
         public const int LOWER_BODY_SLOT_INDEX = byte.MaxValue - 5;
-        public const int HOTBAR_CAPACITY = 3;
+        public const int HOTBAR_CAPACITY = 4;
         public const int HOTBAR_VISIBLE_SLOTS = HOTBAR_CAPACITY - 1;
+        public const int FISHING_POLE_HOTBAR_SLOT = HOTBAR_CAPACITY - 1;
         // PRIVATE MEMBERS
 
         [SerializeField] private WeaponSlot[] _slots;
@@ -898,7 +901,9 @@ namespace TPSBR
 
         private void ToggleFishingPoleInternal()
         {
-            if (_isFishingPoleEquipped == true || (_hotbar[0] != null && _hotbar[0] == _fishingPole))
+            bool fishingPoleInHotbar = _hotbar[FISHING_POLE_HOTBAR_SLOT] != null && _hotbar[FISHING_POLE_HOTBAR_SLOT] == _fishingPole;
+
+            if (_isFishingPoleEquipped == true || fishingPoleInHotbar || _currentWeaponSlot == FISHING_POLE_HOTBAR_SLOT)
             {
                 UnequipFishingPoleInternal();
             }
@@ -928,10 +933,10 @@ namespace TPSBR
 
             Weapon previousWeapon = null;
 
-            Weapon existingWeapon = _hotbar[0];
-            if (existingWeapon == null && _localWeapons != null && _localWeapons.Length > 0)
+            Weapon existingWeapon = _hotbar[FISHING_POLE_HOTBAR_SLOT];
+            if (existingWeapon == null && _localWeapons != null && _localWeapons.Length > FISHING_POLE_HOTBAR_SLOT)
             {
-                existingWeapon = _localWeapons[0];
+                existingWeapon = _localWeapons[FISHING_POLE_HOTBAR_SLOT];
             }
 
             if (existingWeapon != null && existingWeapon != fishingPole)
@@ -943,14 +948,14 @@ namespace TPSBR
 
             if (existingWeapon != null && existingWeapon != fishingPole)
             {
-                RemoveWeapon(0);
+                RemoveWeapon(FISHING_POLE_HOTBAR_SLOT);
             }
 
-            AddWeapon(fishingPole, 0);
+            AddWeapon(fishingPole, FISHING_POLE_HOTBAR_SLOT);
 
             _isFishingPoleEquipped = true;
 
-            SetCurrentWeapon(0);
+            SetCurrentWeapon(FISHING_POLE_HOTBAR_SLOT);
             ArmCurrentWeapon();
 
             RefreshFishingPoleVisuals();
@@ -966,9 +971,9 @@ namespace TPSBR
             Weapon previousWeapon = _weaponBeforeFishingPole;
             _weaponBeforeFishingPole = null;
 
-            if (_hotbar[0] != null && _hotbar[0] == _fishingPole)
+            if (_hotbar[FISHING_POLE_HOTBAR_SLOT] != null && _hotbar[FISHING_POLE_HOTBAR_SLOT] == _fishingPole)
             {
-                RemoveWeapon(0);
+                RemoveWeapon(FISHING_POLE_HOTBAR_SLOT);
             }
 
             byte previousSlot = _weaponSlotBeforeFishingPole;
@@ -976,7 +981,7 @@ namespace TPSBR
 
             if (previousWeapon != null && previousWeapon.Object != null && previousWeapon.Object.IsValid == true)
             {
-                AddWeapon(previousWeapon, 0);
+                AddWeapon(previousWeapon, FISHING_POLE_HOTBAR_SLOT);
             }
 
             if (previousSlot != byte.MaxValue)
@@ -4254,6 +4259,17 @@ namespace TPSBR
 
         if (targetSlot <= 0 || targetSlot >= _hotbar.Length)
             return;
+
+        if (targetSlot == FISHING_POLE_HOTBAR_SLOT)
+        {
+            ToggleFishingPole();
+            return;
+        }
+
+        if ((_isFishingPoleEquipped == true || _currentWeaponSlot == FISHING_POLE_HOTBAR_SLOT) && targetSlot != FISHING_POLE_HOTBAR_SLOT)
+        {
+            ToggleFishingPole();
+        }
 
         if (_currentWeaponSlot == targetSlot)
             return;
