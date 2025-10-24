@@ -52,17 +52,21 @@ namespace TPSBR
 				return;
 			_lastWeaponSize = currentWeaponSize;
 
-			// Activate the current weapon
-			bool found = false;
+            // Activate the current weapon
+            for (int i = 0; i < _moveStateCategories.Length; i++)
+            {
+                _moveStateCategories[i].Move.Deactivate(0.0f);
+            }
+
+            bool found = false;
 			for (int i = 0; i < _moveStateCategories.Length; i++)
 			{
-				if (_moveStateCategories[i].WeaponSize == currentWeaponSize)
+                if (_moveStateCategories[i].WeaponSize == currentWeaponSize)
 				{
 					_moveStateCategories[i].Move.Activate(0.0f);
 					found = true;
 					continue;
 				}
-				_moveStateCategories[i].Move.Deactivate(0.0f);
 			}
 
 			if (found == false)

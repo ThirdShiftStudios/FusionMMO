@@ -1458,7 +1458,7 @@ PrefabInstance:
     - target: {fileID: 8019168302190258968, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
       propertyPath: _fishingPoleEquippedParent
       value: 
-      objectReference: {fileID: 1867873543316851787}
+      objectReference: {fileID: 6388543282259232068}
     - target: {fileID: 8019168302190258968, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
       propertyPath: _initialWeapons.Array.size
       value: 1
@@ -1529,7 +1529,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8311684226520633936, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
       propertyPath: _moveStateCategories.Array.size
-      value: 2
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 8311684226520633936, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
       propertyPath: _moveStateCategories.Array.data[0]._move
@@ -1540,8 +1540,16 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 5828649028299758170}
     - target: {fileID: 8311684226520633936, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
+      propertyPath: _moveStateCategories.Array.data[2]._move
+      value: 
+      objectReference: {fileID: 5828649028299758170}
+    - target: {fileID: 8311684226520633936, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
       propertyPath: _moveStateCategories.Array.data[1]._weaponSize
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8311684226520633936, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
+      propertyPath: _moveStateCategories.Array.data[2]._weaponSize
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 8328825549916750378, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
       propertyPath: m_RootOrder
