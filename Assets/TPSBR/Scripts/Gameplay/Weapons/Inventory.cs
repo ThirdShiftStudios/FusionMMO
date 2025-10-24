@@ -177,6 +177,7 @@ namespace TPSBR
         private FishingPoleWeapon _localFishingPole;
         private bool _localFishingPoleEquipped;
         private byte _weaponSlotBeforeFishingPole = byte.MaxValue;
+        private Weapon _weaponBeforeFishingPole;
         private Dictionary<int, WeaponDefinition> _weaponDefinitionsBySlot = new Dictionary<int, WeaponDefinition>();
         private readonly Dictionary<WeaponSize, int> _weaponSizeToSlotIndex = new Dictionary<WeaponSize, int>();
         private HashSet<int> _suppressedItemFeedSlots;
@@ -925,7 +926,22 @@ namespace TPSBR
                 _weaponSlotBeforeFishingPole = _currentWeaponSlot;
             }
 
-            if (_hotbar[0] != null && _hotbar[0] != fishingPole)
+            Weapon previousWeapon = null;
+
+            Weapon existingWeapon = _hotbar[0];
+            if (existingWeapon == null && _localWeapons != null && _localWeapons.Length > 0)
+            {
+                existingWeapon = _localWeapons[0];
+            }
+
+            if (existingWeapon != null && existingWeapon != fishingPole)
+            {
+                previousWeapon = existingWeapon;
+            }
+
+            _weaponBeforeFishingPole = previousWeapon;
+
+            if (existingWeapon != null && existingWeapon != fishingPole)
             {
                 RemoveWeapon(0);
             }
@@ -947,6 +963,9 @@ namespace TPSBR
                 _isFishingPoleEquipped = false;
             }
 
+            Weapon previousWeapon = _weaponBeforeFishingPole;
+            _weaponBeforeFishingPole = null;
+
             if (_hotbar[0] != null && _hotbar[0] == _fishingPole)
             {
                 RemoveWeapon(0);
@@ -954,6 +973,11 @@ namespace TPSBR
 
             byte previousSlot = _weaponSlotBeforeFishingPole;
             _weaponSlotBeforeFishingPole = byte.MaxValue;
+
+            if (previousWeapon != null && previousWeapon.Object != null && previousWeapon.Object.IsValid == true)
+            {
+                AddWeapon(previousWeapon, 0);
+            }
 
             if (previousSlot != byte.MaxValue)
             {
