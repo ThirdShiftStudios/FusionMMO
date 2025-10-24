@@ -3766,6 +3766,19 @@ namespace TPSBR
 
             if (IsFishingPoleSlotItem(_fishingPoleSlot) == false)
             {
+                int fishingPoleIndex = FindFishingPoleInInventory();
+                if (fishingPoleIndex >= 0)
+                {
+                    var slot = _items[fishingPoleIndex];
+                    _fishingPoleSlot = slot;
+                    _items.Set(fishingPoleIndex, default);
+                    UpdateWeaponDefinitionMapping(fishingPoleIndex, default);
+                    RefreshFishingPoleSlot();
+                    RefreshItems();
+                    EnsureFishingPoleInstance();
+                    return;
+                }
+
                 DespawnFishingPole();
                 return;
             }
@@ -3991,6 +4004,17 @@ namespace TPSBR
             }
 
             return false;
+        }
+
+        private int FindFishingPoleInInventory()
+        {
+            for (int i = 0; i < _items.Length; i++)
+            {
+                if (IsFishingPoleSlotItem(_items[i]) == true)
+                    return i;
+            }
+
+            return -1;
         }
 
         private int FindPickaxeInInventory()
