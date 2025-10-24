@@ -1,5 +1,6 @@
 using Fusion;
 using UnityEngine;
+using UnityEngine.TextCore.Text;
 
 namespace TPSBR
 {
@@ -159,8 +160,17 @@ namespace TPSBR
             if (owner == null)
                 return;
 
-            Vector3 firePosition = _lureFireTransform.position;
-            Vector3 direction = _lureFireTransform.forward;
+            Transform fireTransform = Character.ThirdPersonView.FireTransform;
+            Transform cameraTransform = Character.ThirdPersonView.DefaultCameraTransform;
+
+            if (fireTransform == null || cameraTransform == null)
+            {
+                return;
+            }
+
+            Vector3 firePosition = fireTransform.position;
+            Vector3 targetPoint = cameraTransform.position + cameraTransform.forward * 100f;
+            Vector3 direction = targetPoint - firePosition;
 
             if (direction.sqrMagnitude < 0.0001f)
             {
