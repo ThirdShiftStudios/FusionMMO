@@ -271,6 +271,7 @@ namespace TPSBR.UI
                 var generalSlots = new List<UIListItem>(discoveredSlots.Length);
                 UIListItem pickaxeSlot = null;
                 UIListItem woodAxeSlot = null;
+                UIListItem fishingPoleSlot = null;
                 UIListItem headSlot = null;
                 UIListItem upperBodySlot = null;
                 UIListItem lowerBodySlot = null;
@@ -285,6 +286,10 @@ namespace TPSBR.UI
                     else if (IsWoodAxeUISlot(slot) == true)
                     {
                         woodAxeSlot = slot;
+                    }
+                    else if (IsFishingPoleUISlot(slot) == true)
+                    {
+                        fishingPoleSlot = slot;
                     }
                     else if (IsHeadUISlot(slot) == true)
                     {
@@ -301,6 +306,16 @@ namespace TPSBR.UI
                     else
                     {
                         generalSlots.Add(slot);
+                    }
+                }
+
+                if (fishingPoleSlot == null)
+                {
+                    var template = woodAxeSlot ?? pickaxeSlot ?? (generalSlots.Count > 0 ? generalSlots[generalSlots.Count - 1] : null);
+                    if (template != null)
+                    {
+                        int siblingIndex = template.transform.GetSiblingIndex() + 1;
+                        fishingPoleSlot = CreateSpecialSlot(template, "Fishing Pole", siblingIndex);
                     }
                 }
 
@@ -337,6 +352,7 @@ namespace TPSBR.UI
                 var orderedSlots = new List<UIListItem>(generalSlots.Count +
                                                          (pickaxeSlot != null ? 1 : 0) +
                                                          (woodAxeSlot != null ? 1 : 0) +
+                                                         (fishingPoleSlot != null ? 1 : 0) +
                                                          (headSlot != null ? 1 : 0) +
                                                          (upperBodySlot != null ? 1 : 0) +
                                                          (lowerBodySlot != null ? 1 : 0));
@@ -377,6 +393,20 @@ namespace TPSBR.UI
                 else
                 {
                     Debug.LogWarning($"{nameof(UIList)} inventory list is missing a wood axe inventory slot.");
+                }
+#endif
+
+                if (fishingPoleSlot != null)
+                {
+                    fishingPoleSlot.InitializeSlot(this, Inventory.FISHING_POLE_SLOT_INDEX);
+                    orderedSlots.Add(fishingPoleSlot);
+                    indices.Add(Inventory.FISHING_POLE_SLOT_INDEX);
+                    _slotLookup[Inventory.FISHING_POLE_SLOT_INDEX] = fishingPoleSlot;
+                }
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                else
+                {
+                    Debug.LogWarning($"{nameof(UIList)} inventory list is missing a fishing pole inventory slot.");
                 }
 #endif
 
@@ -577,6 +607,7 @@ namespace TPSBR.UI
                 if (source.Owner is UIHotbar)
                 {
                     if (target.Index == Inventory.PICKAXE_SLOT_INDEX || target.Index == Inventory.WOOD_AXE_SLOT_INDEX ||
+                        target.Index == Inventory.FISHING_POLE_SLOT_INDEX ||
                         target.Index == Inventory.HEAD_SLOT_INDEX || target.Index == Inventory.UPPER_BODY_SLOT_INDEX ||
                         target.Index == Inventory.LOWER_BODY_SLOT_INDEX)
                         return;
@@ -698,6 +729,10 @@ namespace TPSBR.UI
                 {
                     itemDetails = woodAxeDefinition.WoodAxePrefab;
                 }
+                else if (definition is FishingPoleDefinition fishingPoleDefinition && fishingPoleDefinition.FishingPolePrefab != null)
+                {
+                    itemDetails = fishingPoleDefinition.FishingPolePrefab;
+                }
 
                 ItemSelected.Invoke(itemDetails, slot.ConfigurationHash);
             }
@@ -804,6 +839,23 @@ namespace TPSBR.UI
 
                 var normalizedName = slotName.Replace(" ", string.Empty).Replace("_", string.Empty);
                 return normalizedName.IndexOf("woodaxe", StringComparison.OrdinalIgnoreCase) >= 0;
+            }
+
+            private static bool IsFishingPoleUISlot(UIListItem slot)
+            {
+                if (slot == null)
+                    return false;
+
+                var slotObject = slot.gameObject;
+                if (slotObject == null)
+                    return false;
+
+                var slotName = slotObject.name;
+                if (string.IsNullOrEmpty(slotName))
+                    return false;
+
+                var normalizedName = slotName.Replace(" ", string.Empty).Replace("_", string.Empty);
+                return normalizedName.IndexOf("fishingpole", StringComparison.OrdinalIgnoreCase) >= 0;
             }
 
             private static bool IsHeadUISlot(UIListItem slot)

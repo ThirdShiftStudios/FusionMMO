@@ -81,6 +81,7 @@ namespace TPSBR.UI
 
                         _slotCache[Inventory.PICKAXE_SLOT_INDEX] = _inventory.GetItemSlot(Inventory.PICKAXE_SLOT_INDEX);
                         _slotCache[Inventory.WOOD_AXE_SLOT_INDEX] = _inventory.GetItemSlot(Inventory.WOOD_AXE_SLOT_INDEX);
+                        _slotCache[Inventory.FISHING_POLE_SLOT_INDEX] = _inventory.GetItemSlot(Inventory.FISHING_POLE_SLOT_INDEX);
                         _slotCache[Inventory.HEAD_SLOT_INDEX] = _inventory.GetItemSlot(Inventory.HEAD_SLOT_INDEX);
                         _slotCache[Inventory.UPPER_BODY_SLOT_INDEX] = _inventory.GetItemSlot(Inventory.UPPER_BODY_SLOT_INDEX);
                         _slotCache[Inventory.LOWER_BODY_SLOT_INDEX] = _inventory.GetItemSlot(Inventory.LOWER_BODY_SLOT_INDEX);
