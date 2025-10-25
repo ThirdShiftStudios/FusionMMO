@@ -20,12 +20,19 @@ namespace TPSBR
         {
             base.OnImpact(hit);
 
+            bool hitWater = hit.GameObject != null && hit.GameObject.layer == ObjectLayer.Water;
+
+            if (hitWater == true)
+            {
+                transform.position = hit.Point;
+            }
+
             FishingPoleWeapon weapon = _weapon;
             _weapon = null;
 
             weapon?.OnLureImpacted(this, hit);
 
-            if (Runner != null && Object != null && Object.IsValid == true)
+            if (hitWater == false && Runner != null && Object != null && Object.IsValid == true)
             {
                 Runner.Despawn(Object);
             }
