@@ -18,6 +18,9 @@ namespace TPSBR
         [SerializeField]
         private ParabolaString _parabolaString;
 
+        [Networked(OnChanged = nameof(OnActiveLureChanged))]
+        private NetworkObjectRef _networkedActiveLure { get; set; }
+
         private float _primaryHoldTime;
         private bool _isPrimaryHeld;
         private bool _castRequested;
@@ -27,6 +30,12 @@ namespace TPSBR
         private bool _lureLaunched;
 
         public event Action<FishingLifecycleState> LifecycleStateChanged;
+
+        public override void Spawned()
+        {
+            base.Spawned();
+            HandleActiveLureChanged();
+        }
 
         private void OnEnable()
         {
@@ -273,6 +282,7 @@ namespace TPSBR
                 _activeLureProjectile = projectile;
                 projectile.Initialize(this);
                 projectile.Fire(owner, firePosition, initialVelocity, hitMask, HitType);
+                _networkedActiveLure = projectile.Object;
                 UpdateParabolaString();
             });
         }
@@ -347,6 +357,10 @@ namespace TPSBR
             }
 
             _lureLaunched = false;
+            if (HasStateAuthority == true)
+            {
+                _networkedActiveLure = default;
+            }
             UpdateParabolaString();
         }
 
@@ -373,6 +387,29 @@ namespace TPSBR
             {
                 _parabolaString.ClearEndpoints();
             }
+        }
+
+        private static void OnActiveLureChanged(Changed<FishingPoleWeapon> changed)
+        {
+            changed.Behaviour.HandleActiveLureChanged();
+        }
+
+        private void HandleActiveLureChanged()
+        {
+            FishingLureProjectile resolvedProjectile = null;
+
+            if (_networkedActiveLure.IsValid == true)
+            {
+                NetworkRunner runner = Runner;
+
+                if (runner != null && runner.TryFindObject(_networkedActiveLure, out NetworkObject lureObject) == true)
+                {
+                    resolvedProjectile = lureObject.GetComponent<FishingLureProjectile>();
+                }
+            }
+
+            _activeLureProjectile = resolvedProjectile;
+            UpdateParabolaString();
         }
     }
 }
