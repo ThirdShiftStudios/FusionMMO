@@ -18,6 +18,7 @@ namespace TPSBR
         public byte CurrentWeaponSlot;
         public PlayerInventoryItemData PickaxeSlot;
         public PlayerInventoryItemData WoodAxeSlot;
+        public PlayerInventoryItemData FishingPoleSlot;
         public PlayerInventoryItemData HeadSlot;
         public PlayerInventoryItemData UpperBodySlot;
         public PlayerInventoryItemData LowerBodySlot;
@@ -62,6 +63,7 @@ namespace TPSBR
         public byte CurrentWeaponSlot;
         public PlayerInventoryItemData PickaxeSlot;
         public PlayerInventoryItemData WoodAxeSlot;
+        public PlayerInventoryItemData FishingPoleSlot;
         public PlayerInventoryItemData HeadSlot;
         public PlayerInventoryItemData UpperBodySlot;
         public PlayerInventoryItemData LowerBodySlot;
@@ -761,6 +763,7 @@ namespace TPSBR
                 CharacterId = characterId,
                 PickaxeSlot = default,
                 WoodAxeSlot = default,
+                FishingPoleSlot = default,
                 HeadSlot = default,
                 UpperBodySlot = default,
                 LowerBodySlot = default,
@@ -1482,6 +1485,7 @@ namespace TPSBR
             _cachedData.CurrentWeaponSlot = 0;
             _cachedData.PickaxeSlot = default;
             _cachedData.WoodAxeSlot = default;
+            _cachedData.FishingPoleSlot = default;
             _cachedData.HeadSlot = default;
             _cachedData.UpperBodySlot = default;
             _cachedData.LowerBodySlot = default;
@@ -1580,6 +1584,7 @@ namespace TPSBR
                          (_cachedData.HotbarSlots != null && _cachedData.HotbarSlots.Length > 0) ||
                          _cachedData.PickaxeSlot.ItemDefinitionId != 0 ||
                          _cachedData.WoodAxeSlot.ItemDefinitionId != 0 ||
+                         _cachedData.FishingPoleSlot.ItemDefinitionId != 0 ||
                          _cachedData.HeadSlot.ItemDefinitionId != 0 ||
                          _cachedData.UpperBodySlot.ItemDefinitionId != 0 ||
                          _cachedData.LowerBodySlot.ItemDefinitionId != 0 ||
@@ -1609,6 +1614,7 @@ namespace TPSBR
                             CurrentWeaponSlot = _cachedData.CurrentWeaponSlot,
                             PickaxeSlot = _cachedData.PickaxeSlot,
                             WoodAxeSlot = _cachedData.WoodAxeSlot,
+                            FishingPoleSlot = _cachedData.FishingPoleSlot,
                             HeadSlot = _cachedData.HeadSlot,
                             UpperBodySlot = _cachedData.UpperBodySlot,
                             LowerBodySlot = _cachedData.LowerBodySlot,

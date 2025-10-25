@@ -324,6 +324,14 @@ namespace TPSBR
                 ConfigurationHash = string.IsNullOrEmpty(woodAxeConfigurationHash) == false ? woodAxeConfigurationHash : null
             };
 
+            string fishingPoleConfigurationHash = _fishingPoleSlot.ConfigurationHash.ToString();
+            data.FishingPoleSlot = new PlayerInventoryItemData
+            {
+                ItemDefinitionId = _fishingPoleSlot.ItemDefinitionId,
+                Quantity = _fishingPoleSlot.Quantity,
+                ConfigurationHash = string.IsNullOrEmpty(fishingPoleConfigurationHash) == false ? fishingPoleConfigurationHash : null
+            };
+
             string headConfigurationHash = _headSlot.ConfigurationHash.ToString();
             data.HeadSlot = new PlayerInventoryItemData
             {
@@ -370,6 +378,8 @@ namespace TPSBR
             RefreshPickaxeSlot();
             _woodAxeSlot = default;
             RefreshWoodAxeSlot();
+            _fishingPoleSlot = default;
+            RefreshFishingPoleSlot();
             _headSlot = default;
             RefreshHeadSlot();
             _upperBodySlot = default;
@@ -426,6 +436,18 @@ namespace TPSBR
 
                 _woodAxeSlot = new InventorySlot(data.WoodAxeSlot.ItemDefinitionId, data.WoodAxeSlot.Quantity, woodAxeHash);
                 RefreshWoodAxeSlot();
+            }
+
+            if (data.FishingPoleSlot.ItemDefinitionId != 0 && data.FishingPoleSlot.Quantity != 0)
+            {
+                NetworkString<_32> fishingPoleHash = default;
+                if (string.IsNullOrEmpty(data.FishingPoleSlot.ConfigurationHash) == false)
+                {
+                    fishingPoleHash = data.FishingPoleSlot.ConfigurationHash;
+                }
+
+                _fishingPoleSlot = new InventorySlot(data.FishingPoleSlot.ItemDefinitionId, data.FishingPoleSlot.Quantity, fishingPoleHash);
+                RefreshFishingPoleSlot();
             }
 
             if (data.HeadSlot.ItemDefinitionId != 0 && data.HeadSlot.Quantity != 0)
