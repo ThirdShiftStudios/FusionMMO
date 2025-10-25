@@ -7,6 +7,7 @@ using Unity.Services.Authentication;
 using Unity.Services.CloudSave;
 using Unity.Services.CloudSave.Models;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace TPSBR
 {
@@ -28,6 +29,8 @@ namespace TPSBR
         public PlayerCharacterInventorySaveData[] CharacterInventories;
         public PlayerCharacterProfessionSaveData[] CharacterProfessions;
         public PlayerCharacterStatsSaveData[] CharacterStats;
+
+        [FormerlySerializedAs("Stats")] public PlayerStatSaveData[] LegacyStats;
     }
 
     [Serializable]
@@ -1480,6 +1483,7 @@ namespace TPSBR
                 _cachedData.CharacterStats = null;
             }
 
+            _cachedData.LegacyStats = null;
             _cachedData.InventorySlots = null;
             _cachedData.HotbarSlots = null;
             _cachedData.CurrentWeaponSlot = 0;
@@ -1653,6 +1657,36 @@ namespace TPSBR
                             continue;
 
                         _characterStats.Add(stats);
+                    }
+                }
+                else if (_cachedData.LegacyStats != null && _cachedData.LegacyStats.Length > 0)
+                {
+                    string legacyCharacterId = _cachedData.ActiveCharacterId;
+
+                    if (legacyCharacterId.HasValue() == false && _cachedData.Characters != null && _cachedData.Characters.Length > 0)
+                    {
+                        for (int i = 0; i < _cachedData.Characters.Length; i++)
+                        {
+                            var character = _cachedData.Characters[i];
+                            if (character != null && character.CharacterId.HasValue() == true)
+                            {
+                                legacyCharacterId = character.CharacterId;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (legacyCharacterId.HasValue() == true)
+                    {
+                        var legacy = new PlayerCharacterStatsSaveData
+                        {
+                            CharacterId = legacyCharacterId,
+                            Stats = _cachedData.LegacyStats,
+                        };
+
+                        _characterStats.Add(legacy);
+                        _cachedData.LegacyStats = null;
+                        MarkDirty();
                     }
                 }
 
