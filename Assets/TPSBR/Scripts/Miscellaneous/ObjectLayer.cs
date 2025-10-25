@@ -11,6 +11,7 @@ namespace TPSBR
 		public static int Target       { get; private set; }
 		public static int Interaction  { get; private set; }
 		public static int Pickup       { get; private set; }
+		public static int Water        { get; private set; }
 
 		static ObjectLayer()
 		{
@@ -21,6 +22,7 @@ namespace TPSBR
 			Target           = LayerMask.NameToLayer("Target");
 			Interaction      = LayerMask.NameToLayer("Interaction");
 			Pickup           = LayerMask.NameToLayer("Pickup");
+            Water			 = LayerMask.NameToLayer("Water");
 		}
 	}
 
