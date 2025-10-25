@@ -157,6 +157,7 @@ namespace TPSBR
             _castRequested = false;
             _castActive = true;
             _lureLaunched = false;
+            _waitingForPrimaryRelease = false;
             CleanupLure(false);
         }
 
@@ -169,6 +170,7 @@ namespace TPSBR
         {
             _castActive = false;
             _castRequested = false;
+            _waitingForPrimaryRelease = false;
             ResetHoldTracking();
             CleanupLure(true);
         }
