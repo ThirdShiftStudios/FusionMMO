@@ -16,6 +16,8 @@ namespace TPSBR
         private float _lureProjectileSpeed = 12f;
         [SerializeField]
         private ParabolaString _parabolaString;
+        [SerializeField]
+        private Renderer[] _renderers;
 
         [Networked]
         private FishingLureProjectile NetworkedActiveLure { get; set; }
@@ -27,6 +29,7 @@ namespace TPSBR
         private bool _waitingForPrimaryRelease;
         private FishingLureProjectile _activeLureProjectile;
         private bool _lureLaunched;
+        private bool _renderersResolved;
 
         public event Action<FishingLifecycleState> LifecycleStateChanged;
 
@@ -50,11 +53,21 @@ namespace TPSBR
             }
 
             _parabolaString?.ClearEndpoints();
+
+            ResolveRenderers();
+            SetRenderersVisible(IsArmed);
         }
 
         private void OnDisable()
         {
             _parabolaString?.ClearEndpoints();
+            SetRenderersVisible(false);
+        }
+
+        private void Awake()
+        {
+            ResolveRenderers();
+            SetRenderersVisible(false);
         }
 
         public override bool CanFire(bool keyDown)
@@ -65,6 +78,18 @@ namespace TPSBR
         public override void Fire(Vector3 firePosition, Vector3 targetPosition, LayerMask hitMask)
         {
             // Fishing pole currently has no firing behaviour. Override when casting logic is implemented.
+        }
+
+        protected override void OnWeaponArmed()
+        {
+            base.OnWeaponArmed();
+            SetRenderersVisible(true);
+        }
+
+        protected override void OnWeaponDisarmed()
+        {
+            base.OnWeaponDisarmed();
+            SetRenderersVisible(false);
         }
 
         public override WeaponUseRequest EvaluateUse(bool attackActivated, bool attackHeld, bool attackReleased)
@@ -372,6 +397,39 @@ namespace TPSBR
         private void RaiseLifecycleStateChanged(FishingLifecycleState state)
         {
             LifecycleStateChanged?.Invoke(state);
+        }
+
+        private void ResolveRenderers()
+        {
+            if (_renderersResolved == true)
+                return;
+
+            if (_renderers == null || _renderers.Length == 0)
+            {
+                _renderers = GetComponentsInChildren<Renderer>(true);
+            }
+
+            _renderersResolved = true;
+        }
+
+        private void SetRenderersVisible(bool visible)
+        {
+            if (_renderersResolved == false)
+            {
+                ResolveRenderers();
+            }
+
+            if (_renderers == null)
+                return;
+
+            for (int i = 0; i < _renderers.Length; i++)
+            {
+                var renderer = _renderers[i];
+                if (renderer == null)
+                    continue;
+
+                renderer.enabled = visible;
+            }
         }
 
         private UseLayer GetUseLayer()
