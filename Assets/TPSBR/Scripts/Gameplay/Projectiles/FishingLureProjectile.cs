@@ -24,24 +24,39 @@ namespace TPSBR
 
         public override void FixedUpdateNetwork()
         {
+            if (_isAnchoredInWater == true)
+            {
+                if (Object != null && Object.IsValid == true)
+                {
+                    transform.position = _anchorPosition;
+                }
+
+                return;
+            }
+
             base.FixedUpdateNetwork();
 
             if (_applyAnchorOnNextTick == true)
             {
                 _applyAnchorOnNextTick = false;
                 _isAnchoredInWater = true;
-            }
 
-            if (_isAnchoredInWater == true && Object != null && Object.IsValid == true)
+                if (Object != null && Object.IsValid == true)
+                {
+                    transform.position = _anchorPosition;
+                }
+            }
+        }
+
+        public override void Render()
+        {
+            if (_isAnchoredInWater == true)
             {
-                ProjectileData data = _data;
-                data.HasStopped = true;
-                data.FinishedPosition = _anchorPosition;
-                data.DespawnCooldown = TickTimer.None;
-                _data = data;
-
                 transform.position = _anchorPosition;
+                return;
             }
+
+            base.Render();
         }
 
         protected override void OnImpact(in LagCompensatedHit hit)
