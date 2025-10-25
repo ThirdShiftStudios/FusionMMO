@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace TPSBR
 {
@@ -33,14 +33,16 @@ namespace TPSBR
 		public static LayerMask Target               { get; private set; }
 		public static LayerMask BlockingProjectiles  { get; private set; }
 		public static LayerMask Environment          { get; private set; }
+        public static LayerMask Water { get; private set; } // ← add this
 
-		static ObjectLayerMask()
+        static ObjectLayerMask()
 		{
 			Default              = 1 << ObjectLayer.Default;
 			Agent                = 1 << ObjectLayer.Agent;
 			Target               = 1 << ObjectLayer.Target;
+            Water = 1 << ObjectLayer.Water; // ← add this
 
-			Environment = Default;
+            Environment = Default;
 			BlockingProjectiles  = Default | Agent | Target;
 		}
 	}
