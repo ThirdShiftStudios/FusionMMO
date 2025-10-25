@@ -156,6 +156,8 @@ namespace TPSBR
         internal void NotifyWaitingPhaseEntered()
         {
             _castActive = false;
+            _waitingForPrimaryRelease = false;
+            ResetHoldTracking();
         }
 
         internal void LaunchLure()
