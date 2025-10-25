@@ -152,6 +152,19 @@ namespace TPSBR
             return true;
         }
 
+        internal bool TryCancelActiveCast(FishingPoleWeapon weapon)
+        {
+            if (weapon == null)
+                return false;
+
+            if (_activeWeapon == null || _activeWeapon != weapon)
+                return false;
+
+            CancelCast();
+
+            return true;
+        }
+
         private void CompleteCast()
         {
             if (_castState != null)

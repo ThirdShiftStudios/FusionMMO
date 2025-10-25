@@ -272,11 +272,6 @@ namespace TPSBR
 
             bool hitWater = hit.GameObject != null && hit.GameObject.layer == ObjectLayer.Water;
 
-            if (hitWater == false && projectile != null && projectile == _activeLureProjectile)
-            {
-                _activeLureProjectile = null;
-            }
-
             UseLayer layer = GetUseLayer();
 
             if (hitWater == true)
@@ -291,7 +286,18 @@ namespace TPSBR
             }
             else
             {
-                CleanupLure(false);
+                bool canceled = layer?.FishingPoleUseState != null &&
+                                 layer.FishingPoleUseState.TryCancelActiveCast(this) == true;
+
+                if (canceled == false && projectile != null && projectile == _activeLureProjectile)
+                {
+                    _activeLureProjectile = null;
+                }
+
+                if (canceled == false)
+                {
+                    CleanupLure(false);
+                }
             }
         }
 
