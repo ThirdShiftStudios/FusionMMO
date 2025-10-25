@@ -1,3 +1,4 @@
+using System;
 using Fusion;
 using UnityEngine;
 using UnityEngine.TextCore.Text;
@@ -24,6 +25,8 @@ namespace TPSBR
         private bool _waitingForPrimaryRelease;
         private FishingLureProjectile _activeLureProjectile;
         private bool _lureLaunched;
+
+        public event Action<FishingLifecycleState> LifecycleStateChanged;
 
         private void OnEnable()
         {
@@ -164,11 +167,14 @@ namespace TPSBR
             _lureLaunched = false;
             _waitingForPrimaryRelease = false;
             CleanupLure(false);
+
+            RaiseLifecycleStateChanged(FishingLifecycleState.Casting);
         }
 
         internal void NotifyCastThrown()
         {
             // The cast remains active until the animation finishes.
+            RaiseLifecycleStateChanged(FishingLifecycleState.LureInFlight);
         }
 
         internal void NotifyCastCompleted()
@@ -178,6 +184,8 @@ namespace TPSBR
             _waitingForPrimaryRelease = false;
             ResetHoldTracking();
             CleanupLure(true);
+
+            RaiseLifecycleStateChanged(FishingLifecycleState.Ready);
         }
 
         internal void NotifyCastCancelled()
@@ -187,6 +195,8 @@ namespace TPSBR
             ResetHoldTracking();
             _waitingForPrimaryRelease = true;
             CleanupLure(true);
+
+            RaiseLifecycleStateChanged(FishingLifecycleState.Ready);
         }
 
         internal void NotifyWaitingPhaseEntered()
@@ -194,6 +204,8 @@ namespace TPSBR
             _castActive = false;
             _waitingForPrimaryRelease = false;
             ResetHoldTracking();
+
+            RaiseLifecycleStateChanged(FishingLifecycleState.Waiting);
         }
 
         internal void LaunchLure()
@@ -330,6 +342,11 @@ namespace TPSBR
 
             _lureLaunched = false;
             UpdateParabolaString();
+        }
+
+        private void RaiseLifecycleStateChanged(FishingLifecycleState state)
+        {
+            LifecycleStateChanged?.Invoke(state);
         }
 
         private UseLayer GetUseLayer()

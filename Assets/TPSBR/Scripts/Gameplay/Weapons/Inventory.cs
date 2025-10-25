@@ -183,6 +183,7 @@ namespace TPSBR
         private HashSet<int> _suppressedItemFeedSlots;
         private int _localGold;
         private ChangeDetector _changeDetector;
+        private FishingLifecycleState _fishingLifecycleState = FishingLifecycleState.Inactive;
 
         private static readonly Dictionary<int, Weapon> _weaponPrefabsByDefinitionId = new Dictionary<int, Weapon>();
         private static PickaxeDefinition _cachedFallbackPickaxe;
@@ -192,8 +193,10 @@ namespace TPSBR
         public event Action<int, Weapon> HotbarSlotChanged;
         public event Action<int> GoldChanged;
         public event Action<bool> FishingPoleEquippedChanged;
+        public event Action<FishingLifecycleState> FishingLifecycleStateChanged;
 
         public bool IsFishingPoleEquipped => _localFishingPoleEquipped;
+        public FishingLifecycleState FishingLifecycleState => _fishingLifecycleState;
 
         // PUBLIC METHODS
 
@@ -3876,6 +3879,7 @@ namespace TPSBR
 
             if (_localFishingPole != null)
             {
+                UnsubscribeFromFishingLifecycle(_localFishingPole);
                 _localFishingPole.Deinitialize(Object);
                 _localFishingPole = null;
             }
@@ -3892,6 +3896,7 @@ namespace TPSBR
             {
                 if (_localFishingPole != null)
                 {
+                    UnsubscribeFromFishingLifecycle(_localFishingPole);
                     _localFishingPole.Deinitialize(Object);
                 }
 
@@ -3913,19 +3918,67 @@ namespace TPSBR
 
                     _localFishingPole.Initialize(Object, equippedParent, unequippedParent);
                     _localFishingPole.AssignFireAudioEffects(_fireAudioEffectsRoot, _fireAudioEffects);
+                    SubscribeToFishingLifecycle(_localFishingPole);
                 }
             }
 
             UpdateLocalFishingPoleEquipped(_isFishingPoleEquipped);
         }
 
+        private void SubscribeToFishingLifecycle(FishingPoleWeapon weapon)
+        {
+            if (weapon == null)
+                return;
+
+            weapon.LifecycleStateChanged -= OnFishingLifecycleStateChanged;
+            weapon.LifecycleStateChanged += OnFishingLifecycleStateChanged;
+        }
+
+        private void UnsubscribeFromFishingLifecycle(FishingPoleWeapon weapon)
+        {
+            if (weapon == null)
+                return;
+
+            weapon.LifecycleStateChanged -= OnFishingLifecycleStateChanged;
+        }
+
         private void UpdateLocalFishingPoleEquipped(bool isEquipped)
         {
             if (_localFishingPoleEquipped == isEquipped)
+            {
+                if (isEquipped == false)
+                {
+                    SetFishingLifecycleState(FishingLifecycleState.Inactive);
+                }
+
                 return;
+            }
 
             _localFishingPoleEquipped = isEquipped;
             FishingPoleEquippedChanged?.Invoke(isEquipped);
+
+            if (isEquipped == true)
+            {
+                SetFishingLifecycleState(FishingLifecycleState.Ready);
+            }
+            else
+            {
+                SetFishingLifecycleState(FishingLifecycleState.Inactive);
+            }
+        }
+
+        private void OnFishingLifecycleStateChanged(FishingLifecycleState state)
+        {
+            SetFishingLifecycleState(state);
+        }
+
+        private void SetFishingLifecycleState(FishingLifecycleState state)
+        {
+            if (_fishingLifecycleState == state)
+                return;
+
+            _fishingLifecycleState = state;
+            FishingLifecycleStateChanged?.Invoke(state);
         }
 
         private static PickaxeDefinition ResolveDefaultPickaxe()
