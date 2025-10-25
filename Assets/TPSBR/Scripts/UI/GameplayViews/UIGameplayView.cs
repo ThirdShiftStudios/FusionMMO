@@ -36,6 +36,7 @@ namespace TPSBR.UI
 
         private UIMana _mana;
         private UIStamina _stamina;
+        private UIFishingView _fishingView;
         private Agent _localAgent;
         private NetworkBehaviourId _localAgentId;
         private bool _localAgentIsLocalPlayer;
@@ -105,10 +106,18 @@ namespace TPSBR.UI
                 _menuButton.onClick.RemoveListener(OnMenuButton);
             }
 
+            var fishingView = GetFishingView();
+            if (fishingView != null)
+            {
+                fishingView.Bind(null);
+            }
+
             _localAgentIsLocalPlayer = false;
             _lastKnownPlayerLevel = -1;
 
             UnsubscribeExperienceEvents();
+
+            _fishingView = null;
         }
 
         protected override void OnTick()
@@ -256,6 +265,8 @@ namespace TPSBR.UI
 
         private void SetLocalAgent(Agent agent, Player player, bool isLocalPlayer)
         {
+            var fishingView = GetFishingView();
+
             if (_localAgent != null)
             {
                 _localAgent.Health.HitPerformed -= OnHitPerformed;
@@ -265,6 +276,8 @@ namespace TPSBR.UI
 
                 _inventoryFeed?.Bind(null);
                 _goldFeed?.Bind(null);
+
+                fishingView?.Bind(null);
             }
 
             _localAgent = agent;
@@ -292,6 +305,8 @@ namespace TPSBR.UI
                 _goldFeed?.Bind(agent.Inventory);
                 _lastKnownPlayerLevel = Context.PlayerData != null ? Context.PlayerData.Level : -1;
 
+                fishingView?.Bind(agent.Inventory);
+
                 SubscribeExperienceEvents();
             }
             else
@@ -299,6 +314,8 @@ namespace TPSBR.UI
                 _inventoryFeed?.Bind(null);
                 _goldFeed?.Bind(null);
                 _lastKnownPlayerLevel = -1;
+
+                fishingView?.Bind(null);
 
                 UnsubscribeExperienceEvents();
             }
@@ -322,6 +339,8 @@ namespace TPSBR.UI
 
             _inventoryFeed?.Bind(null);
             _goldFeed?.Bind(null);
+
+            GetFishingView()?.Bind(null);
 
             UnsubscribeExperienceEvents();
 
@@ -356,6 +375,16 @@ namespace TPSBR.UI
                 Color = _interactionFailedColor,
                 Sound = _interactionFailedSound,
             }, false, true);
+        }
+
+        private UIFishingView GetFishingView()
+        {
+            if (_fishingView == null && SceneUI != null)
+            {
+                _fishingView = SceneUI.Get<UIFishingView>();
+            }
+
+            return _fishingView;
         }
 
         private void SubscribeExperienceEvents()

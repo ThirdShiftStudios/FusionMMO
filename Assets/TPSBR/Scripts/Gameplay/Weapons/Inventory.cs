@@ -191,6 +191,9 @@ namespace TPSBR
         public event Action<int, InventorySlot> ItemSlotChanged;
         public event Action<int, Weapon> HotbarSlotChanged;
         public event Action<int> GoldChanged;
+        public event Action<bool> FishingPoleEquippedChanged;
+
+        public bool IsFishingPoleEquipped => _localFishingPoleEquipped;
 
         // PUBLIC METHODS
 
@@ -3855,7 +3858,7 @@ namespace TPSBR
                 _localFishingPole = null;
             }
 
-            _localFishingPoleEquipped = false;
+            UpdateLocalFishingPoleEquipped(false);
             _weaponSlotBeforeFishingPole = byte.MaxValue;
         }
 
@@ -3891,7 +3894,16 @@ namespace TPSBR
                 }
             }
 
-            _localFishingPoleEquipped = _isFishingPoleEquipped;
+            UpdateLocalFishingPoleEquipped(_isFishingPoleEquipped);
+        }
+
+        private void UpdateLocalFishingPoleEquipped(bool isEquipped)
+        {
+            if (_localFishingPoleEquipped == isEquipped)
+                return;
+
+            _localFishingPoleEquipped = isEquipped;
+            FishingPoleEquippedChanged?.Invoke(isEquipped);
         }
 
         private static PickaxeDefinition ResolveDefaultPickaxe()
