@@ -64,6 +64,11 @@ namespace TPSBR
             UseLayer layer = null;
             bool waitingInterrupted = false;
 
+            if (attackActivated == true)
+            {
+                _waitingForPrimaryRelease = false;
+            }
+
             if (attackActivated == true && _castActive == false)
             {
                 layer = GetUseLayer();
