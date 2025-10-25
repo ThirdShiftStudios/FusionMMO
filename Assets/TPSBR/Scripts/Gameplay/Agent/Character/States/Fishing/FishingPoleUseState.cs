@@ -147,9 +147,6 @@ namespace TPSBR
             if (_isWaiting == false)
                 return false;
 
-            if (_waiting.IsActive(true) == false)
-                return false;
-
             CompleteCast();
 
             return true;

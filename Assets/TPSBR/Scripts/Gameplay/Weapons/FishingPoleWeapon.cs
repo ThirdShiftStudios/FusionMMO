@@ -61,13 +61,21 @@ namespace TPSBR
                 return WeaponUseRequest.None;
             }
 
+            UseLayer layer = null;
+            bool waitingInterrupted = false;
+
             if (attackActivated == true && _castActive == false)
             {
-                UseLayer layer = GetUseLayer();
+                layer = GetUseLayer();
 
                 if (layer?.FishingPoleUseState != null)
                 {
-                    layer.FishingPoleUseState.TryInterruptWaitingForNewCast(this);
+                    waitingInterrupted = layer.FishingPoleUseState.TryInterruptWaitingForNewCast(this);
+
+                    if (waitingInterrupted == true)
+                    {
+                        _waitingForPrimaryRelease = false;
+                    }
                 }
             }
 
@@ -79,6 +87,17 @@ namespace TPSBR
             }
             else if (attackHeld == true)
             {
+                if (_castActive == false && _castRequested == false && waitingInterrupted == false)
+                {
+                    layer ??= GetUseLayer();
+
+                    if (layer?.FishingPoleUseState != null && layer.FishingPoleUseState.TryInterruptWaitingForNewCast(this) == true)
+                    {
+                        waitingInterrupted = true;
+                        _waitingForPrimaryRelease = false;
+                    }
+                }
+
                 if (_waitingForPrimaryRelease == true)
                 {
                     return WeaponUseRequest.None;
