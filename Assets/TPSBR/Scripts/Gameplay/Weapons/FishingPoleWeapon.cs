@@ -1,7 +1,6 @@
 using System;
 using Fusion;
 using UnityEngine;
-using UnityEngine.TextCore.Text;
 
 namespace TPSBR
 {
@@ -18,8 +17,8 @@ namespace TPSBR
         [SerializeField]
         private ParabolaString _parabolaString;
 
-        [Networked(OnChanged = nameof(OnActiveLureChanged))]
-        private NetworkObjectRef _networkedActiveLure { get; set; }
+        [Networked]
+        private FishingLureProjectile NetworkedActiveLure { get; set; }
 
         private float _primaryHoldTime;
         private bool _isPrimaryHeld;
@@ -34,6 +33,12 @@ namespace TPSBR
         public override void Spawned()
         {
             base.Spawned();
+            HandleActiveLureChanged(true);
+        }
+
+        public override void Render()
+        {
+            base.Render();
             HandleActiveLureChanged();
         }
 
@@ -282,7 +287,7 @@ namespace TPSBR
                 _activeLureProjectile = projectile;
                 projectile.Initialize(this);
                 projectile.Fire(owner, firePosition, initialVelocity, hitMask, HitType);
-                _networkedActiveLure = projectile.Object;
+                NetworkedActiveLure = projectile;
                 UpdateParabolaString();
             });
         }
@@ -359,7 +364,7 @@ namespace TPSBR
             _lureLaunched = false;
             if (HasStateAuthority == true)
             {
-                _networkedActiveLure = default;
+                NetworkedActiveLure = null;
             }
             UpdateParabolaString();
         }
@@ -389,27 +394,21 @@ namespace TPSBR
             }
         }
 
-        private static void OnActiveLureChanged(Changed<FishingPoleWeapon> changed)
+        private void HandleActiveLureChanged(bool force = false)
         {
-            changed.Behaviour.HandleActiveLureChanged();
-        }
-
-        private void HandleActiveLureChanged()
-        {
+            FishingLureProjectile networkedProjectile = NetworkedActiveLure;
             FishingLureProjectile resolvedProjectile = null;
 
-            if (_networkedActiveLure.IsValid == true)
+            if (networkedProjectile != null && networkedProjectile.Object != null && networkedProjectile.Object.IsValid == true)
             {
-                NetworkRunner runner = Runner;
-
-                if (runner != null && runner.TryFindObject(_networkedActiveLure, out NetworkObject lureObject) == true)
-                {
-                    resolvedProjectile = lureObject.GetComponent<FishingLureProjectile>();
-                }
+                resolvedProjectile = networkedProjectile;
             }
 
-            _activeLureProjectile = resolvedProjectile;
-            UpdateParabolaString();
+            if (force == true || _activeLureProjectile != resolvedProjectile)
+            {
+                _activeLureProjectile = resolvedProjectile;
+                UpdateParabolaString();
+            }
         }
     }
 }
