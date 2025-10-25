@@ -18,6 +18,25 @@ namespace TPSBR
 
         protected override void OnImpact(in LagCompensatedHit hit)
         {
+            bool hitWater = hit.GameObject != null && hit.GameObject.layer == ObjectLayer.Water;
+
+            if (hitWater == true)
+            {
+                // Anchor the lure in place when it lands on water so it can
+                // remain for the waiting phase.
+                transform.position = hit.Point;
+
+                // Disable the despawn cooldown while the lure is
+                // sitting in the water.
+                DisableDespawnCooldown();
+
+                FishingPoleWeapon waterWeapon = _weapon;
+                _weapon = null;
+
+                waterWeapon?.OnLureImpacted(this, hit);
+                return;
+            }
+
             base.OnImpact(hit);
 
             FishingPoleWeapon weapon = _weapon;

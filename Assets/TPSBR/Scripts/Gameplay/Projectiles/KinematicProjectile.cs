@@ -110,15 +110,25 @@ namespace TPSBR
 			_bounceCount = default;
 		}
 
-		public void SetDespawnCooldown(float cooldown)
-		{
-			// Guard against post-despawn or pre-spawn access
-			if (_despawning || Object == null || !Object.IsValid) return;
+                public void SetDespawnCooldown(float cooldown)
+                {
+                        // Guard against post-despawn or pre-spawn access
+                        if (_despawning || Object == null || !Object.IsValid) return;
 
-			var data = _data;
-			data.DespawnCooldown = TickTimer.CreateFromSeconds(Runner, cooldown);
-			_data = data;
-		}
+                        var data = _data;
+                        data.DespawnCooldown = TickTimer.CreateFromSeconds(Runner, cooldown);
+                        _data = data;
+                }
+
+                protected void DisableDespawnCooldown()
+                {
+                        if (_despawning || Object == null || !Object.IsValid)
+                                return;
+
+                        var data = _data;
+                        data.DespawnCooldown = TickTimer.None;
+                        _data = data;
+                }
 
 		// NetworkBehaviour INTERFACE
 
