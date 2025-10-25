@@ -1,9 +1,10 @@
 #if UNITY_EDITOR
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEditor;
 using UnityEngine;
+using UnityEditorInternal;
+using TPSBR;
 
 public class HierarchyTransferTool : EditorWindow
 {
@@ -20,7 +21,7 @@ public class HierarchyTransferTool : EditorWindow
 
     private void OnGUI()
     {
-        EditorGUILayout.LabelField("Transfer renderer configs & ItemSlotTransform objects by matching hierarchy paths.", EditorStyles.wordWrappedLabel);
+        EditorGUILayout.LabelField("Transfer renderer configs, EquipmentVisual components, & ItemSlotTransform objects by matching hierarchy paths.", EditorStyles.wordWrappedLabel);
         EditorGUILayout.Space();
 
         currentRoot = (Transform)EditorGUILayout.ObjectField("Current Root", currentRoot, typeof(Transform), true);
@@ -39,6 +40,7 @@ public class HierarchyTransferTool : EditorWindow
             "• Matching is done by relative path from the given roots.\n" +
             "• SkinnedMeshRenderer bones/rootBone are remapped by the same path.\n" +
             "• If a renderer doesn’t exist on the New side, it will be added.\n" +
+            "• EquipmentVisual components are moved to their equivalent GameObjects under New.\n" +
             "• ItemSlotTransform GameObjects are MOVED to the equivalent path under New.\n",
             MessageType.Info
         );
@@ -63,14 +65,31 @@ public class HierarchyTransferTool : EditorWindow
 
             // 1) Copy renderer configs
             int copiedMR = 0, copiedSMR = 0, addedMR = 0, addedSMR = 0, missingTargets = 0;
+            int movedEquipmentVisuals = 0, skippedEquipmentVisuals = 0;
 
             foreach (var kvp in currentMap)
             {
                 string relPath = kvp.Key;
                 Transform currentT = kvp.Value;
 
+                var equipmentVisuals = currentT.GetComponents<EquipmentVisual>();
+
                 if (!newMap.TryGetValue(relPath, out Transform newT))
                 {
+                    if (equipmentVisuals != null && equipmentVisuals.Length > 0)
+                    {
+                        int validVisuals = 0;
+                        foreach (var visual in equipmentVisuals)
+                        {
+                            if (visual != null)
+                            {
+                                validVisuals++;
+                            }
+                        }
+
+                        skippedEquipmentVisuals += validVisuals;
+                    }
+
                     missingTargets++;
                     continue; // No equivalent target in new hierarchy
                 }
@@ -116,6 +135,29 @@ public class HierarchyTransferTool : EditorWindow
                     CopySkinnedMeshRenderer(currSMR, newSMR, currentRoot, newRoot, newMap);
                     copiedSMR++;
                 }
+
+                // EquipmentVisual components
+                if (equipmentVisuals != null && equipmentVisuals.Length > 0)
+                {
+                    foreach (var visual in equipmentVisuals)
+                    {
+                        if (visual == null)
+                        {
+                            skippedEquipmentVisuals++;
+                            continue;
+                        }
+
+                        ComponentUtility.CopyComponent(visual);
+                        if (!ComponentUtility.PasteComponentAsNew(newT.gameObject))
+                        {
+                            skippedEquipmentVisuals++;
+                            continue;
+                        }
+
+                        Undo.DestroyObjectImmediate(visual);
+                        movedEquipmentVisuals++;
+                    }
+                }
             }
 
             // 2) Move ItemSlotTransform GameObjects
@@ -127,12 +169,12 @@ public class HierarchyTransferTool : EditorWindow
                 {
                     var relPath = CalculatePath(currentRoot, t);
 
-                     if (newMap.TryGetValue(relPath.Replace("/" + t.gameObject.name, ""), out Transform newEquivalentParent))
+                    if (newMap.TryGetValue(relPath.Replace("/" + t.gameObject.name, ""), out Transform newEquivalentParent))
                     {
                         // Move the WHOLE GameObject under the equivalent transform in "New".
                         // We’ll keep local alignment (not world), so pass worldPositionStays = false.
                         Undo.SetTransformParent(t, newEquivalentParent, "Move ItemSlotTransform GameObject");
-                        Vector3 localPos = new Vector3(t.localPosition.x, t.localPosition.y,t.localPosition.z);
+                        Vector3 localPos = new Vector3(t.localPosition.x, t.localPosition.y, t.localPosition.z);
                         Quaternion localRot = t.localRotation;
                         
                         t.SetParent(newEquivalentParent, false);
@@ -154,6 +196,7 @@ public class HierarchyTransferTool : EditorWindow
                 "Hierarchy Transfer Complete",
                 $"MeshRenderers copied: {copiedMR} (added: {addedMR})\n" +
                 $"SkinnedMeshRenderers copied: {copiedSMR} (added: {addedSMR})\n" +
+                $"EquipmentVisual components moved: {movedEquipmentVisuals} (skipped: {skippedEquipmentVisuals})\n" +
                 $"Missing equivalent targets in New: {missingTargets}\n" +
                 $"ItemSlotTransform GameObjects moved: {movedItemSlots} (skipped: {skippedItemSlots})",
                 "OK"
