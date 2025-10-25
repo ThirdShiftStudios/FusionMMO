@@ -126,12 +126,30 @@ namespace TPSBR
             _waiting.SetActiveWeapon(weapon);
             _waiting.Play(_blendInDuration);
 
+            weapon.NotifyWaitingPhaseEntered();
+
             if (_castState != null)
             {
                 _castState.Stop(_blendOutDuration);
             }
 
             Activate(_blendInDuration);
+        }
+
+        internal bool TryInterruptWaitingForNewCast(FishingPoleWeapon weapon)
+        {
+            if (_waiting == null || weapon == null)
+                return false;
+
+            if (_activeWeapon == null || _activeWeapon != weapon)
+                return false;
+
+            if (_isWaiting == false)
+                return false;
+
+            CompleteCast();
+
+            return true;
         }
 
         private void CompleteCast()

@@ -61,6 +61,29 @@ namespace TPSBR
                 return WeaponUseRequest.None;
             }
 
+            UseLayer layer = null;
+            bool waitingInterrupted = false;
+
+            if (attackActivated == true)
+            {
+                _waitingForPrimaryRelease = false;
+            }
+
+            if (attackActivated == true && _castActive == false)
+            {
+                layer = GetUseLayer();
+
+                if (layer?.FishingPoleUseState != null)
+                {
+                    waitingInterrupted = layer.FishingPoleUseState.TryInterruptWaitingForNewCast(this);
+
+                    if (waitingInterrupted == true)
+                    {
+                        _waitingForPrimaryRelease = false;
+                    }
+                }
+            }
+
             if (attackReleased == true)
             {
                 _isPrimaryHeld = false;
@@ -69,6 +92,17 @@ namespace TPSBR
             }
             else if (attackHeld == true)
             {
+                if (_castActive == false && _castRequested == false && waitingInterrupted == false)
+                {
+                    layer ??= GetUseLayer();
+
+                    if (layer?.FishingPoleUseState != null && layer.FishingPoleUseState.TryInterruptWaitingForNewCast(this) == true)
+                    {
+                        waitingInterrupted = true;
+                        _waitingForPrimaryRelease = false;
+                    }
+                }
+
                 if (_waitingForPrimaryRelease == true)
                 {
                     return WeaponUseRequest.None;
@@ -128,6 +162,7 @@ namespace TPSBR
             _castRequested = false;
             _castActive = true;
             _lureLaunched = false;
+            _waitingForPrimaryRelease = false;
             CleanupLure(false);
         }
 
@@ -140,6 +175,7 @@ namespace TPSBR
         {
             _castActive = false;
             _castRequested = false;
+            _waitingForPrimaryRelease = false;
             ResetHoldTracking();
             CleanupLure(true);
         }
@@ -151,6 +187,13 @@ namespace TPSBR
             ResetHoldTracking();
             _waitingForPrimaryRelease = true;
             CleanupLure(true);
+        }
+
+        internal void NotifyWaitingPhaseEntered()
+        {
+            _castActive = false;
+            _waitingForPrimaryRelease = false;
+            ResetHoldTracking();
         }
 
         internal void LaunchLure()
