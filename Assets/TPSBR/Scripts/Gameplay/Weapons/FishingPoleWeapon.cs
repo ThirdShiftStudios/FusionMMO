@@ -242,6 +242,14 @@ namespace TPSBR
             Vector3 initialVelocity = direction * _lureProjectileSpeed;
             LayerMask hitMask = Character != null && Character.Agent != null && Character.Agent.Inventory != null ? Character.Agent.Inventory.HitMask : default;
 
+            // Ensure the lure can detect collisions with water surfaces even if the default weapon hit mask excludes them
+            int waterLayer = ObjectLayer.Water;
+
+            if (waterLayer >= 0)
+            {
+                hitMask |= 1 << waterLayer;
+            }
+
             _lureLaunched = true;
 
             runner.Spawn(_lureProjectilePrefab, firePosition, Quaternion.LookRotation(direction), owner.InputAuthority, (spawnRunner, spawnedObject) =>
