@@ -55,6 +55,7 @@ namespace TPSBR.UI
             if (_inventory != null)
             {
                 _inventory.HotbarSlotChanged -= OnHotbarSlotChanged;
+                _inventory.FishingPoleEquippedChanged -= OnFishingPoleEquippedChanged;
             }
 
             _inventory = inventory;
@@ -62,6 +63,7 @@ namespace TPSBR.UI
             if (_inventory != null)
             {
                 _inventory.HotbarSlotChanged += OnHotbarSlotChanged;
+                _inventory.FishingPoleEquippedChanged += OnFishingPoleEquippedChanged;
 
                 for (int i = 0; i < _slots.Length; i++)
                 {
@@ -232,6 +234,11 @@ namespace TPSBR.UI
             if (_slots == null || index < 0 || index >= _slots.Length)
                 return;
 
+            if (ShouldHideWeapon(index, weapon) == true)
+            {
+                weapon = null;
+            }
+
             if (weapon == null)
             {
                 _slots[index].Clear();
@@ -304,6 +311,32 @@ namespace TPSBR.UI
             }
 
             ItemSelected?.Invoke(weapon, configurationHash);
+        }
+
+        private bool ShouldHideWeapon(int index, Weapon weapon)
+        {
+            if (weapon == null || _inventory == null)
+                return false;
+
+            int inventorySlot = index + 1;
+            if (inventorySlot != Inventory.HOTBAR_FISHING_POLE_SLOT)
+                return false;
+
+            return _inventory.IsFishingPoleEquipped == false;
+        }
+
+        private void OnFishingPoleEquippedChanged(bool isEquipped)
+        {
+            if (_slots == null || _inventory == null)
+                return;
+
+            int slotIndex = Inventory.HOTBAR_FISHING_POLE_SLOT - 1;
+            if (slotIndex < 0 || slotIndex >= _slots.Length)
+                return;
+
+            var weapon = _inventory.GetWeapon(Inventory.HOTBAR_FISHING_POLE_SLOT);
+            UpdateSlot(slotIndex, weapon);
+            UpdateSelection(true);
         }
 
         private void EnsureDragVisual()
