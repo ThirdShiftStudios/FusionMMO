@@ -61,6 +61,16 @@ namespace TPSBR
                 return WeaponUseRequest.None;
             }
 
+            if (attackActivated == true && _castActive == false)
+            {
+                UseLayer layer = GetUseLayer();
+
+                if (layer?.FishingPoleUseState != null)
+                {
+                    layer.FishingPoleUseState.TryInterruptWaitingForNewCast(this);
+                }
+            }
+
             if (attackReleased == true)
             {
                 _isPrimaryHeld = false;

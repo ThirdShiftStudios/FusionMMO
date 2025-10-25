@@ -136,6 +136,25 @@ namespace TPSBR
             Activate(_blendInDuration);
         }
 
+        internal bool TryInterruptWaitingForNewCast(FishingPoleWeapon weapon)
+        {
+            if (_waiting == null || weapon == null)
+                return false;
+
+            if (_activeWeapon == null || _activeWeapon != weapon)
+                return false;
+
+            if (_isWaiting == false)
+                return false;
+
+            if (_waiting.IsActive(true) == false)
+                return false;
+
+            CompleteCast();
+
+            return true;
+        }
+
         private void CompleteCast()
         {
             if (_castState != null)
