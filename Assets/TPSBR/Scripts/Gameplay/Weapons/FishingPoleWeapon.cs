@@ -264,24 +264,32 @@ namespace TPSBR
 
         internal void OnLureImpacted(FishingLureProjectile projectile, in LagCompensatedHit hit)
         {
-            _ = hit;
-
             if (_castActive == false)
                 return;
 
-            if (projectile != null && projectile == _activeLureProjectile)
+            bool hitWater = hit.GameObject != null && hit.GameObject.layer == ObjectLayer.Water;
+
+            if (hitWater == false && projectile != null && projectile == _activeLureProjectile)
             {
                 _activeLureProjectile = null;
             }
 
             UseLayer layer = GetUseLayer();
 
-            if (layer?.FishingPoleUseState != null)
+            if (hitWater == true)
             {
-                layer.FishingPoleUseState.EnterWaitingPhase(this);
-            }
+                if (layer?.FishingPoleUseState != null)
+                {
+                    layer.FishingPoleUseState.EnterWaitingPhase(this);
+                }
 
-            CleanupLure(false);
+                _lureLaunched = false;
+                UpdateParabolaString();
+            }
+            else
+            {
+                CleanupLure(false);
+            }
         }
 
         private void ResetHoldTracking()
