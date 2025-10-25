@@ -18,12 +18,25 @@ namespace TPSBR
 
         protected override void OnImpact(in LagCompensatedHit hit)
         {
-            base.OnImpact(hit);
+            bool hitWater = hit.GameObject != null && hit.GameObject.layer == ObjectLayer.Water;
 
             FishingPoleWeapon weapon = _weapon;
             _weapon = null;
 
             weapon?.OnLureImpacted(this, hit);
+
+            if (hitWater == true)
+            {
+                if (Runner != null && Object != null && Object.IsValid == true)
+                {
+                    SetDespawnCooldown(float.MaxValue);
+                    transform.position = hit.Point;
+                }
+
+                return;
+            }
+
+            base.OnImpact(hit);
 
             if (Runner != null && Object != null && Object.IsValid == true)
             {
