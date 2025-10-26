@@ -41,7 +41,7 @@ namespace TPSBR
 		[SerializeField]
 		private float            _showProjectileVisualAfterDistance = 0f;
 		[SerializeField]
-		private GameObject       _projectileVisual;
+                private GameObject       _projectileVisual;
 		[SerializeField]
 		private Transform        _dummyRotationTarget;
 		[SerializeField]
@@ -181,15 +181,15 @@ namespace TPSBR
 			}
 		}
 
-		public override void Render()
-		{
-			// Guard against render after despawn and pre-spawn
-			if (_despawning || Object == null || !Object.IsValid) return;
+                public override void Render()
+                {
+                        // Guard against render after despawn and pre-spawn
+                        if (_despawning || Object == null || !Object.IsValid) return;
 
-			RenderProjectile(_data);
-		}
+                        RenderProjectile(_data);
+                }
 
-		// MONOBEHAVIOUR
+                // MONOBEHAVIOUR
 
 		protected void Awake()
 		{
@@ -444,8 +444,16 @@ namespace TPSBR
 			public int         ImpactTagHash;
 		}
 
-		protected virtual void OnImpact(in LagCompensatedHit hit)
-		{
-		}
-	}
+                protected virtual void OnImpact(in LagCompensatedHit hit)
+                {
+                }
+
+                protected void SetProjectileVisualActive(bool active)
+                {
+                        if (_projectileVisual != null)
+                        {
+                                _projectileVisual.SetActiveSafe(active);
+                        }
+                }
+        }
 }

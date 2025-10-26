@@ -53,6 +53,7 @@ namespace TPSBR
             if (_isAnchoredInWater == true)
             {
                 transform.position = _anchorPosition;
+                SetProjectileVisualActive(true);
                 return;
             }
 
@@ -70,6 +71,7 @@ namespace TPSBR
                 _anchorPosition = hit.Point;
                 _applyAnchorOnNextTick = true;
                 transform.position = hit.Point;
+                SetProjectileVisualActive(true);
             }
 
             FishingPoleWeapon weapon = _weapon;
