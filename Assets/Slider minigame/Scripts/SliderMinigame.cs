@@ -546,7 +546,10 @@ public class SliderMinigame : MonoBehaviour
         if (_winCallbackWithResults != null)
             _winCallbackWithResults.Invoke(successHits);
 
-        NotifyMinigameFinished(true);
+        if (isMinigameFinished)
+        {
+            NotifyMinigameFinished(true);
+        }
 
         if (PlaySounds && SuccessAreaHitSfx != null)
             SuccessAreaHitSfx.Play();
