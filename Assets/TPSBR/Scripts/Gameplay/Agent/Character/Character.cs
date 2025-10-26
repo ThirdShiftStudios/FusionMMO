@@ -12,10 +12,11 @@ namespace TPSBR
 		public Transform RootBone;
 		public Transform HeadTransform;
 
-		public Transform CameraHandle;
-		public Transform CameraTransformHead;
-		public Transform DefaultCameraTransform;
-		public Transform AimCameraTransform;
+                public Transform CameraHandle;
+                public Transform CameraTransformHead;
+                public Transform DefaultCameraTransform;
+                public Transform AimCameraTransform;
+                public Transform FishingCatchCameraTransform;
 
 		public Transform FireTransformRoot;
 		public Transform FireTransform;
@@ -234,7 +235,7 @@ namespace TPSBR
                         _characterController.ManualRenderUpdate();
                         _animationController.ManualRenderUpdate();
 
-                        ECameraState desiredCameraState = _overrideCameraTransform != null ? ECameraState.OtherAuthority : (_characterController.Data.Aim == true ? ECameraState.Aim : ECameraState.Default);
+                        ECameraState desiredCameraState = _overrideCameraTransform != null ? ECameraState.OtherAuthority : (IsFishingCatchPullOutLoopActive() == true ? ECameraState.FishingCatch : (_characterController.Data.Aim == true ? ECameraState.Aim : ECameraState.Default));
 
                         SetCameraState(desiredCameraState);
 
@@ -377,6 +378,9 @@ namespace TPSBR
                                 case ECameraState.Aim:
                                         cameraTransform = _thirdPersonView.AimCameraTransform;
                                         break;
+                                case ECameraState.FishingCatch:
+                                        cameraTransform = _thirdPersonView.FishingCatchCameraTransform;
+                                        break;
                                 case ECameraState.OtherAuthority:
                                         if (_overrideCameraTransform != null)
                                         {
@@ -439,22 +443,36 @@ namespace TPSBR
 			_thirdPersonView.FireTransformRoot.localPosition = _defaultFireTransformPosition;
 		}
 
-		private void SetCameraState(ECameraState state)
-		{
-			if (state == _currentCameraState)
-				return;
+                private void SetCameraState(ECameraState state)
+                {
+                        if (state == _currentCameraState)
+                                return;
 
 			_previousCameraState = _currentCameraState;
 			_currentCameraState = state;
 			_cameraChangeTime = 0f;
 			_cameraDistance = Mathf.Max(_cameraDistance, GetCameraTransform(_currentCameraState).LocalPosition.magnitude);
-		}
+                }
 
-		private static Vector3 MultiplyVector(Vector3 vector, float x, float y, float z)
-		{
-			vector.x *= x;
-			vector.y *= y;
-			vector.z *= z;
+                private bool IsFishingCatchPullOutLoopActive()
+                {
+                        UseLayer useLayer = _animationController != null ? _animationController.AttackLayer : null;
+                        FishingPoleUseState fishingUseState = useLayer != null ? useLayer.FishingPoleUseState : null;
+
+                        if (fishingUseState == null)
+                                return false;
+
+                        if (_thirdPersonView == null || _thirdPersonView.FishingCatchCameraTransform == null)
+                                return false;
+
+                        return fishingUseState.IsActive(true) == true && fishingUseState.IsCatchLoopActive == true;
+                }
+
+                private static Vector3 MultiplyVector(Vector3 vector, float x, float y, float z)
+                {
+                        vector.x *= x;
+                        vector.y *= y;
+                        vector.z *= z;
 			return vector;
 		}
 
@@ -465,6 +483,7 @@ namespace TPSBR
                         None,
                         Default,
                         Aim,
+                        FishingCatch,
                         OtherAuthority,
                 }
         }

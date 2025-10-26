@@ -19,6 +19,8 @@ namespace TPSBR
         private bool _isFighting;
         private bool _isCatching;
 
+        public bool IsCatchLoopActive => _catch != null && _catch.IsLoopActive == true;
+
         public bool BeginCast(FishingPoleWeapon weapon)
         {
             if (weapon == null || _castState == null)
