@@ -1158,6 +1158,7 @@ namespace TPSBR
             EnsureToolAvailability();
             RefreshPickaxeVisuals();
             RefreshWoodAxeVisuals();
+            RefreshFishingPoleVisuals();
             HandleGoldChanged(_gold);
         }
 
@@ -1263,6 +1264,7 @@ namespace TPSBR
             RefreshItems();
             RefreshPickaxeVisuals();
             RefreshWoodAxeVisuals();
+            RefreshFishingPoleVisuals();
 
             if (_changeDetector != null)
             {
