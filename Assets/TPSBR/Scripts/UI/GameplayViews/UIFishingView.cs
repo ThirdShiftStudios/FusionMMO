@@ -15,6 +15,7 @@ namespace TPSBR.UI
 
         private Inventory _inventory;
         private bool _isHookSetMinigameVisible;
+        private bool _isFightingMinigameVisible;
 
         internal void Bind(Inventory inventory)
         {
@@ -39,12 +40,14 @@ namespace TPSBR.UI
                 var initialState = _inventory.IsFishingPoleEquipped ? _inventory.FishingLifecycleState : FishingLifecycleState.Inactive;
                 UpdateLifecycleLabel(initialState);
                 UpdateHookSetMinigameState(initialState);
+                UpdateFightingMinigameState(initialState);
             }
             else
             {
                 UpdateVisibility(false);
                 UpdateLifecycleLabel(FishingLifecycleState.Inactive);
                 UpdateHookSetMinigameState(FishingLifecycleState.Inactive);
+                UpdateFightingMinigameState(FishingLifecycleState.Inactive);
             }
         }
 
@@ -57,6 +60,12 @@ namespace TPSBR.UI
                 _hookSetMinigame.gameObject.SetActive(false);
                 _hookSetMinigame.MinigameFinished += OnHookSetMinigameFinished;
             }
+
+            if (_fightingMinigame != null)
+            {
+                _fightingMinigame.gameObject.SetActive(false);
+                _fightingMinigame.MinigameFinished += OnFightingMinigameFinished;
+            }
         }
 
         protected override void OnDeinitialize()
@@ -67,7 +76,14 @@ namespace TPSBR.UI
                 _hookSetMinigame.MinigameFinished -= OnHookSetMinigameFinished;
             }
 
+            if (_fightingMinigame != null)
+            {
+                _fightingMinigame.ForceStop();
+                _fightingMinigame.MinigameFinished -= OnFightingMinigameFinished;
+            }
+
             HideHookSetMinigame();
+            HideFightingMinigame();
             Bind(null);
             base.OnDeinitialize();
         }
@@ -78,12 +94,14 @@ namespace TPSBR.UI
             var state = isEquipped == true && _inventory != null ? _inventory.FishingLifecycleState : FishingLifecycleState.Inactive;
             UpdateLifecycleLabel(state);
             UpdateHookSetMinigameState(state);
+            UpdateFightingMinigameState(state);
         }
 
         private void OnFishingLifecycleStateChanged(FishingLifecycleState state)
         {
             UpdateLifecycleLabel(state);
             UpdateHookSetMinigameState(state);
+            UpdateFightingMinigameState(state);
         }
 
         private void UpdateVisibility(bool shouldBeVisible)
@@ -145,6 +163,28 @@ namespace TPSBR.UI
             }
         }
 
+        private void UpdateFightingMinigameState(FishingLifecycleState state)
+        {
+            if (_fightingMinigame == null)
+            {
+                return;
+            }
+
+            if (state == FishingLifecycleState.Fighting)
+            {
+                if (_isFightingMinigameVisible == false)
+                {
+                    _fightingMinigame.gameObject.SetActive(true);
+                    _fightingMinigame.Begin(new List<SliderMinigameReward>());
+                    _isFightingMinigameVisible = true;
+                }
+            }
+            else
+            {
+                HideFightingMinigame();
+            }
+        }
+
         private void HideHookSetMinigame()
         {
             if (_hookSetMinigame == null || _isHookSetMinigameVisible == false)
@@ -157,6 +197,18 @@ namespace TPSBR.UI
             _isHookSetMinigameVisible = false;
         }
 
+        private void HideFightingMinigame()
+        {
+            if (_fightingMinigame == null || _isFightingMinigameVisible == false)
+            {
+                return;
+            }
+
+            _fightingMinigame.ForceStop();
+            _fightingMinigame.gameObject.SetActive(false);
+            _isFightingMinigameVisible = false;
+        }
+
         private void OnHookSetMinigameFinished(bool wasSuccessful)
         {
             HideHookSetMinigame();
@@ -167,6 +219,23 @@ namespace TPSBR.UI
             }
 
             _inventory.SubmitHookSetMinigameResult(wasSuccessful);
+        }
+
+        private void OnFightingMinigameFinished(bool wasSuccessful)
+        {
+            HideFightingMinigame();
+
+            if (_inventory == null)
+            {
+                return;
+            }
+
+            _inventory.SubmitFightingMinigameResult(wasSuccessful);
+
+            if (wasSuccessful == false && _inventory.FishingLifecycleState == FishingLifecycleState.Fighting)
+            {
+                UpdateFightingMinigameState(FishingLifecycleState.Fighting);
+            }
         }
     }
 }

@@ -257,6 +257,16 @@ namespace TPSBR
             layer.FishingPoleUseState.EnterFightingPhase(this);
         }
 
+        internal void EnterCatchPhase()
+        {
+            UseLayer layer = GetUseLayer();
+
+            if (layer?.FishingPoleUseState == null)
+                return;
+
+            layer.FishingPoleUseState.EnterCatchPhase(this);
+        }
+
         internal void HandleHookSetFailed()
         {
             UseLayer layer = GetUseLayer();

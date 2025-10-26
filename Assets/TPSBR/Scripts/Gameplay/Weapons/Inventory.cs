@@ -788,6 +788,21 @@ namespace TPSBR
             }
         }
 
+        public void SubmitFightingMinigameResult(bool wasSuccessful)
+        {
+            if (_localFishingPole == null)
+                return;
+
+            if (HasStateAuthority == true)
+            {
+                HandleFightingMinigameResultInternal(wasSuccessful);
+            }
+            else
+            {
+                RPC_SubmitFightingMinigameResult(wasSuccessful);
+            }
+        }
+
         public void SetCurrentWeapon(int slot)
         {
             slot = Mathf.Clamp(slot, 0, _hotbar.Length - 1);
@@ -1598,6 +1613,12 @@ namespace TPSBR
         private void RPC_SubmitHookSetMinigameResult(bool wasSuccessful)
         {
             HandleHookSetMinigameResultInternal(wasSuccessful);
+        }
+
+        [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
+        private void RPC_SubmitFightingMinigameResult(bool wasSuccessful)
+        {
+            HandleFightingMinigameResultInternal(wasSuccessful);
         }
 
         private byte AddItemInternal(ItemDefinition definition, byte quantity, NetworkString<_32> configurationHash)
@@ -3979,6 +4000,19 @@ namespace TPSBR
             else
             {
                 fishingPole.HandleHookSetFailed();
+            }
+        }
+
+        private void HandleFightingMinigameResultInternal(bool wasSuccessful)
+        {
+            var fishingPole = _fishingPole ?? _localFishingPole;
+
+            if (fishingPole == null)
+                return;
+
+            if (wasSuccessful == true)
+            {
+                fishingPole.EnterCatchPhase();
             }
         }
 

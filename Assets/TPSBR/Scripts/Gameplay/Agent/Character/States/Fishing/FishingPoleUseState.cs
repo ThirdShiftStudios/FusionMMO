@@ -17,6 +17,7 @@ namespace TPSBR
         private bool _isWaiting;
         private bool _awaitingLureImpact;
         private bool _isFighting;
+        private bool _isCatching;
 
         public bool BeginCast(FishingPoleWeapon weapon)
         {
@@ -30,9 +31,12 @@ namespace TPSBR
             _isWaiting = false;
             _awaitingLureImpact = false;
             _isFighting = false;
+            _isCatching = false;
 
             _castState.SetActiveWeapon(weapon);
             _waiting?.SetActiveWeapon(weapon);
+            _fighting?.SetActiveWeapon(weapon);
+            _catch?.SetActiveWeapon(weapon);
 
             _castState.PlayBegin(_blendInDuration);
             Activate(_blendInDuration);
@@ -63,6 +67,7 @@ namespace TPSBR
             bool throwActive = _castState.IsThrowActive;
             bool waitingActive = _isWaiting == true && _waiting != null && _waiting.IsActive(true) == true;
             bool fightingActive = _isFighting == true && _fighting != null && _fighting.IsActive(true) == true;
+            bool catchActive = _isCatching == true && _catch != null && _catch.IsActive(true) == true;
 
             if (beginActive == true)
             {
@@ -115,6 +120,25 @@ namespace TPSBR
                     CancelCast();
                 }
             }
+            else if (catchActive == true)
+            {
+                if (_catch != null && _catch.IsLoopActive == true)
+                {
+                    bool secondaryActivated = agentInput.WasActivated(EGameplayInputAction.Block) ||
+                                              agentInput.WasActivated(EGameplayInputAction.HeavyAttack);
+
+                    if (secondaryActivated == true)
+                    {
+                        _catch.PlayEnd(_blendInDuration);
+                    }
+                }
+
+                if (_catch != null && _catch.HasCompletedSequence == true)
+                {
+                    CompleteCatch();
+                    return;
+                }
+            }
             else
             {
                 if (_awaitingLureImpact == true)
@@ -136,6 +160,7 @@ namespace TPSBR
             _isWaiting = true;
             _awaitingLureImpact = false;
             _isFighting = false;
+            _isCatching = false;
 
             _waiting.SetActiveWeapon(weapon);
             _waiting.Play(_blendInDuration);
@@ -160,6 +185,7 @@ namespace TPSBR
 
             _isWaiting = false;
             _isFighting = true;
+            _isCatching = false;
 
             if (_waiting != null)
             {
@@ -171,6 +197,30 @@ namespace TPSBR
             _fighting.Play(_blendInDuration);
 
             weapon.NotifyFightingPhaseEntered();
+
+            Activate(_blendInDuration);
+        }
+
+        internal void EnterCatchPhase(FishingPoleWeapon weapon)
+        {
+            if (_catch == null || weapon == null || _activeWeapon != weapon)
+                return;
+
+            if (_isCatching == true)
+                return;
+
+            _isWaiting = false;
+            _isFighting = false;
+            _isCatching = true;
+
+            if (_fighting != null)
+            {
+                _fighting.Stop(_blendOutDuration);
+                _fighting.ClearActiveWeapon(weapon);
+            }
+
+            _catch.SetActiveWeapon(weapon);
+            _catch.StartCatch(_blendInDuration);
 
             Activate(_blendInDuration);
         }
@@ -223,9 +273,16 @@ namespace TPSBR
                 _fighting.ClearActiveWeapon(_activeWeapon);
             }
 
+            if (_catch != null)
+            {
+                _catch.Stop(_blendOutDuration);
+                _catch.ClearActiveWeapon(_activeWeapon);
+            }
+
             _isWaiting = false;
             _awaitingLureImpact = false;
             _isFighting = false;
+            _isCatching = false;
 
             if (_activeWeapon != null)
             {
@@ -254,9 +311,16 @@ namespace TPSBR
                 _fighting.ClearActiveWeapon(_activeWeapon);
             }
 
+            if (_catch != null)
+            {
+                _catch.Stop(_blendOutDuration);
+                _catch.ClearActiveWeapon(_activeWeapon);
+            }
+
             _isWaiting = false;
             _awaitingLureImpact = false;
             _isFighting = false;
+            _isCatching = false;
 
             if (_activeWeapon != null)
             {
@@ -283,15 +347,28 @@ namespace TPSBR
                 _fighting.ClearActiveWeapon(_activeWeapon);
             }
 
+            if (_catch != null && _activeWeapon != null)
+            {
+                _catch.ClearActiveWeapon(_activeWeapon);
+            }
+
             _activeWeapon = null;
             _isWaiting = false;
             _awaitingLureImpact = false;
             _isFighting = false;
+            _isCatching = false;
 
             if (IsActive(true) == true)
             {
                 Deactivate(_blendOutDuration);
             }
+        }
+
+        private void CompleteCatch()
+        {
+            _isCatching = false;
+
+            CompleteCast();
         }
     }
 }
