@@ -11,6 +11,7 @@ namespace TPSBR.UI
 
         [SerializeField] private TextMeshProUGUI _lifecycleLabel;
         [SerializeField] private SliderMinigame _hookSetMinigame;
+        [SerializeField] private SliderMinigame _fightingMinigame;
 
         private Inventory _inventory;
         private bool _isHookSetMinigameVisible;
