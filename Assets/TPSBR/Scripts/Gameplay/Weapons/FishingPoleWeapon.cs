@@ -18,6 +18,10 @@ namespace TPSBR
         private ParabolaString _parabolaString;
         [SerializeField]
         private Renderer[] _renderers;
+        [SerializeField]
+        private float _waitingSuccessZoneBobAmplitude = 0.1f;
+        [SerializeField]
+        private float _waitingSuccessZoneBobFrequency = 2f;
 
         [Networked]
         private FishingLureProjectile NetworkedActiveLure { get; set; }
@@ -30,6 +34,10 @@ namespace TPSBR
         private FishingLureProjectile _activeLureProjectile;
         private bool _lureLaunched;
         private bool _renderersResolved;
+        private bool _isInWaitingPhase;
+        private bool _isHookSetSuccessZoneActive;
+        private float _waitingBobTimer;
+        private bool _waitingBobOffsetApplied;
 
         public event Action<FishingLifecycleState> LifecycleStateChanged;
 
@@ -43,6 +51,7 @@ namespace TPSBR
         {
             base.Render();
             HandleActiveLureChanged();
+            UpdateWaitingLureBob();
         }
 
         private void OnEnable()
@@ -68,6 +77,7 @@ namespace TPSBR
         {
             ResolveRenderers();
             SetRenderersVisible(false);
+            ResetWaitingBobVisuals();
         }
 
         public override bool CanFire(bool keyDown)
@@ -205,6 +215,7 @@ namespace TPSBR
             _castActive = true;
             _lureLaunched = false;
             _waitingForPrimaryRelease = false;
+            EndWaitingPhase();
             CleanupLure(false);
 
             RaiseLifecycleStateChanged(FishingLifecycleState.Casting);
@@ -222,6 +233,7 @@ namespace TPSBR
             _castRequested = false;
             _waitingForPrimaryRelease = false;
             ResetHoldTracking();
+            EndWaitingPhase();
             CleanupLure(true);
 
             RaiseLifecycleStateChanged(FishingLifecycleState.Ready);
@@ -233,6 +245,7 @@ namespace TPSBR
             _castRequested = false;
             ResetHoldTracking();
             _waitingForPrimaryRelease = true;
+            EndWaitingPhase();
             CleanupLure(true);
 
             RaiseLifecycleStateChanged(FishingLifecycleState.Ready);
@@ -243,6 +256,9 @@ namespace TPSBR
             _castActive = false;
             _waitingForPrimaryRelease = false;
             ResetHoldTracking();
+            _isInWaitingPhase = true;
+            _isHookSetSuccessZoneActive = false;
+            ResetWaitingBobVisuals();
 
             RaiseLifecycleStateChanged(FishingLifecycleState.Waiting);
         }
@@ -254,6 +270,7 @@ namespace TPSBR
             if (layer?.FishingPoleUseState == null)
                 return;
 
+            EndWaitingPhase();
             layer.FishingPoleUseState.EnterFightingPhase(this);
         }
 
@@ -264,6 +281,7 @@ namespace TPSBR
             if (layer?.FishingPoleUseState == null)
                 return;
 
+            EndWaitingPhase();
             layer.FishingPoleUseState.EnterCatchPhase(this);
         }
 
@@ -276,6 +294,7 @@ namespace TPSBR
                 return;
             }
 
+            EndWaitingPhase();
             RaiseLifecycleStateChanged(FishingLifecycleState.Ready);
         }
 
@@ -288,11 +307,13 @@ namespace TPSBR
                 return;
             }
 
+            EndWaitingPhase();
             RaiseLifecycleStateChanged(FishingLifecycleState.Ready);
         }
 
         internal void NotifyFightingPhaseEntered()
         {
+            EndWaitingPhase();
             RaiseLifecycleStateChanged(FishingLifecycleState.Fighting);
         }
 
@@ -420,6 +441,8 @@ namespace TPSBR
 
         private void CleanupLure(bool forceDespawn)
         {
+            ResetWaitingBobVisuals();
+
             if (_activeLureProjectile != null)
             {
                 if (forceDespawn == true && Runner != null && Runner.IsRunning == true)
@@ -467,6 +490,77 @@ namespace TPSBR
         private void RPC_ReportLifecycleStateChanged(FishingLifecycleState state)
         {
             LifecycleStateChanged?.Invoke(state);
+        }
+
+        public void SetHookSetSuccessZoneState(bool isInSuccessZone)
+        {
+            bool shouldActivate = isInSuccessZone && _isInWaitingPhase;
+
+            if (_isHookSetSuccessZoneActive == shouldActivate)
+            {
+                return;
+            }
+
+            _isHookSetSuccessZoneActive = shouldActivate;
+
+            if (_isHookSetSuccessZoneActive == false)
+            {
+                ResetWaitingBobVisuals();
+            }
+        }
+
+        private void EndWaitingPhase()
+        {
+            if (_isInWaitingPhase == false && _isHookSetSuccessZoneActive == false)
+            {
+                ResetWaitingBobVisuals();
+                return;
+            }
+
+            _isInWaitingPhase = false;
+            _isHookSetSuccessZoneActive = false;
+            ResetWaitingBobVisuals();
+        }
+
+        private void ResetWaitingBobVisuals()
+        {
+            _waitingBobTimer = 0f;
+            _waitingBobOffsetApplied = false;
+
+            if (_activeLureProjectile != null)
+            {
+                _activeLureProjectile.SetVisualOffset(Vector3.zero);
+            }
+        }
+
+        private void UpdateWaitingLureBob()
+        {
+            FishingLureProjectile lure = _activeLureProjectile;
+
+            if (lure == null)
+            {
+                return;
+            }
+
+            if (_isInWaitingPhase == false || _isHookSetSuccessZoneActive == false)
+            {
+                if (_waitingBobOffsetApplied == true)
+                {
+                    lure.SetVisualOffset(Vector3.zero);
+                    _waitingBobOffsetApplied = false;
+                }
+
+                _waitingBobTimer = 0f;
+                return;
+            }
+
+            float frequency = Mathf.Max(0f, _waitingSuccessZoneBobFrequency);
+            _waitingBobTimer += Time.deltaTime;
+            float angle = _waitingBobTimer * Mathf.PI * 2f * frequency;
+            float amplitude = Mathf.Max(0f, _waitingSuccessZoneBobAmplitude);
+            float offset = Mathf.Sin(angle) * amplitude;
+            lure.SetVisualOffset(new Vector3(0f, offset, 0f));
+            _waitingBobOffsetApplied = true;
         }
 
         private void ResolveRenderers()
@@ -535,6 +629,7 @@ namespace TPSBR
             if (force == true || _activeLureProjectile != resolvedProjectile)
             {
                 _activeLureProjectile = resolvedProjectile;
+                ResetWaitingBobVisuals();
                 UpdateParabolaString();
             }
         }
