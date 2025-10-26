@@ -172,6 +172,11 @@ namespace TPSBR.UI
 
             if (state == FishingLifecycleState.Fighting)
             {
+                if (_inventory != null)
+                {
+                    _fightingMinigame.SuccessHitsRequired = Mathf.Max(1, _inventory.FightingMinigameHitsRequired);
+                }
+
                 if (_isFightingMinigameVisible == false)
                 {
                     _fightingMinigame.gameObject.SetActive(true);
@@ -231,11 +236,6 @@ namespace TPSBR.UI
             }
 
             _inventory.SubmitFightingMinigameResult(wasSuccessful);
-
-            if (wasSuccessful == false && _inventory.FishingLifecycleState == FishingLifecycleState.Fighting)
-            {
-                UpdateFightingMinigameState(FishingLifecycleState.Fighting);
-            }
         }
     }
 }

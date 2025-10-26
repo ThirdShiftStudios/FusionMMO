@@ -279,6 +279,18 @@ namespace TPSBR
             RaiseLifecycleStateChanged(FishingLifecycleState.Ready);
         }
 
+        internal void HandleFightingFailed()
+        {
+            UseLayer layer = GetUseLayer();
+
+            if (layer?.FishingPoleUseState != null && layer.FishingPoleUseState.TryCancelActiveCast(this) == true)
+            {
+                return;
+            }
+
+            RaiseLifecycleStateChanged(FishingLifecycleState.Ready);
+        }
+
         internal void NotifyFightingPhaseEntered()
         {
             RaiseLifecycleStateChanged(FishingLifecycleState.Fighting);

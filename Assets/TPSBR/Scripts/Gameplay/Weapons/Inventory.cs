@@ -128,6 +128,7 @@ namespace TPSBR
         [SerializeField] private Transform _woodAxeUnequippedParent;
         [SerializeField] private Transform _fishingPoleEquippedParent;
         [SerializeField] private Transform _fishingPoleUnequippedParent;
+        [SerializeField] private Vector2Int _fightingSuccessHitRange = new Vector2Int(2, 4);
 
         [Header("Audio")] [SerializeField] private Transform _fireAudioEffectsRoot;
 
@@ -151,6 +152,8 @@ namespace TPSBR
         [Networked] private NetworkBool _isWoodAxeEquipped { get; set; }
         [Networked] private FishingPoleWeapon _fishingPole { get; set; }
         [Networked] private NetworkBool _isFishingPoleEquipped { get; set; }
+        [Networked] private byte _fightingHitsRequired { get; set; }
+        [Networked] private byte _fightingHitsSucceeded { get; set; }
 
         private Health _health;
         private Character _character;
@@ -197,6 +200,8 @@ namespace TPSBR
 
         public bool IsFishingPoleEquipped => _localFishingPoleEquipped;
         public FishingLifecycleState FishingLifecycleState => _fishingLifecycleState;
+        public int FightingMinigameHitsRequired => Mathf.Max(1, _fightingHitsRequired);
+        public int FightingMinigameHitsSucceeded => _fightingHitsSucceeded;
 
         // PUBLIC METHODS
 
@@ -1127,6 +1132,10 @@ namespace TPSBR
                 HandleGoldChanged(_gold);
                 return;
             }
+
+            int initialHits = Mathf.Clamp(Mathf.Max(1, _fightingSuccessHitRange.x), 1, byte.MaxValue);
+            _fightingHitsRequired = (byte)initialHits;
+            _fightingHitsSucceeded = 0;
 
             if (restoredFromCloud == true)
             {
@@ -3986,6 +3995,27 @@ namespace TPSBR
             weapon.LifecycleStateChanged -= OnFishingLifecycleStateChanged;
         }
 
+        private void PrepareFightingMinigame()
+        {
+            if (HasStateAuthority == false)
+                return;
+
+            int minHits = Mathf.Max(1, _fightingSuccessHitRange.x);
+            int maxHits = Mathf.Max(minHits, _fightingSuccessHitRange.y);
+            maxHits = Mathf.Clamp(maxHits, 1, byte.MaxValue);
+            minHits = Mathf.Clamp(minHits, 1, maxHits);
+            _fightingHitsRequired = (byte)UnityEngine.Random.Range(minHits, maxHits + 1);
+            _fightingHitsSucceeded = 0;
+        }
+
+        private void ResetFightingMinigameProgress()
+        {
+            if (HasStateAuthority == false)
+                return;
+
+            _fightingHitsSucceeded = 0;
+        }
+
         private void HandleHookSetMinigameResultInternal(bool wasSuccessful)
         {
             var fishingPole = _fishingPole ?? _localFishingPole;
@@ -3995,10 +4025,12 @@ namespace TPSBR
 
             if (wasSuccessful == true)
             {
+                PrepareFightingMinigame();
                 fishingPole.EnterFightingPhase();
             }
             else
             {
+                ResetFightingMinigameProgress();
                 fishingPole.HandleHookSetFailed();
             }
         }
@@ -4012,7 +4044,24 @@ namespace TPSBR
 
             if (wasSuccessful == true)
             {
+                int requiredHits = Mathf.Max(1, _fightingHitsRequired);
+                if (_fightingHitsSucceeded < byte.MaxValue)
+                {
+                    _fightingHitsSucceeded++;
+                }
+
+                if (_fightingHitsSucceeded < requiredHits)
+                {
+                    return;
+                }
+
+                ResetFightingMinigameProgress();
                 fishingPole.EnterCatchPhase();
+            }
+            else
+            {
+                ResetFightingMinigameProgress();
+                fishingPole.HandleFightingFailed();
             }
         }
 

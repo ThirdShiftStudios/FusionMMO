@@ -52,6 +52,7 @@ public class SliderMinigame : MonoBehaviour
     [SerializeField] SuccessHitAction onSuccessHitAction;
     [SerializeField] string successHitBarAnim;
     [SerializeField] int maxWins = 99;
+    [SerializeField] int _requiredSuccessHits = 1;
     [SerializeField] bool resetToStartOnSuccessHit = true;
 
     [Header("Interactions")]
@@ -163,6 +164,12 @@ public class SliderMinigame : MonoBehaviour
     static bool InitializeAllMinigames;
 
     public event Action<bool> MinigameFinished;
+
+    public int SuccessHitsRequired
+    {
+        get => Mathf.Max(1, _requiredSuccessHits);
+        set => _requiredSuccessHits = Mathf.Max(1, value);
+    }
 
     bool resultNotified;
 
@@ -504,10 +511,16 @@ public class SliderMinigame : MonoBehaviour
     {
         successHits++;
 
+        int targetSuccessHits = SuccessHitsRequired;
+        bool hasReachedTarget = successHits >= targetSuccessHits;
+
         switch (onSuccessHitAction)
         {
             case SuccessHitAction.EndMinigame:
-                isMinigameFinished = true;
+                if (hasReachedTarget)
+                {
+                    isMinigameFinished = true;
+                }
                 break;
 
             case SuccessHitAction.IncreaseSpeedAndReset:
@@ -531,8 +544,11 @@ public class SliderMinigame : MonoBehaviour
                     if (successHits == maxWins)
                     {
                         isMinigameFinished = true;
+                        hasReachedTarget = true;
                     }
                 }
+
+                isMinigameFinished = hasReachedTarget;
 
                 break;
 
@@ -546,7 +562,10 @@ public class SliderMinigame : MonoBehaviour
         if (_winCallbackWithResults != null)
             _winCallbackWithResults.Invoke(successHits);
 
-        NotifyMinigameFinished(true);
+        if (hasReachedTarget)
+        {
+            NotifyMinigameFinished(true);
+        }
 
         if (PlaySounds && SuccessAreaHitSfx != null)
             SuccessAreaHitSfx.Play();
