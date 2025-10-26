@@ -39,6 +39,9 @@ namespace TPSBR
         private float _waitingBobTimer;
         private bool _waitingBobOffsetApplied;
 
+        [Networked(OnChanged = nameof(OnHookSetSuccessZoneStateChanged))]
+        private NetworkBool NetworkedHookSetSuccessZoneActive { get; set; }
+
         public event Action<FishingLifecycleState> LifecycleStateChanged;
 
         public override void Spawned()
@@ -257,7 +260,7 @@ namespace TPSBR
             _waitingForPrimaryRelease = false;
             ResetHoldTracking();
             _isInWaitingPhase = true;
-            _isHookSetSuccessZoneActive = false;
+            SetHookSetSuccessZoneState(false);
             ResetWaitingBobVisuals();
 
             RaiseLifecycleStateChanged(FishingLifecycleState.Waiting);
@@ -496,6 +499,29 @@ namespace TPSBR
         {
             bool shouldActivate = isInSuccessZone && _isInWaitingPhase;
 
+            if (HasStateAuthority == true)
+            {
+                if (NetworkedHookSetSuccessZoneActive != shouldActivate)
+                {
+                    NetworkedHookSetSuccessZoneActive = shouldActivate;
+                }
+            }
+
+            ApplyHookSetSuccessZoneState(shouldActivate);
+        }
+
+        private static void OnHookSetSuccessZoneStateChanged(Changed<FishingPoleWeapon> changed)
+        {
+            changed.Behaviour.OnHookSetSuccessZoneStateChanged();
+        }
+
+        private void OnHookSetSuccessZoneStateChanged()
+        {
+            ApplyHookSetSuccessZoneState(NetworkedHookSetSuccessZoneActive);
+        }
+
+        private void ApplyHookSetSuccessZoneState(bool shouldActivate)
+        {
             if (_isHookSetSuccessZoneActive == shouldActivate)
             {
                 return;
@@ -518,7 +544,7 @@ namespace TPSBR
             }
 
             _isInWaitingPhase = false;
-            _isHookSetSuccessZoneActive = false;
+            SetHookSetSuccessZoneState(false);
             ResetWaitingBobVisuals();
         }
 
@@ -542,7 +568,7 @@ namespace TPSBR
                 return;
             }
 
-            if (_isInWaitingPhase == false || _isHookSetSuccessZoneActive == false)
+            if (_isHookSetSuccessZoneActive == false)
             {
                 if (_waitingBobOffsetApplied == true)
                 {

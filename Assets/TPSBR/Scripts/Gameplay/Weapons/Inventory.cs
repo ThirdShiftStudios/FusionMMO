@@ -826,6 +826,32 @@ namespace TPSBR
             }
 
             fishingPole.SetHookSetSuccessZoneState(isInSuccessZone);
+
+            if (HasStateAuthority == true)
+            {
+                return;
+            }
+
+            RPC_SetHookSetSuccessZoneState(isInSuccessZone);
+        }
+
+        [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
+        private void RPC_SetHookSetSuccessZoneState(bool isInSuccessZone)
+        {
+            var fishingPole = _fishingPole ?? _localFishingPole;
+
+            if (fishingPole == null)
+            {
+                return;
+            }
+
+            if (_isHookSetSuccessZoneActive == isInSuccessZone)
+            {
+                return;
+            }
+
+            _isHookSetSuccessZoneActive = isInSuccessZone;
+            fishingPole.SetHookSetSuccessZoneState(isInSuccessZone);
         }
 
         public void SetCurrentWeapon(int slot)
