@@ -773,6 +773,21 @@ namespace TPSBR
             }
         }
 
+        public void SubmitHookSetMinigameResult(bool wasSuccessful)
+        {
+            if (_localFishingPole == null)
+                return;
+
+            if (HasStateAuthority == true)
+            {
+                HandleHookSetMinigameResultInternal(wasSuccessful);
+            }
+            else
+            {
+                RPC_SubmitHookSetMinigameResult(wasSuccessful);
+            }
+        }
+
         public void SetCurrentWeapon(int slot)
         {
             slot = Mathf.Clamp(slot, 0, _hotbar.Length - 1);
@@ -1575,6 +1590,12 @@ namespace TPSBR
         private void RPC_RequestToggleFishingPole()
         {
             ToggleFishingPoleInternal();
+        }
+
+        [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
+        private void RPC_SubmitHookSetMinigameResult(bool wasSuccessful)
+        {
+            HandleHookSetMinigameResultInternal(wasSuccessful);
         }
 
         private byte AddItemInternal(ItemDefinition definition, byte quantity, NetworkString<_32> configurationHash)
@@ -3940,6 +3961,23 @@ namespace TPSBR
                 return;
 
             weapon.LifecycleStateChanged -= OnFishingLifecycleStateChanged;
+        }
+
+        private void HandleHookSetMinigameResultInternal(bool wasSuccessful)
+        {
+            var fishingPole = _fishingPole ?? _localFishingPole;
+
+            if (fishingPole == null)
+                return;
+
+            if (wasSuccessful == true)
+            {
+                fishingPole.EnterFightingPhase();
+            }
+            else
+            {
+                fishingPole.HandleHookSetFailed();
+            }
         }
 
         private void UpdateLocalFishingPoleEquipped(bool isEquipped)

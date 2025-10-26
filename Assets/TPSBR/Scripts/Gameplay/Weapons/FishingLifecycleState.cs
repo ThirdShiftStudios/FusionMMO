@@ -10,5 +10,6 @@ namespace TPSBR
         Casting,
         LureInFlight,
         Waiting,
+        Fighting,
     }
 }

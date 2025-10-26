@@ -162,6 +162,10 @@ public class SliderMinigame : MonoBehaviour
     bool Initialize;
     static bool InitializeAllMinigames;
 
+    public event Action<bool> MinigameFinished;
+
+    bool resultNotified;
+
     static List<SliderMinigameReward> _possibleRewards = new List<SliderMinigameReward>();
     List<GameObject> CachedRewards = new List<GameObject>();
 
@@ -208,6 +212,8 @@ public class SliderMinigame : MonoBehaviour
             Debug.Log(gameObject.name + " started minigame");
             SetSuccessHitArea();
 
+            resultNotified = false;
+
             if (HaveWinCounter)
                 WinCounterTextComponent.text = "0" + WinAmountAfterText;
 
@@ -252,6 +258,8 @@ public class SliderMinigame : MonoBehaviour
         // When all tries are depleted or on failed hit, start closing delay
         if (isMinigameFinished)
         {
+            NotifyMinigameFinished(result);
+
             if (ShowResultScreen)
             {
                 MainItemAnimator.SetBool("Finished", true);
@@ -350,6 +358,19 @@ public class SliderMinigame : MonoBehaviour
         _possibleRewards.Add(reward);
 
         isMinigameRunning = Initialize = true;
+    }
+
+    public void ForceStop()
+    {
+        isMinigameRunning = false;
+        startCloseDelay = false;
+        isMinigameFinished = false;
+        isFinished = true;
+        Initialize = false;
+        InitializeAllMinigames = false;
+        timer = 0f;
+        closingTimer = 0f;
+        resultNotified = false;
     }
 
     public static void G_Begin(SliderMinigameReward reward = null)
@@ -525,6 +546,8 @@ public class SliderMinigame : MonoBehaviour
         if (_winCallbackWithResults != null)
             _winCallbackWithResults.Invoke(successHits);
 
+        NotifyMinigameFinished(true);
+
         if (PlaySounds && SuccessAreaHitSfx != null)
             SuccessAreaHitSfx.Play();
 
@@ -544,6 +567,8 @@ public class SliderMinigame : MonoBehaviour
 
         if (ShowParticles && FailedAreaHitParticles != null)
             FailedAreaHitParticles.Play();
+
+        NotifyMinigameFinished(false);
     }
 
     #endregion
@@ -725,7 +750,7 @@ public class SliderMinigame : MonoBehaviour
     void ResetTimers() => timer = closingTimer = 0f;
 
     void ResetStates() =>
-        isMinigameFinished = startCloseDelay = isResultScreenShown = sliderDirectionDown = isOnTextShown = isOnSuccessArea = isStartDelayed = isFinished = false;
+        isMinigameFinished = startCloseDelay = isResultScreenShown = sliderDirectionDown = isOnTextShown = isOnSuccessArea = isStartDelayed = isFinished = resultNotified = false;
 
     void ResetBar()
     {
@@ -829,5 +854,14 @@ public class SliderMinigame : MonoBehaviour
             else
                 Bar.value -= Time.unscaledDeltaTime * currentSpeed;
         }
+    }
+
+    void NotifyMinigameFinished(bool didSucceed)
+    {
+        if (resultNotified)
+            return;
+
+        resultNotified = true;
+        MinigameFinished?.Invoke(didSucceed);
     }
 }

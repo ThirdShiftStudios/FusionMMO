@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using TMPro;
 using TPSBR;
 using UnityEngine;
@@ -12,6 +13,7 @@ namespace TPSBR.UI
         [SerializeField] private SliderMinigame _hookSetMinigame;
 
         private Inventory _inventory;
+        private bool _isHookSetMinigameVisible;
 
         internal void Bind(Inventory inventory)
         {
@@ -33,17 +35,38 @@ namespace TPSBR.UI
                 _inventory.FishingPoleEquippedChanged += OnFishingPoleEquippedChanged;
                 _inventory.FishingLifecycleStateChanged += OnFishingLifecycleStateChanged;
                 UpdateVisibility(_inventory.IsFishingPoleEquipped);
-                UpdateLifecycleLabel(_inventory.IsFishingPoleEquipped ? _inventory.FishingLifecycleState : FishingLifecycleState.Inactive);
+                var initialState = _inventory.IsFishingPoleEquipped ? _inventory.FishingLifecycleState : FishingLifecycleState.Inactive;
+                UpdateLifecycleLabel(initialState);
+                UpdateHookSetMinigameState(initialState);
             }
             else
             {
                 UpdateVisibility(false);
                 UpdateLifecycleLabel(FishingLifecycleState.Inactive);
+                UpdateHookSetMinigameState(FishingLifecycleState.Inactive);
+            }
+        }
+
+        protected override void OnInitialize()
+        {
+            base.OnInitialize();
+
+            if (_hookSetMinigame != null)
+            {
+                _hookSetMinigame.gameObject.SetActive(false);
+                _hookSetMinigame.MinigameFinished += OnHookSetMinigameFinished;
             }
         }
 
         protected override void OnDeinitialize()
         {
+            if (_hookSetMinigame != null)
+            {
+                _hookSetMinigame.ForceStop();
+                _hookSetMinigame.MinigameFinished -= OnHookSetMinigameFinished;
+            }
+
+            HideHookSetMinigame();
             Bind(null);
             base.OnDeinitialize();
         }
@@ -51,12 +74,15 @@ namespace TPSBR.UI
         private void OnFishingPoleEquippedChanged(bool isEquipped)
         {
             UpdateVisibility(isEquipped);
-            UpdateLifecycleLabel(isEquipped == true && _inventory != null ? _inventory.FishingLifecycleState : FishingLifecycleState.Inactive);
+            var state = isEquipped == true && _inventory != null ? _inventory.FishingLifecycleState : FishingLifecycleState.Inactive;
+            UpdateLifecycleLabel(state);
+            UpdateHookSetMinigameState(state);
         }
 
         private void OnFishingLifecycleStateChanged(FishingLifecycleState state)
         {
             UpdateLifecycleLabel(state);
+            UpdateHookSetMinigameState(state);
         }
 
         private void UpdateVisibility(bool shouldBeVisible)
@@ -71,6 +97,7 @@ namespace TPSBR.UI
             else if (IsOpen == true)
             {
                 Close();
+                HideHookSetMinigame();
             }
         }
 
@@ -88,10 +115,57 @@ namespace TPSBR.UI
                 FishingLifecycleState.Casting      => "Casting",
                 FishingLifecycleState.LureInFlight => "Line In Flight",
                 FishingLifecycleState.Waiting      => "Waiting",
+                FishingLifecycleState.Fighting     => "Fighting",
                 _                                  => state.ToString(),
             };
 
             _lifecycleLabel.text = $"Fishing: {status}";
+        }
+
+        private void UpdateHookSetMinigameState(FishingLifecycleState state)
+        {
+            if (_hookSetMinigame == null)
+            {
+                return;
+            }
+
+            if (state == FishingLifecycleState.Waiting)
+            {
+                if (_isHookSetMinigameVisible == false)
+                {
+                    _hookSetMinigame.gameObject.SetActive(true);
+                    _hookSetMinigame.Begin(new List<SliderMinigameReward>());
+                    _isHookSetMinigameVisible = true;
+                }
+            }
+            else
+            {
+                HideHookSetMinigame();
+            }
+        }
+
+        private void HideHookSetMinigame()
+        {
+            if (_hookSetMinigame == null || _isHookSetMinigameVisible == false)
+            {
+                return;
+            }
+
+            _hookSetMinigame.ForceStop();
+            _hookSetMinigame.gameObject.SetActive(false);
+            _isHookSetMinigameVisible = false;
+        }
+
+        private void OnHookSetMinigameFinished(bool wasSuccessful)
+        {
+            HideHookSetMinigame();
+
+            if (_inventory == null)
+            {
+                return;
+            }
+
+            _inventory.SubmitHookSetMinigameResult(wasSuccessful);
         }
     }
 }
