@@ -401,6 +401,8 @@ MonoBehaviour:
     Clip: {fileID: 3094330708855449807, guid: 727221ebde513dc40b76ac9e96a2e46b, type: 3}
     Speed: 1
     IsLooping: 1
+  _blendInDuration: 0.1
+  _blendOutDuration: 0.1
 --- !u!1 &2099819015873955679
 GameObject:
   m_ObjectHideFlags: 0
@@ -697,6 +699,37 @@ MonoBehaviour:
     Clip: {fileID: 8993902097722301239, guid: b3c6c341227c1c04bb1dc8b3203dfbe7, type: 3}
     Speed: 1
     IsLooping: 0
+--- !u!1 &5141887335572224402
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1292528308003204138}
+  m_Layer: 0
+  m_Name: CaughtFishTransform
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1292528308003204138
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5141887335572224402}
+  serializedVersion: 2
+  m_LocalRotation: {x: -1.4210855e-14, y: -1, z: 7.402919e-15, w: 0.0000029504295}
+  m_LocalPosition: {x: 0, y: 0, z: 3}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 5265108563253862392}
+  m_LocalEulerAnglesHint: {x: 0, y: -180, z: 0}
 --- !u!1 &5759879125837889970
 GameObject:
   m_ObjectHideFlags: 0
@@ -2264,6 +2297,10 @@ PrefabInstance:
       propertyPath: _thirdPersonView.HeadTransform
       value: 
       objectReference: {fileID: 3538635313356168612}
+    - target: {fileID: 57946675724828624, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
+      propertyPath: _thirdPersonView.FishingCatchCameraTransform
+      value: 
+      objectReference: {fileID: 1292528308003204138}
     - target: {fileID: 82801286784158879, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
       propertyPath: Flags
       value: 1
@@ -3002,6 +3039,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 8847045542829627438, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
       insertIndex: -1
       addedObject: {fileID: 5192353451144232422}
+    - targetCorrespondingSourceObject: {fileID: 1994670034043224433, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1292528308003204138}
     - targetCorrespondingSourceObject: {fileID: 6007643176418695006, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
       insertIndex: 2
       addedObject: {fileID: 7923445001256126210}
@@ -3220,6 +3260,11 @@ Transform:
 --- !u!4 &5049831846904921630 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1489436706626510999, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
+  m_PrefabInstance: {fileID: 5962503691769372297}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &5265108563253862392 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 1994670034043224433, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
   m_PrefabInstance: {fileID: 5962503691769372297}
   m_PrefabAsset: {fileID: 0}
 --- !u!114 &5828649028299758170 stripped
