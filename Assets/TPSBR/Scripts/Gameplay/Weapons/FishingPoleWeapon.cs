@@ -424,6 +424,27 @@ namespace TPSBR
         private void RaiseLifecycleStateChanged(FishingLifecycleState state)
         {
             LifecycleStateChanged?.Invoke(state);
+
+            if (HasStateAuthority == false)
+                return;
+
+            NetworkObject networkObject = Object;
+
+            if (networkObject == null || networkObject.HasInputAuthority == true)
+                return;
+
+            PlayerRef inputAuthority = networkObject.InputAuthority;
+
+            if (inputAuthority.IsValid == false)
+                return;
+
+            RPC_ReportLifecycleStateChanged(state);
+        }
+
+        [Rpc(RpcSources.StateAuthority, RpcTargets.InputAuthority)]
+        private void RPC_ReportLifecycleStateChanged(FishingLifecycleState state)
+        {
+            LifecycleStateChanged?.Invoke(state);
         }
 
         private void ResolveRenderers()
