@@ -435,7 +435,7 @@ namespace TPSBR
 
             PlayerRef inputAuthority = networkObject.InputAuthority;
 
-            if (inputAuthority.IsValid == false)
+            if (inputAuthority == PlayerRef.None)
                 return;
 
             RPC_ReportLifecycleStateChanged(state);
