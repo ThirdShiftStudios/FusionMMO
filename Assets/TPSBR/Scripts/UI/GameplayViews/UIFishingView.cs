@@ -9,6 +9,7 @@ namespace TPSBR.UI
         public const string ResourcePath = "UI/GameplayViews/UIFishingView";
 
         [SerializeField] private TextMeshProUGUI _lifecycleLabel;
+        [SerializeField] private SliderMinigame _hookSetMinigame;
 
         private Inventory _inventory;
 
