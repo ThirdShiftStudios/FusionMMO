@@ -217,7 +217,7 @@ namespace TPSBR.UI
         private void OnHookSetMinigameFinished(bool wasSuccessful)
         {
             HideHookSetMinigame();
-
+            Debug.Log($"OnHookSetMinigameFinished Success: {wasSuccessful}");
             if (_inventory == null)
             {
                 return;
@@ -228,6 +228,7 @@ namespace TPSBR.UI
 
         private void OnFightingMinigameFinished(bool wasSuccessful)
         {
+            Debug.Log($"OnFightingMinigameFinished Success: {wasSuccessful}");
             HideFightingMinigame();
 
             if (_inventory == null)
