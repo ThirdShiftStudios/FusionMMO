@@ -4047,12 +4047,7 @@ namespace TPSBR
                 int requiredHits = Mathf.Max(1, _fightingHitsRequired);
                 if (_fightingHitsSucceeded < byte.MaxValue)
                 {
-                    _fightingHitsSucceeded++;
-                }
-
-                if (_fightingHitsSucceeded < requiredHits)
-                {
-                    return;
+                    _fightingHitsSucceeded = (byte)Mathf.Min(_fightingHitsSucceeded + 1, requiredHits);
                 }
 
                 ResetFightingMinigameProgress();
