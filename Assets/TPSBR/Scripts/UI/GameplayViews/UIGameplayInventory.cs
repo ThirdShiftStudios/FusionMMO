@@ -714,6 +714,7 @@ namespace TPSBR.UI
 
                 specialSlots.Add(slot);
             }
+        }
 
         private void RefreshInventoryBinding()
         {
@@ -738,11 +739,12 @@ namespace TPSBR.UI
             _inventoryPresenter?.Bind(_boundInventory);
             _hotbar?.Bind(_boundInventory);
         }
+
         private void RefreshCharacterDetails()
         {
-            if(_boundAgent == null)
+            if (_boundAgent == null)
                 return;
-            
+
             _characterDetails.UpdateCharacterDetails(Global.PlayerService.PlayerData);
             _characterDetails.UpdateStats(_boundAgent.Stats);
             _characterDetails.UpdateProfessions(_boundAgent.Professions);
