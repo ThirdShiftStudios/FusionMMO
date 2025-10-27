@@ -599,6 +599,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5978e2868e2fb149b1c151baa6b6a3a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _drinkState: {fileID: 0}
 --- !u!1 &3123258308059616505
 GameObject:
   m_ObjectHideFlags: 0
@@ -1317,6 +1318,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8699027571996696541}
+  - component: {fileID: 3470566168271429713}
   m_Layer: 8
   m_Name: BeerDrink
   m_TagString: Untagged
@@ -1339,6 +1341,22 @@ Transform:
   m_Children: []
   m_Father: {fileID: 7375036221829558348}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &3470566168271429713
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8762732681256332765}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3d84b6e85b4586148b626c742d7da694, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _node:
+    Clip: {fileID: 7400000, guid: 5ac107d2fcf921744a11069d9f343b95, type: 2}
+    Speed: 1
+    IsLooping: 0
 --- !u!1 &9213887584847571045
 GameObject:
   m_ObjectHideFlags: 0

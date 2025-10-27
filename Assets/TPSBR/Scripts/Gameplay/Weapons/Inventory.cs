@@ -1631,7 +1631,7 @@ namespace TPSBR
                     category = ESlotCategory.Weapon;
                     return true;
 
-                case int consumableSlot when consumableSlot >= HOTBAR_FIRST_CONSUMABLE_SLOT && consumableSlot <= HOTBAR_LAST_CONSUMABLE_SLOT:
+                case int consumableSlot when consumableSlot >= HOTBAR_FIRST_CONSUMABLE_SLOT && consumableSlot <= HOTBAR_THIRD_CONSUMABLE_SLOT:
                     category = ESlotCategory.Consumable;
                     return true;
 

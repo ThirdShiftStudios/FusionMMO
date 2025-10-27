@@ -1,21 +1,11 @@
-using System.Collections;
-using System.Collections.Generic;
+using Fusion.Addons.AnimationController;
 using UnityEngine;
 
 namespace TPSBR
 {
-    public class BeerUseState : MonoBehaviour
+    public class BeerUseState : MixerState
     {
-        // Start is called before the first frame update
-        void Start()
-        {
-        
-        }
+        [SerializeField] BeerDrinkState _drinkState;
 
-        // Update is called once per frame
-        void Update()
-        {
-        
-        }
     }
 }
