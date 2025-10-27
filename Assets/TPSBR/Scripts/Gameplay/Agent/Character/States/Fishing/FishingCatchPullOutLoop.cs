@@ -64,7 +64,14 @@ namespace TPSBR
         private void EnsureWeaponReference(bool attachFish = false)
         {
             if (_weapon != null)
+            {
+                if (attachFish == true && _fishTransform != null)
+                {
+                    _weapon.AttachFishToCatchTransform(_fishTransform);
+                }
+
                 return;
+            }
 
             Character character = GetComponentInParent<Character>();
             Agent agent = character != null ? character.Agent : null;
