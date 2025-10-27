@@ -41,9 +41,9 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 329165648373067622}
-  - component: {fileID: 6835525196975420034}
   - component: {fileID: 6709937469244447433}
-  - component: {fileID: 7840383114913675870}
+  - component: {fileID: 5248870388869438440}
+  - component: {fileID: 9106239132037519536}
   m_Layer: 0
   m_Name: Consumable.Beer_1
   m_TagString: Untagged
@@ -67,29 +67,6 @@ Transform:
   - {fileID: 8297281197919305209}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &6835525196975420034
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8529221992274717449}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f3c0c2a1c0a34f3f8fcb1e003c6962b1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _weaponDefinition: {fileID: 11400000, guid: e3336b4b439604b42ba392e6aafd001f, type: 2}
-  _weaponSize: 3
-  _validOnlyWithAmmo: 0
-  _leftHandTarget: {fileID: 0}
-  _hitType: 0
-  _aimFOV: 0
-  _displayName: 
-  _description: 
-  _nameShortcut: 
-  _icon: {fileID: 0}
-  _overrideHealAmount: 0
 --- !u!114 &6709937469244447433
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -107,10 +84,10 @@ MonoBehaviour:
   Flags: 262145
   NestedObjects: []
   NetworkedBehaviours:
-  - {fileID: 6835525196975420034}
-  - {fileID: 7840383114913675870}
+  - {fileID: 5248870388869438440}
+  - {fileID: 9106239132037519536}
   ForceRemoteRenderTimeframe: 0
---- !u!114 &7840383114913675870
+--- !u!114 &5248870388869438440
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -119,14 +96,33 @@ MonoBehaviour:
   m_GameObject: {fileID: 8529221992274717449}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 158639473, guid: e725a070cec140c4caffb81624c8c787, type: 3}
+  m_Script: {fileID: 11500000, guid: 30629d68235b4f2478dedddd7e4852d8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _stateAuthorityChangeErrorCorrectionDelta: 0
-  SyncScale: 0
-  SyncParent: 0
-  _autoAOIOverride: 1
-  DisableSharedModeInterpolation: 0
+  _weaponDefinition: {fileID: 11400000, guid: e3336b4b439604b42ba392e6aafd001f, type: 2}
+  _weaponSize: 0
+  _validOnlyWithAmmo: 0
+  _leftHandTarget: {fileID: 0}
+  _hitType: 0
+  _aimFOV: 0
+  _displayName: 
+  _description: 
+  _nameShortcut: 
+  _icon: {fileID: 0}
+--- !u!114 &9106239132037519536
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8529221992274717449}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ecff45261f75b014fb16db195df51219, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _stateAuthorityChangeErrorCorrectionDelta: 0.15
+  _positionSource: {fileID: 0}
 --- !u!1001 &7027943960126209565
 PrefabInstance:
   m_ObjectHideFlags: 0
