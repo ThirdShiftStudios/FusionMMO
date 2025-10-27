@@ -26,7 +26,7 @@ namespace TPSBR
         {
             base.OnActivate();
             SuppressMovement();
-            _weapon?.AttachFishToCatchTransform(_fishTransform);
+            EnsureWeaponReference(attachFish: true);
         }
 
         protected override void OnFixedUpdate()
@@ -49,6 +49,8 @@ namespace TPSBR
 
         private void SuppressMovement()
         {
+            EnsureWeaponReference();
+
             if (_weapon?.Character?.CharacterController is not KCC kcc)
                 return;
 
@@ -57,6 +59,27 @@ namespace TPSBR
             kcc.SetKinematicVelocity(Vector3.zero);
             kcc.SetExternalVelocity(Vector3.zero);
             kcc.SetExternalAcceleration(Vector3.zero);
+        }
+
+        private void EnsureWeaponReference(bool attachFish = false)
+        {
+            if (_weapon != null)
+                return;
+
+            Character character = GetComponentInParent<Character>();
+            Agent agent = character != null ? character.Agent : null;
+            Inventory inventory = agent != null ? agent.Inventory : null;
+            FishingPoleWeapon resolvedWeapon = inventory != null ? inventory.CurrentWeapon as FishingPoleWeapon : null;
+
+            if (resolvedWeapon == null)
+                return;
+
+            _weapon = resolvedWeapon;
+
+            if (attachFish == true && _fishTransform != null)
+            {
+                _weapon.AttachFishToCatchTransform(_fishTransform);
+            }
         }
     }
 }
