@@ -12,6 +12,7 @@ namespace TPSBR
         HeavyAttack,
         Ability,
         FishingCast,
+        BeerDrink,
     }
 
     public readonly struct WeaponUseRequest

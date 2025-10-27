@@ -11,6 +11,7 @@ namespace TPSBR
 
         public StaffUseState StaffAttack => staffAttack;
         public FishingPoleUseState FishingPoleUseState  => fishingPoleUse;
+        public BeerUseState BeerUseState => beerUse;
 
         // PRIVATE MEMBERS
 
@@ -19,6 +20,8 @@ namespace TPSBR
         private StaffUseState staffAttack;
         [SerializeField]
         private FishingPoleUseState fishingPoleUse;
+        [SerializeField]
+        private BeerUseState beerUse;
 
         public bool TryHandleUse(Weapon weapon, in WeaponUseRequest request)
         {
