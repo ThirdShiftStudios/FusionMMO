@@ -59,6 +59,7 @@ namespace TPSBR.UI
             {
                 _hookSetMinigame.gameObject.SetActive(false);
                 _hookSetMinigame.MinigameFinished += OnHookSetMinigameFinished;
+                _hookSetMinigame.SuccessZoneStateChanged += OnHookSetSuccessZoneStateChanged;
             }
 
             if (_fightingMinigame != null)
@@ -74,6 +75,7 @@ namespace TPSBR.UI
             {
                 _hookSetMinigame.ForceStop();
                 _hookSetMinigame.MinigameFinished -= OnHookSetMinigameFinished;
+                _hookSetMinigame.SuccessZoneStateChanged -= OnHookSetSuccessZoneStateChanged;
             }
 
             if (_fightingMinigame != null)
@@ -155,6 +157,7 @@ namespace TPSBR.UI
                     _hookSetMinigame.gameObject.SetActive(true);
                     _hookSetMinigame.Begin(new List<SliderMinigameReward>());
                     _isHookSetMinigameVisible = true;
+                    _inventory?.UpdateHookSetSuccessZoneState(false);
                 }
             }
             else
@@ -200,6 +203,7 @@ namespace TPSBR.UI
             _hookSetMinigame.ForceStop();
             _hookSetMinigame.gameObject.SetActive(false);
             _isHookSetMinigameVisible = false;
+            _inventory?.UpdateHookSetSuccessZoneState(false);
         }
 
         private void HideFightingMinigame()
@@ -217,6 +221,7 @@ namespace TPSBR.UI
         private void OnHookSetMinigameFinished(bool wasSuccessful)
         {
             HideHookSetMinigame();
+            _inventory?.UpdateHookSetSuccessZoneState(false);
             Debug.Log($"OnHookSetMinigameFinished Success: {wasSuccessful}");
             if (_inventory == null)
             {
@@ -224,6 +229,11 @@ namespace TPSBR.UI
             }
 
             _inventory.SubmitHookSetMinigameResult(wasSuccessful);
+        }
+
+        private void OnHookSetSuccessZoneStateChanged(bool isInSuccessZone)
+        {
+            _inventory?.UpdateHookSetSuccessZoneState(isInSuccessZone);
         }
 
         private void OnFightingMinigameFinished(bool wasSuccessful)

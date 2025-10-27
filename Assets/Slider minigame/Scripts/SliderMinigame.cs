@@ -132,6 +132,7 @@ public class SliderMinigame : MonoBehaviour
     /// Register to this event to receive retrieved items from this minigame
     /// </summary>
     public event ItemsWin OnMinigameItemsWin;
+    public event Action<bool> SuccessZoneStateChanged;
     static Image g_MainPicture;
 
     /// <summary>
@@ -140,6 +141,7 @@ public class SliderMinigame : MonoBehaviour
     int successHits;
     float barWidth, succesRangeWidth, successRangeXOnBar, timer, currentSpeed, closingTimer;
     bool sliderDirectionDown, isOnTextShown, isOnSuccessArea, isStartDelayed, result, isResultScreenShown, startCloseDelay, isSuccessAreaEnterSfxPlayed;
+    bool reportedSuccessZoneState;
 
     /// <summary>
     /// True if this minigame is currently in progress
@@ -244,14 +246,20 @@ public class SliderMinigame : MonoBehaviour
         }
 
         if (isFinished)
+        {
+            NotifySuccessZoneState(false);
             return;
+        }
 
         // Delay before playing Hide animation on Master animator
         if (startCloseDelay)
         {
             closingTimer += Time.unscaledDeltaTime;
             if (closingTimer < CloseDelay)
+            {
+                NotifySuccessZoneState(false);
                 return;
+            }
 
             ResultScreenAnimator.Play("Hide");
             ItemDisplayAnimator.Play("Hide");
@@ -259,6 +267,7 @@ public class SliderMinigame : MonoBehaviour
 
             isFinished = true;
             isMinigameRunning = false;
+            NotifySuccessZoneState(false);
             return;
         }
 
@@ -266,6 +275,8 @@ public class SliderMinigame : MonoBehaviour
         if (isMinigameFinished)
         {
             NotifyMinigameFinished(result);
+
+            NotifySuccessZoneState(false);
 
             if (ShowResultScreen)
             {
@@ -292,7 +303,10 @@ public class SliderMinigame : MonoBehaviour
         {
             timer += Time.unscaledDeltaTime;
             if (timer < StartDelay)
+            {
+                NotifySuccessZoneState(false);
                 return;
+            }
 
             isStartDelayed = true;
         }
@@ -300,6 +314,7 @@ public class SliderMinigame : MonoBehaviour
         MoveBar();
 
         isOnSuccessArea = IsOnSuccessArea();
+        NotifySuccessZoneState(isMinigameRunning && isStartDelayed && isMinigameFinished == false && isOnSuccessArea);
 
         if (isOnSuccessArea && PlaySuccessAreaEnterSfx && !isSuccessAreaEnterSfxPlayed)
         {
@@ -348,6 +363,7 @@ public class SliderMinigame : MonoBehaviour
         _possibleRewards = rewards;
 
         isMinigameRunning = Initialize = true;
+        NotifySuccessZoneState(false);
     }
 
     /// <summary>
@@ -365,6 +381,7 @@ public class SliderMinigame : MonoBehaviour
         _possibleRewards.Add(reward);
 
         isMinigameRunning = Initialize = true;
+        NotifySuccessZoneState(false);
     }
 
     public void ForceStop()
@@ -378,6 +395,7 @@ public class SliderMinigame : MonoBehaviour
         timer = 0f;
         closingTimer = 0f;
         resultNotified = false;
+        NotifySuccessZoneState(false);
     }
 
     public static void G_Begin(SliderMinigameReward reward = null)
@@ -882,5 +900,15 @@ public class SliderMinigame : MonoBehaviour
 
         resultNotified = true;
         MinigameFinished?.Invoke(didSucceed);
+        NotifySuccessZoneState(false);
+    }
+
+    void NotifySuccessZoneState(bool isInSuccessZone)
+    {
+        if (reportedSuccessZoneState == isInSuccessZone)
+            return;
+
+        reportedSuccessZoneState = isInSuccessZone;
+        SuccessZoneStateChanged?.Invoke(isInSuccessZone);
     }
 }

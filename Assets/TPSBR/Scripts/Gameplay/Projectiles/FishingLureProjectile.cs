@@ -9,6 +9,7 @@ namespace TPSBR
         private bool _isAnchoredInWater;
         private bool _applyAnchorOnNextTick;
         private Vector3 _anchorPosition;
+        private Vector3 _visualOffset;
 
         [SerializeField]
         private Transform _lineRendererEndPoint;
@@ -20,6 +21,7 @@ namespace TPSBR
             _isAnchoredInWater = false;
             _applyAnchorOnNextTick = false;
             _anchorPosition = default;
+            _visualOffset = Vector3.zero;
         }
 
         public override void FixedUpdateNetwork()
@@ -28,7 +30,7 @@ namespace TPSBR
             {
                 if (Object != null && Object.IsValid == true)
                 {
-                    transform.position = _anchorPosition;
+                    transform.position = _anchorPosition + _visualOffset;
                 }
 
                 return;
@@ -43,7 +45,7 @@ namespace TPSBR
 
                 if (Object != null && Object.IsValid == true)
                 {
-                    transform.position = _anchorPosition;
+                    transform.position = _anchorPosition + _visualOffset;
                 }
             }
         }
@@ -52,7 +54,7 @@ namespace TPSBR
         {
             if (_isAnchoredInWater == true)
             {
-                transform.position = _anchorPosition;
+                transform.position = _anchorPosition + _visualOffset;
                 return;
             }
 
@@ -69,7 +71,7 @@ namespace TPSBR
             {
                 _anchorPosition = hit.Point;
                 _applyAnchorOnNextTick = true;
-                transform.position = hit.Point;
+                transform.position = hit.Point + _visualOffset;
             }
 
             FishingPoleWeapon weapon = _weapon;
@@ -90,6 +92,17 @@ namespace TPSBR
             _isAnchoredInWater = false;
             _applyAnchorOnNextTick = false;
             _anchorPosition = default;
+            _visualOffset = Vector3.zero;
+        }
+
+        public void SetVisualOffset(Vector3 offset)
+        {
+            _visualOffset = offset;
+
+            if (_isAnchoredInWater == true)
+            {
+                transform.position = _anchorPosition + _visualOffset;
+            }
         }
     }
 }

@@ -187,6 +187,7 @@ namespace TPSBR
         private int _localGold;
         private ChangeDetector _changeDetector;
         private FishingLifecycleState _fishingLifecycleState = FishingLifecycleState.Inactive;
+        private bool _isHookSetSuccessZoneActive;
 
         private static readonly Dictionary<int, Weapon> _weaponPrefabsByDefinitionId = new Dictionary<int, Weapon>();
         private static PickaxeDefinition _cachedFallbackPickaxe;
@@ -806,6 +807,51 @@ namespace TPSBR
             {
                 RPC_SubmitFightingMinigameResult(wasSuccessful);
             }
+        }
+
+        public void UpdateHookSetSuccessZoneState(bool isInSuccessZone)
+        {
+            if (_isHookSetSuccessZoneActive == isInSuccessZone)
+            {
+                return;
+            }
+
+            _isHookSetSuccessZoneActive = isInSuccessZone;
+
+            var fishingPole = _localFishingPole ?? _fishingPole;
+
+            if (fishingPole == null)
+            {
+                return;
+            }
+
+            fishingPole.SetHookSetSuccessZoneState(isInSuccessZone);
+
+            if (HasStateAuthority == true)
+            {
+                return;
+            }
+
+            RPC_SetHookSetSuccessZoneState(isInSuccessZone);
+        }
+
+        [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
+        private void RPC_SetHookSetSuccessZoneState(bool isInSuccessZone)
+        {
+            var fishingPole = _fishingPole ?? _localFishingPole;
+
+            if (fishingPole == null)
+            {
+                return;
+            }
+
+            if (_isHookSetSuccessZoneActive == isInSuccessZone)
+            {
+                return;
+            }
+
+            _isHookSetSuccessZoneActive = isInSuccessZone;
+            fishingPole.SetHookSetSuccessZoneState(isInSuccessZone);
         }
 
         public void SetCurrentWeapon(int slot)
@@ -4018,6 +4064,8 @@ namespace TPSBR
 
         private void HandleHookSetMinigameResultInternal(bool wasSuccessful)
         {
+            UpdateHookSetSuccessZoneState(false);
+
             var fishingPole = _fishingPole ?? _localFishingPole;
 
             if (fishingPole == null)
@@ -4067,6 +4115,7 @@ namespace TPSBR
                 if (isEquipped == false)
                 {
                     SetFishingLifecycleState(FishingLifecycleState.Inactive);
+                    UpdateHookSetSuccessZoneState(false);
                 }
 
                 return;
@@ -4082,6 +4131,7 @@ namespace TPSBR
             else
             {
                 SetFishingLifecycleState(FishingLifecycleState.Inactive);
+                UpdateHookSetSuccessZoneState(false);
             }
         }
 
