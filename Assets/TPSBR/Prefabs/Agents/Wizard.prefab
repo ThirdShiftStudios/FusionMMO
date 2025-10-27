@@ -2128,6 +2128,10 @@ PrefabInstance:
       propertyPath: m_Materials.Array.data[0]
       value: 
       objectReference: {fileID: 2100000, guid: 7cb618b41e7cdca4da680967155ae263, type: 2}
+    - target: {fileID: 5866666021909216657, guid: faea6d6bfcf2f684387c00a94dd1de07, type: 3}
+      propertyPath: m_ApplyRootMotion
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6170896947653023719, guid: faea6d6bfcf2f684387c00a94dd1de07, type: 3}
       propertyPath: m_IsActive
       value: 0
@@ -3106,7 +3110,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8019168302190258968, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
       propertyPath: _slots.Array.size
-      value: 5
+      value: 9
       objectReference: {fileID: 0}
     - target: {fileID: 8019168302190258968, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
       propertyPath: _pickaxeEquippedParent
@@ -3157,6 +3161,22 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 6388543282259232068}
     - target: {fileID: 8019168302190258968, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
+      propertyPath: _slots.Array.data[5].Active
+      value: 
+      objectReference: {fileID: 6388543282259232068}
+    - target: {fileID: 8019168302190258968, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
+      propertyPath: _slots.Array.data[6].Active
+      value: 
+      objectReference: {fileID: 6388543282259232068}
+    - target: {fileID: 8019168302190258968, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
+      propertyPath: _slots.Array.data[7].Active
+      value: 
+      objectReference: {fileID: 6388543282259232068}
+    - target: {fileID: 8019168302190258968, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
+      propertyPath: _slots.Array.data[8].Active
+      value: 
+      objectReference: {fileID: 6388543282259232068}
+    - target: {fileID: 8019168302190258968, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
       propertyPath: _fishingPoleUnequippedParent
       value: 
       objectReference: {fileID: 1867873543316851787}
@@ -3190,6 +3210,22 @@ PrefabInstance:
       objectReference: {fileID: 1867873543316851787}
     - target: {fileID: 8019168302190258968, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
       propertyPath: _slots.Array.data[4].Inactive
+      value: 
+      objectReference: {fileID: 1867873543316851787}
+    - target: {fileID: 8019168302190258968, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
+      propertyPath: _slots.Array.data[5].Inactive
+      value: 
+      objectReference: {fileID: 1867873543316851787}
+    - target: {fileID: 8019168302190258968, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
+      propertyPath: _slots.Array.data[6].Inactive
+      value: 
+      objectReference: {fileID: 1867873543316851787}
+    - target: {fileID: 8019168302190258968, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
+      propertyPath: _slots.Array.data[7].Inactive
+      value: 
+      objectReference: {fileID: 1867873543316851787}
+    - target: {fileID: 8019168302190258968, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
+      propertyPath: _slots.Array.data[8].Inactive
       value: 
       objectReference: {fileID: 1867873543316851787}
     - target: {fileID: 8256672327747089232, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
