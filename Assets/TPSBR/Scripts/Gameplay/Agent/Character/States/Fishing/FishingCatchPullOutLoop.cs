@@ -8,6 +8,7 @@ namespace TPSBR
     {
         [SerializeField] private Transform _fishTransform;
         private FishingPoleWeapon _weapon;
+        private bool _hasAwardedCatch;
 
         internal void SetActiveWeapon(FishingPoleWeapon weapon)
         {
@@ -27,6 +28,7 @@ namespace TPSBR
             base.OnActivate();
             SuppressMovement();
             _weapon?.AttachFishToCatchTransform(_fishTransform);
+            TryAwardCatch();
         }
 
         protected override void OnFixedUpdate()
@@ -45,6 +47,7 @@ namespace TPSBR
         {
             base.OnDeactivate();
             SuppressMovement();
+            _hasAwardedCatch = false;
         }
 
         private void SuppressMovement()
@@ -57,6 +60,40 @@ namespace TPSBR
             kcc.SetKinematicVelocity(Vector3.zero);
             kcc.SetExternalVelocity(Vector3.zero);
             kcc.SetExternalAcceleration(Vector3.zero);
+        }
+
+        private void TryAwardCatch()
+        {
+            if (_hasAwardedCatch == true)
+            {
+                return;
+            }
+
+            if (_weapon == null || _weapon.HasStateAuthority == false)
+            {
+                return;
+            }
+
+            FishDefinition definition = _weapon.ActiveFishDefinition;
+            if (definition == null)
+            {
+                return;
+            }
+
+            Agent agent = _weapon.Character?.Agent;
+            Inventory inventory = agent?.Inventory;
+
+            if (inventory == null)
+            {
+                return;
+            }
+
+            byte remainder = inventory.AddItem(definition, 1);
+
+            if (remainder < 1)
+            {
+                _hasAwardedCatch = true;
+            }
         }
     }
 }

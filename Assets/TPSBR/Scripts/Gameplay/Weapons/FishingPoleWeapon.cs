@@ -58,6 +58,9 @@ namespace TPSBR
 
         public event Action<FishingLifecycleState> LifecycleStateChanged;
 
+        internal FishItem ActiveFish => _activeFish;
+        internal FishDefinition ActiveFishDefinition => _activeFish != null ? _activeFish.Definition : null;
+
         public override void Spawned()
         {
             base.Spawned();
@@ -729,6 +732,7 @@ namespace TPSBR
 
                 fish.Context = Context;
                 fish.State = FishItem.FishState.Fighting;
+                fish.DefinitionId = definition.ID;
 
                 NetworkedActiveFish = fish;
                 HandleActiveFishChanged(true);
