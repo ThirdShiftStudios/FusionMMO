@@ -109,8 +109,13 @@ namespace TPSBR
         public const int HEAD_SLOT_INDEX = byte.MaxValue - 3;
         public const int UPPER_BODY_SLOT_INDEX = byte.MaxValue - 4;
         public const int LOWER_BODY_SLOT_INDEX = byte.MaxValue - 5;
-        public const int HOTBAR_CAPACITY = 4;
+        public const int HOTBAR_CAPACITY = 7;
         public const int HOTBAR_VISIBLE_SLOTS = HOTBAR_CAPACITY - 1;
+        public const int HOTBAR_UNARMED_SLOT = 0;
+        public const int HOTBAR_PRIMARY_WEAPON_SLOT = 1;
+        public const int HOTBAR_SECONDARY_WEAPON_SLOT = 2;
+        public const int HOTBAR_FIRST_CONSUMABLE_SLOT = 3;
+        public const int HOTBAR_LAST_CONSUMABLE_SLOT = 5;
         public const int HOTBAR_FISHING_POLE_SLOT = HOTBAR_CAPACITY - 1;
         // PRIVATE MEMBERS
 
@@ -1407,6 +1412,9 @@ namespace TPSBR
                 if (slot < minSlot)
                     continue;
 
+                if (IsWeaponHotbarSlot(slot) == false)
+                    continue;
+
                 var weapon = _hotbar[slot];
 
                 if (weapon == null)
@@ -1449,6 +1457,9 @@ namespace TPSBR
 
             for (int i = 0; i < _hotbar.Length; i++)
             {
+                if (IsWeaponHotbarSlot(i) == false)
+                    continue;
+
                 var candidate = _hotbar[i];
                 if (candidate != null && candidate.Size == weaponSize)
                 {
@@ -1558,10 +1569,59 @@ namespace TPSBR
             return Mathf.Clamp(slotIndex, 0, maxSlot);
         }
 
+        private static bool IsWeaponHotbarSlot(int slot)
+        {
+            return slot == HOTBAR_PRIMARY_WEAPON_SLOT || slot == HOTBAR_SECONDARY_WEAPON_SLOT;
+        }
+
+        private static bool IsConsumableHotbarSlot(int slot)
+        {
+            return slot >= HOTBAR_FIRST_CONSUMABLE_SLOT && slot <= HOTBAR_LAST_CONSUMABLE_SLOT;
+        }
+
+        private static bool IsFishingHotbarSlot(int slot)
+        {
+            return slot == HOTBAR_FISHING_POLE_SLOT;
+        }
+
+        private static bool IsValidHotbarAssignmentSlot(int slot)
+        {
+            return slot > HOTBAR_UNARMED_SLOT;
+        }
+
+        private static bool CanAssignDefinitionToHotbarSlot(ItemDefinition definition, int slot)
+        {
+            if (definition == null)
+                return false;
+
+            if (IsWeaponHotbarSlot(slot) == true)
+                return definition.SlotCategory == ESlotCategory.Weapon;
+
+            if (IsConsumableHotbarSlot(slot) == true)
+                return definition.SlotCategory == ESlotCategory.Consumable;
+
+            if (IsFishingHotbarSlot(slot) == true)
+                return definition.SlotCategory == ESlotCategory.FishingPole;
+
+            return false;
+        }
+
+        private static bool CanAssignWeaponToHotbarSlot(Weapon weapon, int slot)
+        {
+            if (weapon == null)
+                return true;
+
+            var definition = weapon.Definition as ItemDefinition;
+            return CanAssignDefinitionToHotbarSlot(definition, slot);
+        }
+
         private int FindWeaponSlotBySize(WeaponSize size)
         {
             for (int i = 0; i < _hotbar.Length; i++)
             {
+                if (IsWeaponHotbarSlot(i) == false)
+                    continue;
+
                 var weapon = _hotbar[i];
                 if (weapon != null && weapon.Size == size)
                 {
@@ -1578,6 +1638,9 @@ namespace TPSBR
 
             for (int i = 0; i < _hotbar.Length; i++)
             {
+                if (IsWeaponHotbarSlot(i) == false)
+                    continue;
+
                 var weapon = _hotbar[i];
                 if (weapon != null && weapon.WeaponID == weaponId)
                 {
@@ -1593,10 +1656,10 @@ namespace TPSBR
         {
             return size switch
             {
-                WeaponSize.Unarmed => 0,
-                WeaponSize.Staff => 1,
-                WeaponSize.Throwable => 5,
-                _ => 0,
+                WeaponSize.Unarmed => HOTBAR_UNARMED_SLOT,
+                WeaponSize.Staff => HOTBAR_PRIMARY_WEAPON_SLOT,
+                WeaponSize.Throwable => HOTBAR_LAST_CONSUMABLE_SLOT,
+                _ => HOTBAR_UNARMED_SLOT,
             };
         }
 
@@ -2231,14 +2294,21 @@ namespace TPSBR
                 return;
 
             int slot = hotbarIndex + 1;
-            if (slot <= 0 || slot >= _hotbar.Length)
+            if (slot < 0 || slot >= _hotbar.Length)
+                return;
+
+            if (IsValidHotbarAssignmentSlot(slot) == false)
                 return;
 
             var inventorySlot = _items[inventoryIndex];
             if (inventorySlot.IsEmpty == true)
                 return;
 
-            var definition = inventorySlot.GetDefinition() as WeaponDefinition;
+            var itemDefinition = inventorySlot.GetDefinition();
+            if (CanAssignDefinitionToHotbarSlot(itemDefinition, slot) == false)
+                return;
+
+            var definition = itemDefinition as WeaponDefinition;
             if (definition == null)
                 return;
 
@@ -2284,7 +2354,10 @@ namespace TPSBR
         private void StoreHotbar(int hotbarIndex, int inventoryIndex)
         {
             int slot = hotbarIndex + 1;
-            if (slot <= 0 || slot >= _hotbar.Length)
+            if (slot < 0 || slot >= _hotbar.Length)
+                return;
+
+            if (IsValidHotbarAssignmentSlot(slot) == false)
                 return;
 
             if (IsGeneralInventoryIndex(inventoryIndex) == false)
@@ -2339,10 +2412,13 @@ namespace TPSBR
             int fromSlot = fromIndex + 1;
             int toSlot = toIndex + 1;
 
-            if (fromSlot <= 0 || fromSlot >= _hotbar.Length)
+            if (fromSlot < 0 || fromSlot >= _hotbar.Length)
                 return;
 
-            if (toSlot <= 0 || toSlot >= _hotbar.Length)
+            if (toSlot < 0 || toSlot >= _hotbar.Length)
+                return;
+
+            if (IsValidHotbarAssignmentSlot(fromSlot) == false || IsValidHotbarAssignmentSlot(toSlot) == false)
                 return;
 
             if (fromSlot == toSlot)
@@ -2350,6 +2426,12 @@ namespace TPSBR
 
             var fromWeapon = _hotbar[fromSlot];
             var toWeapon = _hotbar[toSlot];
+
+            if (CanAssignWeaponToHotbarSlot(fromWeapon, toSlot) == false)
+                return;
+
+            if (CanAssignWeaponToHotbarSlot(toWeapon, fromSlot) == false)
+                return;
 
             _hotbar.Set(fromSlot, toWeapon);
             _hotbar.Set(toSlot, fromWeapon);
@@ -4410,6 +4492,24 @@ namespace TPSBR
         }
         targetSlot = ClampToValidSlot(targetSlot);
 
+        if (CanAssignWeaponToHotbarSlot(weapon, targetSlot) == false)
+        {
+            int fallbackSlot = -1;
+            for (int i = 0; i < _hotbar.Length; ++i)
+            {
+                if (CanAssignWeaponToHotbarSlot(weapon, i) == true)
+                {
+                    fallbackSlot = i;
+                    break;
+                }
+            }
+
+            if (fallbackSlot < 0)
+                return;
+
+            targetSlot = fallbackSlot;
+        }
+
         RemoveWeapon(targetSlot);
 
         weapon.Object.AssignInputAuthority(Object.InputAuthority);
@@ -4455,6 +4555,9 @@ namespace TPSBR
 
         for (int i = 0; i < _hotbar.Length; i++)
         {
+            if (IsWeaponHotbarSlot(i) == false)
+                continue;
+
             Weapon weapon = _hotbar[i];
             if (weapon != null)
             {

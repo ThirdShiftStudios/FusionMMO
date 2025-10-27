@@ -675,6 +675,10 @@ namespace TPSBR
 
                         if (Inventory.HOTBAR_VISIBLE_SLOTS >= 1 && keyboard.digit1Key.wasPressedThisFrame == true) { weaponSlot = 0; }
                         if (Inventory.HOTBAR_VISIBLE_SLOTS >= 2 && keyboard.digit2Key.wasPressedThisFrame == true) { weaponSlot = 1; }
+                        if (Inventory.HOTBAR_VISIBLE_SLOTS >= 3 && keyboard.digit3Key.wasPressedThisFrame == true) { weaponSlot = 2; }
+                        if (Inventory.HOTBAR_VISIBLE_SLOTS >= 4 && keyboard.digit4Key.wasPressedThisFrame == true) { weaponSlot = 3; }
+                        if (Inventory.HOTBAR_VISIBLE_SLOTS >= 5 && keyboard.digit5Key.wasPressedThisFrame == true) { weaponSlot = 4; }
+                        if (Inventory.HOTBAR_VISIBLE_SLOTS >= 6 && keyboard.digit6Key.wasPressedThisFrame == true) { weaponSlot = 5; }
 
                         if (weaponSlot < 0)
                         {
