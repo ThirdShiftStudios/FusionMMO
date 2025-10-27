@@ -11,5 +11,6 @@ namespace TSS.Data
         WoodAxe = 6,
         FishingPole = 7,
         Consumable = 8,
+        Fishing = 9,
     }
 }
