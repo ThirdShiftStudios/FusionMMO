@@ -115,7 +115,8 @@ namespace TPSBR
         public const int HOTBAR_PRIMARY_WEAPON_SLOT = 1;
         public const int HOTBAR_SECONDARY_WEAPON_SLOT = 2;
         public const int HOTBAR_FIRST_CONSUMABLE_SLOT = 3;
-        public const int HOTBAR_LAST_CONSUMABLE_SLOT = 5;
+        public const int HOTBAR_SECOND_CONSUMABLE_SLOT = 4;
+        public const int HOTBAR_THIRD_CONSUMABLE_SLOT = 5;
         public const int HOTBAR_FISHING_POLE_SLOT = HOTBAR_CAPACITY - 1;
         // PRIVATE MEMBERS
 
@@ -1591,7 +1592,7 @@ namespace TPSBR
 
         private static bool IsConsumableHotbarSlot(int slot)
         {
-            return slot >= HOTBAR_FIRST_CONSUMABLE_SLOT && slot <= HOTBAR_LAST_CONSUMABLE_SLOT;
+            return slot >= HOTBAR_FIRST_CONSUMABLE_SLOT && slot <= HOTBAR_THIRD_CONSUMABLE_SLOT;
         }
 
         private static bool IsFishingHotbarSlot(int slot)
@@ -1673,7 +1674,7 @@ namespace TPSBR
             {
                 WeaponSize.Unarmed => HOTBAR_UNARMED_SLOT,
                 WeaponSize.Staff => HOTBAR_PRIMARY_WEAPON_SLOT,
-                WeaponSize.Throwable => HOTBAR_LAST_CONSUMABLE_SLOT,
+                WeaponSize.Throwable => HOTBAR_THIRD_CONSUMABLE_SLOT,
                 _ => HOTBAR_UNARMED_SLOT,
             };
         }
