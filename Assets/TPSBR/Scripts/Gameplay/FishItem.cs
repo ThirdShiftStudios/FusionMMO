@@ -14,14 +14,17 @@ namespace TPSBR
         }
 
         [SerializeField]
+        private Transform _hookPlacement;
+        [SerializeField]
         private Animator _animator;
         [SerializeField]
-        private Transform _visuals;
+        private FishVisuals _fishVisuals;
 
         [Networked]
         public FishState State { get; set; }
 
         public Animator Animator => _animator;
-        public Transform Visuals => _visuals;
+        public FishVisuals FishVisuals => _fishVisuals;
+        public Transform HookPlacement => _hookPlacement;
     }
 }
