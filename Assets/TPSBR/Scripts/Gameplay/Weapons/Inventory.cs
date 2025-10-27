@@ -1569,6 +1569,21 @@ namespace TPSBR
             return Mathf.Clamp(slotIndex, 0, maxSlot);
         }
 
+        private WeaponSlot ResolveWeaponSlotForIndex(int slotIndex)
+        {
+            if (_slots == null || _slots.Length == 0)
+                return null;
+
+            if (slotIndex >= 0 && slotIndex < _slots.Length)
+                return _slots[slotIndex];
+
+            int fallbackIndex = Mathf.Clamp(_slots.Length - 1, 0, int.MaxValue);
+            if (fallbackIndex < 0 || fallbackIndex >= _slots.Length)
+                return null;
+
+            return _slots[fallbackIndex];
+        }
+
         private static bool IsWeaponHotbarSlot(int slot)
         {
             return slot == HOTBAR_PRIMARY_WEAPON_SLOT || slot == HOTBAR_SECONDARY_WEAPON_SLOT;
@@ -4513,8 +4528,11 @@ namespace TPSBR
         RemoveWeapon(targetSlot);
 
         weapon.Object.AssignInputAuthority(Object.InputAuthority);
-        WeaponSlot slot = _slots[targetSlot];
-        weapon.Initialize(Object, slot.Active, slot.Inactive);
+        WeaponSlot slot = ResolveWeaponSlotForIndex(targetSlot);
+        Transform activeParent = slot != null ? slot.Active : null;
+        Transform inactiveParent = slot != null ? slot.Inactive : null;
+
+        weapon.Initialize(Object, activeParent, inactiveParent);
         weapon.AssignFireAudioEffects(_fireAudioEffectsRoot, _fireAudioEffects);
 
         var aoiProxy = weapon.GetComponent<NetworkAreaOfInterestProxy>();
