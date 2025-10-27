@@ -774,6 +774,12 @@ namespace TPSBR
                 if (_activeFish == null)
                 {
                     RestoreLureParent();
+
+                    if (_isFishInHand == true || _fishHandTransform != null)
+                    {
+                        _isFishInHand = false;
+                        _fishHandTransform = null;
+                    }
                 }
 
                 ApplyCurrentFishAttachment();
