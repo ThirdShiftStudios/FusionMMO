@@ -818,6 +818,8 @@ namespace TPSBR
 
             if (lure != null)
             {
+                lure.DetachFromFish();
+
                 Transform lureTransform = lure.transform;
                 fishTransform.SetParent(lureTransform);
                 fishTransform.localPosition = _fightingFishOffset;
@@ -858,6 +860,8 @@ namespace TPSBR
                     CacheLureParent();
 
                     Transform lureTransform = lure.transform;
+                    lure.AttachToFish();
+                    lure.SetVisualOffset(Vector3.zero);
                     lureTransform.SetParent(hookPlacement);
                     lureTransform.localPosition = Vector3.zero;
                     lureTransform.localRotation = Quaternion.identity;
@@ -908,6 +912,7 @@ namespace TPSBR
                 lureTransform.SetParent(_cachedLureParent);
                 lureTransform.localPosition = _cachedLureLocalPosition;
                 lureTransform.localRotation = _cachedLureLocalRotation;
+                lure.DetachFromFish();
                 UpdateParabolaString();
             }
 

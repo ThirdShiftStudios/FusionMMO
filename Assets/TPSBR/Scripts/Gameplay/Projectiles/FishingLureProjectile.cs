@@ -8,6 +8,7 @@ namespace TPSBR
         private FishingPoleWeapon _weapon;
         private bool _isAnchoredInWater;
         private bool _applyAnchorOnNextTick;
+        private bool _isAttachedToFish;
         private Vector3 _anchorPosition;
         private Vector3 _visualOffset;
 
@@ -22,10 +23,16 @@ namespace TPSBR
             _applyAnchorOnNextTick = false;
             _anchorPosition = default;
             _visualOffset = Vector3.zero;
+            _isAttachedToFish = false;
         }
 
         public override void FixedUpdateNetwork()
         {
+            if (_isAttachedToFish == true)
+            {
+                return;
+            }
+
             if (_isAnchoredInWater == true)
             {
                 if (Object != null && Object.IsValid == true)
@@ -52,6 +59,11 @@ namespace TPSBR
 
         public override void Render()
         {
+            if (_isAttachedToFish == true)
+            {
+                return;
+            }
+
             if (_isAnchoredInWater == true)
             {
                 transform.position = _anchorPosition + _visualOffset;
@@ -93,6 +105,7 @@ namespace TPSBR
             _applyAnchorOnNextTick = false;
             _anchorPosition = default;
             _visualOffset = Vector3.zero;
+            _isAttachedToFish = false;
         }
 
         public void SetVisualOffset(Vector3 offset)
@@ -103,6 +116,18 @@ namespace TPSBR
             {
                 transform.position = _anchorPosition + _visualOffset;
             }
+        }
+
+        public void AttachToFish()
+        {
+            _isAnchoredInWater = false;
+            _applyAnchorOnNextTick = false;
+            _isAttachedToFish = true;
+        }
+
+        public void DetachFromFish()
+        {
+            _isAttachedToFish = false;
         }
     }
 }
