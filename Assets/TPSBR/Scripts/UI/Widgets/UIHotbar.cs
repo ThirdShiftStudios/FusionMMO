@@ -1,5 +1,6 @@
 using System;
 using Fusion;
+using System.Collections.Generic;
 using TPSBR;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -13,6 +14,8 @@ namespace TPSBR.UI
         private RectTransform _dragLayer;
 
         private UIListItem[] _slots;
+        private UIListItem[] _configuredSlots = Array.Empty<UIListItem>();
+        private bool _isInitialized;
         private Inventory _inventory;
         private UIListItem _dragSource;
         private RectTransform _dragIcon;
@@ -30,12 +33,8 @@ namespace TPSBR.UI
         {
             base.OnInitialize();
 
-            _slots = GetComponentsInChildren<UIListItem>(true);
-
-            for (int i = 0; i < _slots.Length; i++)
-            {
-                _slots[i].InitializeSlot(this, i);
-            }
+            _isInitialized = true;
+            ApplyConfiguredSlots();
 
             UpdateSelection(true);
             UpdateSelectionHighlight();
@@ -44,7 +43,56 @@ namespace TPSBR.UI
         protected override void OnDeinitialize()
         {
             Bind(null);
+            _isInitialized = false;
             base.OnDeinitialize();
+        }
+
+        internal void ConfigureSlots(IReadOnlyList<UIListItem> slots)
+        {
+            if (slots == null || slots.Count == 0)
+            {
+                _configuredSlots = Array.Empty<UIListItem>();
+            }
+            else
+            {
+                if (_configuredSlots == null || _configuredSlots.Length != slots.Count)
+                {
+                    _configuredSlots = new UIListItem[slots.Count];
+                }
+
+                for (int i = 0; i < slots.Count; i++)
+                {
+                    _configuredSlots[i] = slots[i];
+                }
+            }
+
+            if (_isInitialized == true)
+            {
+                ApplyConfiguredSlots();
+                UpdateSelection(true);
+                UpdateSelectionHighlight();
+            }
+        }
+
+        private void ApplyConfiguredSlots()
+        {
+            if (_configuredSlots == null || _configuredSlots.Length == 0)
+            {
+                _slots = Array.Empty<UIListItem>();
+                return;
+            }
+
+            if (_slots == null || _slots.Length != _configuredSlots.Length)
+            {
+                _slots = new UIListItem[_configuredSlots.Length];
+            }
+
+            for (int i = 0; i < _configuredSlots.Length; i++)
+            {
+                var slot = _configuredSlots[i];
+                _slots[i] = slot;
+                slot?.InitializeSlot(this, i);
+            }
         }
 
         internal void Bind(Inventory inventory)

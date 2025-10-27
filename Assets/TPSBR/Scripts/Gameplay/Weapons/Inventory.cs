@@ -109,7 +109,7 @@ namespace TPSBR
         public const int HEAD_SLOT_INDEX = byte.MaxValue - 3;
         public const int UPPER_BODY_SLOT_INDEX = byte.MaxValue - 4;
         public const int LOWER_BODY_SLOT_INDEX = byte.MaxValue - 5;
-        public const int HOTBAR_CAPACITY = 4;
+        public const int HOTBAR_CAPACITY = 7;
         public const int HOTBAR_VISIBLE_SLOTS = HOTBAR_CAPACITY - 1;
         public const int HOTBAR_FISHING_POLE_SLOT = HOTBAR_CAPACITY - 1;
         // PRIVATE MEMBERS
@@ -190,6 +190,9 @@ namespace TPSBR
         private bool _isHookSetSuccessZoneActive;
 
         private static readonly Dictionary<int, Weapon> _weaponPrefabsByDefinitionId = new Dictionary<int, Weapon>();
+        private static readonly int[] _weaponHotbarSlots = { 1, 2 };
+        private static readonly int[] _consumableHotbarSlots = { 3, 4, 5 };
+        private static readonly int[] _fishingHotbarSlots = { HOTBAR_FISHING_POLE_SLOT };
         private static PickaxeDefinition _cachedFallbackPickaxe;
         private static WoodAxeDefinition _cachedFallbackWoodAxe;
 
@@ -2242,6 +2245,9 @@ namespace TPSBR
             if (definition == null)
                 return;
 
+            if (IsDefinitionAllowedInHotbarSlot(definition, slot) == false)
+                return;
+
             var configurationHash = inventorySlot.ConfigurationHash;
 
             var weaponPrefab = EnsureWeaponPrefabRegistered(definition);
@@ -2285,6 +2291,9 @@ namespace TPSBR
         {
             int slot = hotbarIndex + 1;
             if (slot <= 0 || slot >= _hotbar.Length)
+                return;
+
+            if (slot == HOTBAR_FISHING_POLE_SLOT)
                 return;
 
             if (IsGeneralInventoryIndex(inventoryIndex) == false)
@@ -2350,6 +2359,9 @@ namespace TPSBR
 
             var fromWeapon = _hotbar[fromSlot];
             var toWeapon = _hotbar[toSlot];
+
+            if (IsWeaponAllowedInSlot(fromWeapon, toSlot) == false || IsWeaponAllowedInSlot(toWeapon, fromSlot) == false)
+                return;
 
             _hotbar.Set(fromSlot, toWeapon);
             _hotbar.Set(toSlot, fromWeapon);
@@ -2685,6 +2697,64 @@ namespace TPSBR
             _items.Set(index, slot);
             UpdateWeaponDefinitionMapping(index, slot);
             RefreshItems();
+        }
+
+        private static int[] GetAllowedHotbarSlots(ESlotCategory category)
+        {
+            return category switch
+            {
+                ESlotCategory.Weapon => _weaponHotbarSlots,
+                ESlotCategory.Consumable => _consumableHotbarSlots,
+                ESlotCategory.FishingPole => _fishingHotbarSlots,
+                _ => Array.Empty<int>(),
+            };
+        }
+
+        private bool IsDefinitionAllowedInHotbarSlot(WeaponDefinition definition, int slot)
+        {
+            if (definition == null)
+                return false;
+
+            var allowedSlots = GetAllowedHotbarSlots(definition.SlotCategory);
+            for (int i = 0; i < allowedSlots.Length; i++)
+            {
+                if (allowedSlots[i] == slot)
+                    return true;
+            }
+
+            return false;
+        }
+
+        private bool IsWeaponAllowedInSlot(Weapon weapon, int slot)
+        {
+            if (weapon == null)
+                return true;
+
+            var definition = weapon.Definition as WeaponDefinition;
+            return IsDefinitionAllowedInHotbarSlot(definition, slot);
+        }
+
+        private int GetPreferredHotbarSlot(Weapon weapon, int requestedSlot)
+        {
+            var definition = weapon?.Definition as WeaponDefinition;
+            if (definition == null)
+                return requestedSlot;
+
+            if (IsDefinitionAllowedInHotbarSlot(definition, requestedSlot) == true)
+                return requestedSlot;
+
+            var allowedSlots = GetAllowedHotbarSlots(definition.SlotCategory);
+            for (int i = 0; i < allowedSlots.Length; i++)
+            {
+                int slot = allowedSlots[i];
+                if (slot < 0 || slot >= _hotbar.Length)
+                    continue;
+
+                if (_hotbar[slot] == null)
+                    return slot;
+            }
+
+            return allowedSlots.Length > 0 ? allowedSlots[0] : requestedSlot;
         }
 
         private bool TryStoreWeapon(Weapon weapon, int sourceSlot)
@@ -4409,6 +4479,7 @@ namespace TPSBR
             targetSlot = existingSlot >= 0 ? existingSlot : GetSlotIndex(weapon.Size);
         }
         targetSlot = ClampToValidSlot(targetSlot);
+        targetSlot = GetPreferredHotbarSlot(weapon, targetSlot);
 
         RemoveWeapon(targetSlot);
 
