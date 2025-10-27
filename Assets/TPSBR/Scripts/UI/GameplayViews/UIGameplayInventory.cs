@@ -24,6 +24,12 @@ namespace TPSBR.UI
         [SerializeField] private Color _selectedInventorySlotColor = Color.white;
         [SerializeField] private Color _selectedHotbarSlotColor = Color.white;
         [SerializeField] private UIInventoryDetailsPanel _detailsPanel;
+        [Header("Special Inventory Slots")]
+        [SerializeField] private UIListItem _pickaxeSlot;
+        [SerializeField] private UIListItem _woodAxeSlot;
+        [SerializeField] private UIListItem _headSlot;
+        [SerializeField] private UIListItem _upperBodySlot;
+        [SerializeField] private UIListItem _lowerBodySlot;
 
         private bool _menuVisible;
         private Agent _boundAgent;
@@ -269,90 +275,93 @@ namespace TPSBR.UI
 
                 var discoveredSlots = _list.GetComponentsInChildren<UIListItem>(true);
                 var generalSlots = new List<UIListItem>(discoveredSlots.Length);
-                UIListItem pickaxeSlot = null;
-                UIListItem woodAxeSlot = null;
-                UIListItem fishingPoleSlot = null;
-                UIListItem headSlot = null;
-                UIListItem upperBodySlot = null;
-                UIListItem lowerBodySlot = null;
+                UIListItem pickaxeSlot = _view?._pickaxeSlot;
+                UIListItem woodAxeSlot = _view?._woodAxeSlot;
+                UIListItem headSlot = _view?._headSlot;
+                UIListItem upperBodySlot = _view?._upperBodySlot;
+                UIListItem lowerBodySlot = _view?._lowerBodySlot;
+
+                bool pickaxeSlotFound = false;
+                bool woodAxeSlotFound = false;
+                bool headSlotFound = false;
+                bool upperBodySlotFound = false;
+                bool lowerBodySlotFound = false;
 
                 for (int i = 0; i < discoveredSlots.Length; i++)
                 {
                     var slot = discoveredSlots[i];
-                    if (IsPickaxeUISlot(slot) == true)
+                    if (slot == null)
+                        continue;
+
+                    if (pickaxeSlot != null && slot == pickaxeSlot)
                     {
-                        pickaxeSlot = slot;
+                        pickaxeSlotFound = true;
+                        continue;
                     }
-                    else if (IsWoodAxeUISlot(slot) == true)
+
+                    if (woodAxeSlot != null && slot == woodAxeSlot)
                     {
-                        woodAxeSlot = slot;
+                        woodAxeSlotFound = true;
+                        continue;
                     }
-                    else if (IsFishingPoleUISlot(slot) == true)
+
+                    if (headSlot != null && slot == headSlot)
                     {
-                        fishingPoleSlot = slot;
+                        headSlotFound = true;
+                        continue;
                     }
-                    else if (IsHeadUISlot(slot) == true)
+
+                    if (upperBodySlot != null && slot == upperBodySlot)
                     {
-                        headSlot = slot;
+                        upperBodySlotFound = true;
+                        continue;
                     }
-                    else if (IsUpperBodyUISlot(slot) == true)
+
+                    if (lowerBodySlot != null && slot == lowerBodySlot)
                     {
-                        upperBodySlot = slot;
+                        lowerBodySlotFound = true;
+                        continue;
                     }
-                    else if (IsLowerBodyUISlot(slot) == true)
-                    {
-                        lowerBodySlot = slot;
-                    }
-                    else
-                    {
-                        generalSlots.Add(slot);
-                    }
+
+                    generalSlots.Add(slot);
                 }
 
-                if (fishingPoleSlot == null)
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                if (pickaxeSlot != null && pickaxeSlotFound == false)
                 {
-                    var template = woodAxeSlot ?? pickaxeSlot ?? (generalSlots.Count > 0 ? generalSlots[generalSlots.Count - 1] : null);
-                    if (template != null)
-                    {
-                        int siblingIndex = template.transform.GetSiblingIndex() + 1;
-                        fishingPoleSlot = CreateSpecialSlot(template, "Fishing Pole", siblingIndex);
-                    }
+                    Debug.LogWarning($"{nameof(UIList)} inventory list is missing the configured pickaxe inventory slot.");
                 }
 
-                if (headSlot == null)
+                if (woodAxeSlot != null && woodAxeSlotFound == false)
                 {
-                    var template = woodAxeSlot ?? pickaxeSlot ?? (generalSlots.Count > 0 ? generalSlots[generalSlots.Count - 1] : null);
-                    if (template != null)
-                    {
-                        int siblingIndex = template.transform.GetSiblingIndex() + 1;
-                        headSlot = CreateSpecialSlot(template, "Head Equipment", siblingIndex);
-                    }
+                    Debug.LogWarning($"{nameof(UIList)} inventory list is missing the configured wood axe inventory slot.");
                 }
 
-                if (upperBodySlot == null)
+                if (headSlot != null && headSlotFound == false)
                 {
-                    var template = headSlot ?? woodAxeSlot ?? pickaxeSlot ?? (generalSlots.Count > 0 ? generalSlots[generalSlots.Count - 1] : null);
-                    if (template != null)
-                    {
-                        int siblingIndex = template.transform.GetSiblingIndex() + 1;
-                        upperBodySlot = CreateSpecialSlot(template, "Upper Body Equipment", siblingIndex);
-                    }
+                    Debug.LogWarning($"{nameof(UIList)} inventory list is missing the configured head equipment inventory slot.");
                 }
 
-                if (lowerBodySlot == null)
+                if (upperBodySlot != null && upperBodySlotFound == false)
                 {
-                    var template = upperBodySlot ?? headSlot ?? woodAxeSlot ?? pickaxeSlot ?? (generalSlots.Count > 0 ? generalSlots[generalSlots.Count - 1] : null);
-                    if (template != null)
-                    {
-                        int siblingIndex = template.transform.GetSiblingIndex() + 1;
-                        lowerBodySlot = CreateSpecialSlot(template, "Lower Body Equipment", siblingIndex);
-                    }
+                    Debug.LogWarning($"{nameof(UIList)} inventory list is missing the configured upper body inventory slot.");
                 }
+
+                if (lowerBodySlot != null && lowerBodySlotFound == false)
+                {
+                    Debug.LogWarning($"{nameof(UIList)} inventory list is missing the configured lower body inventory slot.");
+                }
+#endif
+
+                pickaxeSlot = pickaxeSlotFound ? pickaxeSlot : null;
+                woodAxeSlot = woodAxeSlotFound ? woodAxeSlot : null;
+                headSlot = headSlotFound ? headSlot : null;
+                upperBodySlot = upperBodySlotFound ? upperBodySlot : null;
+                lowerBodySlot = lowerBodySlotFound ? lowerBodySlot : null;
 
                 var orderedSlots = new List<UIListItem>(generalSlots.Count +
                                                          (pickaxeSlot != null ? 1 : 0) +
                                                          (woodAxeSlot != null ? 1 : 0) +
-                                                         (fishingPoleSlot != null ? 1 : 0) +
                                                          (headSlot != null ? 1 : 0) +
                                                          (upperBodySlot != null ? 1 : 0) +
                                                          (lowerBodySlot != null ? 1 : 0));
@@ -393,20 +402,6 @@ namespace TPSBR.UI
                 else
                 {
                     Debug.LogWarning($"{nameof(UIList)} inventory list is missing a wood axe inventory slot.");
-                }
-#endif
-
-                if (fishingPoleSlot != null)
-                {
-                    fishingPoleSlot.InitializeSlot(this, Inventory.FISHING_POLE_SLOT_INDEX);
-                    orderedSlots.Add(fishingPoleSlot);
-                    indices.Add(Inventory.FISHING_POLE_SLOT_INDEX);
-                    _slotLookup[Inventory.FISHING_POLE_SLOT_INDEX] = fishingPoleSlot;
-                }
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                else
-                {
-                    Debug.LogWarning($"{nameof(UIList)} inventory list is missing a fishing pole inventory slot.");
                 }
 #endif
 
@@ -456,36 +451,6 @@ namespace TPSBR.UI
                 _slotIndices = indices.ToArray();
 
                 UpdateSelectionHighlight();
-            }
-
-            private static UIListItem CreateSpecialSlot(UIListItem template, string displayName, int siblingIndex)
-            {
-                if (template == null)
-                    return null;
-
-                var clone = UnityEngine.Object.Instantiate(template, template.transform.parent);
-                string slotName = $"UIListItem ({displayName})";
-                clone.gameObject.name = slotName;
-                clone.name = slotName;
-
-                var parent = clone.transform.parent;
-                if (parent != null)
-                {
-                    int targetIndex = siblingIndex;
-                    if (targetIndex < 0)
-                    {
-                        targetIndex = parent.childCount - 1;
-                    }
-                    else
-                    {
-                        targetIndex = Mathf.Clamp(targetIndex, 0, parent.childCount - 1);
-                    }
-
-                    clone.transform.SetSiblingIndex(targetIndex);
-                }
-
-                clone.gameObject.SetActive(template.gameObject.activeSelf);
-                return clone;
             }
 
             internal void Bind(Inventory inventory)
@@ -607,7 +572,6 @@ namespace TPSBR.UI
                 if (source.Owner is UIHotbar)
                 {
                     if (target.Index == Inventory.PICKAXE_SLOT_INDEX || target.Index == Inventory.WOOD_AXE_SLOT_INDEX ||
-                        target.Index == Inventory.FISHING_POLE_SLOT_INDEX ||
                         target.Index == Inventory.HEAD_SLOT_INDEX || target.Index == Inventory.UPPER_BODY_SLOT_INDEX ||
                         target.Index == Inventory.LOWER_BODY_SLOT_INDEX)
                         return;
@@ -808,109 +772,6 @@ namespace TPSBR.UI
                 }
             }
 
-            private static bool IsPickaxeUISlot(UIListItem slot)
-            {
-                if (slot == null)
-                    return false;
-
-                var slotObject = slot.gameObject;
-                if (slotObject == null)
-                    return false;
-
-                var slotName = slotObject.name;
-                if (string.IsNullOrEmpty(slotName))
-                    return false;
-
-                return slotName.IndexOf("pickaxe", StringComparison.OrdinalIgnoreCase) >= 0;
-            }
-
-            private static bool IsWoodAxeUISlot(UIListItem slot)
-            {
-                if (slot == null)
-                    return false;
-
-                var slotObject = slot.gameObject;
-                if (slotObject == null)
-                    return false;
-
-                var slotName = slotObject.name;
-                if (string.IsNullOrEmpty(slotName))
-                    return false;
-
-                var normalizedName = slotName.Replace(" ", string.Empty).Replace("_", string.Empty);
-                return normalizedName.IndexOf("woodaxe", StringComparison.OrdinalIgnoreCase) >= 0;
-            }
-
-            private static bool IsFishingPoleUISlot(UIListItem slot)
-            {
-                if (slot == null)
-                    return false;
-
-                var slotObject = slot.gameObject;
-                if (slotObject == null)
-                    return false;
-
-                var slotName = slotObject.name;
-                if (string.IsNullOrEmpty(slotName))
-                    return false;
-
-                var normalizedName = slotName.Replace(" ", string.Empty).Replace("_", string.Empty);
-                return normalizedName.IndexOf("fishingpole", StringComparison.OrdinalIgnoreCase) >= 0;
-            }
-
-            private static bool IsHeadUISlot(UIListItem slot)
-            {
-                if (slot == null)
-                    return false;
-
-                var slotObject = slot.gameObject;
-                if (slotObject == null)
-                    return false;
-
-                var slotName = slotObject.name;
-                if (string.IsNullOrEmpty(slotName))
-                    return false;
-
-                var normalizedName = slotName.Replace(" ", string.Empty).Replace("_", string.Empty);
-                return normalizedName.IndexOf("head", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                       normalizedName.IndexOf("hat", StringComparison.OrdinalIgnoreCase) >= 0;
-            }
-
-            private static bool IsUpperBodyUISlot(UIListItem slot)
-            {
-                if (slot == null)
-                    return false;
-
-                var slotObject = slot.gameObject;
-                if (slotObject == null)
-                    return false;
-
-                var slotName = slotObject.name;
-                if (string.IsNullOrEmpty(slotName))
-                    return false;
-
-                var normalizedName = slotName.Replace(" ", string.Empty).Replace("_", string.Empty);
-                return normalizedName.IndexOf("upperbody", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                       normalizedName.IndexOf("robe", StringComparison.OrdinalIgnoreCase) >= 0;
-            }
-
-            private static bool IsLowerBodyUISlot(UIListItem slot)
-            {
-                if (slot == null)
-                    return false;
-
-                var slotObject = slot.gameObject;
-                if (slotObject == null)
-                    return false;
-
-                var slotName = slotObject.name;
-                if (string.IsNullOrEmpty(slotName))
-                    return false;
-
-                var normalizedName = slotName.Replace(" ", string.Empty).Replace("_", string.Empty);
-                return normalizedName.IndexOf("lowerbody", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                       normalizedName.IndexOf("boot", StringComparison.OrdinalIgnoreCase) >= 0;
-            }
         }
 
         private void RefreshInventoryBinding()

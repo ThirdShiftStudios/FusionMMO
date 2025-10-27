@@ -109,7 +109,7 @@ namespace TPSBR
         public const int HEAD_SLOT_INDEX = byte.MaxValue - 3;
         public const int UPPER_BODY_SLOT_INDEX = byte.MaxValue - 4;
         public const int LOWER_BODY_SLOT_INDEX = byte.MaxValue - 5;
-        public const int HOTBAR_CAPACITY = 4;
+        public const int HOTBAR_CAPACITY = 7;
         public const int HOTBAR_VISIBLE_SLOTS = HOTBAR_CAPACITY - 1;
         public const int HOTBAR_FISHING_POLE_SLOT = HOTBAR_CAPACITY - 1;
         // PRIVATE MEMBERS
@@ -2242,6 +2242,9 @@ namespace TPSBR
             if (definition == null)
                 return;
 
+            if (IsHotbarSlotCategoryAllowed(slot, definition.SlotCategory) == false)
+                return;
+
             var configurationHash = inventorySlot.ConfigurationHash;
 
             var weaponPrefab = EnsureWeaponPrefabRegistered(definition);
@@ -2350,6 +2353,9 @@ namespace TPSBR
 
             var fromWeapon = _hotbar[fromSlot];
             var toWeapon = _hotbar[toSlot];
+
+            if (IsWeaponAllowedInSlot(fromWeapon, toSlot) == false || IsWeaponAllowedInSlot(toWeapon, fromSlot) == false)
+                return;
 
             _hotbar.Set(fromSlot, toWeapon);
             _hotbar.Set(toSlot, fromWeapon);
@@ -4332,6 +4338,55 @@ namespace TPSBR
             return definition.SlotCategory == category;
         }
 
+        private bool IsHotbarSlotCategoryAllowed(int slot, ESlotCategory category)
+        {
+            if (slot == 0)
+            {
+                return category == ESlotCategory.Weapon || category == ESlotCategory.General;
+            }
+
+            switch (slot)
+            {
+                case 1:
+                case 2:
+                    return category == ESlotCategory.Weapon;
+                case 3:
+                case 4:
+                case 5:
+                    return category == ESlotCategory.Consumable;
+                case HOTBAR_FISHING_POLE_SLOT:
+                    return category == ESlotCategory.FishingPole;
+                default:
+                    return false;
+            }
+        }
+
+        private int EnsureHotbarSlotForCategory(int preferredSlot, ESlotCategory category)
+        {
+            if (IsHotbarSlotCategoryAllowed(preferredSlot, category) == true)
+                return preferredSlot;
+
+            for (int i = 1; i < _hotbar.Length; i++)
+            {
+                if (IsHotbarSlotCategoryAllowed(i, category) == true)
+                    return i;
+            }
+
+            return preferredSlot;
+        }
+
+        private bool IsWeaponAllowedInSlot(Weapon weapon, int slot)
+        {
+            if (weapon == null)
+                return true;
+
+            var definition = weapon.Definition;
+            if (definition == null)
+                return true;
+
+            return IsHotbarSlotCategoryAllowed(slot, definition.SlotCategory);
+        }
+
         private void SpawnInventoryItemPickup(ItemDefinition definition, byte quantity, NetworkString<_32> configurationHash = default)
         {
             if (HasStateAuthority == false)
@@ -4409,6 +4464,17 @@ namespace TPSBR
             targetSlot = existingSlot >= 0 ? existingSlot : GetSlotIndex(weapon.Size);
         }
         targetSlot = ClampToValidSlot(targetSlot);
+
+        var weaponDefinition = weapon.Definition;
+        if (weaponDefinition != null)
+        {
+            targetSlot = EnsureHotbarSlotForCategory(targetSlot, weaponDefinition.SlotCategory);
+
+            if (IsHotbarSlotCategoryAllowed(targetSlot, weaponDefinition.SlotCategory) == false)
+            {
+                return;
+            }
+        }
 
         RemoveWeapon(targetSlot);
 

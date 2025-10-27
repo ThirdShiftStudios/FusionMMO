@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Fusion;
 using TPSBR;
 using UnityEngine;
@@ -9,6 +10,8 @@ namespace TPSBR.UI
 {
     public class UIHotbar : UIWidget, IUIListItemOwner
     {
+        [SerializeField]
+        private UIListItem[] _hotbarSlots = Array.Empty<UIListItem>();
         [SerializeField]
         private RectTransform _dragLayer;
 
@@ -30,7 +33,28 @@ namespace TPSBR.UI
         {
             base.OnInitialize();
 
-            _slots = GetComponentsInChildren<UIListItem>(true);
+            if (_hotbarSlots == null)
+            {
+                _slots = Array.Empty<UIListItem>();
+            }
+            else
+            {
+                var validSlots = new List<UIListItem>(_hotbarSlots.Length);
+
+                for (int i = 0; i < _hotbarSlots.Length; i++)
+                {
+                    var slot = _hotbarSlots[i];
+                    if (slot == null)
+                        continue;
+
+                    if (validSlots.Contains(slot) == false)
+                    {
+                        validSlots.Add(slot);
+                    }
+                }
+
+                _slots = validSlots.ToArray();
+            }
 
             for (int i = 0; i < _slots.Length; i++)
             {
