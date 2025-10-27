@@ -1587,22 +1587,22 @@ namespace TPSBR
 
         private static bool IsWeaponHotbarSlot(int slot)
         {
-            return slot == HOTBAR_PRIMARY_WEAPON_SLOT || slot == HOTBAR_SECONDARY_WEAPON_SLOT;
+            return TryGetHotbarSlotCategory(slot, out var category) && category == ESlotCategory.Weapon;
         }
 
         private static bool IsConsumableHotbarSlot(int slot)
         {
-            return slot >= HOTBAR_FIRST_CONSUMABLE_SLOT && slot <= HOTBAR_THIRD_CONSUMABLE_SLOT;
+            return TryGetHotbarSlotCategory(slot, out var category) && category == ESlotCategory.Consumable;
         }
 
         private static bool IsFishingHotbarSlot(int slot)
         {
-            return slot == HOTBAR_FISHING_POLE_SLOT;
+            return TryGetHotbarSlotCategory(slot, out var category) && category == ESlotCategory.Fishing;
         }
 
         private static bool IsValidHotbarAssignmentSlot(int slot)
         {
-            return slot > HOTBAR_UNARMED_SLOT;
+            return TryGetHotbarSlotCategory(slot, out _);
         }
 
         private static bool CanAssignDefinitionToHotbarSlot(ItemDefinition definition, int slot)
@@ -1610,16 +1610,39 @@ namespace TPSBR
             if (definition == null)
                 return false;
 
-            if (IsWeaponHotbarSlot(slot) == true)
-                return definition.SlotCategory == ESlotCategory.Weapon;
+            if (TryGetHotbarSlotCategory(slot, out var requiredCategory) == false)
+                return false;
 
-            if (IsConsumableHotbarSlot(slot) == true)
-                return definition.SlotCategory == ESlotCategory.Consumable;
+            if (requiredCategory == ESlotCategory.Fishing)
+            {
+                return definition.SlotCategory == ESlotCategory.Fishing ||
+                       definition.SlotCategory == ESlotCategory.FishingPole;
+            }
 
-            if (IsFishingHotbarSlot(slot) == true)
-                return definition.SlotCategory == ESlotCategory.FishingPole;
+            return definition.SlotCategory == requiredCategory;
+        }
 
-            return false;
+        private static bool TryGetHotbarSlotCategory(int slot, out ESlotCategory category)
+        {
+            switch (slot)
+            {
+                case HOTBAR_PRIMARY_WEAPON_SLOT:
+                case HOTBAR_SECONDARY_WEAPON_SLOT:
+                    category = ESlotCategory.Weapon;
+                    return true;
+
+                case int consumableSlot when consumableSlot >= HOTBAR_FIRST_CONSUMABLE_SLOT && consumableSlot <= HOTBAR_LAST_CONSUMABLE_SLOT:
+                    category = ESlotCategory.Consumable;
+                    return true;
+
+                case HOTBAR_FISHING_POLE_SLOT:
+                    category = ESlotCategory.Fishing;
+                    return true;
+
+                default:
+                    category = default;
+                    return false;
+            }
         }
 
         private static bool CanAssignWeaponToHotbarSlot(Weapon weapon, int slot)
