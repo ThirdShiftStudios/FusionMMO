@@ -2715,6 +2715,13 @@ namespace TPSBR
             if (definition == null)
                 return false;
 
+            if (slot < 0 || slot >= _hotbar.Length)
+                return false;
+
+            int slotsLength = _slots?.Length ?? 0;
+            if (slot >= slotsLength)
+                return false;
+
             var allowedSlots = GetAllowedHotbarSlots(definition.SlotCategory);
             for (int i = 0; i < allowedSlots.Length; i++)
             {
@@ -2738,23 +2745,36 @@ namespace TPSBR
         {
             var definition = weapon?.Definition as WeaponDefinition;
             if (definition == null)
-                return requestedSlot;
+                return ClampToValidSlot(requestedSlot);
+
+            requestedSlot = ClampToValidSlot(requestedSlot);
 
             if (IsDefinitionAllowedInHotbarSlot(definition, requestedSlot) == true)
                 return requestedSlot;
 
             var allowedSlots = GetAllowedHotbarSlots(definition.SlotCategory);
+            int slotsLength = _slots?.Length ?? 0;
+            int firstValidSlot = -1;
             for (int i = 0; i < allowedSlots.Length; i++)
             {
                 int slot = allowedSlots[i];
                 if (slot < 0 || slot >= _hotbar.Length)
                     continue;
 
+                if (slot >= slotsLength)
+                    continue;
+
                 if (_hotbar[slot] == null)
                     return slot;
+
+                if (firstValidSlot < 0)
+                    firstValidSlot = slot;
             }
 
-            return allowedSlots.Length > 0 ? allowedSlots[0] : requestedSlot;
+            if (firstValidSlot >= 0)
+                return firstValidSlot;
+
+            return requestedSlot;
         }
 
         private bool TryStoreWeapon(Weapon weapon, int sourceSlot)
