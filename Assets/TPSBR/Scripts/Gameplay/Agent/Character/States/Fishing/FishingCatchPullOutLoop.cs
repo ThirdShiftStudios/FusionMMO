@@ -6,6 +6,7 @@ namespace TPSBR
 {
     public class FishingCatchPullOutLoop : ClipState
     {
+        [SerializeField] private Transform _fishTransform;
         private FishingPoleWeapon _weapon;
 
         internal void SetActiveWeapon(FishingPoleWeapon weapon)
@@ -25,6 +26,7 @@ namespace TPSBR
         {
             base.OnActivate();
             SuppressMovement();
+            _weapon?.AttachFishToCatchTransform(_fishTransform);
         }
 
         protected override void OnFixedUpdate()

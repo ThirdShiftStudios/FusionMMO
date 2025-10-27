@@ -22,9 +22,15 @@ namespace TPSBR
         private float _waitingSuccessZoneBobAmplitude = 0.1f;
         [SerializeField]
         private float _waitingSuccessZoneBobFrequency = 2f;
+        [SerializeField]
+        private FishDefinition[] _availableFishDefinitions;
+        [SerializeField]
+        private Vector3 _fightingFishOffset = new Vector3(0f, -1f, 0f);
 
         [Networked]
         private FishingLureProjectile NetworkedActiveLure { get; set; }
+        [Networked]
+        private FishItem NetworkedActiveFish { get; set; }
 
         private float _primaryHoldTime;
         private bool _isPrimaryHeld;
@@ -32,12 +38,20 @@ namespace TPSBR
         private bool _castActive;
         private bool _waitingForPrimaryRelease;
         private FishingLureProjectile _activeLureProjectile;
+        private FishItem _activeFish;
         private bool _lureLaunched;
         private bool _renderersResolved;
         private bool _isInWaitingPhase;
         private bool _isHookSetSuccessZoneActive;
         private float _waitingBobTimer;
         private bool _waitingBobOffsetApplied;
+        private Transform _fishHandTransform;
+        private bool _isFishInHand;
+        private Transform _cachedLureParent;
+        private Vector3 _cachedLureLocalPosition;
+        private Quaternion _cachedLureLocalRotation;
+        private bool _hasCachedLureParent;
+        private static FishDefinition[] _cachedResourceFishDefinitions;
 
         [Networked]
         private NetworkBool NetworkedHookSetSuccessZoneActive { get; set; }
@@ -48,12 +62,14 @@ namespace TPSBR
         {
             base.Spawned();
             HandleActiveLureChanged(true);
+            HandleActiveFishChanged(true);
         }
 
         public override void Render()
         {
             base.Render();
             HandleActiveLureChanged();
+            HandleActiveFishChanged();
             ApplyHookSetSuccessZoneState(NetworkedHookSetSuccessZoneActive);
             UpdateWaitingLureBob();
         }
@@ -220,6 +236,7 @@ namespace TPSBR
             _lureLaunched = false;
             _waitingForPrimaryRelease = false;
             EndWaitingPhase();
+            DespawnActiveFish();
             CleanupLure(false);
 
             RaiseLifecycleStateChanged(FishingLifecycleState.Casting);
@@ -238,6 +255,7 @@ namespace TPSBR
             _waitingForPrimaryRelease = false;
             ResetHoldTracking();
             EndWaitingPhase();
+            DespawnActiveFish();
             CleanupLure(true);
 
             RaiseLifecycleStateChanged(FishingLifecycleState.Ready);
@@ -250,6 +268,7 @@ namespace TPSBR
             ResetHoldTracking();
             _waitingForPrimaryRelease = true;
             EndWaitingPhase();
+            DespawnActiveFish();
             CleanupLure(true);
 
             RaiseLifecycleStateChanged(FishingLifecycleState.Ready);
@@ -298,6 +317,7 @@ namespace TPSBR
                 return;
             }
 
+            DespawnActiveFish();
             EndWaitingPhase();
             RaiseLifecycleStateChanged(FishingLifecycleState.Ready);
         }
@@ -311,6 +331,7 @@ namespace TPSBR
                 return;
             }
 
+            DespawnActiveFish();
             EndWaitingPhase();
             RaiseLifecycleStateChanged(FishingLifecycleState.Ready);
         }
@@ -318,7 +339,27 @@ namespace TPSBR
         internal void NotifyFightingPhaseEntered()
         {
             EndWaitingPhase();
+            SetFishPresentationToLure();
+
+            if (HasStateAuthority == true)
+            {
+                SpawnFightingFish();
+            }
+
             RaiseLifecycleStateChanged(FishingLifecycleState.Fighting);
+        }
+
+        internal void AttachFishToCatchTransform(Transform catchTransform)
+        {
+            _fishHandTransform = catchTransform;
+            _isFishInHand = catchTransform != null;
+
+            if (HasStateAuthority == true && _activeFish != null)
+            {
+                _activeFish.State = _isFishInHand == true ? FishItem.FishState.Caught : FishItem.FishState.Fighting;
+            }
+
+            ApplyCurrentFishAttachment();
         }
 
         internal void LaunchLure()
@@ -633,6 +674,278 @@ namespace TPSBR
             }
         }
 
+        private void SetFishPresentationToLure()
+        {
+            _isFishInHand = false;
+            _fishHandTransform = null;
+
+            if (HasStateAuthority == true && _activeFish != null)
+            {
+                _activeFish.State = FishItem.FishState.Fighting;
+            }
+
+            ApplyCurrentFishAttachment();
+        }
+
+        private void SpawnFightingFish()
+        {
+            DespawnActiveFish();
+
+            FishingLureProjectile lure = _activeLureProjectile;
+            if (lure == null)
+            {
+                return;
+            }
+
+            FishDefinition definition = ResolveRandomFishDefinition();
+            if (definition == null || definition.FishPrefab == null)
+            {
+                return;
+            }
+
+            NetworkRunner runner = Runner;
+            if (runner == null || runner.IsRunning == false)
+            {
+                return;
+            }
+
+            NetworkObject owner = Owner;
+            if (owner == null)
+            {
+                return;
+            }
+
+            Vector3 spawnPosition = lure.transform.position + _fightingFishOffset;
+            Quaternion spawnRotation = lure.transform.rotation;
+
+            runner.Spawn(definition.FishPrefab, spawnPosition, spawnRotation, owner.InputAuthority, (spawnRunner, spawnedObject) =>
+            {
+                FishItem fish = spawnedObject.GetComponent<FishItem>();
+
+                if (fish == null)
+                {
+                    return;
+                }
+
+                fish.Context = Context;
+                fish.State = FishItem.FishState.Fighting;
+
+                NetworkedActiveFish = fish;
+                HandleActiveFishChanged(true);
+            });
+        }
+
+        private FishDefinition ResolveRandomFishDefinition()
+        {
+            if (_availableFishDefinitions != null && _availableFishDefinitions.Length > 0)
+            {
+                int index = UnityEngine.Random.Range(0, _availableFishDefinitions.Length);
+                return _availableFishDefinitions[index];
+            }
+
+            if (_cachedResourceFishDefinitions == null || _cachedResourceFishDefinitions.Length == 0)
+            {
+                _cachedResourceFishDefinitions = Resources.LoadAll<FishDefinition>(string.Empty);
+            }
+
+            if (_cachedResourceFishDefinitions != null && _cachedResourceFishDefinitions.Length > 0)
+            {
+                int index = UnityEngine.Random.Range(0, _cachedResourceFishDefinitions.Length);
+                return _cachedResourceFishDefinitions[index];
+            }
+
+            return null;
+        }
+
+        private void HandleActiveFishChanged(bool force = false)
+        {
+            FishItem networkedFish = NetworkedActiveFish;
+            FishItem resolvedFish = null;
+
+            if (networkedFish != null && networkedFish.Object != null && networkedFish.Object.IsValid == true)
+            {
+                resolvedFish = networkedFish;
+            }
+
+            if (force == true || _activeFish != resolvedFish)
+            {
+                _activeFish = resolvedFish;
+
+                if (_activeFish == null)
+                {
+                    RestoreLureParent();
+                }
+
+                ApplyCurrentFishAttachment();
+            }
+        }
+
+        private void ApplyCurrentFishAttachment()
+        {
+            if (_isFishInHand == false)
+            {
+                RestoreLureParent();
+            }
+
+            FishItem fish = _activeFish;
+
+            if (fish == null)
+            {
+                return;
+            }
+
+            if (_isFishInHand == true && _fishHandTransform != null)
+            {
+                AttachFishToHandInternal(fish, _fishHandTransform);
+            }
+            else
+            {
+                AttachFishToLureInternal(fish);
+            }
+        }
+
+        private void AttachFishToLureInternal(FishItem fish)
+        {
+            if (fish == null)
+            {
+                return;
+            }
+
+            RestoreLureParent();
+
+            FishingLureProjectile lure = _activeLureProjectile;
+            Transform fishTransform = fish.transform;
+
+            if (lure != null)
+            {
+                Transform lureTransform = lure.transform;
+                fishTransform.SetParent(lureTransform);
+                fishTransform.localPosition = _fightingFishOffset;
+                fishTransform.localRotation = Quaternion.identity;
+                UpdateParabolaString();
+            }
+            else
+            {
+                fishTransform.SetParent(null);
+            }
+
+            if (HasStateAuthority == true)
+            {
+                fish.State = FishItem.FishState.Fighting;
+            }
+        }
+
+        private void AttachFishToHandInternal(FishItem fish, Transform handTransform)
+        {
+            if (fish == null || handTransform == null)
+            {
+                return;
+            }
+
+            Transform fishTransform = fish.transform;
+            fishTransform.SetParent(handTransform);
+            fishTransform.localPosition = Vector3.zero;
+            fishTransform.localRotation = Quaternion.identity;
+
+            FishingLureProjectile lure = _activeLureProjectile;
+
+            if (lure != null)
+            {
+                Transform hookPlacement = fish.HookPlacement;
+
+                if (hookPlacement != null)
+                {
+                    CacheLureParent();
+
+                    Transform lureTransform = lure.transform;
+                    lureTransform.SetParent(hookPlacement);
+                    lureTransform.localPosition = Vector3.zero;
+                    lureTransform.localRotation = Quaternion.identity;
+
+                    UpdateParabolaString();
+                }
+            }
+
+            if (HasStateAuthority == true)
+            {
+                fish.State = FishItem.FishState.Caught;
+            }
+        }
+
+        private void CacheLureParent()
+        {
+            if (_hasCachedLureParent == true)
+            {
+                return;
+            }
+
+            FishingLureProjectile lure = _activeLureProjectile;
+
+            if (lure == null)
+            {
+                return;
+            }
+
+            Transform lureTransform = lure.transform;
+            _cachedLureParent = lureTransform.parent;
+            _cachedLureLocalPosition = lureTransform.localPosition;
+            _cachedLureLocalRotation = lureTransform.localRotation;
+            _hasCachedLureParent = true;
+        }
+
+        private void RestoreLureParent()
+        {
+            if (_hasCachedLureParent == false)
+            {
+                return;
+            }
+
+            FishingLureProjectile lure = _activeLureProjectile;
+
+            if (lure != null)
+            {
+                Transform lureTransform = lure.transform;
+                lureTransform.SetParent(_cachedLureParent);
+                lureTransform.localPosition = _cachedLureLocalPosition;
+                lureTransform.localRotation = _cachedLureLocalRotation;
+                UpdateParabolaString();
+            }
+
+            _hasCachedLureParent = false;
+            _cachedLureParent = null;
+            _cachedLureLocalPosition = default;
+            _cachedLureLocalRotation = default;
+        }
+
+        private void DespawnActiveFish()
+        {
+            RestoreLureParent();
+
+            if (HasStateAuthority == true)
+            {
+                FishItem fishToDespawn = NetworkedActiveFish ?? _activeFish;
+
+                if (fishToDespawn != null)
+                {
+                    NetworkObject fishObject = fishToDespawn.Object;
+
+                    if (fishObject != null && fishObject.IsValid == true)
+                    {
+                        Runner?.Despawn(fishObject);
+                    }
+                }
+
+                if (NetworkedActiveFish != null)
+                {
+                    NetworkedActiveFish = null;
+                }
+            }
+
+            _activeFish = null;
+            _isFishInHand = false;
+            _fishHandTransform = null;
+        }
+
         private void HandleActiveLureChanged(bool force = false)
         {
             FishingLureProjectile networkedProjectile = NetworkedActiveLure;
@@ -648,6 +961,7 @@ namespace TPSBR
                 _activeLureProjectile = resolvedProjectile;
                 ResetWaitingBobVisuals();
                 UpdateParabolaString();
+                ApplyCurrentFishAttachment();
             }
         }
     }
