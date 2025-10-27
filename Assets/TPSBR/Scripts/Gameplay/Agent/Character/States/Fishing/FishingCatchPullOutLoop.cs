@@ -8,11 +8,17 @@ namespace TPSBR
     {
         [SerializeField] private Transform _fishTransform;
         private FishingPoleWeapon _weapon;
-        private bool _hasAwardedCatch;
+        private bool _fishAttached;
 
         internal void SetActiveWeapon(FishingPoleWeapon weapon)
         {
             _weapon = weapon;
+            _fishAttached = false;
+
+            if (weapon != null && IsActive(true) == true)
+            {
+                EnsureWeaponReference(attachFish: true);
+            }
         }
 
         internal void ClearActiveWeapon(FishingPoleWeapon weapon)
@@ -20,15 +26,16 @@ namespace TPSBR
             if (_weapon == weapon)
             {
                 _weapon = null;
+                _fishAttached = false;
             }
         }
 
         protected override void OnActivate()
         {
             base.OnActivate();
+            _fishAttached = false;
             SuppressMovement();
-            _weapon?.AttachFishToCatchTransform(_fishTransform);
-            TryAwardCatch();
+            EnsureWeaponReference(attachFish: true);
         }
 
         protected override void OnFixedUpdate()
@@ -47,11 +54,13 @@ namespace TPSBR
         {
             base.OnDeactivate();
             SuppressMovement();
-            _hasAwardedCatch = false;
+            _fishAttached = false;
         }
 
         private void SuppressMovement()
         {
+            EnsureWeaponReference(attachFish: _fishAttached == false);
+
             if (_weapon?.Character?.CharacterController is not KCC kcc)
                 return;
 
@@ -62,37 +71,33 @@ namespace TPSBR
             kcc.SetExternalAcceleration(Vector3.zero);
         }
 
-        private void TryAwardCatch()
+        private void EnsureWeaponReference(bool attachFish = false)
         {
-            if (_hasAwardedCatch == true)
+            if (_weapon != null)
             {
+                if (attachFish == true && _fishTransform != null)
+                {
+                    _weapon.AttachFishToCatchTransform(_fishTransform);
+                    _fishAttached = true;
+                }
+
                 return;
             }
 
-            if (_weapon == null || _weapon.HasStateAuthority == false)
-            {
+            Character character = GetComponentInParent<Character>();
+            Agent agent = character != null ? character.Agent : null;
+            Inventory inventory = agent != null ? agent.Inventory : null;
+            FishingPoleWeapon resolvedWeapon = inventory != null ? inventory.CurrentWeapon as FishingPoleWeapon : null;
+
+            if (resolvedWeapon == null)
                 return;
-            }
 
-            FishDefinition definition = _weapon.ActiveFishDefinition;
-            if (definition == null)
+            _weapon = resolvedWeapon;
+
+            if (attachFish == true && _fishTransform != null)
             {
-                return;
-            }
-
-            Agent agent = _weapon.Character?.Agent;
-            Inventory inventory = agent?.Inventory;
-
-            if (inventory == null)
-            {
-                return;
-            }
-
-            byte remainder = inventory.AddItem(definition, 1);
-
-            if (remainder < 1)
-            {
-                _hasAwardedCatch = true;
+                _weapon.AttachFishToCatchTransform(_fishTransform);
+                _fishAttached = true;
             }
         }
     }
