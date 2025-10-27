@@ -39,7 +39,7 @@ namespace TPSBR
         private float _waitingBobTimer;
         private bool _waitingBobOffsetApplied;
 
-        [Networked(OnChanged = nameof(OnHookSetSuccessZoneStateChanged))]
+        [Networked]
         private NetworkBool NetworkedHookSetSuccessZoneActive { get; set; }
 
         public event Action<FishingLifecycleState> LifecycleStateChanged;
@@ -54,6 +54,7 @@ namespace TPSBR
         {
             base.Render();
             HandleActiveLureChanged();
+            ApplyHookSetSuccessZoneState(NetworkedHookSetSuccessZoneActive);
             UpdateWaitingLureBob();
         }
 
@@ -508,16 +509,6 @@ namespace TPSBR
             }
 
             ApplyHookSetSuccessZoneState(shouldActivate);
-        }
-
-        private static void OnHookSetSuccessZoneStateChanged(Changed<FishingPoleWeapon> changed)
-        {
-            changed.Behaviour.OnHookSetSuccessZoneStateChanged();
-        }
-
-        private void OnHookSetSuccessZoneStateChanged()
-        {
-            ApplyHookSetSuccessZoneState(NetworkedHookSetSuccessZoneActive);
         }
 
         private void ApplyHookSetSuccessZoneState(bool shouldActivate)
