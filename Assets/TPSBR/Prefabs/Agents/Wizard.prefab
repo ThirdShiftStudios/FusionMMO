@@ -102,6 +102,7 @@ MonoBehaviour:
     Clip: {fileID: 3094330708855449807, guid: 210c0ba3454dd1a4681017115b0c564f, type: 3}
     Speed: 1
     IsLooping: 1
+  _fishTransform: {fileID: 5527120700237703712}
 --- !u!1 &717184677871332033
 GameObject:
   m_ObjectHideFlags: 0
@@ -152,6 +153,37 @@ MonoBehaviour:
   _endOpenChest: {fileID: 1209673589450827304}
   _blendInDuration: 0.1
   _blendOutDuration: 0.1
+--- !u!1 &837541674950971199
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5527120700237703712}
+  m_Layer: 0
+  m_Name: FishTransform
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5527120700237703712
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 837541674950971199}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0.0213, y: 0.0034, z: 0.0134}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1949544339565536962}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1116861512055694563
 GameObject:
   m_ObjectHideFlags: 0
@@ -1985,6 +2017,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: -4510743551149356090, guid: 89f884e7f2fb94845ab3d0adb853f9e6, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1867873543316851787}
+    - targetCorrespondingSourceObject: {fileID: -6008036986429401550, guid: 89f884e7f2fb94845ab3d0adb853f9e6, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 5527120700237703712}
     - targetCorrespondingSourceObject: {fileID: 5816189743937407162, guid: 89f884e7f2fb94845ab3d0adb853f9e6, type: 3}
       insertIndex: -1
       addedObject: {fileID: 6388543282259232068}
@@ -2089,6 +2124,11 @@ MonoBehaviour:
 --- !u!4 &1887732310353660571 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 3288635460157618795, guid: 89f884e7f2fb94845ab3d0adb853f9e6, type: 3}
+  m_PrefabInstance: {fileID: 4003988201778376944}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &1949544339565536962 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -6008036986429401550, guid: 89f884e7f2fb94845ab3d0adb853f9e6, type: 3}
   m_PrefabInstance: {fileID: 4003988201778376944}
   m_PrefabAsset: {fileID: 0}
 --- !u!4 &2211108689987638485 stripped
