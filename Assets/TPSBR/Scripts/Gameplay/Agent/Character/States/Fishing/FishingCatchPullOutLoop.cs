@@ -8,10 +8,17 @@ namespace TPSBR
     {
         [SerializeField] private Transform _fishTransform;
         private FishingPoleWeapon _weapon;
+        private bool _fishAttached;
 
         internal void SetActiveWeapon(FishingPoleWeapon weapon)
         {
             _weapon = weapon;
+            _fishAttached = false;
+
+            if (weapon != null && IsActive(true) == true)
+            {
+                EnsureWeaponReference(attachFish: true);
+            }
         }
 
         internal void ClearActiveWeapon(FishingPoleWeapon weapon)
@@ -19,12 +26,14 @@ namespace TPSBR
             if (_weapon == weapon)
             {
                 _weapon = null;
+                _fishAttached = false;
             }
         }
 
         protected override void OnActivate()
         {
             base.OnActivate();
+            _fishAttached = false;
             SuppressMovement();
             EnsureWeaponReference(attachFish: true);
         }
@@ -45,11 +54,12 @@ namespace TPSBR
         {
             base.OnDeactivate();
             SuppressMovement();
+            _fishAttached = false;
         }
 
         private void SuppressMovement()
         {
-            EnsureWeaponReference();
+            EnsureWeaponReference(attachFish: _fishAttached == false);
 
             if (_weapon?.Character?.CharacterController is not KCC kcc)
                 return;
@@ -68,6 +78,7 @@ namespace TPSBR
                 if (attachFish == true && _fishTransform != null)
                 {
                     _weapon.AttachFishToCatchTransform(_fishTransform);
+                    _fishAttached = true;
                 }
 
                 return;
@@ -86,6 +97,7 @@ namespace TPSBR
             if (attachFish == true && _fishTransform != null)
             {
                 _weapon.AttachFishToCatchTransform(_fishTransform);
+                _fishAttached = true;
             }
         }
     }
