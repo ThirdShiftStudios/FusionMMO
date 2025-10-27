@@ -109,9 +109,11 @@ namespace TPSBR
         public const int HEAD_SLOT_INDEX = byte.MaxValue - 3;
         public const int UPPER_BODY_SLOT_INDEX = byte.MaxValue - 4;
         public const int LOWER_BODY_SLOT_INDEX = byte.MaxValue - 5;
-        public const int HOTBAR_CAPACITY = 4;
+        public const int HOTBAR_CAPACITY = 7;
         public const int HOTBAR_VISIBLE_SLOTS = HOTBAR_CAPACITY - 1;
         public const int HOTBAR_FISHING_POLE_SLOT = HOTBAR_CAPACITY - 1;
+        public const int HOTBAR_FIRST_CONSUMABLE_SLOT = 3;
+        public const int HOTBAR_CONSUMABLE_SLOT_COUNT = 3;
         // PRIVATE MEMBERS
 
         [SerializeField] private WeaponSlot[] _slots;
@@ -1220,6 +1222,8 @@ namespace TPSBR
                 }
             }
 
+            SpawnDefaultConsumables();
+
 
             SetCurrentWeapon(bestWeaponSlot);
             ArmCurrentWeapon();
@@ -1520,6 +1524,42 @@ namespace TPSBR
 
         // PRIVATE METHODS
 
+        private void SpawnDefaultConsumables()
+        {
+            if (Runner == null)
+                return;
+
+            int consumableSlot = HOTBAR_FIRST_CONSUMABLE_SLOT;
+            int lastConsumableSlot = HOTBAR_FIRST_CONSUMABLE_SLOT + HOTBAR_CONSUMABLE_SLOT_COUNT - 1;
+
+            if (consumableSlot < 0 || consumableSlot >= _hotbar.Length)
+                return;
+
+            int targetSlot = -1;
+            for (int slot = consumableSlot; slot <= lastConsumableSlot && slot < _hotbar.Length; slot++)
+            {
+                if (_hotbar[slot] == null)
+                {
+                    targetSlot = slot;
+                    break;
+                }
+            }
+
+            if (targetSlot < 0)
+                return;
+
+            var beerDefinition = Resources.Load<BeerDefinition>("BeerDefinition");
+            if (beerDefinition == null)
+                return;
+
+            var beerPrefab = EnsureWeaponPrefabRegistered(beerDefinition);
+            if (beerPrefab == null)
+                return;
+
+            var beerWeapon = Runner.Spawn(beerPrefab, inputAuthority: Object.InputAuthority);
+            AddWeapon(beerWeapon, targetSlot);
+        }
+
         private int GetSlotIndex(WeaponSize size)
         {
             if (_slots == null || _slots.Length == 0)
@@ -1595,6 +1635,7 @@ namespace TPSBR
             {
                 WeaponSize.Unarmed => 0,
                 WeaponSize.Staff => 1,
+                WeaponSize.Consumable => HOTBAR_FIRST_CONSUMABLE_SLOT,
                 WeaponSize.Throwable => 5,
                 _ => 0,
             };
@@ -4475,17 +4516,19 @@ namespace TPSBR
 
     private static int GetWeaponPriority(WeaponSize size)
     {
-        switch (size)
-        {
-            case WeaponSize.Staff:
-                return 2;
-            case WeaponSize.Throwable:
-                return 1;
-            case WeaponSize.Unarmed:
-            default:
-                return 0;
+            switch (size)
+            {
+                case WeaponSize.Staff:
+                    return 2;
+                case WeaponSize.Throwable:
+                    return 1;
+                case WeaponSize.Consumable:
+                    return 0;
+                case WeaponSize.Unarmed:
+                default:
+                    return 0;
+            }
         }
-    }
 
     public void SwitchWeapon(int hotbarIndex)
     {

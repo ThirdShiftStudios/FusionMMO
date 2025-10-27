@@ -268,9 +268,10 @@ namespace TPSBR
         {
                 switch (_inventory.CurrentWeaponSize)
                 {
-                        case WeaponSize.Unarmed:   return 1.0f;
-                        case WeaponSize.Throwable: return 0.95f;
-                        case WeaponSize.Staff:     return 0.92f;
+                        case WeaponSize.Unarmed:    return 1.0f;
+                        case WeaponSize.Consumable: return 0.97f;
+                        case WeaponSize.Throwable:  return 0.95f;
+                        case WeaponSize.Staff:      return 0.92f;
                 }
 
                 return 0.95f;

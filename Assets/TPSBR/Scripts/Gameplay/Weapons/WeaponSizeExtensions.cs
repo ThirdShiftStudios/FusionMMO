@@ -8,6 +8,7 @@ namespace TPSBR
             {
                 WeaponSize.Unarmed => 0,
                 WeaponSize.Staff => 1,
+                WeaponSize.Consumable => 3,
                 WeaponSize.Throwable => 5,
                 _ => 0,
             };
@@ -19,6 +20,7 @@ namespace TPSBR
             {
                 WeaponSize.Unarmed => "UNARMED",
                 WeaponSize.Staff => "STAFF",
+                WeaponSize.Consumable => "CONSUMABLE",
                 WeaponSize.Throwable => "THROWABLE",
                 _ => "UNARMED",
             };
