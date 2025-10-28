@@ -599,7 +599,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5978e2868e2fb149b1c151baa6b6a3a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _drinkState: {fileID: 0}
+  _drinkState: {fileID: 3470566168271429713}
+  _blendInDuration: 0.1
+  _blendOutDuration: 0.15
 --- !u!1 &3123258308059616505
 GameObject:
   m_ObjectHideFlags: 0
@@ -3586,6 +3588,7 @@ MonoBehaviour:
   _initialWeight: 1
   staffAttack: {fileID: 3954794708403379349}
   fishingPoleUse: {fileID: 6087183381381594988}
+  beerUse: {fileID: 3130146283118759857}
 --- !u!1 &4282139267378355678 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 7625200539080901463, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
