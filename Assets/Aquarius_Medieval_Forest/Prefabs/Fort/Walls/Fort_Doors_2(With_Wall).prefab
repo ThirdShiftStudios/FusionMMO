@@ -1,0 +1,261 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &6296298185096013512
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1346472612196097621}
+  m_Layer: 0
+  m_Name: Fort_Doors_2(With_Wall)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1346472612196097621
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6296298185096013512}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 7422652507803082054}
+  - {fileID: 8512584714673893507}
+  - {fileID: 2518551259059370893}
+  m_Father: {fileID: 0}
+  m_RootOrder: 0
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1001 &3135247899866986461
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    m_TransformParent: {fileID: 1346472612196097621}
+    m_Modifications:
+    - target: {fileID: 5512454852986251931, guid: a015df80791e4e84e861a85f9d2dfaf9,
+        type: 3}
+      propertyPath: m_RootOrder
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5512454852986251931, guid: a015df80791e4e84e861a85f9d2dfaf9,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 2.9371033
+      objectReference: {fileID: 0}
+    - target: {fileID: 5512454852986251931, guid: a015df80791e4e84e861a85f9d2dfaf9,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -0.0047283173
+      objectReference: {fileID: 0}
+    - target: {fileID: 5512454852986251931, guid: a015df80791e4e84e861a85f9d2dfaf9,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0.16082764
+      objectReference: {fileID: 0}
+    - target: {fileID: 5512454852986251931, guid: a015df80791e4e84e861a85f9d2dfaf9,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5512454852986251931, guid: a015df80791e4e84e861a85f9d2dfaf9,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5512454852986251931, guid: a015df80791e4e84e861a85f9d2dfaf9,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5512454852986251931, guid: a015df80791e4e84e861a85f9d2dfaf9,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5512454852986251931, guid: a015df80791e4e84e861a85f9d2dfaf9,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5512454852986251931, guid: a015df80791e4e84e861a85f9d2dfaf9,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5512454852986251931, guid: a015df80791e4e84e861a85f9d2dfaf9,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7405737620742038261, guid: a015df80791e4e84e861a85f9d2dfaf9,
+        type: 3}
+      propertyPath: m_Name
+      value: Fort_Door_A1
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: a015df80791e4e84e861a85f9d2dfaf9, type: 3}
+--- !u!4 &7422652507803082054 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 5512454852986251931, guid: a015df80791e4e84e861a85f9d2dfaf9,
+    type: 3}
+  m_PrefabInstance: {fileID: 3135247899866986461}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &8492506623559488040
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    m_TransformParent: {fileID: 1346472612196097621}
+    m_Modifications:
+    - target: {fileID: 6280481619240479141, guid: 847c8b8cdd5d1fc4c8482d9d11bc3412,
+        type: 3}
+      propertyPath: m_RootOrder
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6280481619240479141, guid: 847c8b8cdd5d1fc4c8482d9d11bc3412,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 2.7624817
+      objectReference: {fileID: 0}
+    - target: {fileID: 6280481619240479141, guid: 847c8b8cdd5d1fc4c8482d9d11bc3412,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 6280481619240479141, guid: 847c8b8cdd5d1fc4c8482d9d11bc3412,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6280481619240479141, guid: 847c8b8cdd5d1fc4c8482d9d11bc3412,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6280481619240479141, guid: 847c8b8cdd5d1fc4c8482d9d11bc3412,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6280481619240479141, guid: 847c8b8cdd5d1fc4c8482d9d11bc3412,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6280481619240479141, guid: 847c8b8cdd5d1fc4c8482d9d11bc3412,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6280481619240479141, guid: 847c8b8cdd5d1fc4c8482d9d11bc3412,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6280481619240479141, guid: 847c8b8cdd5d1fc4c8482d9d11bc3412,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6280481619240479141, guid: 847c8b8cdd5d1fc4c8482d9d11bc3412,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8130079354409305271, guid: 847c8b8cdd5d1fc4c8482d9d11bc3412,
+        type: 3}
+      propertyPath: m_Name
+      value: Fort_Wall_Large_Top_Window_A1
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 847c8b8cdd5d1fc4c8482d9d11bc3412, type: 3}
+--- !u!4 &2518551259059370893 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 6280481619240479141, guid: 847c8b8cdd5d1fc4c8482d9d11bc3412,
+    type: 3}
+  m_PrefabInstance: {fileID: 8492506623559488040}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &8573114705967280508
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    m_TransformParent: {fileID: 1346472612196097621}
+    m_Modifications:
+    - target: {fileID: 61665926526124543, guid: b4615a51862e68f48bdfac2923e796e9,
+        type: 3}
+      propertyPath: m_RootOrder
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 61665926526124543, guid: b4615a51862e68f48bdfac2923e796e9,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -2.9628906
+      objectReference: {fileID: 0}
+    - target: {fileID: 61665926526124543, guid: b4615a51862e68f48bdfac2923e796e9,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -0.0047283173
+      objectReference: {fileID: 0}
+    - target: {fileID: 61665926526124543, guid: b4615a51862e68f48bdfac2923e796e9,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0.16082764
+      objectReference: {fileID: 0}
+    - target: {fileID: 61665926526124543, guid: b4615a51862e68f48bdfac2923e796e9,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 61665926526124543, guid: b4615a51862e68f48bdfac2923e796e9,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 61665926526124543, guid: b4615a51862e68f48bdfac2923e796e9,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 61665926526124543, guid: b4615a51862e68f48bdfac2923e796e9,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 61665926526124543, guid: b4615a51862e68f48bdfac2923e796e9,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 61665926526124543, guid: b4615a51862e68f48bdfac2923e796e9,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 61665926526124543, guid: b4615a51862e68f48bdfac2923e796e9,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6283550316032203415, guid: b4615a51862e68f48bdfac2923e796e9,
+        type: 3}
+      propertyPath: m_Name
+      value: Fort_Door_A2
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: b4615a51862e68f48bdfac2923e796e9, type: 3}
+--- !u!4 &8512584714673893507 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 61665926526124543, guid: b4615a51862e68f48bdfac2923e796e9,
+    type: 3}
+  m_PrefabInstance: {fileID: 8573114705967280508}
+  m_PrefabAsset: {fileID: 0}
