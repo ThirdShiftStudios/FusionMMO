@@ -20,6 +20,7 @@ namespace TPSBR
                 private Vector3 _displayedBeerOriginalLocalPosition;
                 private Quaternion _displayedBeerOriginalLocalRotation;
                 private Vector3 _displayedBeerOriginalLocalScale;
+                private ItemData? _lastSelectedItem;
 
                 private static DataDefinition[] _cachedBeerDefinitions;
                 private static readonly List<BeerUsable> _beerLookupBuffer = new List<BeerUsable>();
@@ -80,12 +81,14 @@ namespace TPSBR
                         UnsubscribeFromInventory();
                         _activeAgent = null;
                         UpdatePurchaseButtonState();
+                        _lastSelectedItem = null;
                 }
 
                 protected override void OnDisable()
                 {
                         RestoreDisplayedBeer();
                         base.OnDisable();
+                        _lastSelectedItem = null;
                 }
 
                 protected override void SubscribeToViewEvents(UIView view)
@@ -115,16 +118,18 @@ namespace TPSBR
                         base.Render();
 
                         UpdatePurchaseButtonState();
+                        MaintainDisplayedBeer();
                 }
 
                 protected override void OnItemSelected(ItemData data)
                 {
-                        base.OnItemSelected(data);
+                        SetLastSelectedItem(data);
                         UpdateDisplayedBeer(data);
                 }
 
                 private void HandleItemSelectedForRefill(UpgradeStation.ItemData data)
                 {
+                        SetLastSelectedItem(data);
                         UpdateDisplayedBeer(data);
                         UpdatePurchaseButtonState();
                 }
@@ -263,6 +268,50 @@ namespace TPSBR
                         AttachBeerToView(beer);
                 }
 
+                private void MaintainDisplayedBeer()
+                {
+                        Inventory inventory = _activeAgent != null ? _activeAgent.Inventory : null;
+
+                        if (WeaponViewTransform == null || inventory == null)
+                        {
+                                RestoreDisplayedBeer();
+                                return;
+                        }
+
+                        RefreshLastSelectedItemFromNetwork(inventory);
+
+                        if (_lastSelectedItem.HasValue == false)
+                        {
+                                RestoreDisplayedBeer();
+                                return;
+                        }
+
+                        ItemData data = _lastSelectedItem.Value;
+
+                        if (TryGetBeerForSelection(inventory, data, out BeerUsable beer) == false)
+                        {
+                                RestoreDisplayedBeer();
+                                return;
+                        }
+
+                        if (_displayedBeer == beer)
+                        {
+                                if (beer != null && beer.transform.parent != WeaponViewTransform)
+                                {
+                                        Transform beerTransform = beer.transform;
+                                        beerTransform.SetParent(WeaponViewTransform, false);
+                                        beerTransform.localPosition = Vector3.zero;
+                                        beerTransform.localRotation = Quaternion.identity;
+                                        beerTransform.localScale = Vector3.one;
+                                }
+
+                                return;
+                        }
+
+                        RestoreDisplayedBeer();
+                        AttachBeerToView(beer);
+                }
+
                 private bool TryGetBeerForSelection(Inventory inventory, UpgradeStation.ItemData data, out BeerUsable beer)
                 {
                         beer = null;
@@ -358,6 +407,61 @@ namespace TPSBR
 
                         _displayedBeer = null;
                         _displayedBeerOriginalParent = null;
+                }
+
+                private void SetLastSelectedItem(ItemData data)
+                {
+                        _lastSelectedItem = data;
+                        _currentSelectedSourceType = data.SourceType;
+                        _currentSelectedSourceIndex = data.SourceIndex;
+                }
+
+                private void RefreshLastSelectedItemFromNetwork(Inventory inventory)
+                {
+                        if (inventory == null)
+                        {
+                                _lastSelectedItem = null;
+                                return;
+                        }
+
+                        if (_currentSelectedSourceType == ItemSourceType.None)
+                        {
+                                _lastSelectedItem = null;
+                                return;
+                        }
+
+                        if (SelectedItemDefinitionId == 0)
+                        {
+                                if (_lastSelectedItem.HasValue == false || _lastSelectedItem.Value.Definition == null)
+                                {
+                                        _lastSelectedItem = null;
+                                }
+
+                                return;
+                        }
+
+                        if (_lastSelectedItem.HasValue == true)
+                        {
+                                ItemData current = _lastSelectedItem.Value;
+
+                                if (current.SourceType == _currentSelectedSourceType &&
+                                    current.SourceIndex == _currentSelectedSourceIndex &&
+                                    current.Definition != null &&
+                                    current.Definition.ID == SelectedItemDefinitionId)
+                                {
+                                        return;
+                                }
+                        }
+
+                        WeaponDefinition definition = ItemDefinition.Get(SelectedItemDefinitionId) as WeaponDefinition;
+
+                        if (definition == null)
+                        {
+                                _lastSelectedItem = null;
+                                return;
+                        }
+
+                        _lastSelectedItem = new ItemData(null, 0, _currentSelectedSourceType, _currentSelectedSourceIndex, definition, null);
                 }
 
                 private void SubscribeToInventory(Inventory inventory)
