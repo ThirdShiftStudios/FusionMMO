@@ -31,6 +31,9 @@ namespace TPSBR
         private int _currentSelectedSourceIndex = -1;
         private ChangeDetector _changeDetector;
 
+        protected ItemSourceType CurrentSelectedSourceType => _currentSelectedSourceType;
+        protected int CurrentSelectedSourceIndex => _currentSelectedSourceIndex;
+
 
         public void Interact(Agent agent)
         {
@@ -129,7 +132,7 @@ namespace TPSBR
             base.OnExchangeViewClosed(view);
         }
 
-        private ItemStatus PopulateItems(Agent agent, List<ItemData> destination)
+        protected virtual ItemStatus PopulateItems(Agent agent, List<ItemData> destination)
         {
             if (destination == null)
                 return ItemStatus.NoItems;
@@ -449,7 +452,7 @@ namespace TPSBR
             _currentSelectedSourceIndex = SelectedItemSourceIndex;
         }
 
-        private bool MatchesFilter(DataDefinition definition)
+        protected virtual bool MatchesFilter(DataDefinition definition)
         {
             if (FilterDefinitions == null || FilterDefinitions.Length == 0)
                 return true;
