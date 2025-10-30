@@ -1707,9 +1707,34 @@ namespace TPSBR
                 EnsureCharacterStatsData(character.CharacterId, false);
             }
 
-            if (_activeCharacterId.HasValue() == false && _characters.Count > 0)
+            if (_activeCharacterId.HasValue() == false)
             {
-                _activeCharacterId = _characters[0].CharacterId;
+                if (_characters.Count > 0)
+                {
+                    _activeCharacterId = _characters[0].CharacterId;
+                }
+                else if (_characterInventories.Count > 0)
+                {
+                    for (int i = 0; i < _characterInventories.Count; i++)
+                    {
+                        var inventory = _characterInventories[i];
+                        if (inventory == null)
+                            continue;
+
+                        if (inventory.CharacterId.HasValue() == true)
+                        {
+                            _activeCharacterId = inventory.CharacterId;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (_activeCharacterId.HasValue() == true)
+            {
+                EnsureCharacterInventoryData(_activeCharacterId, false);
+                EnsureCharacterProfessionData(_activeCharacterId, false);
+                EnsureCharacterStatsData(_activeCharacterId, false);
             }
 
             UpdatePlayerActiveCharacter();

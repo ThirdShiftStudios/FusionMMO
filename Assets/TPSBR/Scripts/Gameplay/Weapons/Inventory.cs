@@ -1399,6 +1399,11 @@ namespace TPSBR
 
         public Weapon GetWeapon(int slot)
         {
+            if (slot < 0 || slot >= _hotbar.Length)
+            {
+                return null;
+            }
+
             return _hotbar[slot];
         }
 
