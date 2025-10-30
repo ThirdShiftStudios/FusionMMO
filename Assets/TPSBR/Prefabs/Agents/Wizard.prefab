@@ -102,7 +102,7 @@ MonoBehaviour:
     Clip: {fileID: 3094330708855449807, guid: 210c0ba3454dd1a4681017115b0c564f, type: 3}
     Speed: 1
     IsLooping: 1
-  _fishTransform: {fileID: 0}
+  _fishTransform: {fileID: 8690934100449852939}
 --- !u!1 &717184677871332033
 GameObject:
   m_ObjectHideFlags: 0
@@ -1267,6 +1267,7 @@ MonoBehaviour:
   _catch: {fileID: 1619185603032873582}
   _blendInDuration: 0.1
   _blendOutDuration: 0.1
+  _reelSmoothTime: 0.25
 --- !u!1 &8504675271889870947
 GameObject:
   m_ObjectHideFlags: 0
@@ -2609,6 +2610,11 @@ MonoBehaviour:
   _itemDefinition: {fileID: 11400000, guid: 4d9c22ce36934d84ab2b26286d991d52, type: 2}
   _slotCategory: 2
   _defaultObject: 0
+--- !u!4 &8690934100449852939 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -4562232961297264790, guid: faea6d6bfcf2f684387c00a94dd1de07, type: 3}
+  m_PrefabInstance: {fileID: 4049817776425546081}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &8711715230960344346 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -4551471164858798981, guid: faea6d6bfcf2f684387c00a94dd1de07, type: 3}
