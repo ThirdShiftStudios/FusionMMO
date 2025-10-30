@@ -60,6 +60,7 @@ namespace TPSBR
 
         internal FishItem ActiveFish => _activeFish;
         internal FishDefinition ActiveFishDefinition => _activeFish != null ? _activeFish.Definition : null;
+        internal FishingLureProjectile ActiveLure => _activeLureProjectile != null ? _activeLureProjectile : NetworkedActiveLure;
 
         public override void Spawned()
         {
@@ -350,6 +351,16 @@ namespace TPSBR
             }
 
             RaiseLifecycleStateChanged(FishingLifecycleState.Fighting);
+        }
+
+        internal void HandleFightingMinigameProgress(int successHits, int requiredHits)
+        {
+            UseLayer layer = GetUseLayer();
+
+            if (layer?.FishingPoleUseState == null)
+                return;
+
+            layer.FishingPoleUseState.UpdateFightingMinigameProgress(this, successHits, requiredHits);
         }
 
         internal void AttachFishToCatchTransform(Transform catchTransform)

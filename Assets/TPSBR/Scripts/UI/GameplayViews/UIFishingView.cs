@@ -66,6 +66,7 @@ namespace TPSBR.UI
             {
                 _fightingMinigame.gameObject.SetActive(false);
                 _fightingMinigame.MinigameFinished += OnFightingMinigameFinished;
+                _fightingMinigame.SuccessProgressed += OnFightingMinigameProgressed;
             }
         }
 
@@ -82,6 +83,7 @@ namespace TPSBR.UI
             {
                 _fightingMinigame.ForceStop();
                 _fightingMinigame.MinigameFinished -= OnFightingMinigameFinished;
+                _fightingMinigame.SuccessProgressed -= OnFightingMinigameProgressed;
             }
 
             HideHookSetMinigame();
@@ -247,6 +249,11 @@ namespace TPSBR.UI
             }
 
             _inventory.SubmitFightingMinigameResult(wasSuccessful);
+        }
+
+        private void OnFightingMinigameProgressed(int currentHits, int requiredHits)
+        {
+            _inventory?.SubmitFightingMinigameProgress(currentHits, requiredHits);
         }
     }
 }

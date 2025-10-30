@@ -133,6 +133,7 @@ public class SliderMinigame : MonoBehaviour
     /// </summary>
     public event ItemsWin OnMinigameItemsWin;
     public event Action<bool> SuccessZoneStateChanged;
+    public event Action<int, int> SuccessProgressed;
     static Image g_MainPicture;
 
     /// <summary>
@@ -531,6 +532,8 @@ public class SliderMinigame : MonoBehaviour
 
         int targetSuccessHits = SuccessHitsRequired;
         bool hasReachedTarget = successHits >= targetSuccessHits;
+
+        SuccessProgressed?.Invoke(successHits, targetSuccessHits);
 
         switch (onSuccessHitAction)
         {

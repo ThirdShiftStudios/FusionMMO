@@ -815,6 +815,25 @@ namespace TPSBR
             }
         }
 
+        public void SubmitFightingMinigameProgress(int successHits, int requiredHits)
+        {
+            if (_localFishingPole == null)
+                return;
+
+            successHits = Mathf.Max(0, successHits);
+            requiredHits = Mathf.Max(1, requiredHits);
+
+            if (HasStateAuthority == true)
+            {
+                HandleFightingMinigameProgressInternal(successHits, requiredHits);
+            }
+            else
+            {
+                HandleFightingMinigameProgressInternal(successHits, requiredHits);
+                RPC_SubmitFightingMinigameProgress((byte)Mathf.Clamp(successHits, 0, byte.MaxValue), (byte)Mathf.Clamp(requiredHits, 1, byte.MaxValue));
+            }
+        }
+
         public void UpdateHookSetSuccessZoneState(bool isInSuccessZone)
         {
             if (_isHookSetSuccessZoneActive == isInSuccessZone)
@@ -1776,6 +1795,12 @@ namespace TPSBR
         private void RPC_SubmitFightingMinigameResult(bool wasSuccessful)
         {
             HandleFightingMinigameResultInternal(wasSuccessful);
+        }
+
+        [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
+        private void RPC_SubmitFightingMinigameProgress(byte successHits, byte requiredHits)
+        {
+            HandleFightingMinigameProgressInternal(successHits, Mathf.Max(1, requiredHits));
         }
 
         private byte AddItemInternal(ItemDefinition definition, byte quantity, NetworkString<_32> configurationHash)
@@ -4202,6 +4227,26 @@ namespace TPSBR
                 ResetFightingMinigameProgress();
                 fishingPole.HandleHookSetFailed();
             }
+        }
+
+        private void HandleFightingMinigameProgressInternal(int successHits, int requiredHits)
+        {
+            var fishingPole = _fishingPole ?? _localFishingPole;
+
+            if (fishingPole == null)
+                return;
+
+            successHits = Mathf.Max(0, successHits);
+
+            int clampedRequired = Mathf.Max(1, _fightingHitsRequired);
+            if (requiredHits > 0)
+            {
+                clampedRequired = Mathf.Max(clampedRequired, requiredHits);
+            }
+
+            successHits = Mathf.Min(successHits, clampedRequired);
+
+            fishingPole.HandleFightingMinigameProgress(successHits, clampedRequired);
         }
 
         private void HandleFightingMinigameResultInternal(bool wasSuccessful)
