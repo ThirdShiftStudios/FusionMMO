@@ -34,6 +34,7 @@ namespace TPSBR.UI
         private Agent _boundAgent;
         private Inventory _boundInventory;
         private InventoryListPresenter _inventoryPresenter;
+        [SerializeField]
         private UICharacterDetailsView _characterDetails;
         
         internal SceneUI GameplaySceneUI => SceneUI;
