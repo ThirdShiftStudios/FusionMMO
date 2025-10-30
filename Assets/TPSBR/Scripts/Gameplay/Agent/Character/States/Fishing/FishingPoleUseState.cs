@@ -25,9 +25,11 @@ namespace TPSBR
         private Vector3 _reelCurrentOffset;
         private Vector3 _reelTargetOffset;
         private Vector3 _reelOffsetVelocity;
+        private Vector3 _reelAnchorPosition;
         private int _reelRequiredHits;
         private int _reelAppliedHits;
         private bool _isReelActive;
+        private bool _hasReelAnchorPosition;
 
         public bool IsCatchLoopActive => _catch != null && _catch.IsLoopActive == true;
 
@@ -283,20 +285,39 @@ namespace TPSBR
             float normalized = _reelRequiredHits > 0 ? (float)_reelAppliedHits / _reelRequiredHits : 0f;
             normalized = Mathf.Clamp01(normalized);
 
-            float targetDistance = _reelInitialDistance * normalized;
-            _reelTargetOffset = _reelDirection * targetDistance;
+            Vector3 anchorPosition = _hasReelAnchorPosition == true ? _reelAnchorPosition : (_reelLure != null ? _reelLure.transform.position - _reelCurrentOffset : Vector3.zero);
+            Vector3 finalTargetPosition = anchorPosition + _reelDirection * _reelInitialDistance;
+
+            if (_hasReelAnchorPosition == true && TryGetReelTargetPosition(weapon, out Vector3 resolvedTarget) == true)
+            {
+                finalTargetPosition = resolvedTarget;
+
+                Vector3 toTarget = finalTargetPosition - anchorPosition;
+                float totalDistance = toTarget.magnitude;
+
+                if (totalDistance > 0.001f)
+                {
+                    _reelDirection = toTarget / totalDistance;
+                    _reelInitialDistance = totalDistance;
+                }
+            }
+
+            if (_hasReelAnchorPosition == true)
+            {
+                Vector3 desiredPosition = Vector3.Lerp(anchorPosition, finalTargetPosition, normalized);
+                _reelTargetOffset = desiredPosition - anchorPosition;
+            }
+            else
+            {
+                float targetDistance = _reelInitialDistance * normalized;
+                _reelTargetOffset = _reelDirection * targetDistance;
+            }
+
             _isReelActive = true;
 
             if (_reelAppliedHits >= _reelRequiredHits && _reelRequiredHits > 0)
             {
-                _reelTargetOffset = _reelDirection * _reelInitialDistance;
-                _reelCurrentOffset = _reelTargetOffset;
-                _reelOffsetVelocity = Vector3.zero;
-
-                if (_reelLure != null)
-                {
-                    _reelLure.SetVisualOffset(_reelCurrentOffset);
-                }
+                SnapReeledLureToTarget(weapon, anchorPosition, finalTargetPosition);
             }
         }
 
@@ -316,6 +337,24 @@ namespace TPSBR
             {
                 _fighting.Stop(_blendOutDuration);
                 _fighting.ClearActiveWeapon(weapon);
+            }
+
+            if (_reelLure == null)
+            {
+                _reelLure = weapon.ActiveLure;
+            }
+
+            if (_reelLure != null)
+            {
+                Vector3 anchorPosition = _hasReelAnchorPosition == true ? _reelAnchorPosition : (_reelLure.transform.position - _reelCurrentOffset);
+                Vector3 finalTargetPosition = anchorPosition + _reelDirection * _reelInitialDistance;
+
+                if (TryGetReelTargetPosition(weapon, out Vector3 resolvedTarget) == true)
+                {
+                    finalTargetPosition = resolvedTarget;
+                }
+
+                SnapReeledLureToTarget(weapon, anchorPosition, finalTargetPosition);
             }
 
             ResetReeling(clearVisualOffset: false);
@@ -367,8 +406,21 @@ namespace TPSBR
                 return;
 
             Vector3 lurePosition = lure.transform.position;
-            Vector3 characterPosition = characterTransform.position;
-            Vector3 toCharacter = characterPosition - lurePosition;
+            _reelAnchorPosition = lurePosition;
+            _hasReelAnchorPosition = true;
+
+            Vector3 targetPosition;
+
+            if (TryGetReelTargetPosition(weapon, out Vector3 resolvedTarget) == true)
+            {
+                targetPosition = resolvedTarget;
+            }
+            else
+            {
+                targetPosition = characterTransform.position;
+            }
+
+            Vector3 toCharacter = targetPosition - lurePosition;
             float distance = toCharacter.magnitude;
 
             if (distance <= 0.01f)
@@ -400,9 +452,11 @@ namespace TPSBR
             _reelCurrentOffset = Vector3.zero;
             _reelTargetOffset = Vector3.zero;
             _reelOffsetVelocity = Vector3.zero;
+            _reelAnchorPosition = Vector3.zero;
             _reelRequiredHits = 0;
             _reelAppliedHits = 0;
             _isReelActive = false;
+            _hasReelAnchorPosition = false;
         }
 
         private void UpdateReelMovement(float deltaTime)
@@ -564,6 +618,75 @@ namespace TPSBR
             _isCatching = false;
 
             CompleteCast();
+        }
+
+        private bool TryGetReelTargetPosition(FishingPoleWeapon weapon, out Vector3 targetPosition)
+        {
+            targetPosition = default;
+
+            if (weapon == null)
+                return false;
+
+            Character character = weapon.Character;
+
+            if (character == null)
+                return false;
+
+            CharacterView view = character.ThirdPersonView;
+            Transform fireTransform = view != null ? view.FireTransform : null;
+
+            if (fireTransform != null)
+            {
+                targetPosition = fireTransform.position;
+                return true;
+            }
+
+            targetPosition = character.transform.position;
+            return true;
+        }
+
+        private void SnapReeledLureToTarget(FishingPoleWeapon weapon, Vector3 anchorPosition, Vector3 targetPosition)
+        {
+            if (weapon == null)
+                return;
+
+            if (_reelLure == null)
+            {
+                _reelLure = weapon.ActiveLure;
+
+                if (_reelLure == null)
+                    return;
+            }
+
+            if (_hasReelAnchorPosition == false)
+            {
+                anchorPosition = _reelLure.transform.position - _reelCurrentOffset;
+            }
+
+            if (TryGetReelTargetPosition(weapon, out Vector3 resolvedTarget) == true)
+            {
+                targetPosition = resolvedTarget;
+            }
+
+            _reelAnchorPosition = anchorPosition;
+            _hasReelAnchorPosition = true;
+
+            Vector3 offset = targetPosition - anchorPosition;
+
+            float distance = offset.magnitude;
+
+            if (distance > 0.001f)
+            {
+                _reelDirection = offset / distance;
+                _reelInitialDistance = distance;
+            }
+
+            _reelTargetOffset = offset;
+            _reelCurrentOffset = offset;
+            _reelOffsetVelocity = Vector3.zero;
+            _isReelActive = true;
+
+            _reelLure.SetVisualOffset(_reelCurrentOffset);
         }
     }
 }
