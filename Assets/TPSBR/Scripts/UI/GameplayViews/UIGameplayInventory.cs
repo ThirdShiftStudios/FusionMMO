@@ -73,7 +73,7 @@ namespace TPSBR.UI
 
             if (_characterDetails == null)
             {
-                _characterDetails = GetComponentInChildren<UICharacterDetailsView>();
+                _characterDetails = GetComponentInChildren<UICharacterDetailsView>(true);
             }
 
             if (_inventoryList != null && _inventoryPresenter == null)
@@ -742,7 +742,7 @@ namespace TPSBR.UI
 
         private void RefreshCharacterDetails()
         {
-            if (_boundAgent == null)
+            if (_boundAgent == null || _characterDetails == null)
                 return;
 
             _characterDetails.UpdateCharacterDetails(Global.PlayerService.PlayerData);
