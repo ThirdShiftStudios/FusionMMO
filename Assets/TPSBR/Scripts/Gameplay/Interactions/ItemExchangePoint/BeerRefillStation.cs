@@ -4,6 +4,7 @@ using Fusion;
 using TPSBR.UI;
 using TSS.Data;
 using UnityEngine;
+using Unity.Template.CompetitiveActionMultiplayer;
 
 namespace TPSBR
 {
