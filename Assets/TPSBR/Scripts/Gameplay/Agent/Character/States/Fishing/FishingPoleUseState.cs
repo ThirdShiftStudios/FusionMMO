@@ -306,7 +306,7 @@ namespace TPSBR
                 _fighting.ClearActiveWeapon(weapon);
             }
 
-            ResetReeling();
+            ResetReeling(clearVisualOffset: false);
 
             _catch.SetActiveWeapon(weapon);
             _catch.StartCatch(_blendInDuration);
@@ -375,9 +375,9 @@ namespace TPSBR
             _reelLure.SetVisualOffset(Vector3.zero);
         }
 
-        private void ResetReeling()
+        private void ResetReeling(bool clearVisualOffset = true)
         {
-            if (_reelLure != null)
+            if (_reelLure != null && clearVisualOffset == true)
             {
                 _reelLure.SetVisualOffset(Vector3.zero);
             }
