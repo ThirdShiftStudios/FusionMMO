@@ -286,6 +286,18 @@ namespace TPSBR
             float targetDistance = _reelInitialDistance * normalized;
             _reelTargetOffset = _reelDirection * targetDistance;
             _isReelActive = true;
+
+            if (_reelAppliedHits >= _reelRequiredHits && _reelRequiredHits > 0)
+            {
+                _reelTargetOffset = _reelDirection * _reelInitialDistance;
+                _reelCurrentOffset = _reelTargetOffset;
+                _reelOffsetVelocity = Vector3.zero;
+
+                if (_reelLure != null)
+                {
+                    _reelLure.SetVisualOffset(_reelCurrentOffset);
+                }
+            }
         }
 
         internal void EnterCatchPhase(FishingPoleWeapon weapon)
