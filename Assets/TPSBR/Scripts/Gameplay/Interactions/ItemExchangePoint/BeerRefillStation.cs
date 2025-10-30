@@ -187,7 +187,7 @@ namespace TPSBR
                                 InventorySlot slot = inventory.GetItemSlot(_currentSelectedSourceIndex);
                                 ItemDefinition definition = slot.GetDefinition();
 
-                                if (definition is WeaponDefinition weaponDefinition)
+                                if (definition is ItemDefinition weaponDefinition)
                                 {
                                         int hotbarSize = inventory.HotbarSize;
 
