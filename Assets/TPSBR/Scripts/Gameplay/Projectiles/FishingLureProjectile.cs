@@ -16,6 +16,10 @@ namespace TPSBR
         private Transform _lineRendererEndPoint;
 
         public Transform LineRendererEndPoint => _lineRendererEndPoint;
+
+        public Vector3 AnchorPosition => _anchorPosition;
+        public bool IsAnchoredInWater => _isAnchoredInWater;
+        public bool IsAttachedToFish => _isAttachedToFish;
         public void Initialize(FishingPoleWeapon weapon)
         {
             _weapon = weapon;
@@ -111,6 +115,16 @@ namespace TPSBR
         public void SetVisualOffset(Vector3 offset)
         {
             _visualOffset = offset;
+
+            if (_isAnchoredInWater == true)
+            {
+                transform.position = _anchorPosition + _visualOffset;
+            }
+        }
+
+        public void UpdateAnchorPosition(Vector3 position)
+        {
+            _anchorPosition = position;
 
             if (_isAnchoredInWater == true)
             {

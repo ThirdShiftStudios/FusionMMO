@@ -4219,11 +4219,13 @@ namespace TPSBR
                     _fightingHitsSucceeded = (byte)Mathf.Min(_fightingHitsSucceeded + 1, requiredHits);
                 }
 
+                fishingPole.NotifyFightingMinigameProgress(_fightingHitsSucceeded, requiredHits);
                 ResetFightingMinigameProgress();
                 fishingPole.EnterCatchPhase();
             }
             else
             {
+                fishingPole.NotifyFightingMinigameFailed();
                 ResetFightingMinigameProgress();
                 fishingPole.HandleFightingFailed();
             }

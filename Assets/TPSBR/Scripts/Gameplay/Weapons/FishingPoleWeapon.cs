@@ -26,6 +26,8 @@ namespace TPSBR
         private FishDefinition[] _availableFishDefinitions;
         [SerializeField]
         private Vector3 _fightingFishOffset = new Vector3(0f, -1f, 0f);
+        [SerializeField]
+        private float _reelSpeed = 6f;
 
         [Networked]
         private FishingLureProjectile NetworkedActiveLure { get; set; }
@@ -53,6 +55,16 @@ namespace TPSBR
         private bool _hasCachedLureParent;
         private static FishDefinition[] _cachedResourceFishDefinitions;
 
+        private bool _isReeling;
+        private FishingLureProjectile _reelingLure;
+        private Vector3 _reelInitialAnchorPosition;
+        private Vector3 _reelInitialRodPosition;
+        private Vector3 _reelInitialRelativeOffset;
+        private float _reelInitialDistance;
+        private float _reelCurrentProgress;
+        private float _reelTargetProgress;
+        private int _reelTotalHits;
+
         [Networked]
         private NetworkBool NetworkedHookSetSuccessZoneActive { get; set; }
 
@@ -75,6 +87,17 @@ namespace TPSBR
             HandleActiveFishChanged();
             ApplyHookSetSuccessZoneState(NetworkedHookSetSuccessZoneActive);
             UpdateWaitingLureBob();
+        }
+
+        public override void FixedUpdateNetwork()
+        {
+            base.FixedUpdateNetwork();
+
+            if (HasStateAuthority == true)
+            {
+                float deltaTime = Runner != null ? Runner.DeltaTime : Time.fixedDeltaTime;
+                UpdateReeling(deltaTime);
+            }
         }
 
         private void OnEnable()
@@ -241,6 +264,7 @@ namespace TPSBR
             EndWaitingPhase();
             DespawnActiveFish();
             CleanupLure(false);
+            ClearReelingState();
 
             RaiseLifecycleStateChanged(FishingLifecycleState.Casting);
         }
@@ -260,6 +284,7 @@ namespace TPSBR
             EndWaitingPhase();
             DespawnActiveFish();
             CleanupLure(true);
+            ClearReelingState();
 
             RaiseLifecycleStateChanged(FishingLifecycleState.Ready);
         }
@@ -273,6 +298,7 @@ namespace TPSBR
             EndWaitingPhase();
             DespawnActiveFish();
             CleanupLure(true);
+            ClearReelingState();
 
             RaiseLifecycleStateChanged(FishingLifecycleState.Ready);
         }
@@ -285,6 +311,7 @@ namespace TPSBR
             _isInWaitingPhase = true;
             SetHookSetSuccessZoneState(false);
             ResetWaitingBobVisuals();
+            ClearReelingState();
 
             RaiseLifecycleStateChanged(FishingLifecycleState.Waiting);
         }
@@ -308,6 +335,7 @@ namespace TPSBR
                 return;
 
             EndWaitingPhase();
+            SnapReelingToRodTip();
             layer.FishingPoleUseState.EnterCatchPhase(this);
         }
 
@@ -322,6 +350,7 @@ namespace TPSBR
 
             DespawnActiveFish();
             EndWaitingPhase();
+            NotifyFightingMinigameFailed();
             RaiseLifecycleStateChanged(FishingLifecycleState.Ready);
         }
 
@@ -336,6 +365,7 @@ namespace TPSBR
 
             DespawnActiveFish();
             EndWaitingPhase();
+            NotifyFightingMinigameFailed();
             RaiseLifecycleStateChanged(FishingLifecycleState.Ready);
         }
 
@@ -347,6 +377,7 @@ namespace TPSBR
             if (HasStateAuthority == true)
             {
                 SpawnFightingFish();
+                BeginReeling();
             }
 
             RaiseLifecycleStateChanged(FishingLifecycleState.Fighting);
@@ -490,6 +521,7 @@ namespace TPSBR
         private void CleanupLure(bool forceDespawn)
         {
             ResetWaitingBobVisuals();
+            ClearReelingState();
 
             if (_activeLureProjectile != null)
             {
@@ -884,6 +916,165 @@ namespace TPSBR
             {
                 fish.State = FishItem.FishState.Caught;
             }
+        }
+
+        internal void NotifyFightingMinigameProgress(int hitsSucceeded, int hitsRequired)
+        {
+            if (HasStateAuthority == false)
+                return;
+
+            if (hitsRequired <= 0)
+                return;
+
+            if (_reelingLure == null || _reelTotalHits != hitsRequired)
+            {
+                BeginReeling(hitsRequired);
+            }
+
+            if (_reelingLure == null || _reelTotalHits <= 0)
+                return;
+
+            float total = Mathf.Max(1, _reelTotalHits);
+            float clampedHits = Mathf.Clamp(hitsSucceeded, 0, _reelTotalHits);
+            float targetProgress = Mathf.Clamp01(clampedHits / total);
+
+            if (targetProgress > _reelTargetProgress)
+            {
+                _reelTargetProgress = targetProgress;
+            }
+
+            _isReeling = _reelingLure != null && _reelInitialDistance > 0.01f;
+        }
+
+        internal void NotifyFightingMinigameFailed()
+        {
+            if (HasStateAuthority == false)
+                return;
+
+            if (_reelingLure != null)
+            {
+                _reelingLure.UpdateAnchorPosition(_reelInitialAnchorPosition);
+                UpdateParabolaString();
+            }
+
+            ClearReelingState();
+        }
+
+        private void BeginReeling()
+        {
+            if (HasStateAuthority == false)
+                return;
+
+            Inventory inventory = Character != null ? Character.Agent?.Inventory : null;
+            int hitsRequired = inventory != null ? inventory.FightingMinigameHitsRequired : 0;
+
+            if (hitsRequired <= 0)
+                return;
+
+            BeginReeling(hitsRequired);
+        }
+
+        private void BeginReeling(int hitsRequired)
+        {
+            if (HasStateAuthority == false)
+                return;
+
+            FishingLureProjectile lure = _activeLureProjectile;
+
+            if (lure == null || lure.IsAnchoredInWater == false)
+            {
+                ClearReelingState();
+                return;
+            }
+
+            Transform fireTransform = _lureFireTransform;
+            Vector3 rodPosition = fireTransform != null ? fireTransform.position : (Character != null ? Character.transform.position : lure.transform.position);
+            Vector3 anchorPosition = lure.AnchorPosition;
+
+            _reelingLure = lure;
+            _reelInitialAnchorPosition = anchorPosition;
+            _reelInitialRodPosition = rodPosition;
+            _reelInitialRelativeOffset = anchorPosition - rodPosition;
+            _reelInitialDistance = _reelInitialRelativeOffset.magnitude;
+            _reelCurrentProgress = 0f;
+            _reelTargetProgress = 0f;
+            _reelTotalHits = Mathf.Max(1, hitsRequired);
+            _isReeling = _reelInitialDistance > 0.01f;
+
+            if (_isReeling == false)
+            {
+                ClearReelingState();
+            }
+        }
+
+        private void UpdateReeling(float deltaTime)
+        {
+            if (_isReeling == false)
+                return;
+
+            FishingLureProjectile lure = _activeLureProjectile;
+
+            if (lure == null || lure != _reelingLure || lure.IsAnchoredInWater == false || lure.IsAttachedToFish == true)
+            {
+                ClearReelingState();
+                return;
+            }
+
+            if (_reelTotalHits <= 0 || _reelInitialDistance <= 0.001f)
+            {
+                ClearReelingState();
+                return;
+            }
+
+            if (Mathf.Abs(_reelTargetProgress - _reelCurrentProgress) <= 0.0001f)
+            {
+                return;
+            }
+
+            float progressSpeed = _reelSpeed > 0f ? (_reelSpeed / _reelInitialDistance) : 1f;
+            _reelCurrentProgress = Mathf.MoveTowards(_reelCurrentProgress, _reelTargetProgress, progressSpeed * deltaTime);
+
+            Vector3 desiredAnchor = ResolveReelPosition(_reelCurrentProgress);
+            lure.UpdateAnchorPosition(desiredAnchor);
+            UpdateParabolaString();
+        }
+
+        private Vector3 ResolveReelPosition(float progress)
+        {
+            progress = Mathf.Clamp01(progress);
+
+            Transform fireTransform = _lureFireTransform;
+            Vector3 rodPosition = fireTransform != null ? fireTransform.position : (Character != null ? Character.transform.position : _reelInitialRodPosition);
+
+            return rodPosition + _reelInitialRelativeOffset * Mathf.Max(0f, 1f - progress);
+        }
+
+        private void SnapReelingToRodTip()
+        {
+            if (HasStateAuthority == false)
+                return;
+
+            if (_reelingLure != null)
+            {
+                Vector3 finalAnchor = ResolveReelPosition(1f);
+                _reelingLure.UpdateAnchorPosition(finalAnchor);
+                UpdateParabolaString();
+            }
+
+            ClearReelingState();
+        }
+
+        private void ClearReelingState()
+        {
+            _isReeling = false;
+            _reelingLure = null;
+            _reelInitialAnchorPosition = Vector3.zero;
+            _reelInitialRodPosition = Vector3.zero;
+            _reelInitialRelativeOffset = Vector3.zero;
+            _reelInitialDistance = 0f;
+            _reelCurrentProgress = 0f;
+            _reelTargetProgress = 0f;
+            _reelTotalHits = 0;
         }
 
         private void CacheLureParent()
