@@ -31,6 +31,9 @@ namespace TPSBR
         protected int _currentSelectedSourceIndex = -1;
         private ChangeDetector _changeDetector;
 
+        protected virtual bool ShouldUseWeaponPreview => true;
+        protected Transform WeaponViewTransform => _weaponViewTransform;
+
 
         public void Interact(Agent agent)
         {
@@ -287,6 +290,12 @@ namespace TPSBR
 
         private void UpdateLocalWeaponPreview(WeaponDefinition definition)
         {
+            if (ShouldUseWeaponPreview == false)
+            {
+                ClearWeaponPreview();
+                return;
+            }
+
             if (definition == null)
             {
                 if (_currentPreviewDefinitionId != 0)
@@ -307,7 +316,13 @@ namespace TPSBR
         {
             UpdateLocalWeaponPreview(data.Definition);
             RequestSetSelectedItem(data.Definition != null ? data.Definition.ID : 0, data.SourceType, data.SourceIndex);
+            OnItemSelected(data);
             ApplyCameraAuthority(CurrentCameraAgent);
+        }
+
+        protected virtual void OnItemSelected(ItemData data)
+        {
+            _ = data;
         }
 
         private void ShowWeaponPreview(WeaponDefinition definition)
@@ -331,7 +346,7 @@ namespace TPSBR
             _currentPreviewDefinitionId = definition.ID;
         }
 
-        private void ClearWeaponPreview()
+        protected void ClearWeaponPreview()
         {
             if (_weaponPreviewInstance != null)
             {
@@ -377,6 +392,12 @@ namespace TPSBR
 
         private void UpdateWeaponPreviewFromDefinitionId(int definitionId)
         {
+            if (ShouldUseWeaponPreview == false)
+            {
+                ClearWeaponPreview();
+                return;
+            }
+
             if (definitionId <= 0)
             {
                 if (_currentPreviewDefinitionId != 0)

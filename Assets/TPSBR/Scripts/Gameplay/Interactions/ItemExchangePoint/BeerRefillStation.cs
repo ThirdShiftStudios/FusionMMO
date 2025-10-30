@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Fusion;
 using TPSBR.UI;
 using TSS.Data;
@@ -14,8 +15,14 @@ namespace TPSBR
                 private UIBeerRefillStationView _beerRefillView;
                 private Agent _activeAgent;
                 private Inventory _activeInventory;
+                private BeerUsable _displayedBeer;
+                private Transform _displayedBeerOriginalParent;
+                private Vector3 _displayedBeerOriginalLocalPosition;
+                private Quaternion _displayedBeerOriginalLocalRotation;
+                private Vector3 _displayedBeerOriginalLocalScale;
 
                 private static DataDefinition[] _cachedBeerDefinitions;
+                private static readonly List<BeerUsable> _beerLookupBuffer = new List<BeerUsable>();
 
                 public int RefillCost => _refillCost;
 
@@ -34,6 +41,7 @@ namespace TPSBR
 #endif
 
                 protected override UIView _uiView => GetBeerRefillStationView();
+                protected override bool ShouldUseWeaponPreview => false;
 
                 private UIBeerRefillStationView GetBeerRefillStationView()
                 {
@@ -66,11 +74,18 @@ namespace TPSBR
 
                 protected override void OnExchangeViewClosed(UIView view)
                 {
+                        RestoreDisplayedBeer();
                         base.OnExchangeViewClosed(view);
 
                         UnsubscribeFromInventory();
                         _activeAgent = null;
                         UpdatePurchaseButtonState();
+                }
+
+                protected override void OnDisable()
+                {
+                        RestoreDisplayedBeer();
+                        base.OnDisable();
                 }
 
                 protected override void SubscribeToViewEvents(UIView view)
@@ -102,9 +117,15 @@ namespace TPSBR
                         UpdatePurchaseButtonState();
                 }
 
+                protected override void OnItemSelected(ItemData data)
+                {
+                        base.OnItemSelected(data);
+                        UpdateDisplayedBeer(data);
+                }
+
                 private void HandleItemSelectedForRefill(UpgradeStation.ItemData data)
                 {
-                        _ = data;
+                        UpdateDisplayedBeer(data);
                         UpdatePurchaseButtonState();
                 }
 
@@ -206,6 +227,137 @@ namespace TPSBR
 
                         beer = weapon as BeerUsable;
                         return beer != null;
+                }
+
+                private void UpdateDisplayedBeer(UpgradeStation.ItemData data)
+                {
+                        Inventory inventory = _activeAgent != null ? _activeAgent.Inventory : null;
+
+                        if (WeaponViewTransform == null || inventory == null)
+                        {
+                                RestoreDisplayedBeer();
+                                return;
+                        }
+
+                        if (TryGetBeerForSelection(inventory, data, out BeerUsable beer) == false)
+                        {
+                                RestoreDisplayedBeer();
+                                return;
+                        }
+
+                        if (_displayedBeer == beer)
+                        {
+                                if (beer != null && beer.transform.parent != WeaponViewTransform)
+                                {
+                                        Transform beerTransform = beer.transform;
+                                        beerTransform.SetParent(WeaponViewTransform, false);
+                                        beerTransform.localPosition = Vector3.zero;
+                                        beerTransform.localRotation = Quaternion.identity;
+                                        beerTransform.localScale = Vector3.one;
+                                }
+
+                                return;
+                        }
+
+                        RestoreDisplayedBeer();
+                        AttachBeerToView(beer);
+                }
+
+                private bool TryGetBeerForSelection(Inventory inventory, UpgradeStation.ItemData data, out BeerUsable beer)
+                {
+                        beer = null;
+
+                        if (inventory == null)
+                                return false;
+
+                        if (data.SourceType == ItemSourceType.Hotbar)
+                        {
+                                beer = inventory.GetHotbarWeapon(data.SourceIndex) as BeerUsable;
+
+                                if (beer != null)
+                                        return true;
+                        }
+
+                        WeaponDefinition definition = data.Definition;
+
+                        if (definition == null)
+                                return false;
+
+                        int hotbarSize = inventory.HotbarSize;
+
+                        for (int i = 0; i < hotbarSize; ++i)
+                        {
+                                Weapon candidate = inventory.GetHotbarWeapon(i);
+
+                                if (candidate is BeerUsable candidateBeer && candidateBeer.Definition == definition)
+                                {
+                                        beer = candidateBeer;
+                                        return true;
+                                }
+                        }
+
+                        if (_activeAgent != null)
+                        {
+                                _beerLookupBuffer.Clear();
+                                _activeAgent.GetComponentsInChildren(true, _beerLookupBuffer);
+
+                                for (int i = 0; i < _beerLookupBuffer.Count; ++i)
+                                {
+                                        BeerUsable candidate = _beerLookupBuffer[i];
+
+                                        if (candidate != null && candidate.Definition == definition)
+                                        {
+                                                beer = candidate;
+                                                break;
+                                        }
+                                }
+
+                                _beerLookupBuffer.Clear();
+                        }
+
+                        return beer != null;
+                }
+
+                private void AttachBeerToView(BeerUsable beer)
+                {
+                        if (beer == null || WeaponViewTransform == null)
+                                return;
+
+                        Transform beerTransform = beer.transform;
+
+                        _displayedBeer = beer;
+                        _displayedBeerOriginalParent = beerTransform.parent;
+                        _displayedBeerOriginalLocalPosition = beerTransform.localPosition;
+                        _displayedBeerOriginalLocalRotation = beerTransform.localRotation;
+                        _displayedBeerOriginalLocalScale = beerTransform.localScale;
+
+                        beerTransform.SetParent(WeaponViewTransform, false);
+                        beerTransform.localPosition = Vector3.zero;
+                        beerTransform.localRotation = Quaternion.identity;
+                        beerTransform.localScale = Vector3.one;
+                }
+
+                private void RestoreDisplayedBeer()
+                {
+                        if (_displayedBeer == null)
+                                return;
+
+                        Transform beerTransform = _displayedBeer.transform;
+
+                        if (_displayedBeerOriginalParent != null)
+                        {
+                                beerTransform.SetParent(_displayedBeerOriginalParent, false);
+                                beerTransform.localPosition = _displayedBeerOriginalLocalPosition;
+                                beerTransform.localRotation = _displayedBeerOriginalLocalRotation;
+                                beerTransform.localScale = _displayedBeerOriginalLocalScale;
+                        }
+                        else
+                        {
+                                beerTransform.SetParent(null, false);
+                        }
+
+                        _displayedBeer = null;
+                        _displayedBeerOriginalParent = null;
                 }
 
                 private void SubscribeToInventory(Inventory inventory)
