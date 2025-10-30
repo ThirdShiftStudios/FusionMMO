@@ -124,6 +124,11 @@
                 Agent agent = _character != null ? _character.Agent : null;
                 arcaneConduit.Interact(agent);
             }
+            else if (InteractionTarget is BeerRefillStation beerRefillStation)
+            {
+                Agent agent = _character != null ? _character.Agent : null;
+                beerRefillStation.Interact(agent);
+            }
             else if (InteractionTarget is ItemVendor itemVendor)
             {
                 Agent agent = _character != null ? _character.Agent : null;

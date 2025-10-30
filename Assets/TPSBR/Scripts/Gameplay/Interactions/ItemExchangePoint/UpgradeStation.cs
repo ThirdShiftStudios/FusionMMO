@@ -19,16 +19,16 @@ namespace TPSBR
         private UIItemContextView _itemContextView;
 
         [Networked]
-        private int SelectedItemDefinitionId { get; set; }
+        protected int SelectedItemDefinitionId { get; set; }
         [Networked]
-        private ItemSourceType SelectedItemSourceType { get; set; }
+        protected ItemSourceType SelectedItemSourceType { get; set; }
         [Networked]
-        private int SelectedItemSourceIndex { get; set; }
+        protected int SelectedItemSourceIndex { get; set; }
 
         private Weapon _weaponPreviewInstance;
         private int _currentPreviewDefinitionId;
-        private ItemSourceType _currentSelectedSourceType = ItemSourceType.None;
-        private int _currentSelectedSourceIndex = -1;
+        protected ItemSourceType _currentSelectedSourceType = ItemSourceType.None;
+        protected int _currentSelectedSourceIndex = -1;
         private ChangeDetector _changeDetector;
 
 
