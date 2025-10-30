@@ -1,3 +1,4 @@
+using Fusion;
 using UnityEngine;
 
 namespace TPSBR
@@ -5,6 +6,13 @@ namespace TPSBR
     public class BeerUsable : Weapon
     {
         private bool _isDrinking;
+
+        [Networked]
+        private byte _beerStack { get; set; }
+
+        public byte BeerStack => _beerStack;
+        public bool HasBeerStack => _beerStack > 0;
+        public bool IsBeerStackFull => _beerStack >= byte.MaxValue;
 
         public override bool CanFire(bool keyDown)
         {
@@ -28,6 +36,11 @@ namespace TPSBR
                 return WeaponUseRequest.None;
             }
 
+            if (HasBeerStack == false)
+            {
+                return WeaponUseRequest.None;
+            }
+
             return WeaponUseRequest.CreateAnimation(WeaponUseAnimation.BeerDrink);
         }
 
@@ -36,6 +49,11 @@ namespace TPSBR
             if (request.Animation == WeaponUseAnimation.BeerDrink)
             {
                 _isDrinking = true;
+
+                if (HasStateAuthority == true && HasBeerStack == true)
+                {
+                    _beerStack--;
+                }
             }
         }
 
@@ -66,6 +84,21 @@ namespace TPSBR
         internal void NotifyDrinkFinished()
         {
             _isDrinking = false;
+        }
+
+        public void AddBeerStack(byte amount)
+        {
+            if (amount == 0)
+                return;
+
+            if (HasStateAuthority == false)
+                return;
+
+            if (IsBeerStackFull == true)
+                return;
+
+            int newStack = Mathf.Clamp(_beerStack + amount, 0, byte.MaxValue);
+            _beerStack = (byte)newStack;
         }
     }
 }

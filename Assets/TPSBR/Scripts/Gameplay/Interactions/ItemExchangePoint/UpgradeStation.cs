@@ -471,5 +471,27 @@ namespace TPSBR
 
             return false;
         }
+
+        protected bool TryGetSelectedHotbarWeapon(Agent agent, out Weapon weapon)
+        {
+            weapon = null;
+
+            if (agent == null)
+                return false;
+
+            Inventory inventory = agent.Inventory;
+            if (inventory == null)
+                return false;
+
+            if (_currentSelectedSourceType != ItemSourceType.Hotbar)
+                return false;
+
+            int index = _currentSelectedSourceIndex;
+            if (index < 0 || index >= inventory.HotbarSize)
+                return false;
+
+            weapon = inventory.GetHotbarWeapon(index);
+            return weapon != null;
+        }
     }
 }

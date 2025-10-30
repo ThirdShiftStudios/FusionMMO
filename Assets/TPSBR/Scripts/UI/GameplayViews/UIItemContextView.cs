@@ -6,7 +6,7 @@ using UnityEngine.EventSystems;
 
 namespace TPSBR.UI
 {
-        public sealed class UIItemContextView : UICloseView, IUIListItemOwner
+        public class UIItemContextView : UICloseView, IUIListItemOwner
         {
                 [SerializeField]
                 private TextMeshProUGUI _emptyStateLabel;
