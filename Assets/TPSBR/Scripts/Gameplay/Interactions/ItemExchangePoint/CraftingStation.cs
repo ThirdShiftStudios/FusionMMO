@@ -813,7 +813,7 @@ namespace TPSBR
                 RecipeDefinition.ItemQuantity entry = outputs[i];
                 ItemDefinition item = entry.Item;
 
-                if (item is IProfessionExperienceGiver experienceGiver == false)
+                if (item is IGrantsProfessionExperience experienceGiver == false)
                     continue;
 
                 int quantity = entry.Quantity * crafts;
