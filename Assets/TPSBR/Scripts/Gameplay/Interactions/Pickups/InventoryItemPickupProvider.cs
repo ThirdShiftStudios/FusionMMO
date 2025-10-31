@@ -232,11 +232,32 @@ namespace TPSBR
                         _visualInitialized = false;
                 }
 
-                // IInteraction INTERFACE
+        // IInteraction INTERFACE
 
-                string  IInteraction.Name        => Name;
-                string  IInteraction.Description => Description;
-                Vector3 IInteraction.HUDPosition => transform.position;
-                bool    IInteraction.IsActive    => _collider != null && _collider.enabled;
+        string IInteraction.Name => Name;
+        string IInteraction.Description => Description;
+        Vector3 IInteraction.HUDPosition => transform.position;
+        bool IInteraction.IsActive => _collider != null && _collider.enabled;
+
+        bool IInteraction.Interact(in InteractionContext context, out string message)
+        {
+                Inventory inventory = context.Inventory;
+
+                if (inventory == null && context.Interactor != null)
+                {
+                        inventory = context.Interactor.GetComponent<Inventory>();
+                }
+
+                if (inventory == null)
+                {
+                        message = "No inventory available";
+                        return false;
+                }
+
+                inventory.Pickup(this);
+
+                message = string.Empty;
+                return true;
+        }
         }
 }

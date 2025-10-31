@@ -45,12 +45,30 @@ namespace TPSBR
 		private TickTimer  _despawnCooldown;
 		private Collider   _collider;
 
-		// IInteraction INTERFACE
+        // IInteraction INTERFACE
 
-		string  IInteraction.Name        => InteractionName;
-		string  IInteraction.Description => InteractionDescription;
-		Vector3 IInteraction.HUDPosition => _hudPosition != null ? _hudPosition.position : transform.position;
-		bool    IInteraction.IsActive    => IsDisabled == false;
+        string IInteraction.Name => InteractionName;
+        string IInteraction.Description => InteractionDescription;
+        Vector3 IInteraction.HUDPosition => _hudPosition != null ? _hudPosition.position : transform.position;
+        bool IInteraction.IsActive => IsDisabled == false;
+
+        public virtual bool Interact(in InteractionContext context, out string message)
+        {
+                GameObject instigator = context.Interactor;
+
+                if (instigator == null)
+                {
+                        message = "Invalid instigator";
+                        return false;
+                }
+
+                return TryConsume(instigator, out message);
+        }
+
+        bool IInteraction.Interact(in InteractionContext context, out string message)
+        {
+                return Interact(context, out message);
+        }
 
 		protected virtual string InteractionName        => _interactionName;
 		protected virtual string InteractionDescription => _interactionDescription;
@@ -122,7 +140,7 @@ namespace TPSBR
 
 		// PROTECTED METHODS
 
-		protected virtual bool Consume(GameObject instigator, out string result) { result = string.Empty; return false; }
+        protected virtual bool Consume(GameObject instigator, out string result) { result = string.Empty; return false; }
 
 		// NetworkBehaviour INTERFACE
 

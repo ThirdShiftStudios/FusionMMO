@@ -104,12 +104,34 @@ namespace TPSBR
 			UpdateLocalState();
 		}
 
-		// IInteraction INTERFACE
+        // IInteraction INTERFACE
 
-		string  IInteraction.Name        => _interactionName;
-		string  IInteraction.Description => _interactionDescription;
-		Vector3 IInteraction.HUDPosition => _hudPivot != null ? _hudPivot.position : transform.position;
-		bool    IInteraction.IsActive    => BoxState == EState.Closed;
+        string IInteraction.Name => _interactionName;
+        string IInteraction.Description => _interactionDescription;
+        Vector3 IInteraction.HUDPosition => _hudPivot != null ? _hudPivot.position : transform.position;
+        bool IInteraction.IsActive => BoxState == EState.Closed;
+
+        bool IInteraction.Interact(in InteractionContext context, out string message)
+        {
+                message = string.Empty;
+
+                CharacterAnimationController animationController = context.AnimationController;
+
+                if (animationController != null)
+                {
+                        float openNormalizedTime = context.Interactions != null ? context.Interactions.ItemBoxOpenNormalizedTime : 0f;
+                        float cancelMoveDistance = context.Interactions != null ? context.Interactions.ItemBoxCancelMoveDistance : 0f;
+                        float cancelInputThreshold = context.Interactions != null ? context.Interactions.ItemBoxCancelInputThreshold : 0f;
+
+                        if (animationController.TryStartItemBoxInteraction(this, openNormalizedTime, cancelMoveDistance, cancelInputThreshold) == true)
+                        {
+                                return true;
+                        }
+                }
+
+                Open();
+                return true;
+        }
 
 		// MonoBehaviour INTERFACE
 

@@ -21,6 +21,19 @@ namespace TPSBR
         Vector3 IInteraction.HUDPosition => _hudPivot != null ? _hudPivot.position : transform.position;
         bool IInteraction.IsActive => isActiveAndEnabled == true && (_interactionCollider == null || (_interactionCollider.enabled == true && _interactionCollider.gameObject.activeInHierarchy == true));
 
+        bool IInteraction.Interact(in InteractionContext context, out string message)
+        {
+            Agent agent = context.Agent;
+
+            if (agent == null)
+            {
+                message = "No agent available";
+                return false;
+            }
+
+            return HandleInteraction(agent, out message);
+        }
+
         [Header("Interaction Camera")]
         [SerializeField, FormerlySerializedAs("_cameraViewTransform")]
         private Transform _cameraTransform;
@@ -32,6 +45,8 @@ namespace TPSBR
         protected Agent CurrentCameraAgent => _cameraAgent;
         protected virtual UIView _uiView => null;
         protected UIView ActiveUIView => _activeUIView;
+
+        protected abstract bool HandleInteraction(Agent agent, out string message);
 
         protected void ApplyCameraAuthority(Agent agent)
         {

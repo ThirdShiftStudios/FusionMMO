@@ -45,6 +45,19 @@ namespace TPSBR
             return agent?.Inventory?.GetWoodAxeSpeed() ?? 0;
         }
 
+        protected override bool TryStartAnimatedInteraction(in InteractionContext context)
+        {
+            CharacterAnimationController animationController = context.AnimationController;
+
+            if (animationController == null)
+                return false;
+
+            float cancelMoveDistance = context.Interactions != null ? context.Interactions.TreeCancelMoveDistance : 0f;
+            float cancelInputThreshold = context.Interactions != null ? context.Interactions.TreeCancelInputThreshold : 0f;
+
+            return animationController.TryStartTreeInteraction(this, cancelMoveDistance, cancelInputThreshold);
+        }
+
         protected override void OnInteractionStarted(Agent agent)
         {
             base.OnInteractionStarted(agent);
