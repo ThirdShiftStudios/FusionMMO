@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Fusion;
 using TPSBR.Abilities;
 using UnityEngine;
+using Unity.Template.CompetitiveActionMultiplayer;
 
 namespace TPSBR
 {
