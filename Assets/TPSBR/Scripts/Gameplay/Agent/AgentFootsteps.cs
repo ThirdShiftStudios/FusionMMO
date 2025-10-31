@@ -1,4 +1,6 @@
+using System.Collections;
 using UnityEngine;
+using UnityEngine.Audio;
 
 namespace TPSBR
 {
@@ -37,6 +39,7 @@ namespace TPSBR
 
 		private Agent     _agent;
 		private Character _character;
+		private int       _lastClipIndex = -1;
 
 		// PUBLIC METHODS
 
@@ -55,8 +58,8 @@ namespace TPSBR
 			_leftFootData.Transform = _character.ThirdPersonView.LeftFoot;
 			_rightFootData.Transform = _character.ThirdPersonView.RightFoot;
 
-			_leftFootData.Effect = _leftFootEffect;
-			_rightFootData.Effect = _rightFootEffect;
+			InitializeFootAudio(_leftFootData, _leftFootEffect);
+			InitializeFootAudio(_rightFootData, _rightFootEffect);
 		}
 
 		// PRIVATE METHODS
@@ -70,6 +73,8 @@ namespace TPSBR
 			{
 				_leftFootData.IsUp = true;
 				_rightFootData.IsUp = true;
+				CancelFootstepDelay(_leftFootData);
+				CancelFootstepDelay(_rightFootData);
 				return;
 			}
 
@@ -95,8 +100,8 @@ namespace TPSBR
 			}
 			else if (foot.IsUp == true && distanceFromBottom < _checkDistanceDown)
 			{
-                                var surface = GetSurface(foot.Transform);
-                                var newSetupSource = _footstepSetup.GetSound(surface, _character.CharacterController.FixedData.RealSpeed > _runSpeedTreshold);
+				var surface = GetSurface(foot.Transform);
+				var newSetupSource = _footstepSetup.GetSound(surface, _character.CharacterController.FixedData.RealSpeed > _runSpeedTreshold);
 
 				if (foot.SetupSource != newSetupSource)
 				{
@@ -116,11 +121,7 @@ namespace TPSBR
 					foot.Setup.Delay = _defaultDelay;
 				}
 
-				foot.Effect.Play(foot.Setup, EForceBehaviour.ForceAny);
-
-				// Make sure same sound is not played twice in a row
-				_leftFootData.Effect.LastPlayedClipIndex = foot.Effect.LastPlayedClipIndex;
-				_rightFootData.Effect.LastPlayedClipIndex = foot.Effect.LastPlayedClipIndex;
+				PlayFootstepSound(foot);
 
 				_lastStepTime = Time.time + foot.Setup.Delay;
 
@@ -129,70 +130,163 @@ namespace TPSBR
 			}
 		}
 
-                private FootstepSurface GetSurface(Transform foot)
-                {
-                        var physicsScene = _agent.Runner.SimulationUnityScene.GetPhysicsScene();
-                        if (physicsScene.Raycast(foot.position + Vector3.up, Vector3.down, out RaycastHit hit, 1.5f, _hitMask, QueryTriggerInteraction.Collide) == true)
-                        {
-                                var collider = hit.collider;
-                                if (collider != null)
-                                {
-                                        Terrain terrain = collider.GetComponent<Terrain>();
-                                        if (terrain == null)
-                                        {
-                                                terrain = collider.GetComponentInParent<Terrain>();
-                                        }
+		private FootstepSurface GetSurface(Transform foot)
+		{
+			var physicsScene = _agent.Runner.SimulationUnityScene.GetPhysicsScene();
+			if (physicsScene.Raycast(foot.position + Vector3.up, Vector3.down, out RaycastHit hit, 1.5f, _hitMask, QueryTriggerInteraction.Collide) == true)
+			{
+				var collider = hit.collider;
+				if (collider != null)
+				{
+					Terrain terrain = collider.GetComponent<Terrain>();
+					if (terrain == null)
+					{
+						terrain = collider.GetComponentInParent<Terrain>();
+					}
 
-                                        TerrainLayer terrainLayer = null;
-                                        Texture2D terrainTexture = null;
+					TerrainLayer terrainLayer = null;
+					Texture2D terrainTexture = null;
 
-                                        if (terrain != null)
-                                        {
-                                                var terrainData = terrain.terrainData;
-                                                if (terrainData != null && terrainData.alphamapLayers > 0 && terrainData.alphamapWidth > 0 && terrainData.alphamapHeight > 0)
-                                                {
-                                                        Vector3 terrainLocalPos = terrain.transform.InverseTransformPoint(hit.point);
-                                                        Vector3 terrainSize = terrainData.size;
+					if (terrain != null)
+					{
+						var terrainData = terrain.terrainData;
+						if (terrainData != null && terrainData.alphamapLayers > 0 && terrainData.alphamapWidth > 0 && terrainData.alphamapHeight > 0)
+						{
+							Vector3 terrainLocalPos = terrain.transform.InverseTransformPoint(hit.point);
+							Vector3 terrainSize = terrainData.size;
 
-                                                        float normalizedX = terrainSize.x > 0f ? Mathf.Clamp01(terrainLocalPos.x / terrainSize.x) : 0f;
-                                                        float normalizedZ = terrainSize.z > 0f ? Mathf.Clamp01(terrainLocalPos.z / terrainSize.z) : 0f;
+							float normalizedX = terrainSize.x > 0f ? Mathf.Clamp01(terrainLocalPos.x / terrainSize.x) : 0f;
+							float normalizedZ = terrainSize.z > 0f ? Mathf.Clamp01(terrainLocalPos.z / terrainSize.z) : 0f;
 
-                                                        int mapX = Mathf.Clamp(Mathf.RoundToInt(normalizedX * (terrainData.alphamapWidth - 1)), 0, terrainData.alphamapWidth - 1);
-                                                        int mapZ = Mathf.Clamp(Mathf.RoundToInt(normalizedZ * (terrainData.alphamapHeight - 1)), 0, terrainData.alphamapHeight - 1);
+							int mapX = Mathf.Clamp(Mathf.RoundToInt(normalizedX * (terrainData.alphamapWidth - 1)), 0, terrainData.alphamapWidth - 1);
+							int mapZ = Mathf.Clamp(Mathf.RoundToInt(normalizedZ * (terrainData.alphamapHeight - 1)), 0, terrainData.alphamapHeight - 1);
 
-                                                        var alphamaps = terrainData.GetAlphamaps(mapX, mapZ, 1, 1);
-                                                        int dominantLayer = 0;
-                                                        float maxWeight = 0f;
+							var alphamaps = terrainData.GetAlphamaps(mapX, mapZ, 1, 1);
+							int dominantLayer = 0;
+							float maxWeight = 0f;
 
-                                                        for (int i = 0; i < terrainData.alphamapLayers; i++)
-                                                        {
-                                                                float weight = alphamaps[0, 0, i];
-                                                                if (weight > maxWeight)
-                                                                {
-                                                                        maxWeight = weight;
-                                                                        dominantLayer = i;
-                                                                }
-                                                        }
+							for (int i = 0; i < terrainData.alphamapLayers; i++)
+							{
+								float weight = alphamaps[0, 0, i];
+								if (weight > maxWeight)
+								{
+									maxWeight = weight;
+									dominantLayer = i;
+								}
+							}
 
-                                                        var layers = terrainData.terrainLayers;
-                                                        if (layers != null && dominantLayer >= 0 && dominantLayer < layers.Length)
-                                                        {
-                                                                terrainLayer = layers[dominantLayer];
-                                                                if (terrainLayer != null)
-                                                                {
-                                                                        terrainTexture = terrainLayer.diffuseTexture;
-                                                                }
-                                                        }
-                                                }
-                                        }
+							var layers = terrainData.terrainLayers;
+							if (layers != null && dominantLayer >= 0 && dominantLayer < layers.Length)
+							{
+								terrainLayer = layers[dominantLayer];
+								if (terrainLayer != null)
+								{
+									terrainTexture = terrainLayer.diffuseTexture;
+								}
+							}
+						}
+					}
 
-                                        int tagHash = collider.tag.GetHashCode();
-                                        return new FootstepSurface(tagHash, terrainLayer, terrainTexture);
-                                }
-                        }
+					int tagHash = collider.tag.GetHashCode();
+					return new FootstepSurface(tagHash, terrainLayer, terrainTexture);
+				}
+			}
 
-                        return new FootstepSurface(0, null, null);
-                }
+			return new FootstepSurface(0, null, null);
+		}
+
+		private void PlayFootstepSound(FootData foot)
+		{
+			var sceneAudio = _agent?.Context?.Audio;
+			if (sceneAudio == null)
+				return;
+
+			var setup = foot.Setup;
+			if (setup == null || setup.Clips == null || setup.Clips.Length == 0)
+				return;
+
+			int clipIndex = Random.Range(0, setup.Clips.Length);
+
+			if (setup.Clips.Length > 1 && clipIndex == _lastClipIndex)
+			{
+				clipIndex = (clipIndex + 1) % setup.Clips.Length;
+			}
+
+			var clip = setup.Clips[clipIndex];
+			if (clip == null)
+				return;
+
+			_lastClipIndex = clipIndex;
+
+			float pitch = foot.BasePitch + setup.PitchShift + Random.Range(-setup.MaxPitchChange, setup.MaxPitchChange);
+			if (pitch <= 0f)
+			{
+				pitch = 0.01f;
+			}
+
+			var request = new SceneAudio.AudioRequest
+			{
+				Clip         = clip,
+				Loop         = setup.Loop,
+				Volume       = Mathf.Max(0f, setup.Volume),
+				Pitch        = pitch,
+				SpatialBlend = Mathf.Clamp01(foot.SpatialBlend),
+				FadeIn       = Mathf.Max(0f, setup.FadeIn),
+				FadeOut      = Mathf.Max(0f, setup.FadeOut),
+				OutputMixer  = foot.OutputMixer,
+				FollowTarget = foot.Transform,
+				UsePosition  = false,
+			};
+
+			CancelFootstepDelay(foot);
+
+			if (setup.Delay > 0.01f)
+			{
+				foot.DelayRoutine = StartCoroutine(PlayFootstepDelayed(sceneAudio, request, setup.Delay, foot));
+			}
+			else
+			{
+				sceneAudio.PlayEffect(request);
+			}
+		}
+
+		private IEnumerator PlayFootstepDelayed(SceneAudio sceneAudio, SceneAudio.AudioRequest request, float delay, FootData foot)
+		{
+			if (delay > 0.01f)
+			{
+				yield return new WaitForSeconds(delay);
+			}
+
+			sceneAudio?.PlayEffect(request);
+			foot.DelayRoutine = null;
+		}
+
+		private void CancelFootstepDelay(FootData foot)
+		{
+			if (foot.DelayRoutine != null)
+			{
+				StopCoroutine(foot.DelayRoutine);
+				foot.DelayRoutine = null;
+			}
+		}
+
+		private void InitializeFootAudio(FootData foot, AudioEffect effect)
+		{
+			if (effect == null)
+				return;
+
+			var source = effect.AudioSource;
+			if (source != null)
+			{
+				foot.BasePitch    = effect.BasePitch;
+				foot.SpatialBlend = source.spatialBlend;
+				foot.OutputMixer  = source.outputAudioMixerGroup;
+
+				source.enabled = false;
+			}
+
+			effect.enabled = false;
+		}
 
 		// HELPERS
 
@@ -201,9 +295,12 @@ namespace TPSBR
 			public bool        IsUp;
 			public float       Cooldown;
 			public Transform   Transform;
-			public AudioEffect Effect;
 			public AudioSetup  Setup = new AudioSetup();
 			public AudioSetup  SetupSource;
+			public float       BasePitch     = 1f;
+			public float       SpatialBlend  = 1f;
+			public AudioMixerGroup OutputMixer;
+			public Coroutine   DelayRoutine;
 		}
 	}
 }
