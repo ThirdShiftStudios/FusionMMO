@@ -200,6 +200,16 @@ namespace TPSBR
             IsActive = path != null;
         }
 
+        public void ResetCurrentPathProgress()
+        {
+            ResetTraversal();
+
+            if (_isActive == true)
+            {
+                TryInitializeTraversal();
+            }
+        }
+
         private void EnsureCurrentPath()
         {
             if (_currentPath != null)

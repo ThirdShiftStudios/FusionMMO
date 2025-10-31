@@ -523,10 +523,22 @@ namespace TPSBR
             if (state == _currentCameraState)
                 return;
 
+            bool wasCinematic = _currentCameraState == ECameraState.Cinematic;
+            bool willBeCinematic = state == ECameraState.Cinematic;
+
             _previousCameraState = _currentCameraState;
             _currentCameraState = state;
             _cameraChangeTime = 0f;
             _cameraDistance = Mathf.Max(_cameraDistance, GetCameraTransform(_currentCameraState).LocalPosition.magnitude);
+
+            if (wasCinematic != willBeCinematic)
+            {
+                CinematicCameraHandler cinematicHandler = CinematicCameraHandler.Instance;
+                if (cinematicHandler != null)
+                {
+                    cinematicHandler.ResetCurrentPathProgress();
+                }
+            }
         }
 
         private bool IsFishingCatchPullOutLoopActive()
