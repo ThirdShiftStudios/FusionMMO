@@ -12,7 +12,6 @@ namespace TPSBR.UI
         [SerializeField] private Image _professionIcon;
         [SerializeField] private UISlider _levelProgress;
         [SerializeField] private TextMeshProUGUI _currentExperience;
-        [SerializeField] private TextMeshProUGUI _nextLevelExperience;
 
         private int _professionCurrentExperience;
         private int _professionExperienceNextLevel;
@@ -66,12 +65,7 @@ namespace TPSBR.UI
 
             if (_currentExperience != null)
             {
-                _currentExperience.SetTextSafe(_professionCurrentExperience.ToString());
-            }
-
-            if (_nextLevelExperience != null)
-            {
-                _nextLevelExperience.SetTextSafe(_professionExperienceNextLevel.ToString());
+                _currentExperience.SetTextSafe($"{_professionCurrentExperience.ToString()} / {_professionExperienceNextLevel.ToString()}");
             }
         }
     }
