@@ -90,13 +90,14 @@ namespace TPSBR
 
         private void Update()
         {
-            if (_isActive == false)
+            if (IsActive == false)
                 return;
 
             if (_currentPath == null)
             {
-                IsActive = false;
-                return;
+                _currentPath = _fallbackWaypointPath;
+                //IsActive = false;
+                //return;
             }
 
             var waypoints = _currentPath.Waypoints;
