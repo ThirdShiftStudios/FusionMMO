@@ -650,6 +650,37 @@ MonoBehaviour:
     Clip: {fileID: 3094330708855449807, guid: 4ab1f667c5dd53943b45c9d15b01a39a, type: 3}
     Speed: 1
     IsLooping: 0
+--- !u!1 &3627971996645895059
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 323036069004231737}
+  m_Layer: 0
+  m_Name: OpenInventoryTransform
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &323036069004231737
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3627971996645895059}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.0000000027939677, y: -0.9844704, z: 0.0000000037252903, w: 0.17555101}
+  m_LocalPosition: {x: -0.4, y: -0.56, z: 3.25}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 5265108563253862392}
+  m_LocalEulerAnglesHint: {x: 0, y: -159.779, z: 0}
 --- !u!1 &3745952408766224433
 GameObject:
   m_ObjectHideFlags: 0
@@ -2667,6 +2698,10 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 4519665485269015605}
     - target: {fileID: 57946675724828624, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
+      propertyPath: _thirdPersonView.InventoryOpenTransform
+      value: 
+      objectReference: {fileID: 323036069004231737}
+    - target: {fileID: 57946675724828624, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
       propertyPath: _thirdPersonView.FishingCatchCameraTransform
       value: 
       objectReference: {fileID: 1292528308003204138}
@@ -3443,6 +3478,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 1994670034043224433, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1292528308003204138}
+    - targetCorrespondingSourceObject: {fileID: 1994670034043224433, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 323036069004231737}
     - targetCorrespondingSourceObject: {fileID: 6007643176418695006, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
       insertIndex: 2
       addedObject: {fileID: 7923445001256126210}

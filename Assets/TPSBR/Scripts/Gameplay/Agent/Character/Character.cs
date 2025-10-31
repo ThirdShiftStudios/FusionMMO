@@ -17,6 +17,7 @@ namespace TPSBR
                 public Transform DefaultCameraTransform;
                 public Transform AimCameraTransform;
                 public Transform FishingCatchCameraTransform;
+                public Transform InventoryOpenTransform;
 
 		public Transform FireTransformRoot;
 		public Transform FireTransform;
@@ -95,6 +96,7 @@ namespace TPSBR
 
                 private ECameraState                 _previousCameraState;
                 private ECameraState                 _currentCameraState;
+                private bool                         _inventoryOpen;
                 private TransformSampler             _fireTransformSampler   = new TransformSampler();
 		private TransformSampler             _cameraTransformSampler = new TransformSampler();
 
@@ -163,6 +165,16 @@ namespace TPSBR
                         SetCameraState(_characterController.Data.Aim == true ? ECameraState.Aim : ECameraState.Default);
                 }
 
+                public void SetInventoryOpen(bool isOpen)
+                {
+                        if (_inventoryOpen == isOpen)
+                                return;
+
+                        _inventoryOpen = isOpen;
+
+                        SetCameraState(GetDesiredCameraState());
+                }
+
                 public void OnSpawned(Agent agent)
                 {
                         _agent  = agent;
@@ -181,6 +193,7 @@ namespace TPSBR
 
                         _overrideCameraTransform     = null;
                         _overrideCameraTransformData = default;
+                        _inventoryOpen               = false;
                 }
 
 		public void OnFixedUpdate()
@@ -235,9 +248,7 @@ namespace TPSBR
                         _characterController.ManualRenderUpdate();
                         _animationController.ManualRenderUpdate();
 
-                        ECameraState desiredCameraState = _overrideCameraTransform != null ? ECameraState.OtherAuthority : (IsFishingCatchPullOutLoopActive() == true ? ECameraState.FishingCatch : (_characterController.Data.Aim == true ? ECameraState.Aim : ECameraState.Default));
-
-                        SetCameraState(desiredCameraState);
+                        SetCameraState(GetDesiredCameraState());
 
                         RefreshCameraHeadPosition();
                         RefreshFiringPosition();
@@ -381,6 +392,9 @@ namespace TPSBR
                                 case ECameraState.FishingCatch:
                                         cameraTransform = _thirdPersonView.FishingCatchCameraTransform;
                                         break;
+                                case ECameraState.InventoryOpen:
+                                        cameraTransform = _thirdPersonView.InventoryOpenTransform != null ? _thirdPersonView.InventoryOpenTransform : _thirdPersonView.DefaultCameraTransform;
+                                        break;
                                 case ECameraState.OtherAuthority:
                                         if (_overrideCameraTransform != null)
                                         {
@@ -443,6 +457,23 @@ namespace TPSBR
 			_thirdPersonView.FireTransformRoot.localPosition = _defaultFireTransformPosition;
 		}
 
+                private ECameraState GetDesiredCameraState()
+                {
+                        if (_overrideCameraTransform != null)
+                                return ECameraState.OtherAuthority;
+
+                        if (_inventoryOpen == true)
+                                return ECameraState.InventoryOpen;
+
+                        if (IsFishingCatchPullOutLoopActive() == true)
+                                return ECameraState.FishingCatch;
+
+                        if (_characterController.Data.Aim == true)
+                                return ECameraState.Aim;
+
+                        return ECameraState.Default;
+                }
+
                 private void SetCameraState(ECameraState state)
                 {
                         if (state == _currentCameraState)
@@ -484,6 +515,7 @@ namespace TPSBR
                         Default,
                         Aim,
                         FishingCatch,
+                        InventoryOpen,
                         OtherAuthority,
                 }
         }
