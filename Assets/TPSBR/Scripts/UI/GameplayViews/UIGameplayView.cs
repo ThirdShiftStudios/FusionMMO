@@ -16,6 +16,7 @@ namespace TPSBR.UI
         [SerializeField] private UIKillFeed _killFeed;
         [SerializeField] private UIGoldFeed _goldFeed;
         [SerializeField] private UIInventoryFeed _inventoryFeed;
+        [SerializeField] private UIProfessionExperienceFeed _professionExperienceFeed;
         [SerializeField] private UIBehaviour _spectatingGroup;
         [SerializeField] private TextMeshProUGUI _spectatingText;
         [SerializeField] private UIHitDamageIndicator _hitDamage;
@@ -111,6 +112,8 @@ namespace TPSBR.UI
             {
                 fishingView.Bind(null);
             }
+
+            _professionExperienceFeed?.Bind(null);
 
             _localAgentIsLocalPlayer = false;
             _lastKnownPlayerLevel = -1;
@@ -276,6 +279,7 @@ namespace TPSBR.UI
 
                 _inventoryFeed?.Bind(null);
                 _goldFeed?.Bind(null);
+                _professionExperienceFeed?.Bind(null);
 
                 fishingView?.Bind(null);
             }
@@ -303,6 +307,7 @@ namespace TPSBR.UI
             {
                 _inventoryFeed?.Bind(agent.Inventory);
                 _goldFeed?.Bind(agent.Inventory);
+                _professionExperienceFeed?.Bind(agent.Professions);
                 _lastKnownPlayerLevel = Context.PlayerData != null ? Context.PlayerData.Level : -1;
 
                 fishingView?.Bind(agent.Inventory);
@@ -313,6 +318,7 @@ namespace TPSBR.UI
             {
                 _inventoryFeed?.Bind(null);
                 _goldFeed?.Bind(null);
+                _professionExperienceFeed?.Bind(null);
                 _lastKnownPlayerLevel = -1;
 
                 fishingView?.Bind(null);
@@ -339,6 +345,7 @@ namespace TPSBR.UI
 
             _inventoryFeed?.Bind(null);
             _goldFeed?.Bind(null);
+            _professionExperienceFeed?.Bind(null);
 
             GetFishingView()?.Bind(null);
 
