@@ -13,6 +13,15 @@ namespace TPSBR
         [SerializeField] private float _blendInDuration = 0.1f;
         [SerializeField] private float _blendOutDuration = 0.15f;
         [SerializeField] private float _reelSmoothTime = 0.25f;
+        [SerializeField] private float _fightingHorizontalRadius = 0.35f;
+        [SerializeField] private float _fightingHorizontalSpeed = 0.65f;
+        [SerializeField] private float _fightingHorizontalJitterRadius = 0.15f;
+        [SerializeField] private float _fightingHorizontalJitterSpeed = 1.2f;
+        [SerializeField] private float _fightingVerticalAmplitude = 0.2f;
+        [SerializeField] private float _fightingVerticalSpeed = 1.4f;
+        [SerializeField] private Vector2 _fightingJumpInterval = new Vector2(2f, 4f);
+        [SerializeField] private float _fightingJumpHeight = 0.45f;
+        [SerializeField] private float _fightingJumpDuration = 0.6f;
 
         private FishingPoleWeapon _activeWeapon;
         private bool _isWaiting;
@@ -30,6 +39,18 @@ namespace TPSBR
         private int _reelAppliedHits;
         private bool _isReelActive;
         private bool _hasReelAnchorPosition;
+        private bool _fightingMotionInitialized;
+        private float _fightingMotionTime;
+        private Vector3 _fightingMotionOffset;
+        private float _fightingHorizontalPhase;
+        private float _fightingVerticalPhase;
+        private float _fightingJitterPhase;
+        private float _fightingHorizontalDirection;
+        private float _fightingRadiusMultiplier;
+        private float _fightingJumpTimer;
+        private float _fightingJumpElapsed;
+        private float _fightingNextJumpDelay;
+        private bool _fightingJumpActive;
 
         public bool IsCatchLoopActive => _catch != null && _catch.IsLoopActive == true;
 
@@ -242,6 +263,15 @@ namespace TPSBR
 
             ResetReeling();
             BeginReeling(weapon);
+
+            if (weapon.HasStateAuthority == true)
+            {
+                BeginFightingMotion();
+            }
+            else
+            {
+                ResetFightingMotion();
+            }
 
             weapon.NotifyFightingPhaseEntered();
 
@@ -457,6 +487,7 @@ namespace TPSBR
             _reelAppliedHits = 0;
             _isReelActive = false;
             _hasReelAnchorPosition = false;
+            ResetFightingMotion();
         }
 
         private void UpdateReelMovement(float deltaTime)
@@ -494,7 +525,135 @@ namespace TPSBR
                 _reelCurrentOffset = _reelTargetOffset;
             }
 
-            _reelLure.SetVisualOffset(_reelCurrentOffset);
+            Vector3 fightingOffset = Vector3.zero;
+
+            if (_isFighting == true)
+            {
+                fightingOffset = UpdateFightingMotion(deltaTime);
+            }
+            else if (_fightingMotionInitialized == true || _fightingMotionOffset != Vector3.zero)
+            {
+                ResetFightingMotion();
+            }
+
+            _reelLure.SetVisualOffset(_reelCurrentOffset + fightingOffset);
+        }
+
+        private void BeginFightingMotion()
+        {
+            ResetFightingMotion();
+
+            _fightingMotionInitialized = true;
+            _fightingHorizontalPhase = UnityEngine.Random.value * Mathf.PI * 2f;
+            _fightingVerticalPhase = UnityEngine.Random.value * Mathf.PI * 2f;
+            _fightingJitterPhase = UnityEngine.Random.value * Mathf.PI * 2f;
+            _fightingHorizontalDirection = UnityEngine.Random.value > 0.5f ? 1f : -1f;
+            _fightingRadiusMultiplier = Mathf.Lerp(0.85f, 1.15f, UnityEngine.Random.value);
+
+            float minDelay = Mathf.Max(0.1f, Mathf.Min(_fightingJumpInterval.x, _fightingJumpInterval.y));
+            float maxDelay = Mathf.Max(minDelay, Mathf.Max(_fightingJumpInterval.x, _fightingJumpInterval.y));
+            _fightingNextJumpDelay = maxDelay > 0f ? UnityEngine.Random.Range(minDelay, maxDelay) : 0f;
+        }
+
+        private void ResetFightingMotion()
+        {
+            _fightingMotionInitialized = false;
+            _fightingMotionTime = 0f;
+            _fightingMotionOffset = Vector3.zero;
+            _fightingJumpTimer = 0f;
+            _fightingJumpElapsed = 0f;
+            _fightingJumpActive = false;
+            _fightingNextJumpDelay = 0f;
+        }
+
+        private Vector3 UpdateFightingMotion(float deltaTime)
+        {
+            if (_fightingMotionInitialized == false)
+            {
+                BeginFightingMotion();
+            }
+
+            if (deltaTime <= 0f)
+            {
+                deltaTime = Time.deltaTime;
+            }
+
+            _fightingMotionTime += deltaTime;
+
+            float radius = Mathf.Max(0f, _fightingHorizontalRadius) * (_fightingRadiusMultiplier != 0f ? _fightingRadiusMultiplier : 1f);
+            float speed = Mathf.Max(0f, _fightingHorizontalSpeed);
+            float horizontalAngle = _fightingMotionTime * speed * _fightingHorizontalDirection + _fightingHorizontalPhase;
+
+            float horizontalX = 0f;
+            float horizontalZ = 0f;
+
+            if (radius > 0f && speed > 0f)
+            {
+                horizontalX = Mathf.Cos(horizontalAngle) * radius;
+                horizontalZ = Mathf.Sin(horizontalAngle) * radius;
+            }
+
+            float jitterRadius = Mathf.Max(0f, _fightingHorizontalJitterRadius);
+            float jitterSpeed = Mathf.Max(0f, _fightingHorizontalJitterSpeed);
+
+            if (jitterRadius > 0f && jitterSpeed > 0f)
+            {
+                float jitterAngle = _fightingMotionTime * jitterSpeed + _fightingJitterPhase;
+                horizontalX += Mathf.Sin(jitterAngle) * jitterRadius;
+                horizontalZ += Mathf.Cos(jitterAngle * 0.75f) * jitterRadius;
+            }
+
+            float vertical = 0f;
+            float verticalAmplitude = Mathf.Max(0f, _fightingVerticalAmplitude);
+            float verticalSpeed = Mathf.Max(0f, _fightingVerticalSpeed);
+
+            if (verticalAmplitude > 0f && verticalSpeed > 0f)
+            {
+                vertical = Mathf.Sin(_fightingMotionTime * verticalSpeed + _fightingVerticalPhase) * verticalAmplitude;
+            }
+
+            float jumpHeight = Mathf.Max(0f, _fightingJumpHeight);
+
+            if (jumpHeight > 0f)
+            {
+                float jumpDuration = Mathf.Max(0.01f, _fightingJumpDuration);
+                float minDelay = Mathf.Max(0.1f, Mathf.Min(_fightingJumpInterval.x, _fightingJumpInterval.y));
+                float maxDelay = Mathf.Max(minDelay, Mathf.Max(_fightingJumpInterval.x, _fightingJumpInterval.y));
+
+                if (_fightingJumpActive == false && maxDelay > 0f)
+                {
+                    _fightingJumpTimer += deltaTime;
+
+                    if (_fightingNextJumpDelay <= 0f)
+                    {
+                        _fightingNextJumpDelay = UnityEngine.Random.Range(minDelay, maxDelay);
+                    }
+
+                    if (_fightingJumpTimer >= _fightingNextJumpDelay)
+                    {
+                        _fightingJumpActive = true;
+                        _fightingJumpTimer = 0f;
+                        _fightingJumpElapsed = 0f;
+                    }
+                }
+
+                if (_fightingJumpActive == true)
+                {
+                    _fightingJumpElapsed += deltaTime;
+                    float normalized = Mathf.Clamp01(_fightingJumpElapsed / jumpDuration);
+                    vertical += Mathf.Sin(normalized * Mathf.PI) * jumpHeight;
+
+                    if (normalized >= 1f)
+                    {
+                        _fightingJumpActive = false;
+                        _fightingJumpElapsed = 0f;
+                        _fightingNextJumpDelay = maxDelay > 0f ? UnityEngine.Random.Range(minDelay, maxDelay) : 0f;
+                    }
+                }
+            }
+
+            _fightingMotionOffset = new Vector3(horizontalX, vertical, horizontalZ);
+            return _fightingMotionOffset;
         }
 
         private void CompleteCast()
