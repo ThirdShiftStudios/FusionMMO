@@ -55,6 +55,8 @@ namespace TPSBR
                 private float _downGravityMultiplier = 1.0f;
 
                 [Header("Water")]
+                [SerializeField, Tooltip("Layers that represent water volumes.")]
+                private LayerMask _waterLayers = ObjectLayerMask.Water;
                 [SerializeField, Tooltip("Horizontal movement speed while swimming.")]
                 private float _swimSpeed = 4.0f;
                 [SerializeField, Tooltip("Acceleration applied to reach swim speed when there is input.")]
@@ -71,7 +73,7 @@ namespace TPSBR
                 private float _waterProbeRadius = 0.75f;
 
                 private readonly Collider[] _waterOverlap = new Collider[8];
-                private int _waterLayerMask;
+                private bool _loggedMissingWaterLayer;
 
                 [SerializeField]
                 private StepUpProcessor _stepUpProcessor;
@@ -82,7 +84,15 @@ namespace TPSBR
 
                 private void Awake()
                 {
-                        _waterLayerMask = ObjectLayerMask.Water;
+                        if (_waterLayers == 0)
+                        {
+                                _waterLayers = ObjectLayerMask.Water;
+
+                                if (_waterLayers == 0)
+                                {
+                                        WarnAboutMissingWaterLayer();
+                                }
+                        }
                 }
 
                 public override float GetPriority(KCC kcc) => DefaultPriority + RelativePriority;
@@ -427,13 +437,6 @@ namespace TPSBR
 
                 private bool UpdateSwimmingState(KCC kcc, KCCData data)
                 {
-                        if (_waterLayerMask == 0)
-                        {
-                                data.IsSwimming = false;
-                                data.SwimSurfaceHeight = 0.0f;
-                                return false;
-                        }
-
                         Vector3 position        = data.TargetPosition;
                         float   characterBottom = position.y;
                         float   characterTop    = characterBottom + kcc.Settings.Height;
@@ -441,7 +444,16 @@ namespace TPSBR
 
                         PhysicsScene physicsScene = kcc.Runner != null ? kcc.Runner.SimulationUnityScene.GetPhysicsScene() : Physics.defaultPhysicsScene;
 
-                        int overlapCount = physicsScene.OverlapSphere(position, probeRadius, _waterOverlap, _waterLayerMask, QueryTriggerInteraction.Collide);
+                        int layerMask = _waterLayers;
+                        if (layerMask == 0)
+                        {
+                                WarnAboutMissingWaterLayer();
+                                data.IsSwimming = false;
+                                data.SwimSurfaceHeight = 0.0f;
+                                return false;
+                        }
+
+                        int overlapCount = physicsScene.OverlapSphere(position, probeRadius, _waterOverlap, layerMask, QueryTriggerInteraction.Collide);
 
                         bool  wasSwimming   = data.IsSwimming;
                         bool  isSwimming    = false;
@@ -451,9 +463,6 @@ namespace TPSBR
                         {
                                 Collider collider = _waterOverlap[i];
                                 if (collider == null)
-                                        continue;
-
-                                if (collider.gameObject.layer != ObjectLayer.Water)
                                         continue;
 
                                 Bounds bounds = collider.bounds;
@@ -563,6 +572,17 @@ namespace TPSBR
 
                         data.DynamicVelocity = new Vector3(data.DynamicVelocity.x, 0.0f, data.DynamicVelocity.z);
                         data.KinematicVelocity = new Vector3(data.KinematicVelocity.x, 0.0f, data.KinematicVelocity.z);
+                }
+
+                private void WarnAboutMissingWaterLayer()
+                {
+                        if (_loggedMissingWaterLayer == true)
+                                return;
+
+                        _loggedMissingWaterLayer = true;
+                        Debug.LogWarning("[BREnvironmentProcessor] No water layers are configured. Assign the ocean collider to th"
+                                         + "e 'Water' layer or specify the correct layers in the BREnvironmentProcessor settings"
+                                         + " to enable swimming.");
                 }
         }
 }
