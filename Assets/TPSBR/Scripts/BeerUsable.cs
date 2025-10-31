@@ -30,12 +30,19 @@ namespace TPSBR
 
         private void OnEnable()
         {
-            SetVisualsVisible(IsArmed);
+            ApplyVisualVisibility();
         }
 
         private void OnDisable()
         {
-            SetVisualsVisible(false);
+            if (_externalVisibilityOverride == true)
+            {
+                ApplyVisualVisibility();
+            }
+            else
+            {
+                SetVisualsVisible(false);
+            }
         }
 
         public override bool CanFire(bool keyDown)
@@ -187,7 +194,7 @@ namespace TPSBR
 
         private void ApplyVisualVisibility()
         {
-            bool shouldBeVisible = (_desiredVisibility == true || _externalVisibilityOverride == true) && isActiveAndEnabled == true;
+            bool shouldBeVisible = _desiredVisibility == true || _externalVisibilityOverride == true;
 
             ResolveRenderers();
             ResolveColliders();
