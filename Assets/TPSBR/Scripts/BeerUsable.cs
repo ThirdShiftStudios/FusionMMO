@@ -34,7 +34,6 @@ namespace TPSBR
 
         private void OnDisable()
         {
-            _previewVisible = false;
             SetVisualsVisible(false);
         }
 
@@ -147,14 +146,16 @@ namespace TPSBR
 
             _previewVisible = visible;
 
-            if (isActiveAndEnabled == true)
-            {
-                UpdateVisualState();
-            }
+            UpdateVisualState();
         }
 
         private void UpdateVisualState()
         {
+            if (gameObject.activeInHierarchy == false)
+            {
+                return;
+            }
+
             SetVisualsVisible(IsArmed || _previewVisible);
         }
 
