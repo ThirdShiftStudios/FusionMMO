@@ -95,7 +95,8 @@ namespace TPSBR
 			}
 			else if (foot.IsUp == true && distanceFromBottom < _checkDistanceDown)
 			{
-				var newSetupSource = _footstepSetup.GetSound(GetSurfaceTagHash(foot.Transform), _character.CharacterController.FixedData.RealSpeed > _runSpeedTreshold);
+                                var surface = GetSurface(foot.Transform);
+                                var newSetupSource = _footstepSetup.GetSound(surface, _character.CharacterController.FixedData.RealSpeed > _runSpeedTreshold);
 
 				if (foot.SetupSource != newSetupSource)
 				{
@@ -128,20 +129,70 @@ namespace TPSBR
 			}
 		}
 
-		private int GetSurfaceTagHash(Transform foot)
-		{
-			var physicsScene = _agent.Runner.SimulationUnityScene.GetPhysicsScene();
-			if (physicsScene.Raycast(foot.position + Vector3.up, Vector3.down, out RaycastHit hit, 1.5f, _hitMask, QueryTriggerInteraction.Collide) == true)
-			{
-				var collider = hit.collider;
-				if (collider != null)
-				{
-					return collider.tag.GetHashCode();
-				}
-			}
+                private FootstepSurface GetSurface(Transform foot)
+                {
+                        var physicsScene = _agent.Runner.SimulationUnityScene.GetPhysicsScene();
+                        if (physicsScene.Raycast(foot.position + Vector3.up, Vector3.down, out RaycastHit hit, 1.5f, _hitMask, QueryTriggerInteraction.Collide) == true)
+                        {
+                                var collider = hit.collider;
+                                if (collider != null)
+                                {
+                                        Terrain terrain = collider.GetComponent<Terrain>();
+                                        if (terrain == null)
+                                        {
+                                                terrain = collider.GetComponentInParent<Terrain>();
+                                        }
 
-			return 0;
-		}
+                                        TerrainLayer terrainLayer = null;
+                                        Texture2D terrainTexture = null;
+
+                                        if (terrain != null)
+                                        {
+                                                var terrainData = terrain.terrainData;
+                                                if (terrainData != null && terrainData.alphamapLayers > 0 && terrainData.alphamapWidth > 0 && terrainData.alphamapHeight > 0)
+                                                {
+                                                        Vector3 terrainLocalPos = terrain.transform.InverseTransformPoint(hit.point);
+                                                        Vector3 terrainSize = terrainData.size;
+
+                                                        float normalizedX = terrainSize.x > 0f ? Mathf.Clamp01(terrainLocalPos.x / terrainSize.x) : 0f;
+                                                        float normalizedZ = terrainSize.z > 0f ? Mathf.Clamp01(terrainLocalPos.z / terrainSize.z) : 0f;
+
+                                                        int mapX = Mathf.Clamp(Mathf.RoundToInt(normalizedX * (terrainData.alphamapWidth - 1)), 0, terrainData.alphamapWidth - 1);
+                                                        int mapZ = Mathf.Clamp(Mathf.RoundToInt(normalizedZ * (terrainData.alphamapHeight - 1)), 0, terrainData.alphamapHeight - 1);
+
+                                                        var alphamaps = terrainData.GetAlphamaps(mapX, mapZ, 1, 1);
+                                                        int dominantLayer = 0;
+                                                        float maxWeight = 0f;
+
+                                                        for (int i = 0; i < terrainData.alphamapLayers; i++)
+                                                        {
+                                                                float weight = alphamaps[0, 0, i];
+                                                                if (weight > maxWeight)
+                                                                {
+                                                                        maxWeight = weight;
+                                                                        dominantLayer = i;
+                                                                }
+                                                        }
+
+                                                        var layers = terrainData.terrainLayers;
+                                                        if (layers != null && dominantLayer >= 0 && dominantLayer < layers.Length)
+                                                        {
+                                                                terrainLayer = layers[dominantLayer];
+                                                                if (terrainLayer != null)
+                                                                {
+                                                                        terrainTexture = terrainLayer.diffuseTexture;
+                                                                }
+                                                        }
+                                                }
+                                        }
+
+                                        int tagHash = collider.tag.GetHashCode();
+                                        return new FootstepSurface(tagHash, terrainLayer, terrainTexture);
+                                }
+                        }
+
+                        return new FootstepSurface(0, null, null);
+                }
 
 		// HELPERS
 

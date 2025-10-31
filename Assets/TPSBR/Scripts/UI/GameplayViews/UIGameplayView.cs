@@ -463,6 +463,8 @@ namespace TPSBR.UI
 
             int currentLevel = playerData.Level;
 
+            _player?.SetLevel(currentLevel);
+
             if (_lastKnownPlayerLevel < 0)
             {
                 _lastKnownPlayerLevel = currentLevel;

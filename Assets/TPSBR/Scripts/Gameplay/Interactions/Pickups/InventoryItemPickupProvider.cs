@@ -18,6 +18,8 @@ namespace TPSBR
                 [SerializeField]
                 private Vector3 _visualOffset;
                 [SerializeField]
+                private ItemDefinitionIconDisplay _iconDisplay;
+                [SerializeField]
                 private NetworkRigidbody3D _networkRigidbody;
                 [SerializeField]
                 private Rigidbody _rigidbody;
@@ -90,6 +92,11 @@ namespace TPSBR
                 public override void Spawned()
                 {
                         base.Spawned();
+
+                        if (_iconDisplay == null)
+                        {
+                                _iconDisplay = GetComponent<ItemDefinitionIconDisplay>();
+                        }
 
                         if (_interpolationTarget == null)
                         {
@@ -200,29 +207,46 @@ namespace TPSBR
                         if (_definition == null)
                                 return;
 
-                        var graphic = _definition.WorldGraphic;
-                        if (graphic == null)
-                                return;
-
-                        ClearVisual();
-
-                        var parent = InterpolationTarget;
-                        _visualInstance = Instantiate(graphic, parent);
-                        _visualInstance.transform.localPosition += _visualOffset;
-                        _visualInstance.transform.localRotation = Quaternion.identity;
-                        _visualInstance.transform.localScale = Vector3.one;
-
-                        var rigidbody = _visualInstance.GetComponent<Rigidbody>();
-                        if (rigidbody != null)
+                        if (_iconDisplay == null)
                         {
-                                Destroy(rigidbody);
+                                _iconDisplay = GetComponent<ItemDefinitionIconDisplay>();
                         }
 
-                        _visualInitialized = true;
+                        var graphic = _definition.WorldGraphic;
+                        ClearVisual();
+
+                        if (graphic != null)
+                        {
+                                var parent = InterpolationTarget;
+                                _visualInstance = Instantiate(graphic, parent);
+                                _visualInstance.transform.localPosition += _visualOffset;
+                                _visualInstance.transform.localRotation = Quaternion.identity;
+                                _visualInstance.transform.localScale = Vector3.one;
+
+                                var rigidbody = _visualInstance.GetComponent<Rigidbody>();
+                                if (rigidbody != null)
+                                {
+                                        Destroy(rigidbody);
+                                }
+
+                                _visualInitialized = true;
+                                return;
+                        }
+
+                        if (_iconDisplay != null)
+                        {
+                                _iconDisplay.CreateIcon(_definition, InterpolationTarget, _visualOffset);
+                                _visualInitialized = _iconDisplay.HasIcon;
+                        }
                 }
 
                 private void ClearVisual()
                 {
+                        if (_iconDisplay != null)
+                        {
+                                _iconDisplay.Clear();
+                        }
+
                         if (_visualInstance != null)
                         {
                                 Destroy(_visualInstance);
@@ -232,11 +256,32 @@ namespace TPSBR
                         _visualInitialized = false;
                 }
 
-                // IInteraction INTERFACE
+        // IInteraction INTERFACE
 
-                string  IInteraction.Name        => Name;
-                string  IInteraction.Description => Description;
-                Vector3 IInteraction.HUDPosition => transform.position;
-                bool    IInteraction.IsActive    => _collider != null && _collider.enabled;
+        string IInteraction.Name => Name;
+        string IInteraction.Description => Description;
+        Vector3 IInteraction.HUDPosition => transform.position;
+        bool IInteraction.IsActive => _collider != null && _collider.enabled;
+
+        bool IInteraction.Interact(in InteractionContext context, out string message)
+        {
+                Inventory inventory = context.Inventory;
+
+                if (inventory == null && context.Interactor != null)
+                {
+                        inventory = context.Interactor.GetComponent<Inventory>();
+                }
+
+                if (inventory == null)
+                {
+                        message = "No inventory available";
+                        return false;
+                }
+
+                inventory.Pickup(this);
+
+                message = string.Empty;
+                return true;
+        }
         }
 }

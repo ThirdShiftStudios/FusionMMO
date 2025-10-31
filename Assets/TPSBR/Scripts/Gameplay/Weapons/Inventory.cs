@@ -577,6 +577,41 @@ namespace TPSBR
             return _items[index];
         }
 
+        public bool TrySetInventorySlotConfiguration(int index, NetworkString<_32> configurationHash)
+        {
+            if (HasStateAuthority == false)
+                return false;
+
+            if (index < 0 || index >= _items.Length)
+                return false;
+
+            var slot = _items[index];
+            if (slot.IsEmpty == true)
+                return false;
+
+            slot = new InventorySlot(slot.ItemDefinitionId, slot.Quantity, configurationHash);
+            _items.Set(index, slot);
+            UpdateWeaponDefinitionMapping(index, slot);
+            RefreshItems();
+            return true;
+        }
+
+        public bool TrySetHotbarConfiguration(int index, NetworkString<_32> configurationHash)
+        {
+            if (HasStateAuthority == false)
+                return false;
+
+            if (index < 0 || index >= _hotbar.Length)
+                return false;
+
+            Weapon weapon = _hotbar[index];
+            if (weapon == null)
+                return false;
+
+            weapon.SetConfigurationHash(configurationHash);
+            return true;
+        }
+
         public InventorySlot GetEquipmentSlot(ESlotCategory category)
         {
             return category switch
