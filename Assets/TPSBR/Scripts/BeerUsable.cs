@@ -16,6 +16,8 @@ namespace TPSBR
 
         private bool _renderersResolved;
         private bool _collidersResolved;
+        private bool _desiredVisibility;
+        private bool _externalVisibilityOverride;
 
         public byte BeerStack => _beerStack;
 
@@ -136,6 +138,17 @@ namespace TPSBR
             _beerStack = (byte)newValue;
         }
 
+        public void SetExternalVisibilityOverride(bool visible)
+        {
+            if (_externalVisibilityOverride == visible)
+            {
+                return;
+            }
+
+            _externalVisibilityOverride = visible;
+            ApplyVisualVisibility();
+        }
+
         private void ResolveRenderers()
         {
             if (_renderersResolved == true)
@@ -168,6 +181,14 @@ namespace TPSBR
 
         private void SetVisualsVisible(bool visible)
         {
+            _desiredVisibility = visible;
+            ApplyVisualVisibility();
+        }
+
+        private void ApplyVisualVisibility()
+        {
+            bool shouldBeVisible = (_desiredVisibility == true || _externalVisibilityOverride == true) && isActiveAndEnabled == true;
+
             ResolveRenderers();
             ResolveColliders();
 
@@ -178,7 +199,7 @@ namespace TPSBR
                     var renderer = _renderers[i];
                     if (renderer != null)
                     {
-                        renderer.enabled = visible;
+                        renderer.enabled = shouldBeVisible;
                     }
                 }
             }
@@ -190,7 +211,7 @@ namespace TPSBR
                     var collider = _colliders[i];
                     if (collider != null)
                     {
-                        collider.enabled = visible;
+                        collider.enabled = shouldBeVisible;
                     }
                 }
             }

@@ -14,6 +14,7 @@ namespace TPSBR
                 private UIBeerRefillStationView _beerRefillView;
                 private Agent _activeAgent;
                 private Inventory _activeInventory;
+                private BeerUsable _displayedBeer;
 
                 private static DataDefinition[] _cachedBeerDefinitions;
 
@@ -70,6 +71,7 @@ namespace TPSBR
 
                         UnsubscribeFromInventory();
                         _activeAgent = null;
+                        SetDisplayedBeer(null);
                         UpdatePurchaseButtonState();
                 }
 
@@ -231,6 +233,7 @@ namespace TPSBR
 
                         _activeInventory.GoldChanged -= HandleGoldChanged;
                         _activeInventory = null;
+                        SetDisplayedBeer(null);
                 }
 
                 private void HandleGoldChanged(int value)
@@ -245,6 +248,8 @@ namespace TPSBR
                         {
                                 refillView.SetPurchaseButtonInteractable(CanPurchase());
                         }
+
+                        UpdateSelectedBeerVisual();
                 }
 
                 private bool CanPurchase()
@@ -264,6 +269,38 @@ namespace TPSBR
                                 return false;
 
                         return beer.BeerStack < byte.MaxValue;
+                }
+
+                private void UpdateSelectedBeerVisual()
+                {
+                        Inventory inventory = _activeAgent != null ? _activeAgent.Inventory : null;
+
+                        if (inventory != null && TryGetSelectedBeer(inventory, out BeerUsable beer) == true)
+                        {
+                                SetDisplayedBeer(beer);
+                        }
+                        else
+                        {
+                                SetDisplayedBeer(null);
+                        }
+                }
+
+                private void SetDisplayedBeer(BeerUsable beer)
+                {
+                        if (_displayedBeer == beer)
+                                return;
+
+                        if (_displayedBeer != null)
+                        {
+                                _displayedBeer.SetExternalVisibilityOverride(false);
+                        }
+
+                        _displayedBeer = beer;
+
+                        if (_displayedBeer != null)
+                        {
+                                _displayedBeer.SetExternalVisibilityOverride(true);
+                        }
                 }
 
                 private void EnsureBeerFilters()
