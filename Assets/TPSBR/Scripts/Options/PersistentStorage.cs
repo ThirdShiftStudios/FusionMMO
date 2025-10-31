@@ -257,7 +257,13 @@ namespace TPSBR
 
                 if (_deletedKeys.Count > 0)
                 {
-                    dataService.ForceDeleteAsync(_deletedKeys).GetAwaiter().GetResult();
+                    var keysToDelete = new List<string>(_deletedKeys);
+
+                    foreach (var key in keysToDelete)
+                    {
+                        dataService.ForceDeleteAsync(key).GetAwaiter().GetResult();
+                    }
+
                     _deletedKeys.Clear();
                 }
 
