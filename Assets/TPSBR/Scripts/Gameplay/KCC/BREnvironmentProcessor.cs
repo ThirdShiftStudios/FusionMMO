@@ -534,10 +534,6 @@ namespace TPSBR
                         desiredPosition.y = targetHeight;
                         data.DesiredPosition = desiredPosition;
 
-                        Vector3 desiredVelocity = data.DesiredVelocity;
-                        desiredVelocity.y = 0.0f;
-                        data.DesiredVelocity = desiredVelocity;
-
                         data.DynamicVelocity = new Vector3(data.DynamicVelocity.x, 0.0f, data.DynamicVelocity.z);
                         data.KinematicVelocity = new Vector3(data.KinematicVelocity.x, 0.0f, data.KinematicVelocity.z);
                 }
