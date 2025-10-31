@@ -434,8 +434,8 @@ namespace TPSBR
                                 return false;
                         }
 
-                        Vector3 position     = data.TargetPosition;
-                        float   characterTop = position.y + kcc.Settings.Height;
+                        Vector3 position        = data.TargetPosition;
+                        float   characterBottom = position.y;
                         float   probeRadius  = Mathf.Max(_waterProbeRadius, kcc.Settings.Radius);
 
                         PhysicsScene physicsScene = kcc.Runner != null ? kcc.Runner.SimulationUnityScene.GetPhysicsScene() : Physics.defaultPhysicsScene;
@@ -460,13 +460,16 @@ namespace TPSBR
                                 if (position.z < bounds.min.z || position.z > bounds.max.z)
                                         continue;
 
-                                float top   = bounds.max.y;
-                                float depth = top - characterTop;
+                                float top          = bounds.max.y;
+                                float depthToBottom = top - characterBottom;
 
-                                if (depth < -_swimExitMargin)
+                                if (depthToBottom < -_swimExitMargin)
                                         continue;
 
-                                if (depth > _swimActivationDepth && wasSwimming == false)
+                                if (depthToBottom <= 0.0f)
+                                        continue;
+
+                                if (depthToBottom > _swimActivationDepth && wasSwimming == false)
                                         continue;
 
                                 if (isSwimming == false || top > surfaceHeight)
