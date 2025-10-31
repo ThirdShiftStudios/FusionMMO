@@ -77,5 +77,15 @@ MonoBehaviour:
   _speedMultiplier: 1.6
   _upGravityMultiplier: 2
   _downGravityMultiplier: 3
+  _waterLayers:
+    serializedVersion: 2
+    m_Bits: 16
+  _swimSpeed: 2
+  _swimAcceleration: 2
+  _swimDeceleration: 2
+  _swimActivationDepth: 0.1
+  _swimExitMargin: 0.1
+  _waterSurfaceOffset: 0
+  _waterProbeRadius: 1
   _stepUpProcessor: {fileID: 561824206424634091, guid: 68c4081a63f1dfd469da9c95bea22158, type: 3}
   _groundSnapProcessor: {fileID: 8306782452827789390, guid: 6d976f9777012db4aa55e7e6b1991afe, type: 3}
