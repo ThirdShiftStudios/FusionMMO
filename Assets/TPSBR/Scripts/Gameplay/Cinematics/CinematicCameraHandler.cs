@@ -11,6 +11,9 @@ namespace TPSBR
         [SerializeField]
         private List<CinematicWaypointPath> _waypointPathRoots = new List<CinematicWaypointPath>();
 
+        [SerializeField]
+        private CinematicWaypointPath _fallbackWaypointPath;
+
         public IReadOnlyList<CinematicWaypointPath> WaypointPathRoots => _waypointPathRoots;
         public bool OverrideIsActive = false;
         public bool IsActive
@@ -205,7 +208,12 @@ namespace TPSBR
                     continue;
 
                 _currentPath = _waypointPathRoots[i];
-                break;
+                return;
+            }
+
+            if (_fallbackWaypointPath != null)
+            {
+                _currentPath = _fallbackWaypointPath;
             }
         }
 
