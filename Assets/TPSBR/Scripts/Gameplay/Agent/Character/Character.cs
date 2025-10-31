@@ -175,6 +175,19 @@ namespace TPSBR
                         SetCameraState(GetDesiredCameraState());
                 }
 
+                public void EnterCinematicCamera()
+                {
+                        SetCameraState(ECameraState.Cinematic);
+                }
+
+                public void ExitCinematicCamera()
+                {
+                        if (_currentCameraState == ECameraState.Cinematic)
+                        {
+                                SetCameraState(GetDesiredCameraState());
+                        }
+                }
+
                 public void OnSpawned(Agent agent)
                 {
                         _agent  = agent;
@@ -290,6 +303,25 @@ namespace TPSBR
                                 return;
                         }
 
+                        if (_currentCameraState == ECameraState.Cinematic)
+                        {
+                                CinematicCameraHandler cinematicHandler = CinematicCameraHandler.Instance;
+
+                                if (cinematicHandler != null && cinematicHandler.TryGetCameraTransform(out Vector3 cinematicPosition, out Quaternion cinematicRotation) == true)
+                                {
+                                        _camera.transform.SetPositionAndRotation(cinematicPosition, cinematicRotation);
+                                        _cameraDistance   = 0f;
+                                        _cameraChangeTime = _cameraChangeDuration;
+
+                                        if (_agent.HasInputAuthority == true)
+                                        {
+                                                _animationController.RefreshSnapping();
+                                        }
+                                }
+
+                                return;
+                        }
+
                         if (_previousCameraState != _currentCameraState)
                         {
                                 _cameraChangeTime += Time.deltaTime;
@@ -377,9 +409,9 @@ namespace TPSBR
 
 		// PRIVATE METHODS
 
-		private TransformData GetCameraTransform(ECameraState cameraState)
-		{
-			Transform cameraTransform = null;
+                private TransformData GetCameraTransform(ECameraState cameraState)
+                {
+                        Transform cameraTransform = null;
 
                         switch (cameraState)
                         {
@@ -402,6 +434,14 @@ namespace TPSBR
                                         }
 
                                         return _overrideCameraTransformData;
+                                case ECameraState.Cinematic:
+                                        CinematicCameraHandler cinematicHandler = CinematicCameraHandler.Instance;
+                                        if (cinematicHandler != null && cinematicHandler.TryGetCameraTransform(out Vector3 cinematicPosition, out Quaternion cinematicRotation) == true)
+                                        {
+                                                return new TransformData(cinematicPosition, transform.InverseTransformPoint(cinematicPosition), cinematicRotation);
+                                        }
+
+                                        return GetCameraTransform(ECameraState.Default);
                         }
 
                         if (cameraTransform == null)
@@ -459,6 +499,10 @@ namespace TPSBR
 
                 private ECameraState GetDesiredCameraState()
                 {
+                        CinematicCameraHandler cinematicHandler = CinematicCameraHandler.Instance;
+                        if (cinematicHandler != null && cinematicHandler.IsActive == true)
+                                return ECameraState.Cinematic;
+
                         if (_overrideCameraTransform != null)
                                 return ECameraState.OtherAuthority;
 
@@ -517,6 +561,7 @@ namespace TPSBR
                         FishingCatch,
                         InventoryOpen,
                         OtherAuthority,
+                        Cinematic,
                 }
         }
 }
