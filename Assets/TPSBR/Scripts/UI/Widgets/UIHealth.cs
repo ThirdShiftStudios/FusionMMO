@@ -12,7 +12,7 @@ namespace TPSBR.UI
 		[SerializeField]
 		private TextMeshProUGUI _healthText;
 		[SerializeField]
-		private Image           _healthProgress;
+                private UISlider        _healthProgress;
 		[SerializeField]
 		private TextMeshProUGUI _maxHealthText;
 		[SerializeField]
@@ -35,7 +35,7 @@ namespace TPSBR.UI
 		[SerializeField]
 		private Color           _shieldInactiveColor = Color.gray;
 		[SerializeField]
-		private Image           _shieldProgress;
+                private UISlider        _shieldProgress;
 		[SerializeField]
 		private TextMeshProUGUI _maxShieldText;
 
@@ -73,20 +73,27 @@ namespace TPSBR.UI
 
 			int maxHealth = (int)health.MaxHealth;
 
-			if (currentHealth != _lastHealth)
-			{
-				DOTween.Kill(_healthProgress);
+                        if (currentHealth != _lastHealth)
+                        {
+                                float progress = health.MaxHealth > 0f ? currentHealth / health.MaxHealth : 0f;
 
-				float progress = currentHealth / health.MaxHealth;
-				_healthProgress.DOFillAmount(progress, _healthAnimationDuration);
+                                if (_healthProgress != null)
+                                {
+                                        DOTween.Kill(_healthProgress);
 
-				_healthText.text = currentHealth.ToString();
+                                        _healthProgress.DOValue(progress, _healthAnimationDuration);
+                                }
 
-				UpdateHealthColor(health);
-				ShowCriticalAnimation(progress);
+                                if (_healthText != null)
+                                {
+                                        _healthText.text = currentHealth.ToString();
+                                }
 
-				_lastHealth = currentHealth;
-			}
+                                UpdateHealthColor(health);
+                                ShowCriticalAnimation(progress);
+
+                                _lastHealth = currentHealth;
+                        }
 
 			if (maxHealth != _lastMaxHealth)
 			{
@@ -103,28 +110,40 @@ namespace TPSBR.UI
 			int currentShield = (int)health.CurrentShield;
 			int maxShield = (int)health.MaxShield;
 
-			if (currentShield != _lastShield)
-			{
-				DOTween.Kill(_shieldProgress);
+                        if (currentShield != _lastShield)
+                        {
+                                if (_shieldProgress != null)
+                                {
+                                        DOTween.Kill(_shieldProgress);
 
-				float progress = currentShield / health.MaxShield;
-				_shieldProgress.DOFillAmount(progress, _healthAnimationDuration);
+                                        float progress = health.MaxShield > 0f ? currentShield / health.MaxShield : 0f;
+                                        _shieldProgress.DOValue(progress, _healthAnimationDuration);
+                                }
 
-				_shieldText.text = currentShield.ToString();
-				_shieldText.color = currentShield > 0 ? _shieldColor : _shieldInactiveColor;
-				_shieldIcon.color = currentShield > 0 ? _shieldColor : _shieldInactiveColor;
+                                if (_shieldText != null)
+                                {
+                                        _shieldText.text = currentShield.ToString();
+                                        _shieldText.color = currentShield > 0 ? _shieldColor : _shieldInactiveColor;
+                                }
 
-				UpdateHealthColor(health);
+                                if (_shieldIcon != null)
+                                {
+                                        _shieldIcon.color = currentShield > 0 ? _shieldColor : _shieldInactiveColor;
+                                }
 
-				_lastShield = currentShield;
-			}
+                                SetSliderFillColor(_shieldProgress, currentShield > 0 ? _shieldColor : _shieldInactiveColor);
+
+                                UpdateHealthColor(health);
+
+                                _lastShield = currentShield;
+                        }
 
 			if (maxShield != _lastMaxShield)
 			{
-				if (_maxShieldText != null)
-				{
-					_maxShieldText.text = $"{maxShield}";
-				}
+                                if (_maxShieldText != null)
+                                {
+                                        _maxShieldText.text = $"{maxShield}";
+                                }
 
 				_lastMaxShield = maxShield;
 			}
@@ -132,14 +151,17 @@ namespace TPSBR.UI
 
 		// MONOBEHAVIOUR
 
-		protected void Awake()
-		{
-			_shieldColor = _shieldIcon.color;
-		}
+                protected void Awake()
+                {
+                        _shieldColor = _shieldIcon != null ? _shieldIcon.color : Color.white;
+                }
 
-		protected void OnEnable()
-		{
-			_criticalAnimation.SampleStart();
+                protected void OnEnable()
+                {
+                        if (_criticalAnimation != null)
+                        {
+                                _criticalAnimation.SampleStart();
+                        }
 		}
 
 		// PRIVATE MEMBERS
@@ -147,11 +169,23 @@ namespace TPSBR.UI
 		private void UpdateHealthColor(Health health)
 		{
 			var healthColor = GetHealthColor(health.CurrentHealth / health.MaxHealth);
-			_healthText.color = healthColor;
-			_healthIcon.color = healthColor;
-			_healthIcon2.color = healthColor;
-			_healthProgress.color = healthColor;
-		}
+                        if (_healthText != null)
+                        {
+                                _healthText.color = healthColor;
+                        }
+
+                        if (_healthIcon != null)
+                        {
+                                _healthIcon.color = healthColor;
+                        }
+
+                        if (_healthIcon2 != null)
+                        {
+                                _healthIcon2.color = healthColor;
+                        }
+
+                        SetSliderFillColor(_healthProgress, healthColor);
+                }
 
 		private Color GetHealthColor(float healthProgress)
 		{
@@ -165,20 +199,38 @@ namespace TPSBR.UI
 
 		private void ShowCriticalAnimation(float healthProgress)
 		{
-			if (healthProgress > _criticalThreshold)
-			{
-				if (_criticalAnimation.isPlaying == true)
-				{
-					_criticalAnimation.SampleStart();
-				}
+                        if (_criticalAnimation == null)
+                                return;
+
+                        if (healthProgress > _criticalThreshold)
+                        {
+                                if (_criticalAnimation.isPlaying == true)
+                                {
+                                        _criticalAnimation.SampleStart();
+                                }
 
 				return;
 			}
 
 			if (_criticalAnimation.isPlaying == false)
 			{
-				_criticalAnimation.Play();
-			}
-		}
-	}
+                                _criticalAnimation.Play();
+                        }
+                }
+
+                private void SetSliderFillColor(UISlider slider, Color color)
+                {
+                        if (slider == null)
+                                return;
+
+                        if (slider.fillRect != null)
+                        {
+                                var image = slider.fillRect.GetComponent<Image>();
+                                if (image != null)
+                                {
+                                        image.color = color;
+                                }
+                        }
+                }
+        }
 }

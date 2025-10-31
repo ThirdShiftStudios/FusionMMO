@@ -9,7 +9,7 @@ namespace TPSBR.UI
     {
         [SerializeField] private TextMeshProUGUI _manaText;
         [SerializeField] private TextMeshProUGUI _maxManaText;
-        [SerializeField] private Image _manaProgress;
+        [SerializeField] private UISlider _manaProgress;
         [SerializeField] private Image _manaIcon;
         [SerializeField] private float _animationDuration = 0.2f;
         [SerializeField] private Color _depletedColor = Color.gray;
@@ -21,6 +21,7 @@ namespace TPSBR.UI
 
         private Color _initialTextColor = Color.white;
         private Color _initialIconColor = Color.white;
+        private Color _initialSliderColor = Color.white;
 
         protected void Awake()
         {
@@ -32,6 +33,15 @@ namespace TPSBR.UI
             if (_manaIcon != null)
             {
                 _initialIconColor = _manaIcon.color;
+            }
+
+            if (_manaProgress != null && _manaProgress.fillRect != null)
+            {
+                var image = _manaProgress.fillRect.GetComponent<Image>();
+                if (image != null)
+                {
+                    _initialSliderColor = image.color;
+                }
             }
         }
 
@@ -58,10 +68,14 @@ namespace TPSBR.UI
             int totalMana = Mathf.RoundToInt(totalValue);
             float progress = totalValue > 0f ? Mathf.Clamp01(currentValue / totalValue) : 0f;
 
-            if (_manaProgress != null && Mathf.Abs(progress - _lastProgress) > Mathf.Epsilon)
+            if (Mathf.Abs(progress - _lastProgress) > Mathf.Epsilon)
             {
-                DOTween.Kill(_manaProgress);
-                _manaProgress.DOFillAmount(progress, _animationDuration);
+                if (_manaProgress != null)
+                {
+                    DOTween.Kill(_manaProgress);
+                    _manaProgress.DOValue(progress, _animationDuration);
+                }
+
                 _lastProgress = progress;
             }
 
@@ -85,7 +99,7 @@ namespace TPSBR.UI
             if (_manaProgress != null)
             {
                 DOTween.Kill(_manaProgress);
-                _manaProgress.fillAmount = progress;
+                _manaProgress.SetValue(progress);
             }
 
             if (_manaText != null)
@@ -108,15 +122,40 @@ namespace TPSBR.UI
         private void UpdateColors(float progress)
         {
             float t = Mathf.Clamp01(progress);
+            Color textColor = Color.Lerp(_depletedColor, _initialTextColor, t);
+            Color iconColor = Color.Lerp(_depletedColor, _initialIconColor, t);
+            Color sliderColor = Color.Lerp(_depletedColor, _initialSliderColor, t);
 
             if (_manaText != null)
             {
-                _manaText.color = Color.Lerp(_depletedColor, _initialTextColor, t);
+                _manaText.color = textColor;
             }
 
             if (_manaIcon != null)
             {
-                _manaIcon.color = Color.Lerp(_depletedColor, _initialIconColor, t);
+                _manaIcon.color = iconColor;
+            }
+
+            if (_manaProgress != null)
+            {
+                UpdateSliderFillColor(_manaProgress, sliderColor);
+            }
+        }
+
+        private void UpdateSliderFillColor(UISlider slider, Color color)
+        {
+            if (slider == null)
+            {
+                return;
+            }
+
+            if (slider.fillRect != null)
+            {
+                var image = slider.fillRect.GetComponent<Image>();
+                if (image != null)
+                {
+                    image.color = color;
+                }
             }
         }
     }
