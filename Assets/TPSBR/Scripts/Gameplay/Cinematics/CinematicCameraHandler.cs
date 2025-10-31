@@ -65,6 +65,7 @@ namespace TPSBR
                 private Vector3 _currentPosition;
                 private Quaternion _currentRotation = Quaternion.identity;
                 private bool _hasValidTransform;
+                private int _lastTraversalFrame = -1;
 
                 private void Awake()
                 {
@@ -84,10 +85,18 @@ namespace TPSBR
                         }
                 }
 
-                private void Update()
+                public void UpdateTraversal(float deltaTime)
                 {
                         if (_isActive == false)
                                 return;
+
+                        if (deltaTime <= 0f)
+                                return;
+
+                        if (_lastTraversalFrame == Time.frameCount)
+                                return;
+
+                        _lastTraversalFrame = Time.frameCount;
 
                         if (_currentPath == null)
                         {
@@ -124,7 +133,7 @@ namespace TPSBR
 
                         float duration = Mathf.Max(toWaypoint.SegmentDuration, 0.01f);
 
-                        _segmentElapsed += Time.deltaTime;
+                        _segmentElapsed += deltaTime;
                         float progress = Mathf.Clamp01(_segmentElapsed / duration);
 
                         _currentPosition = Vector3.Lerp(fromWaypoint.transform.position, toWaypoint.transform.position, progress);
@@ -181,6 +190,7 @@ namespace TPSBR
                         _currentPosition = default;
                         _currentRotation = Quaternion.identity;
                         _hasValidTransform = false;
+                        _lastTraversalFrame = -1;
                 }
 
                 private bool TryInitializeTraversal()

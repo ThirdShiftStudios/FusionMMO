@@ -256,17 +256,23 @@ namespace TPSBR
 			Profiler.EndSample();
 		}
 
-                public void OnRender()
-                {
-                        _characterController.ManualRenderUpdate();
-                        _animationController.ManualRenderUpdate();
+		public void OnRender()
+		{
+			_characterController.ManualRenderUpdate();
+			_animationController.ManualRenderUpdate();
 
-                        SetCameraState(GetDesiredCameraState());
+			SetCameraState(GetDesiredCameraState());
 
-                        RefreshCameraHeadPosition();
-                        RefreshFiringPosition();
+			CinematicCameraHandler cinematicHandler = CinematicCameraHandler.Instance;
+			if (cinematicHandler != null && cinematicHandler.IsActive == true)
+			{
+				cinematicHandler.UpdateTraversal(Time.deltaTime);
+			}
 
-                        TransformData fireTransformData = GetFireTransform(false);
+			RefreshCameraHeadPosition();
+			RefreshFiringPosition();
+
+			TransformData fireTransformData = GetFireTransform(false);
 			_fireTransformSampler.Sample(_characterController, fireTransformData.Position, fireTransformData.Rotation);
 
 			TransformData cameraTransformData = GetCameraTransform(false);
@@ -284,43 +290,50 @@ namespace TPSBR
 				aimFOV = _agent.Inventory.CurrentWeapon.AimFOV;
 			}
 
-                        _targetFOV = _characterController.Data.Aim == true ? aimFOV : _defaultFOV;
-                        _camera.Camera.fieldOfView = Mathf.Lerp(_camera.Camera.fieldOfView, _targetFOV, _fovChangeSpeed * Time.deltaTime);
+			_targetFOV = _characterController.Data.Aim == true ? aimFOV : _defaultFOV;
+			_camera.Camera.fieldOfView = Mathf.Lerp(_camera.Camera.fieldOfView, _targetFOV, _fovChangeSpeed * Time.deltaTime);
 
-                        if (_currentCameraState == ECameraState.OtherAuthority)
-                        {
-                                TransformData overrideTransform = GetCameraTransform(ECameraState.OtherAuthority);
+			if (_currentCameraState == ECameraState.OtherAuthority)
+			{
+				TransformData overrideTransform = GetCameraTransform(ECameraState.OtherAuthority);
 
-                                _camera.transform.SetPositionAndRotation(overrideTransform.Position, overrideTransform.Rotation);
-                                _cameraDistance   = 0f;
-                                _cameraChangeTime = _cameraChangeDuration;
+				_camera.transform.SetPositionAndRotation(overrideTransform.Position, overrideTransform.Rotation);
+				_cameraDistance   = 0f;
+				_cameraChangeTime = _cameraChangeDuration;
 
-                                if (_agent.HasInputAuthority == true)
-                                {
-                                        _animationController.RefreshSnapping();
-                                }
+				if (_agent.HasInputAuthority == true)
+				{
+					_animationController.RefreshSnapping();
+				}
 
-                                return;
-                        }
+				return;
+			}
 
-                        if (_currentCameraState == ECameraState.Cinematic)
-                        {
-                                CinematicCameraHandler cinematicHandler = CinematicCameraHandler.Instance;
+			if (_currentCameraState == ECameraState.Cinematic)
+			{
+				CinematicCameraHandler cinematicHandler = CinematicCameraHandler.Instance;
 
-                                if (cinematicHandler != null && cinematicHandler.IsActive == true && cinematicHandler.TryGetCameraTransform(out Vector3 cinematicPosition, out Quaternion cinematicRotation) == true)
-                                {
-                                        _camera.transform.SetPositionAndRotation(cinematicPosition, cinematicRotation);
-                                        _cameraDistance   = 0f;
-                                        _cameraChangeTime = _cameraChangeDuration;
+				if (cinematicHandler != null && cinematicHandler.IsActive == true)
+				{
+					cinematicHandler.UpdateTraversal(Time.deltaTime);
 
-                                        if (_agent.HasInputAuthority == true)
-                                        {
-                                                _animationController.RefreshSnapping();
-                                        }
-                                }
+					if (cinematicHandler.TryGetCameraTransform(out Vector3 cinematicPosition, out Quaternion cinematicRotation) == true)
+					{
+						_camera.transform.SetPositionAndRotation(cinematicPosition, cinematicRotation);
+						_cameraDistance   = 0f;
+						_cameraChangeTime = _cameraChangeDuration;
 
-                                return;
-                        }
+						if (_agent.HasInputAuthority == true)
+						{
+							_animationController.RefreshSnapping();
+						}
+					}
+				}
+
+				return;
+			}
+		}
+
 
                         if (_previousCameraState != _currentCameraState)
                         {
