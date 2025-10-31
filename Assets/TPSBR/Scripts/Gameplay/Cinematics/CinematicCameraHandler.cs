@@ -4,7 +4,7 @@ namespace TPSBR
     using UnityEngine;
 
     [DisallowMultipleComponent]
-    public class CinematicCameraHandler : MonoBehaviour
+    public class CinematicCameraHandler : ContextBehaviour
     {
         public static CinematicCameraHandler Instance { get; private set; }
 
@@ -65,6 +65,7 @@ namespace TPSBR
         private Vector3 _currentPosition;
         private Quaternion _currentRotation = Quaternion.identity;
         private bool _hasValidTransform;
+        private Transform _sceneCameraTransform;
 
         private void Awake()
         {
@@ -113,7 +114,15 @@ namespace TPSBR
                 var finalWaypoint = waypoints[waypoints.Count - 1];
                 _currentPosition = finalWaypoint.transform.position;
                 _currentRotation = finalWaypoint.transform.rotation;
+                if (ApplySceneCameraTransform(_currentPosition, _currentRotation) == false)
+                {
+                    _hasValidTransform = false;
+                    IsActive = false;
+                    return;
+                }
+
                 _hasValidTransform = true;
+                transform.SetPositionAndRotation(_currentPosition, _currentRotation);
 
                 IsActive = false;
                 return;
@@ -124,12 +133,30 @@ namespace TPSBR
 
             float duration = Mathf.Max(toWaypoint.SegmentDuration, 0.01f);
 
-            _segmentElapsed += Time.deltaTime;
+            float deltaTime = Time.deltaTime;
+            if (deltaTime <= 0f)
+            {
+                deltaTime = Time.unscaledDeltaTime;
+            }
+
+            if (deltaTime <= 0f)
+                return;
+
+            _segmentElapsed += deltaTime;
             float progress = Mathf.Clamp01(_segmentElapsed / duration);
 
             _currentPosition = Vector3.Lerp(fromWaypoint.transform.position, toWaypoint.transform.position, progress);
             _currentRotation = Quaternion.Slerp(fromWaypoint.transform.rotation, toWaypoint.transform.rotation, progress);
+            if (ApplySceneCameraTransform(_currentPosition, _currentRotation) == false)
+            {
+                _hasValidTransform = false;
+                IsActive = false;
+                return;
+            }
+
             _hasValidTransform = true;
+
+            transform.SetPositionAndRotation(_currentPosition, _currentRotation);
 
             if (_segmentElapsed >= duration)
             {
@@ -141,7 +168,15 @@ namespace TPSBR
                     var lastWaypoint = waypoints[waypoints.Count - 1];
                     _currentPosition = lastWaypoint.transform.position;
                     _currentRotation = lastWaypoint.transform.rotation;
+                    if (ApplySceneCameraTransform(_currentPosition, _currentRotation) == false)
+                    {
+                        _hasValidTransform = false;
+                        IsActive = false;
+                        return;
+                    }
+
                     _hasValidTransform = true;
+                    transform.SetPositionAndRotation(_currentPosition, _currentRotation);
                 }
             }
         }
@@ -204,8 +239,43 @@ namespace TPSBR
             _currentPosition = startingWaypoint.transform.position;
             _currentRotation = startingWaypoint.transform.rotation;
             _segmentElapsed = 0f;
+            _hasValidTransform = false;
+
+            if (ApplySceneCameraTransform(_currentPosition, _currentRotation) == false)
+                return false;
+
+            transform.SetPositionAndRotation(_currentPosition, _currentRotation);
+
             _hasValidTransform = true;
 
+            return true;
+        }
+
+        private Transform GetSceneCameraTransform()
+        {
+            if (Context?.Camera?.Camera == null)
+            {
+                _sceneCameraTransform = null;
+                return null;
+            }
+
+            Transform cameraTransform = Context.Camera.Camera.transform;
+
+            if (_sceneCameraTransform != cameraTransform)
+            {
+                _sceneCameraTransform = cameraTransform;
+            }
+
+            return _sceneCameraTransform;
+        }
+
+        private bool ApplySceneCameraTransform(Vector3 position, Quaternion rotation)
+        {
+            Transform cameraTransform = GetSceneCameraTransform();
+            if (cameraTransform == null)
+                return false;
+
+            cameraTransform.SetPositionAndRotation(position, rotation);
             return true;
         }
     }
