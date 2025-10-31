@@ -66,6 +66,11 @@ namespace TPSBR
                                 var terrainSetup = GetTerrainSound(surface, isRunning);
                                 if (terrainSetup != null)
                                         return terrainSetup;
+
+                                // When grounded on a terrain without a matching setup, prefer
+                                // the generic fallback instead of the collider tag mapping so
+                                // that only terrain-driven sounds are used.
+                                return isRunning == true ? _fallbackRunSound : _fallbackWalkSound;
                         }
 
                         return GetTagSound(surface.TagHash, isRunning);
