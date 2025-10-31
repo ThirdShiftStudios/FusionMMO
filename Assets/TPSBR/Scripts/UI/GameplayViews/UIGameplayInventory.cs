@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Fusion;
 using Unity.Template.CompetitiveActionMultiplayer;
 using UnityEngine;
+using TMPro;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
@@ -29,6 +30,7 @@ namespace TPSBR.UI
         [SerializeField] private UIListItem _headSlot;
         [SerializeField] private UIListItem _upperBodySlot;
         [SerializeField] private UIListItem _lowerBodySlot;
+        [SerializeField] private TextMeshProUGUI _goldLabel;
 
         private bool _menuVisible;
         private Agent _boundAgent;
@@ -104,6 +106,15 @@ namespace TPSBR.UI
 
         protected override void OnDeinitialize()
         {
+            if (_boundInventory != null)
+            {
+                _boundInventory.GoldChanged -= OnGoldChanged;
+                _boundInventory = null;
+            }
+
+            _boundAgent = null;
+            UpdateGoldLabel(0);
+
             if (_inventoryPresenter != null)
             {
                 _inventoryPresenter.ItemSelected -= OnInventoryItemSelected;
@@ -745,10 +756,16 @@ namespace TPSBR.UI
             {
                 if (_boundAgent != null)
                 {
+                    if (_boundInventory != null)
+                    {
+                        _boundInventory.GoldChanged -= OnGoldChanged;
+                    }
+
                     _boundAgent = null;
                     _boundInventory = null;
                     _inventoryPresenter?.Bind(null);
                     _hotbar?.Bind(null);
+                    UpdateGoldLabel(0);
                 }
                 return;
             }
@@ -757,10 +774,25 @@ namespace TPSBR.UI
             if (_boundAgent == agent)
                 return;
 
+            if (_boundInventory != null)
+            {
+                _boundInventory.GoldChanged -= OnGoldChanged;
+            }
+
             _boundAgent = agent;
             _boundInventory = agent != null ? agent.Inventory : null;
             _inventoryPresenter?.Bind(_boundInventory);
             _hotbar?.Bind(_boundInventory);
+
+            if (_boundInventory != null)
+            {
+                _boundInventory.GoldChanged += OnGoldChanged;
+                UpdateGoldLabel(_boundInventory.Gold);
+            }
+            else
+            {
+                UpdateGoldLabel(0);
+            }
         }
 
         private void RefreshCharacterDetails()
@@ -771,6 +803,19 @@ namespace TPSBR.UI
             _characterDetails.UpdateCharacterDetails(Global.PlayerService.PlayerData);
             _characterDetails.UpdateStats(_boundAgent.Stats);
             _characterDetails.UpdateProfessions(_boundAgent.Professions);
+        }
+
+        private void OnGoldChanged(int amount)
+        {
+            UpdateGoldLabel(amount);
+        }
+
+        private void UpdateGoldLabel(int amount)
+        {
+            if (_goldLabel == null)
+                return;
+
+            _goldLabel.text = amount.ToString();
         }
     }
 }
