@@ -579,16 +579,29 @@ namespace TPSBR
                         float surfaceHeight = data.SwimSurfaceHeight;
                         float bottomHeight  = surfaceHeight - _waterSurfaceOffset - kcc.Settings.Height;
 
+                        bool    clamped        = false;
+
                         Vector3 targetPosition = data.TargetPosition;
-                        targetPosition.y = bottomHeight;
-                        data.TargetPosition = targetPosition;
+                        if (targetPosition.y < bottomHeight)
+                        {
+                                targetPosition.y = bottomHeight;
+                                data.TargetPosition = targetPosition;
+                                clamped = true;
+                        }
 
                         Vector3 desiredPosition = data.DesiredPosition;
-                        desiredPosition.y = bottomHeight;
-                        data.DesiredPosition = desiredPosition;
+                        if (desiredPosition.y < bottomHeight)
+                        {
+                                desiredPosition.y = bottomHeight;
+                                data.DesiredPosition = desiredPosition;
+                                clamped = true;
+                        }
 
-                        data.DynamicVelocity = new Vector3(data.DynamicVelocity.x, 0.0f, data.DynamicVelocity.z);
-                        data.KinematicVelocity = new Vector3(data.KinematicVelocity.x, 0.0f, data.KinematicVelocity.z);
+                        if (clamped == true)
+                        {
+                                data.DynamicVelocity = new Vector3(data.DynamicVelocity.x, 0.0f, data.DynamicVelocity.z);
+                                data.KinematicVelocity = new Vector3(data.KinematicVelocity.x, 0.0f, data.KinematicVelocity.z);
+                        }
                 }
 
                 private void WarnAboutMissingWaterLayer()
