@@ -51,7 +51,7 @@ namespace TPSBR
                 if (_currentPath == value)
                     return;
 
-                _currentPath = value;
+                SetCurrentPathInternal(value);
                 ResetTraversal();
 
                 if (_isActive == true && TryInitializeTraversal() == false)
@@ -69,6 +69,7 @@ namespace TPSBR
         private Quaternion _currentRotation = Quaternion.identity;
         private bool _hasValidTransform;
         private Transform _sceneCameraTransform;
+        private bool _syncHandlerTransform = true;
 
         private void Awake()
         {
@@ -95,7 +96,8 @@ namespace TPSBR
 
             if (_currentPath == null)
             {
-                _currentPath = _fallbackWaypointPath;
+                SetCurrentPathInternal(_fallbackWaypointPath);
+                ResetTraversal();
                 //IsActive = false;
                 //return;
             }
@@ -126,7 +128,7 @@ namespace TPSBR
                 }
 
                 _hasValidTransform = true;
-                transform.SetPositionAndRotation(_currentPosition, _currentRotation);
+                UpdateHandlerTransform(_currentPosition, _currentRotation);
 
                 IsActive = false;
                 return;
@@ -160,7 +162,7 @@ namespace TPSBR
 
             _hasValidTransform = true;
 
-            transform.SetPositionAndRotation(_currentPosition, _currentRotation);
+            UpdateHandlerTransform(_currentPosition, _currentRotation);
 
             if (_segmentElapsed >= duration)
             {
@@ -180,7 +182,7 @@ namespace TPSBR
                     }
 
                     _hasValidTransform = true;
-                    transform.SetPositionAndRotation(_currentPosition, _currentRotation);
+                    UpdateHandlerTransform(_currentPosition, _currentRotation);
                 }
             }
         }
@@ -208,13 +210,15 @@ namespace TPSBR
                 if (_waypointPathRoots[i] == null)
                     continue;
 
-                _currentPath = _waypointPathRoots[i];
+                SetCurrentPathInternal(_waypointPathRoots[i]);
+                ResetTraversal();
                 return;
             }
 
             if (_fallbackWaypointPath != null)
             {
-                _currentPath = _fallbackWaypointPath;
+                SetCurrentPathInternal(_fallbackWaypointPath);
+                ResetTraversal();
             }
         }
 
@@ -253,11 +257,37 @@ namespace TPSBR
             if (ApplySceneCameraTransform(_currentPosition, _currentRotation) == false)
                 return false;
 
-            transform.SetPositionAndRotation(_currentPosition, _currentRotation);
+            UpdateHandlerTransform(_currentPosition, _currentRotation);
 
             _hasValidTransform = true;
 
             return true;
+        }
+
+        private void SetCurrentPathInternal(CinematicWaypointPath path)
+        {
+            _currentPath = path;
+            _syncHandlerTransform = ShouldSyncHandlerTransform(path);
+        }
+
+        private bool ShouldSyncHandlerTransform(CinematicWaypointPath path)
+        {
+            if (path == null)
+                return true;
+
+            Transform pathTransform = path.transform;
+            if (pathTransform == null)
+                return true;
+
+            return pathTransform.IsChildOf(transform) == false;
+        }
+
+        private void UpdateHandlerTransform(Vector3 position, Quaternion rotation)
+        {
+            if (_syncHandlerTransform == false)
+                return;
+
+            transform.SetPositionAndRotation(position, rotation);
         }
 
         private Transform GetSceneCameraTransform()
