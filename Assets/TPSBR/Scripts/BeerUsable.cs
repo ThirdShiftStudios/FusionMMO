@@ -16,6 +16,7 @@ namespace TPSBR
 
         private bool _renderersResolved;
         private bool _collidersResolved;
+        private bool _previewVisible;
 
         public byte BeerStack => _beerStack;
 
@@ -28,11 +29,12 @@ namespace TPSBR
 
         private void OnEnable()
         {
-            SetVisualsVisible(IsArmed);
+            UpdateVisualState();
         }
 
         private void OnDisable()
         {
+            _previewVisible = false;
             SetVisualsVisible(false);
         }
 
@@ -77,13 +79,13 @@ namespace TPSBR
         protected override void OnWeaponArmed()
         {
             base.OnWeaponArmed();
-            SetVisualsVisible(true);
+            UpdateVisualState();
         }
 
         protected override void OnWeaponDisarmed()
         {
             base.OnWeaponDisarmed();
-            SetVisualsVisible(false);
+            UpdateVisualState();
         }
 
         public override bool HandleAnimationRequest(UseLayer attackLayer, in WeaponUseRequest request)
@@ -134,6 +136,26 @@ namespace TPSBR
 
             int newValue = Mathf.Clamp(_beerStack + amount, 0, byte.MaxValue);
             _beerStack = (byte)newValue;
+        }
+
+        public void SetPreviewVisibility(bool visible)
+        {
+            if (_previewVisible == visible)
+            {
+                return;
+            }
+
+            _previewVisible = visible;
+
+            if (isActiveAndEnabled == true)
+            {
+                UpdateVisualState();
+            }
+        }
+
+        private void UpdateVisualState()
+        {
+            SetVisualsVisible(IsArmed || _previewVisible);
         }
 
         private void ResolveRenderers()
