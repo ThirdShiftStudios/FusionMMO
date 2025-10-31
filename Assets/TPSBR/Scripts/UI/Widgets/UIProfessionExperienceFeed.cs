@@ -72,7 +72,7 @@ namespace TPSBR.UI
 
                 protected override UIFeedItemBase[] GetFeedItems()
                 {
-                        return GetComponentsInChildren<UIProfessionExperienceFeedItem>();
+                        return GetComponentsInChildren<UIProfessionExperienceFeedItem>(true);
                 }
 
                 private void OnExperienceGained(Professions.ProfessionIndex profession, int amount, Professions.ProfessionSnapshot previousSnapshot, Professions.ProfessionSnapshot newSnapshot)

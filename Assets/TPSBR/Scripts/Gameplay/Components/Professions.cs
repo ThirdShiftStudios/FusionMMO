@@ -583,10 +583,19 @@ namespace TPSBR
                     continue;
                 }
 
-                _cachedLevels[i] = currentLevel;
+                var previousSnapshot = CreateSnapshot(previousLevel, previousExperience);
+                var newSnapshot      = CreateSnapshot(currentLevel, currentExperience);
+
+                _cachedLevels[i]     = currentLevel;
                 _cachedExperience[i] = currentExperience;
 
-                OnProfessionChanged((ProfessionIndex)i, CreateSnapshot(previousLevel, previousExperience), CreateSnapshot(currentLevel, currentExperience));
+                OnProfessionChanged((ProfessionIndex)i, previousSnapshot, newSnapshot);
+
+                int gainedExperience = CalculateTotalExperience(currentLevel, currentExperience) - CalculateTotalExperience(previousLevel, previousExperience);
+                if (gainedExperience > 0)
+                {
+                    ExperienceGained?.Invoke((ProfessionIndex)i, gainedExperience, previousSnapshot, newSnapshot);
+                }
             }
         }
 
