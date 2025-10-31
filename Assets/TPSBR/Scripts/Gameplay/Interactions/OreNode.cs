@@ -71,12 +71,6 @@ namespace TPSBR
             MiningCompleted?.Invoke(agent);
             EvaluateLootTable(agent);
 
-            if (agent != null)
-            {
-                Professions professions = agent.GetComponent<Professions>();
-                professions?.AddExperience(Professions.ProfessionIndex.Mining, 100);
-            }
-
             _oreNode ??= GetComponentInChildren<ShatterStone.OreNode>();
             _oreNode.DestroyNode();
         }

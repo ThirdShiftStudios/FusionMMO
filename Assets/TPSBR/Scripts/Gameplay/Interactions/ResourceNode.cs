@@ -288,6 +288,11 @@ namespace TPSBR
                 if (roll <= probability)
                 {
                     inventory.AddItem(loot.ItemDefinition, 1);
+
+                    if (loot.ItemDefinition is IGrantsProfessionExperience experienceSource)
+                    {
+                        agent.GrantProfessionExperience(experienceSource);
+                    }
                 }
             }
         }

@@ -1008,6 +1008,7 @@ namespace TPSBR
             }
 
             inventory.AddItem(definition, 1);
+            agent.GrantProfessionExperience(definition);
         }
 
         private void HandleActiveLureChanged(bool force = false)

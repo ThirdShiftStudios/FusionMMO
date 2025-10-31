@@ -68,12 +68,6 @@ namespace TPSBR
             HarvestCompleted?.Invoke(agent);
             GrantReward(agent);
             EvaluateLootTable(agent);
-
-            if (agent != null)
-            {
-                Professions professions = agent.GetComponent<Professions>();
-                professions?.AddExperience(Professions.ProfessionIndex.Runecrafting, 100);
-            }
         }
 
         private void GrantReward(Agent agent)
@@ -92,6 +86,7 @@ namespace TPSBR
                 return;
 
             inventory.AddItem(_rewardDefinition, _rewardQuantity);
+            agent.GrantProfessionExperience(_rewardDefinition, _rewardQuantity);
         }
     }
 }

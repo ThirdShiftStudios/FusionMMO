@@ -62,12 +62,6 @@ namespace TPSBR
             base.OnInteractionCompleted(agent);
             HarvestCompleted?.Invoke(agent);
             EvaluateLootTable(agent);
-
-            if (agent != null)
-            {
-                Professions professions = agent.GetComponent<Professions>();
-                professions?.AddExperience(Professions.ProfessionIndex.Herbalism, 100);
-            }
         }
     }
 }
