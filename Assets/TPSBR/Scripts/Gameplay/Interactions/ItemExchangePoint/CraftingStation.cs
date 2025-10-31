@@ -313,7 +313,7 @@ namespace TPSBR
             if (craftingTime <= 0f || Runner == null)
             {
                 ConsumeInputs(inventory, recipe, craftCount);
-                GrantOutputs(inventory, recipe, craftCount);
+                GrantOutputs(inventory, recipe, craftCount, agent);
                 return;
             }
 
@@ -642,7 +642,7 @@ namespace TPSBR
 
             if (inventory != null && craft.Recipe != null)
             {
-                GrantOutputs(inventory, craft.Recipe, craft.Crafts);
+                GrantOutputs(inventory, craft.Recipe, craft.Crafts, craft.Agent);
             }
             else if (craft.Recipe != null)
             {
@@ -757,9 +757,11 @@ namespace TPSBR
             }
         }
 
-        private void GrantOutputs(Inventory inventory, RecipeDefinition recipe, int crafts)
+        private void GrantOutputs(Inventory inventory, RecipeDefinition recipe, int crafts, Agent agent)
         {
-            GrantItems(inventory, recipe != null ? recipe.Outputs : null, crafts, recipe, "crafted output");
+            IReadOnlyList<RecipeDefinition.ItemQuantity> outputs = recipe != null ? recipe.Outputs : null;
+            GrantItems(inventory, outputs, crafts, recipe, "crafted output");
+            GrantProfessionExperience(agent, outputs, crafts);
         }
 
         private void ReturnInputs(Inventory inventory, RecipeDefinition recipe, int crafts)
@@ -798,6 +800,27 @@ namespace TPSBR
                         break;
                     }
                 }
+            }
+        }
+
+        private void GrantProfessionExperience(Agent agent, IReadOnlyList<RecipeDefinition.ItemQuantity> outputs, int crafts)
+        {
+            if (agent == null || outputs == null || outputs.Count == 0 || crafts <= 0)
+                return;
+
+            for (int i = 0; i < outputs.Count; ++i)
+            {
+                RecipeDefinition.ItemQuantity entry = outputs[i];
+                ItemDefinition item = entry.Item;
+
+                if (item is IGrantsProfessionExperience experienceGiver == false)
+                    continue;
+
+                int quantity = entry.Quantity * crafts;
+                if (quantity <= 0)
+                    continue;
+
+                agent.GrantProfessionExperience(experienceGiver, quantity);
             }
         }
 
