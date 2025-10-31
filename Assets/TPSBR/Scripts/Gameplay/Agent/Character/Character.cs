@@ -307,7 +307,7 @@ namespace TPSBR
                         {
                                 CinematicCameraHandler cinematicHandler = CinematicCameraHandler.Instance;
 
-                                if (cinematicHandler != null && cinematicHandler.TryGetCameraTransform(out Vector3 cinematicPosition, out Quaternion cinematicRotation) == true)
+                                if (cinematicHandler != null && cinematicHandler.IsActive == true && cinematicHandler.TryGetCameraTransform(out Vector3 cinematicPosition, out Quaternion cinematicRotation) == true)
                                 {
                                         _camera.transform.SetPositionAndRotation(cinematicPosition, cinematicRotation);
                                         _cameraDistance   = 0f;
@@ -436,7 +436,7 @@ namespace TPSBR
                                         return _overrideCameraTransformData;
                                 case ECameraState.Cinematic:
                                         CinematicCameraHandler cinematicHandler = CinematicCameraHandler.Instance;
-                                        if (cinematicHandler != null && cinematicHandler.TryGetCameraTransform(out Vector3 cinematicPosition, out Quaternion cinematicRotation) == true)
+                                        if (cinematicHandler != null && cinematicHandler.IsActive == true && cinematicHandler.TryGetCameraTransform(out Vector3 cinematicPosition, out Quaternion cinematicRotation) == true)
                                         {
                                                 return new TransformData(cinematicPosition, transform.InverseTransformPoint(cinematicPosition), cinematicRotation);
                                         }

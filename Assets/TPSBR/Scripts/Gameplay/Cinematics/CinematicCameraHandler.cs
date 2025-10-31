@@ -4,7 +4,6 @@ namespace TPSBR
         using UnityEngine;
 
         [DisallowMultipleComponent]
-        [RequireComponent(typeof(Character))]
         public class CinematicCameraHandler : MonoBehaviour
         {
                 public static CinematicCameraHandler Instance { get; private set; }
@@ -33,12 +32,9 @@ namespace TPSBR
                                                 _isActive = false;
                                                 return;
                                         }
-
-                                        _character?.EnterCinematicCamera();
                                 }
                                 else
                                 {
-                                        _character?.ExitCinematicCamera();
                                         ResetTraversal();
                                 }
                         }
@@ -62,7 +58,6 @@ namespace TPSBR
                         }
                 }
 
-                private Character _character;
                 private bool _isActive;
                 private CinematicWaypointPath _currentPath;
                 private int _segmentStartIndex;
@@ -79,7 +74,6 @@ namespace TPSBR
                         }
 
                         Instance = this;
-                        _character = GetComponent<Character>();
                 }
 
                 private void OnDestroy()
