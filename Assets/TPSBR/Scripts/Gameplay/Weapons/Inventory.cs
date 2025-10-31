@@ -361,15 +361,17 @@ namespace TPSBR
             return string.IsNullOrEmpty(hash) == false ? hash : default;
         }
 
-        private void ApplySpecialSlotData(PlayerInventoryItemData slotData, ref InventorySlot targetSlot, Action refreshAction)
+        private void ApplySpecialSlotData(PlayerInventoryItemData slotData, Func<InventorySlot> getSlot, Action<InventorySlot> setSlot, Action refreshAction)
         {
+            var currentSlot = getSlot != null ? getSlot() : default;
             var newSlot = CreateInventorySlot(slotData);
-            if (targetSlot.Equals(newSlot) == true)
+
+            if (currentSlot.Equals(newSlot) == true)
             {
                 return;
             }
 
-            targetSlot = newSlot;
+            setSlot?.Invoke(newSlot);
             refreshAction?.Invoke();
         }
 
@@ -419,12 +421,12 @@ namespace TPSBR
                 }
             }
 
-            ApplySpecialSlotData(data.PickaxeSlot, ref _pickaxeSlot, RefreshPickaxeSlot);
-            ApplySpecialSlotData(data.WoodAxeSlot, ref _woodAxeSlot, RefreshWoodAxeSlot);
-            ApplySpecialSlotData(data.FishingPoleSlot, ref _fishingPoleSlot, RefreshFishingPoleSlot);
-            ApplySpecialSlotData(data.HeadSlot, ref _headSlot, RefreshHeadSlot);
-            ApplySpecialSlotData(data.UpperBodySlot, ref _upperBodySlot, RefreshUpperBodySlot);
-            ApplySpecialSlotData(data.LowerBodySlot, ref _lowerBodySlot, RefreshLowerBodySlot);
+            ApplySpecialSlotData(data.PickaxeSlot, () => _pickaxeSlot, slot => _pickaxeSlot = slot, RefreshPickaxeSlot);
+            ApplySpecialSlotData(data.WoodAxeSlot, () => _woodAxeSlot, slot => _woodAxeSlot = slot, RefreshWoodAxeSlot);
+            ApplySpecialSlotData(data.FishingPoleSlot, () => _fishingPoleSlot, slot => _fishingPoleSlot = slot, RefreshFishingPoleSlot);
+            ApplySpecialSlotData(data.HeadSlot, () => _headSlot, slot => _headSlot = slot, RefreshHeadSlot);
+            ApplySpecialSlotData(data.UpperBodySlot, () => _upperBodySlot, slot => _upperBodySlot = slot, RefreshUpperBodySlot);
+            ApplySpecialSlotData(data.LowerBodySlot, () => _lowerBodySlot, slot => _lowerBodySlot = slot, RefreshLowerBodySlot);
 
             if (data.HotbarSlots != null)
             {
