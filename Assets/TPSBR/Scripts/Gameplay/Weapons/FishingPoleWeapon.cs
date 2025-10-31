@@ -259,6 +259,7 @@ namespace TPSBR
             _waitingForPrimaryRelease = false;
             ResetHoldTracking();
             EndWaitingPhase();
+            GrantCaughtFishToInventory();
             DespawnActiveFish();
             CleanupLure(true);
 
@@ -970,6 +971,43 @@ namespace TPSBR
             _activeFish = null;
             _isFishInHand = false;
             _fishHandTransform = null;
+        }
+
+        private void GrantCaughtFishToInventory()
+        {
+            if (HasStateAuthority == false)
+            {
+                return;
+            }
+
+            FishItem fish = _activeFish ?? NetworkedActiveFish;
+
+            if (fish == null)
+            {
+                return;
+            }
+
+            if (fish.State != FishItem.FishState.Caught && _isFishInHand == false)
+            {
+                return;
+            }
+
+            FishDefinition definition = fish.Definition;
+
+            if (definition == null)
+            {
+                return;
+            }
+
+            Agent agent = Character != null ? Character.Agent : null;
+            Inventory inventory = agent != null ? agent.Inventory : null;
+
+            if (inventory == null)
+            {
+                return;
+            }
+
+            inventory.AddItem(definition, 1);
         }
 
         private void HandleActiveLureChanged(bool force = false)
