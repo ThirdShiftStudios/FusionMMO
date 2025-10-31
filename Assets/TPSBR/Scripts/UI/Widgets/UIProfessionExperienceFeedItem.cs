@@ -53,8 +53,18 @@ namespace TPSBR.UI
 
                         if (_icon != null)
                         {
-                                _icon.sprite = experienceData.Icon;
-                                _icon.gameObject.SetActive(experienceData.Icon != null);
+                                Sprite icon = null;
+
+                                var definitions = ProfessionResourceDefinitions.Instance;
+                                var resource     = definitions != null ? definitions.GetResource(experienceData.Profession) : null;
+
+                                if (resource != null)
+                                {
+                                        icon = resource.Icon;
+                                }
+
+                                _icon.sprite = icon;
+                                _icon.gameObject.SetActive(icon != null);
                         }
                 }
         }

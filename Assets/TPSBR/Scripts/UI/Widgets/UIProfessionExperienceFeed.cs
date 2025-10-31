@@ -6,8 +6,8 @@ namespace TPSBR.UI
 {
         public struct ProfessionExperienceFeedData : IFeedData
         {
+                public Professions.ProfessionIndex Profession;
                 public string ProfessionName;
-                public Sprite Icon;
                 public int ExperienceAmount;
                 public int NewLevel;
                 public bool LevelIncreased;
@@ -85,8 +85,8 @@ namespace TPSBR.UI
 
                         var data = new ProfessionExperienceFeedData
                         {
+                                Profession     = profession,
                                 ProfessionName = GetProfessionName(profession),
-                                Icon           = GetProfessionIcon(profession),
                                 ExperienceAmount = amount,
                                 NewLevel       = newSnapshot.Level,
                                 LevelIncreased = newSnapshot.Level > previousSnapshot.Level,
@@ -101,14 +101,6 @@ namespace TPSBR.UI
                                 return display.DisplayName;
 
                         return profession.ToString();
-                }
-
-                private Sprite GetProfessionIcon(Professions.ProfessionIndex profession)
-                {
-                        if (TryGetDisplay(profession, out var display) == true)
-                                return display.Icon;
-
-                        return null;
                 }
 
                 private bool TryGetDisplay(Professions.ProfessionIndex profession, out ProfessionDisplay display)
