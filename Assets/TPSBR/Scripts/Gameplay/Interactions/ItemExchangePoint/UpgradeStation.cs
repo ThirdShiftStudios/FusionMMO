@@ -324,6 +324,11 @@ namespace TPSBR
 
             DisableNetworkingForPreview(_weaponPreviewInstance);
 
+            if (_weaponPreviewInstance is BeerUsable beerPreview)
+            {
+                beerPreview.SetPreviewVisibility(true);
+            }
+
             Transform previewTransform = _weaponPreviewInstance.transform;
             previewTransform.localPosition = Vector3.zero;
             previewTransform.localRotation = Quaternion.identity;

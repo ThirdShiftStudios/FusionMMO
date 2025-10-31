@@ -14,6 +14,7 @@ namespace TPSBR
                 private UIBeerRefillStationView _beerRefillView;
                 private Agent _activeAgent;
                 private Inventory _activeInventory;
+                private BeerUsable _previewedBeer;
 
                 private static DataDefinition[] _cachedBeerDefinitions;
 
@@ -59,6 +60,7 @@ namespace TPSBR
 
                         _activeAgent = null;
                         SubscribeToInventory(null);
+                        SetPreviewedBeer(null);
                         UpdatePurchaseButtonState();
 
                         return false;
@@ -68,6 +70,7 @@ namespace TPSBR
                 {
                         base.OnExchangeViewClosed(view);
 
+                        SetPreviewedBeer(null);
                         UnsubscribeFromInventory();
                         _activeAgent = null;
                         UpdatePurchaseButtonState();
@@ -102,9 +105,16 @@ namespace TPSBR
                         UpdatePurchaseButtonState();
                 }
 
+                protected override void OnDisable()
+                {
+                        SetPreviewedBeer(null);
+                        base.OnDisable();
+                }
+
                 private void HandleItemSelectedForRefill(UpgradeStation.ItemData data)
                 {
-                        _ = data;
+                        _currentSelectedSourceType = data.SourceType;
+                        _currentSelectedSourceIndex = data.SourceIndex;
                         UpdatePurchaseButtonState();
                 }
 
@@ -245,6 +255,8 @@ namespace TPSBR
                         {
                                 refillView.SetPurchaseButtonInteractable(CanPurchase());
                         }
+
+                        UpdateSelectedBeerPreview();
                 }
 
                 private bool CanPurchase()
@@ -264,6 +276,38 @@ namespace TPSBR
                                 return false;
 
                         return beer.BeerStack < byte.MaxValue;
+                }
+
+                private void UpdateSelectedBeerPreview()
+                {
+                        BeerUsable selectedBeer = null;
+
+                        Inventory inventory = _activeAgent != null ? _activeAgent.Inventory : null;
+
+                        if (inventory != null)
+                        {
+                                TryGetSelectedBeer(inventory, out selectedBeer);
+                        }
+
+                        SetPreviewedBeer(selectedBeer);
+                }
+
+                private void SetPreviewedBeer(BeerUsable beer)
+                {
+                        if (_previewedBeer == beer)
+                                return;
+
+                        if (_previewedBeer != null)
+                        {
+                                _previewedBeer.SetPreviewVisibility(false);
+                        }
+
+                        _previewedBeer = beer;
+
+                        if (_previewedBeer != null)
+                        {
+                                _previewedBeer.SetPreviewVisibility(true);
+                        }
                 }
 
                 private void EnsureBeerFilters()
