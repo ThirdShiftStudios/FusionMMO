@@ -49,6 +49,8 @@ namespace TPSBR.UI
             _menuVisible = value;
             CanvasGroup.interactable = value;
 
+            NotifyInventoryCameraState(value);
+
             (SceneUI as GameplayUI).RefreshCursorVisibility();
 
             if (value == true)
@@ -131,8 +133,22 @@ namespace TPSBR.UI
             _menuVisible = false;
             CanvasGroup.interactable = false;
 
+            NotifyInventoryCameraState(false);
+
             RefreshInventoryBinding();
             _detailsPanel?.Hide();
+        }
+
+        protected override void OnClose()
+        {
+            if (_menuVisible == true)
+            {
+                _menuVisible = false;
+                CanvasGroup.interactable = false;
+                NotifyInventoryCameraState(false);
+            }
+
+            base.OnClose();
         }
 
         protected override void OnTick()
@@ -193,6 +209,12 @@ namespace TPSBR.UI
             }
 
             _detailsPanel.Show(item, configurationHash);
+        }
+
+        private void NotifyInventoryCameraState(bool isOpen)
+        {
+            var observedAgent = Context != null ? Context.ObservedAgent : null;
+            observedAgent?.Character?.SetInventoryOpen(isOpen);
         }
 
         private void OnLeaveButton()
