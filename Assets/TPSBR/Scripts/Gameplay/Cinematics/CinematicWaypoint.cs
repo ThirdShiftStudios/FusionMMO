@@ -21,31 +21,22 @@ namespace TPSBR
 
                 private void OnDrawGizmosSelected()
                 {
+                        var parentPath = GetComponentInParent<CinematicWaypointPath>();
+
+                        if (parentPath != null)
+                        {
+                                parentPath.DrawPathGizmos(this);
+                                return;
+                        }
+
                         var previousColor = Gizmos.color;
                         var position = transform.position;
 
-                        var parentPath = GetComponentInParent<CinematicWaypointPath>();
+                        Gizmos.color = Color.yellow;
+                        Gizmos.DrawSphere(position, DefaultWaypointRadius);
 
-                        var shouldDrawSphere = parentPath == null ? true : parentPath.DrawWaypointPoints;
-                        var shouldDrawDirection = parentPath == null ? true : parentPath.DrawCameraDirection;
-
-                        if (shouldDrawSphere)
-                        {
-                                var radius = parentPath == null ? DefaultWaypointRadius : parentPath.WaypointRadius;
-                                var color = parentPath == null ? Color.yellow : parentPath.WaypointColor;
-
-                                Gizmos.color = color;
-                                Gizmos.DrawSphere(position, radius);
-                        }
-
-                        if (shouldDrawDirection)
-                        {
-                                var directionLength = parentPath == null ? DefaultDirectionLength : parentPath.DirectionLength;
-                                var color = parentPath == null ? Color.magenta : parentPath.DirectionColor;
-
-                                Gizmos.color = color;
-                                Gizmos.DrawLine(position, position + transform.forward * directionLength);
-                        }
+                        Gizmos.color = Color.magenta;
+                        Gizmos.DrawLine(position, position + transform.forward * DefaultDirectionLength);
 
                         Gizmos.color = previousColor;
                 }

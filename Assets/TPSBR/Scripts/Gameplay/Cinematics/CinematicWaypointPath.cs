@@ -34,6 +34,10 @@ namespace TPSBR
                 [SerializeField]
                 private Color _directionColor = Color.magenta;
 
+                private const float MinWaypointRadius = 0.01f;
+                private const float MinDirectionLength = 0f;
+                private static readonly Color SelectedWaypointColor = Color.green;
+
                 public bool DrawWaypointPoints => _drawWaypointPoints;
 
                 public bool DrawPathConnections => _drawPathConnections;
@@ -66,13 +70,18 @@ namespace TPSBR
 #if UNITY_EDITOR
                 private void OnValidate()
                 {
-                        _waypointRadius = Mathf.Max(_waypointRadius, 0.01f);
-                        _directionLength = Mathf.Max(_directionLength, 0f);
+                        _waypointRadius = Mathf.Max(_waypointRadius, MinWaypointRadius);
+                        _directionLength = Mathf.Max(_directionLength, MinDirectionLength);
 
                         RefreshWaypoints();
                 }
 
                 private void OnDrawGizmosSelected()
+                {
+                        DrawPathGizmos(null);
+                }
+
+                internal void DrawPathGizmos(CinematicWaypoint selectedWaypoint)
                 {
                         RefreshWaypoints();
 
@@ -81,16 +90,30 @@ namespace TPSBR
 
                         var previousColor = Gizmos.color;
 
-                        if (_drawWaypointPoints)
-                        {
-                                Gizmos.color = _waypointColor;
+                        bool hasSelectedWaypoint = selectedWaypoint != null;
+                        bool shouldDrawWaypointPoints = _drawWaypointPoints || hasSelectedWaypoint;
 
+                        if (shouldDrawWaypointPoints)
+                        {
                                 foreach (var waypoint in _waypoints)
                                 {
                                         if (waypoint == null)
                                                 continue;
 
-                                        Gizmos.DrawSphere(waypoint.transform.position, _waypointRadius);
+                                        var waypointPosition = waypoint.transform.position;
+
+                                        if (hasSelectedWaypoint && waypoint == selectedWaypoint)
+                                        {
+                                                Gizmos.color = SelectedWaypointColor;
+                                                Gizmos.DrawSphere(waypointPosition, _waypointRadius);
+                                                continue;
+                                        }
+
+                                        if (!_drawWaypointPoints)
+                                                continue;
+
+                                        Gizmos.color = _waypointColor;
+                                        Gizmos.DrawSphere(waypointPosition, _waypointRadius);
                                 }
                         }
 
