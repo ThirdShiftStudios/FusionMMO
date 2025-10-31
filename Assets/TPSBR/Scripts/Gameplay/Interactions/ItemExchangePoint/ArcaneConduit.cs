@@ -17,7 +17,7 @@ namespace TPSBR
         private Agent _activeAgent;
         private readonly List<AbilityOption> _abilityOptions = new List<AbilityOption>();
 
-        internal readonly struct AbilityOption
+        public readonly struct AbilityOption
         {
             public AbilityOption(int index, AbilityDefinition definition, bool isUnlocked, bool canPurchase, int cost)
             {
