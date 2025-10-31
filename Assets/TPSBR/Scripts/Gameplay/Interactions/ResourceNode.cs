@@ -74,6 +74,30 @@ namespace TPSBR
         Vector3 IInteraction.HUDPosition => _hudPivot != null ? _hudPivot.position : transform.position;
         bool IInteraction.IsActive => IsDepleted == false && _activeAgent == null;
 
+        bool IInteraction.Interact(in InteractionContext context, out string message)
+        {
+            message = string.Empty;
+
+            Agent agent = context.Agent;
+
+            if (agent == null)
+                return false;
+
+            if (TryStartAnimatedInteraction(context) == true)
+            {
+                context.Interactions?.SetActiveResourceNode(this);
+                return true;
+            }
+
+            if (TryBeginInteraction(agent) == true)
+            {
+                context.Interactions?.SetActiveResourceNode(this);
+                return true;
+            }
+
+            return false;
+        }
+
         protected virtual void Reset()
         {
             _interactionName = GetDefaultInteractionName();
@@ -134,6 +158,12 @@ namespace TPSBR
         public override void Render()
         {
             RefreshInteractionState();
+        }
+
+        protected virtual bool TryStartAnimatedInteraction(in InteractionContext context)
+        {
+            _ = context;
+            return false;
         }
 
         protected bool TryBeginInteraction(Agent agent)

@@ -15,6 +15,27 @@
         public bool IsUndesiredTargetPoint { get; private set; }
 
         public float ItemDropTime => _itemDropTime;
+        public float ItemBoxOpenNormalizedTime => _itemBoxOpenNormalizedTime;
+        public float ItemBoxCancelMoveDistance => _itemBoxCancelMoveDistance;
+        public float ItemBoxCancelInputThreshold => _itemBoxCancelInputThreshold;
+        public float OreCancelMoveDistance => _oreCancelMoveDistance;
+        public float OreCancelInputThreshold => _oreCancelInputThreshold;
+        public float RuneCancelMoveDistance => _runeCancelMoveDistance;
+        public float RuneCancelInputThreshold => _runeCancelInputThreshold;
+        public float HerbCancelMoveDistance => _herbCancelMoveDistance;
+        public float HerbCancelInputThreshold => _herbCancelInputThreshold;
+        public float TreeCancelMoveDistance => _treeCancelMoveDistance;
+        public float TreeCancelInputThreshold => _treeCancelInputThreshold;
+
+        public Inventory Inventory => _inventory;
+        public Character Character => _character;
+        public CharacterAnimationController AnimationController => _animationController;
+
+        public void SetActiveResourceNode(ResourceNode resourceNode)
+        {
+            ActiveResourceNode = resourceNode;
+            InteractionTarget = resourceNode;
+        }
 
         [Networked, HideInInspector] public TickTimer DropItemTimer { get; private set; }
 
@@ -99,61 +120,12 @@
             if (interact == false)
                 return;
 
-            if (InteractionTarget is InventoryItemPickupProvider itemProvider)
+            Agent agent = _character != null ? _character.Agent : null;
+            var interactionContext = new InteractionContext(this, gameObject, agent, _character, _inventory, _animationController);
+
+            if (InteractionTarget.Interact(interactionContext, out string message) == false && message.HasValue() == true)
             {
-                _inventory.Pickup(itemProvider);
-            }
-            else if (InteractionTarget is WeaponPickup weaponPickup)
-            {
-                _inventory.Pickup(weaponPickup);
-            }
-            else if (InteractionTarget is ItemBox itemBox)
-            {
-                TryOpenItemBox(itemBox);
-            }
-            else if (InteractionTarget is StaticPickup staticPickup)
-            {
-                bool success = staticPickup.TryConsume(gameObject, out string result);
-                if (success == false && result.HasValue() == true)
-                {
-                    RPC_InteractionFailed(result);
-                }
-            }
-            else if (InteractionTarget is ArcaneConduit arcaneConduit)
-            {
-                Agent agent = _character != null ? _character.Agent : null;
-                arcaneConduit.Interact(agent);
-            }
-            else if (InteractionTarget is BeerRefillStation beerRefillStation)
-            {
-                Agent agent = _character != null ? _character.Agent : null;
-                beerRefillStation.Interact(agent);
-            }
-            else if (InteractionTarget is ItemVendor itemVendor)
-            {
-                Agent agent = _character != null ? _character.Agent : null;
-                itemVendor.Interact(agent);
-            }
-            else if (InteractionTarget is CraftingStation craftingStation)
-            {
-                Agent agent = _character != null ? _character.Agent : null;
-                craftingStation.Interact(agent);
-            }
-            else if (InteractionTarget is RuneNode runeNode)
-            {
-                TryHarvestRuneNode(runeNode);
-            }
-            else if (InteractionTarget is OreNode oreNode)
-            {
-                TryMineOreNode(oreNode);
-            }
-            else if (InteractionTarget is HerbNode herbNode)
-            {
-                TryHarvestHerbNode(herbNode);
-            }
-            else if (InteractionTarget is TreeNode treeNode)
-            {
-                TryChopTreeNode(treeNode);
+                RPC_InteractionFailed(message);
             }
         }
 
@@ -350,108 +322,6 @@
             if (agent == null || ActiveResourceNode.IsInteracting(agent) == false)
             {
                 ActiveResourceNode = null;
-            }
-        }
-
-        private void TryOpenItemBox(ItemBox itemBox)
-        {
-            if (itemBox == null)
-                return;
-
-            if (_animationController == null ||
-                _animationController.TryStartItemBoxInteraction(itemBox, _itemBoxOpenNormalizedTime,
-                    _itemBoxCancelMoveDistance, _itemBoxCancelInputThreshold) == false)
-            {
-                itemBox.Open();
-            }
-        }
-
-        private void TryHarvestRuneNode(RuneNode runeNode)
-        {
-            if (runeNode == null)
-                return;
-
-            if (_animationController != null &&
-                _animationController.TryStartRuneInteraction(runeNode, _runeCancelMoveDistance, _runeCancelInputThreshold) ==
-                    true)
-            {
-                ActiveResourceNode = runeNode;
-                InteractionTarget = runeNode;
-                return;
-            }
-
-            Agent agent = _character != null ? _character.Agent : null;
-
-            if (agent != null && runeNode.TryBeginHarvesting(agent) == true)
-            {
-                ActiveResourceNode = runeNode;
-                InteractionTarget = runeNode;
-            }
-        }
-
-        private void TryMineOreNode(OreNode oreNode)
-        {
-            if (oreNode == null)
-                return;
-
-            if (_animationController != null &&
-                _animationController.TryStartOreInteraction(oreNode, _oreCancelMoveDistance, _oreCancelInputThreshold) == true)
-            {
-                ActiveResourceNode = oreNode;
-                InteractionTarget = oreNode;
-                return;
-            }
-
-            Agent agent = _character != null ? _character.Agent : null;
-
-            if (agent != null && oreNode.TryBeginMining(agent) == true)
-            {
-                ActiveResourceNode = oreNode;
-                InteractionTarget = oreNode;
-            }
-        }
-
-        private void TryHarvestHerbNode(HerbNode herbNode)
-        {
-            if (herbNode == null)
-                return;
-
-            if (_animationController != null &&
-                _animationController.TryStartHerbInteraction(herbNode, _herbCancelMoveDistance, _herbCancelInputThreshold) == true)
-            {
-                ActiveResourceNode = herbNode;
-                InteractionTarget = herbNode;
-                return;
-            }
-
-            Agent agent = _character != null ? _character.Agent : null;
-
-            if (agent != null && herbNode.TryBeginHarvesting(agent) == true)
-            {
-                ActiveResourceNode = herbNode;
-                InteractionTarget = herbNode;
-            }
-        }
-
-        private void TryChopTreeNode(TreeNode treeNode)
-        {
-            if (treeNode == null)
-                return;
-
-            if (_animationController != null &&
-                _animationController.TryStartTreeInteraction(treeNode, _treeCancelMoveDistance, _treeCancelInputThreshold) == true)
-            {
-                ActiveResourceNode = treeNode;
-                InteractionTarget = treeNode;
-                return;
-            }
-
-            Agent agent = _character != null ? _character.Agent : null;
-
-            if (agent != null && treeNode.TryBeginChopping(agent) == true)
-            {
-                ActiveResourceNode = treeNode;
-                InteractionTarget = treeNode;
             }
         }
 
