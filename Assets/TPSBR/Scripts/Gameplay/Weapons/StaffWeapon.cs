@@ -240,28 +240,9 @@ namespace TPSBR
             List<int> defaultAbilityIndexes = null;
             var definition = Definition as WeaponDefinition;
 
-            if (definition != null)
+            if (definition != null && TrySelectDefaultAbilityIndex(random, definition, out int selectedAbilityIndex) == true)
             {
-                IReadOnlyList<AbilityDefinition> availableAbilities = definition.AvailableAbilities;
-
-                if (availableAbilities != null && availableAbilities.Count > 0)
-                {
-                    var selectableIndexes = new List<int>();
-
-                    for (int i = 0; i < availableAbilities.Count; ++i)
-                    {
-                        if (availableAbilities[i] is StaffAbilityDefinition)
-                        {
-                            selectableIndexes.Add(i);
-                        }
-                    }
-
-                    if (selectableIndexes.Count > 0)
-                    {
-                        int randomIndex = random.Next(selectableIndexes.Count);
-                        defaultAbilityIndexes = new List<int>(1) { selectableIndexes[randomIndex] };
-                    }
-                }
+                defaultAbilityIndexes = new List<int>(1) { selectedAbilityIndex };
             }
 
             string baseHash = $"{HASH_PREFIX}:{encodedSeed}:{encodedStats}";
@@ -292,6 +273,13 @@ namespace TPSBR
         {
             base.OnConfigurationHashApplied(configurationHash);
 
+            if (TryParseConfiguration(configurationHash, out int seed, out _, out int[] abilityIndexes) == false)
+            {
+                ResetConfiguration();
+                NotifyInventoryAboutStatChange();
+                return;
+            }
+
             if (TryGetStatsFromConfiguration(configurationHash, out float baseDamage, out float healthRegen, out float manaRegen, out string configuredItemName, out int[] statBonuses) == false)
             {
                 ResetConfiguration();
@@ -299,8 +287,20 @@ namespace TPSBR
                 return;
             }
 
-            int[] abilityIndexes = null;
-            TryParseConfiguration(configurationHash, out _, out _, out abilityIndexes);
+            bool abilityIndexesMissing = abilityIndexes == null || abilityIndexes.Length == 0;
+
+            if (abilityIndexesMissing == true && TryDeriveDefaultAbilityIndexes(seed, out int[] derivedAbilityIndexes) == true)
+            {
+                abilityIndexes = derivedAbilityIndexes;
+
+                if (HasStateAuthority == true &&
+                    StaffWeapon.TryApplyAbilityIndexes(configurationHash, abilityIndexes, out NetworkString<_32> updatedHash) == true &&
+                    updatedHash.ToString() != configurationHash)
+                {
+                    SetConfigurationHash(updatedHash);
+                    return;
+                }
+            }
 
             _lastConfigurationHash = configurationHash;
             ApplyConfiguration(baseDamage, healthRegen, manaRegen, statBonuses, configuredItemName, abilityIndexes);
@@ -456,6 +456,67 @@ namespace TPSBR
             {
                 statBonuses[i] = 0;
             }
+        }
+
+        private bool TrySelectDefaultAbilityIndex(System.Random random, WeaponDefinition definition, out int abilityIndex)
+        {
+            abilityIndex = -1;
+
+            if (random == null || definition == null)
+            {
+                return false;
+            }
+
+            IReadOnlyList<AbilityDefinition> availableAbilities = definition.AvailableAbilities;
+
+            if (availableAbilities == null || availableAbilities.Count == 0)
+            {
+                return false;
+            }
+
+            var selectableIndexes = new List<int>();
+
+            for (int i = 0; i < availableAbilities.Count; ++i)
+            {
+                if (availableAbilities[i] is StaffAbilityDefinition)
+                {
+                    selectableIndexes.Add(i);
+                }
+            }
+
+            if (selectableIndexes.Count == 0)
+            {
+                return false;
+            }
+
+            int selected = random.Next(selectableIndexes.Count);
+            abilityIndex = selectableIndexes[selected];
+            return true;
+        }
+
+        private bool TryDeriveDefaultAbilityIndexes(int seed, out int[] abilityIndexes)
+        {
+            abilityIndexes = null;
+
+            var definition = Definition as WeaponDefinition;
+            if (definition == null)
+            {
+                return false;
+            }
+
+            var random = new System.Random(seed);
+            PopulatePrimaryStats(random, out _, out _, out _, out _);
+
+            int[] statBonuses = new int[Stats.Count];
+            PopulateStatBonuses(random, statBonuses);
+
+            if (TrySelectDefaultAbilityIndex(random, definition, out int abilityIndex) == false)
+            {
+                return false;
+            }
+
+            abilityIndexes = new[] { abilityIndex };
+            return true;
         }
 
         private static string EncodeStatBonuses(IReadOnlyList<int> statBonuses)

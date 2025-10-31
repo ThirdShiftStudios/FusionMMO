@@ -309,6 +309,7 @@ namespace TPSBR.UI
                 return;
             }
 
+            container.gameObject.SetActive(true);
             EnsureAbilitySlotCapacity(slots, container, options.Count);
 
             for (int i = 0; i < options.Count; ++i)
@@ -320,10 +321,19 @@ namespace TPSBR.UI
                 slot.gameObject.SetActive(true);
                 slot.SetSelectionHighlight(false, _selectedSlotColor);
 
-                if (slot.Content is UIAbilityOptionSlot abilityContent)
+                UIAbilityOptionSlot abilityContent = slot.Content as UIAbilityOptionSlot;
+
+                if (abilityContent == null)
                 {
-                    abilityContent.SetAbility(option, allowSelection);
+                    abilityContent = slot.GetComponent<UIAbilityOptionSlot>();
                 }
+
+                if (abilityContent == null)
+                {
+                    abilityContent = slot.GetComponentInChildren<UIAbilityOptionSlot>(true);
+                }
+
+                abilityContent?.SetAbility(option, allowSelection);
             }
 
             for (int i = options.Count; i < slots.Count; ++i)
