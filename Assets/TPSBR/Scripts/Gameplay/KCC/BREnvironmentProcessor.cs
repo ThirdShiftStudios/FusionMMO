@@ -56,7 +56,7 @@ namespace TPSBR
 
                 [Header("Water")]
                 [SerializeField, Tooltip("Layers that represent water volumes.")]
-                private LayerMask _waterLayers = ObjectLayerMask.Water;
+                private LayerMask _waterLayers;
                 [SerializeField, Tooltip("Horizontal movement speed while swimming.")]
                 private float _swimSpeed = 4.0f;
                 [SerializeField, Tooltip("Acceleration applied to reach swim speed when there is input.")]
@@ -84,6 +84,8 @@ namespace TPSBR
 
                 private void Awake()
                 {
+                        ObjectLayerMask.EnsureInitialized();
+
                         if (_waterLayers == 0)
                         {
                                 _waterLayers = ObjectLayerMask.Water;
@@ -94,6 +96,21 @@ namespace TPSBR
                                 }
                         }
                 }
+
+#if UNITY_EDITOR
+                private void OnValidate()
+                {
+                        ObjectLayerMask.EnsureInitialized();
+
+                        if (Application.isPlaying == true)
+                                return;
+
+                        if (_waterLayers == 0)
+                        {
+                                _waterLayers = ObjectLayerMask.Water;
+                        }
+                }
+#endif
 
                 public override float GetPriority(KCC kcc) => DefaultPriority + RelativePriority;
 
