@@ -436,7 +436,8 @@ namespace TPSBR
 
                         Vector3 position        = data.TargetPosition;
                         float   characterBottom = position.y;
-                        float   probeRadius  = Mathf.Max(_waterProbeRadius, kcc.Settings.Radius);
+                        float   characterTop    = characterBottom + kcc.Settings.Height;
+                        float   probeRadius     = Mathf.Max(_waterProbeRadius, kcc.Settings.Radius);
 
                         PhysicsScene physicsScene = kcc.Runner != null ? kcc.Runner.SimulationUnityScene.GetPhysicsScene() : Physics.defaultPhysicsScene;
 
@@ -452,6 +453,9 @@ namespace TPSBR
                                 if (collider == null)
                                         continue;
 
+                                if (collider.gameObject.layer != ObjectLayer.Water)
+                                        continue;
+
                                 Bounds bounds = collider.bounds;
 
                                 if (position.x < bounds.min.x || position.x > bounds.max.x)
@@ -460,22 +464,27 @@ namespace TPSBR
                                 if (position.z < bounds.min.z || position.z > bounds.max.z)
                                         continue;
 
-                                float top          = bounds.max.y;
-                                float depthToBottom = top - characterBottom;
+                                float surfaceTop   = bounds.max.y;
+                                float depthToTop   = surfaceTop - characterTop;
 
-                                if (depthToBottom < -_swimExitMargin)
-                                        continue;
+                                if (wasSwimming == true)
+                                {
+                                        if (depthToTop < -_swimExitMargin)
+                                                continue;
+                                }
+                                else
+                                {
+                                        if (depthToTop < 0.0f)
+                                                continue;
 
-                                if (depthToBottom <= 0.0f)
-                                        continue;
+                                        if (depthToTop > _swimActivationDepth)
+                                                continue;
+                                }
 
-                                if (depthToBottom > _swimActivationDepth && wasSwimming == false)
-                                        continue;
-
-                                if (isSwimming == false || top > surfaceHeight)
+                                if (isSwimming == false || surfaceTop > surfaceHeight)
                                 {
                                         isSwimming    = true;
-                                        surfaceHeight = top;
+                                        surfaceHeight = surfaceTop;
                                 }
                         }
 
