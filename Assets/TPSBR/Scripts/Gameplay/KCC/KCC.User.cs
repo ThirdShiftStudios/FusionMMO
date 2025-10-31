@@ -16,15 +16,19 @@ namespace Fusion.Addons.KCC
 		}
 	}
 
-	public partial class KCCData
-	{
-		public bool    Aim;
-		public Vector2 Recoil;
+        public partial class KCCData
+        {
+                public bool    Aim;
+                public bool    IsSwimming;
+                public float   SwimSurfaceHeight;
+                public Vector2 Recoil;
 
-		partial void CopyUserDataFromOther(KCCData other)
-		{
-			Aim    = other.Aim;
-			Recoil = other.Recoil;
-		}
-	}
+                partial void CopyUserDataFromOther(KCCData other)
+                {
+                        Aim               = other.Aim;
+                        IsSwimming        = other.IsSwimming;
+                        SwimSurfaceHeight = other.SwimSurfaceHeight;
+                        Recoil            = other.Recoil;
+                }
+        }
 }

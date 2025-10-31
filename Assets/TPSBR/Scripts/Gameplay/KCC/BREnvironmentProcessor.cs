@@ -51,33 +51,78 @@ namespace TPSBR
 		private float _speedMultiplier = 1.0f;
 		[SerializeField]
 		private float _upGravityMultiplier = 1.0f;
-		[SerializeField]
-		private float _downGravityMultiplier = 1.0f;
+                [SerializeField]
+                private float _downGravityMultiplier = 1.0f;
 
-		[SerializeField]
-		private StepUpProcessor _stepUpProcessor;
-		[SerializeField]
-		private GroundSnapProcessor _groundSnapProcessor;
+                [Header("Water")]
+                [SerializeField, Tooltip("Horizontal movement speed while swimming.")]
+                private float _swimSpeed = 4.0f;
+                [SerializeField, Tooltip("Acceleration applied to reach swim speed when there is input.")]
+                private float _swimAcceleration = 6.0f;
+                [SerializeField, Tooltip("Deceleration applied when there is no swim input.")]
+                private float _swimDeceleration = 4.0f;
+                [SerializeField, Tooltip("Maximum distance (from the character top) below the water surface to trigger swimming.")]
+                private float _swimActivationDepth = 2.0f;
+                [SerializeField, Tooltip("Allowed distance above the surface before the swimming state ends.")]
+                private float _swimExitMargin = 0.2f;
+                [SerializeField, Tooltip("Keeps the character slightly below the water surface when swimming.")]
+                private float _waterSurfaceOffset = 0.5f;
+                [SerializeField, Tooltip("Radius used to check for water volumes around the character.")]
+                private float _waterProbeRadius = 0.75f;
 
-		// KCCProcessor INTERFACE
+                private readonly Collider[] _waterOverlap = new Collider[8];
+                private int _waterLayerMask;
 
-		public override float GetPriority(KCC kcc) => DefaultPriority + RelativePriority;
+                [SerializeField]
+                private StepUpProcessor _stepUpProcessor;
+                [SerializeField]
+                private GroundSnapProcessor _groundSnapProcessor;
+
+                // KCCProcessor INTERFACE
+
+                private void Awake()
+                {
+                        _waterLayerMask = ObjectLayerMask.Water;
+                }
+
+                public override float GetPriority(KCC kcc) => DefaultPriority + RelativePriority;
 
 		// IPrepareData INTERFACE
 
-		public void Execute(PrepareData stage, KCC kcc, KCCData data)
-		{
-			data.MaxGroundAngle = MaxGroundAngle;
-			data.Gravity        = Gravity != default ? Gravity : Physics.gravity;
+                public void Execute(PrepareData stage, KCC kcc, KCCData data)
+                {
+                        data.MaxGroundAngle = MaxGroundAngle;
 
-			data.Gravity *= kcc.FixedData.RealVelocity.y > 0.0f ? _upGravityMultiplier : _downGravityMultiplier;
+                        bool isSwimming = UpdateSwimmingState(kcc, data);
 
-			SetDynamicVelocity(kcc, data);
+                        Vector3 gravity = Gravity != default ? Gravity : Physics.gravity;
+                        if (isSwimming == true)
+                        {
+                                data.Gravity = Vector3.zero;
+                        }
+                        else
+                        {
+                                data.Gravity = gravity;
+                                data.Gravity *= kcc.FixedData.RealVelocity.y > 0.0f ? _upGravityMultiplier : _downGravityMultiplier;
+                        }
 
-			data.KinematicDirection = data.InputDirection.OnlyXZ();
+                        SetDynamicVelocity(kcc, data);
 
-			SetKinematicVelocity(kcc, data);
-		}
+                        if (isSwimming == true)
+                        {
+                                data.DynamicVelocity = new Vector3(data.DynamicVelocity.x, 0.0f, data.DynamicVelocity.z);
+                        }
+
+                        data.KinematicDirection = data.InputDirection.OnlyXZ();
+
+                        if (isSwimming == true)
+                        {
+                                ApplySwimmingKinematics(kcc, data);
+                                return;
+                        }
+
+                        SetKinematicVelocity(kcc, data);
+                }
 
 		private void SetDynamicVelocity(KCC kcc, KCCData data)
 		{
@@ -315,11 +360,11 @@ namespace TPSBR
 
 		// IAfterMoveStep INTERFACE
 
-		public void Execute(AfterMoveStep stage, KCC kcc, KCCData data)
-		{
-			// This code path can be executed multiple times in single update if CCD is active (Continuous Collision Detection).
+                public void Execute(AfterMoveStep stage, KCC kcc, KCCData data)
+                {
+                        // This code path can be executed multiple times in single update if CCD is active (Continuous Collision Detection).
 
-			KCCData fixedData = kcc.FixedData;
+                        KCCData fixedData = kcc.FixedData;
 
 			if (data.IsGrounded == true)
 			{
@@ -369,8 +414,132 @@ namespace TPSBR
 				}
 			}
 
-			_stepUpProcessor.Execute(stage, kcc, data);
-			_groundSnapProcessor.Execute(stage, kcc, data);
-		}
-	}
+                        _stepUpProcessor.Execute(stage, kcc, data);
+                        _groundSnapProcessor.Execute(stage, kcc, data);
+
+                        if (data.IsSwimming == true)
+                        {
+                                StickToWaterSurface(data);
+                        }
+                }
+
+                // PRIVATE METHODS
+
+                private bool UpdateSwimmingState(KCC kcc, KCCData data)
+                {
+                        if (_waterLayerMask == 0)
+                        {
+                                data.IsSwimming = false;
+                                data.SwimSurfaceHeight = 0.0f;
+                                return false;
+                        }
+
+                        Vector3 position    = data.TargetPosition;
+                        float   probeRadius = Mathf.Max(_waterProbeRadius, kcc.Settings.Radius);
+
+                        PhysicsScene physicsScene = kcc.Runner != null ? kcc.Runner.SimulationUnityScene.GetPhysicsScene() : Physics.defaultPhysicsScene;
+
+                        int overlapCount = physicsScene.OverlapSphere(position, probeRadius, _waterOverlap, _waterLayerMask, QueryTriggerInteraction.Collide);
+
+                        bool  isSwimming    = false;
+                        float surfaceHeight = 0.0f;
+
+                        for (int i = 0; i < overlapCount; ++i)
+                        {
+                                Collider collider = _waterOverlap[i];
+                                if (collider == null)
+                                        continue;
+
+                                Bounds bounds = collider.bounds;
+
+                                if (position.x < bounds.min.x || position.x > bounds.max.x)
+                                        continue;
+
+                                if (position.z < bounds.min.z || position.z > bounds.max.z)
+                                        continue;
+
+                                float top   = bounds.max.y;
+                                float depth = top - position.y;
+
+                                if (depth < -_swimExitMargin)
+                                        continue;
+
+                                if (depth > _swimActivationDepth)
+                                        continue;
+
+                                if (isSwimming == false || top > surfaceHeight)
+                                {
+                                        isSwimming    = true;
+                                        surfaceHeight = top;
+                                }
+                        }
+
+                        data.IsSwimming = isSwimming;
+                        data.SwimSurfaceHeight = isSwimming == true ? surfaceHeight : 0.0f;
+
+                        return isSwimming;
+                }
+
+                private void ApplySwimmingKinematics(KCC kcc, KCCData data)
+                {
+                        KCCData fixedData      = kcc.FixedData;
+                        float   fixedDeltaTime = fixedData.DeltaTime;
+
+                        Vector3 currentVelocity = fixedData.KinematicVelocity;
+                        Vector3 desiredVelocity = Vector3.zero;
+
+                        bool hasInput = data.KinematicDirection.IsAlmostZero(0.0001f) == false;
+                        if (hasInput == true)
+                        {
+                                desiredVelocity = data.KinematicDirection.normalized * _swimSpeed;
+                        }
+
+                        Vector3 currentXZ    = currentVelocity.OnlyXZ();
+                        float   acceleration = (hasInput == true ? _swimAcceleration : _swimDeceleration) * fixedDeltaTime;
+                        Vector3 newVelocityXZ = Vector3.MoveTowards(currentXZ, desiredVelocity, acceleration);
+
+                        Vector3 newVelocity = new Vector3(newVelocityXZ.x, 0.0f, newVelocityXZ.z);
+
+                        data.KinematicVelocity = newVelocity;
+                        data.KinematicSpeed    = _swimSpeed;
+
+                        Vector3 tangent;
+                        if (newVelocity.sqrMagnitude > 0.0001f)
+                        {
+                                tangent = newVelocity.normalized;
+                        }
+                        else if (hasInput == true)
+                        {
+                                tangent = data.KinematicDirection.normalized;
+                        }
+                        else
+                        {
+                                Vector3 forward = data.TransformDirection.OnlyXZ();
+                                tangent = forward.IsAlmostZero(0.0001f) == true ? Vector3.forward : forward.normalized;
+                        }
+
+                        data.KinematicTangent = tangent;
+                        data.DynamicVelocity  = new Vector3(data.DynamicVelocity.x, 0.0f, data.DynamicVelocity.z);
+                }
+
+                private void StickToWaterSurface(KCCData data)
+                {
+                        float targetHeight = data.SwimSurfaceHeight - _waterSurfaceOffset;
+
+                        Vector3 targetPosition = data.TargetPosition;
+                        targetPosition.y = targetHeight;
+                        data.TargetPosition = targetPosition;
+
+                        Vector3 desiredPosition = data.DesiredPosition;
+                        desiredPosition.y = targetHeight;
+                        data.DesiredPosition = desiredPosition;
+
+                        Vector3 desiredVelocity = data.DesiredVelocity;
+                        desiredVelocity.y = 0.0f;
+                        data.DesiredVelocity = desiredVelocity;
+
+                        data.DynamicVelocity = new Vector3(data.DynamicVelocity.x, 0.0f, data.DynamicVelocity.z);
+                        data.KinematicVelocity = new Vector3(data.KinematicVelocity.x, 0.0f, data.KinematicVelocity.z);
+                }
+        }
 }
