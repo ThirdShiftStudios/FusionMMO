@@ -1,0 +1,49 @@
+﻿using System;
+using Unity.Template.CompetitiveActionMultiplayer;
+using UnityEngine;
+using UnityEngine.UI;
+
+namespace TPSBR
+{
+    [Serializable]
+    public class ProfessionResource
+    {
+        public Professions.ProfessionIndex Profession => _profession;
+        public Image Icon => _icon;
+
+        [SerializeField]
+        private Professions.ProfessionIndex _profession;
+        [SerializeField]
+        private Image _icon;
+    }
+    public class ProfessionResourceDefinitions : GlobalDataDefinition
+    {
+        private const string ResourcePath = "ProfessionResourceDefinitions";
+
+        private static ProfessionResourceDefinitions _instance;
+
+        public override string Name => "Profession Resources";
+        public override Texture2D Icon { get; }
+
+        public static ProfessionResourceDefinitions Instance
+        {
+            get
+            {
+                if (_instance == null)
+                {
+                    _instance = Resources.Load<ProfessionResourceDefinitions>(ResourcePath);
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                    if (_instance == null)
+                    {
+                        Debug.LogWarning($"Unable to locate {nameof(ProfessionResourceDefinitions)} asset at Resources/{ResourcePath}.");
+                    }
+#endif
+                }
+
+                return _instance;
+            }
+        }
+
+    }
+}
