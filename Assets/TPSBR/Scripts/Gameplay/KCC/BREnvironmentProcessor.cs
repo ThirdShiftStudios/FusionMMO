@@ -419,7 +419,7 @@ namespace TPSBR
 
                         if (data.IsSwimming == true)
                         {
-                                StickToWaterSurface(data);
+                                StickToWaterSurface(kcc, data);
                         }
                 }
 
@@ -434,13 +434,15 @@ namespace TPSBR
                                 return false;
                         }
 
-                        Vector3 position    = data.TargetPosition;
-                        float   probeRadius = Mathf.Max(_waterProbeRadius, kcc.Settings.Radius);
+                        Vector3 position     = data.TargetPosition;
+                        float   characterTop = position.y + kcc.Settings.Height;
+                        float   probeRadius  = Mathf.Max(_waterProbeRadius, kcc.Settings.Radius);
 
                         PhysicsScene physicsScene = kcc.Runner != null ? kcc.Runner.SimulationUnityScene.GetPhysicsScene() : Physics.defaultPhysicsScene;
 
                         int overlapCount = physicsScene.OverlapSphere(position, probeRadius, _waterOverlap, _waterLayerMask, QueryTriggerInteraction.Collide);
 
+                        bool  wasSwimming   = data.IsSwimming;
                         bool  isSwimming    = false;
                         float surfaceHeight = 0.0f;
 
@@ -459,12 +461,12 @@ namespace TPSBR
                                         continue;
 
                                 float top   = bounds.max.y;
-                                float depth = top - position.y;
+                                float depth = top - characterTop;
 
                                 if (depth < -_swimExitMargin)
                                         continue;
 
-                                if (depth > _swimActivationDepth)
+                                if (depth > _swimActivationDepth && wasSwimming == false)
                                         continue;
 
                                 if (isSwimming == false || top > surfaceHeight)
@@ -476,6 +478,18 @@ namespace TPSBR
 
                         data.IsSwimming = isSwimming;
                         data.SwimSurfaceHeight = isSwimming == true ? surfaceHeight : 0.0f;
+
+                        if (wasSwimming != isSwimming)
+                        {
+                                if (isSwimming == true)
+                                {
+                                        Debug.Log($"[BREnvironmentProcessor] {kcc.name} entered swimming at y={surfaceHeight:F2}.");
+                                }
+                                else
+                                {
+                                        Debug.Log($"[BREnvironmentProcessor] {kcc.name} exited swimming.");
+                                }
+                        }
 
                         return isSwimming;
                 }
@@ -522,16 +536,17 @@ namespace TPSBR
                         data.DynamicVelocity  = new Vector3(data.DynamicVelocity.x, 0.0f, data.DynamicVelocity.z);
                 }
 
-                private void StickToWaterSurface(KCCData data)
+                private void StickToWaterSurface(KCC kcc, KCCData data)
                 {
-                        float targetHeight = data.SwimSurfaceHeight - _waterSurfaceOffset;
+                        float surfaceHeight = data.SwimSurfaceHeight;
+                        float bottomHeight  = surfaceHeight - _waterSurfaceOffset - kcc.Settings.Height;
 
                         Vector3 targetPosition = data.TargetPosition;
-                        targetPosition.y = targetHeight;
+                        targetPosition.y = bottomHeight;
                         data.TargetPosition = targetPosition;
 
                         Vector3 desiredPosition = data.DesiredPosition;
-                        desiredPosition.y = targetHeight;
+                        desiredPosition.y = bottomHeight;
                         data.DesiredPosition = desiredPosition;
 
                         data.DynamicVelocity = new Vector3(data.DynamicVelocity.x, 0.0f, data.DynamicVelocity.z);
