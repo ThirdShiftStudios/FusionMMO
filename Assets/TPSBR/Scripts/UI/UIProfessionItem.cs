@@ -41,15 +41,32 @@ namespace TPSBR.UI
 
             if (_professionIcon != null)
             {
-                float progress = snapshot.Progress;
-                if (string.IsNullOrEmpty(professionCode) == true)
+                Sprite icon = null;
+                float progress = 0f;
+
+                if (string.IsNullOrEmpty(professionCode) == false)
                 {
-                    _professionIcon.fillAmount = 0f;
+                    progress = Mathf.Clamp01(snapshot.Progress);
+
+                    if (Professions.TryGetIndex(professionCode, out int professionIndex) == true)
+                    {
+                        ProfessionResourceDefinitions definitions = ProfessionResourceDefinitions.Instance;
+                        if (definitions != null)
+                        {
+                            ProfessionResource resource = definitions.GetResource((Professions.ProfessionIndex)professionIndex);
+                            icon = resource != null ? resource.Icon : null;
+                        }
+                    }
                 }
-                else
+
+                _professionIcon.fillAmount = progress;
+
+                if (_professionIcon.sprite != icon)
                 {
-                    _professionIcon.fillAmount = Mathf.Clamp01(progress);
+                    _professionIcon.sprite = icon;
                 }
+
+                _professionIcon.enabled = icon != null;
             }
 
             if (_levelProgress != null)
