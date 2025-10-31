@@ -9,8 +9,32 @@ namespace TPSBR
         private byte _beerStack { get; set; }
 
         private bool _isDrinking;
+        [SerializeField]
+        private Renderer[] _renderers;
+        [SerializeField]
+        private Collider[] _colliders;
+
+        private bool _renderersResolved;
+        private bool _collidersResolved;
 
         public byte BeerStack => _beerStack;
+
+        private void Awake()
+        {
+            ResolveRenderers();
+            ResolveColliders();
+            SetVisualsVisible(false);
+        }
+
+        private void OnEnable()
+        {
+            SetVisualsVisible(IsArmed);
+        }
+
+        private void OnDisable()
+        {
+            SetVisualsVisible(false);
+        }
 
         public override bool CanFire(bool keyDown)
         {
@@ -48,6 +72,18 @@ namespace TPSBR
             {
                 _isDrinking = true;
             }
+        }
+
+        protected override void OnWeaponArmed()
+        {
+            base.OnWeaponArmed();
+            SetVisualsVisible(true);
+        }
+
+        protected override void OnWeaponDisarmed()
+        {
+            base.OnWeaponDisarmed();
+            SetVisualsVisible(false);
         }
 
         public override bool HandleAnimationRequest(UseLayer attackLayer, in WeaponUseRequest request)
@@ -98,6 +134,66 @@ namespace TPSBR
 
             int newValue = Mathf.Clamp(_beerStack + amount, 0, byte.MaxValue);
             _beerStack = (byte)newValue;
+        }
+
+        private void ResolveRenderers()
+        {
+            if (_renderersResolved == true)
+            {
+                return;
+            }
+
+            if (_renderers == null || _renderers.Length == 0)
+            {
+                _renderers = GetComponentsInChildren<Renderer>(true);
+            }
+
+            _renderersResolved = true;
+        }
+
+        private void ResolveColliders()
+        {
+            if (_collidersResolved == true)
+            {
+                return;
+            }
+
+            if (_colliders == null || _colliders.Length == 0)
+            {
+                _colliders = GetComponentsInChildren<Collider>(true);
+            }
+
+            _collidersResolved = true;
+        }
+
+        private void SetVisualsVisible(bool visible)
+        {
+            ResolveRenderers();
+            ResolveColliders();
+
+            if (_renderers != null)
+            {
+                for (int i = 0; i < _renderers.Length; i++)
+                {
+                    var renderer = _renderers[i];
+                    if (renderer != null)
+                    {
+                        renderer.enabled = visible;
+                    }
+                }
+            }
+
+            if (_colliders != null)
+            {
+                for (int i = 0; i < _colliders.Length; i++)
+                {
+                    var collider = _colliders[i];
+                    if (collider != null)
+                    {
+                        collider.enabled = visible;
+                    }
+                }
+            }
         }
     }
 }
