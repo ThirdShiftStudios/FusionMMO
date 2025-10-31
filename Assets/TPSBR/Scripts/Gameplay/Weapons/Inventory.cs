@@ -286,92 +286,91 @@ namespace TPSBR
         {
             var data = new PlayerCharacterInventorySaveData
             {
-                InventorySlots     = new PlayerInventoryItemData[_items.Length],
-                HotbarSlots        = new PlayerHotbarSlotData[_hotbar.Length],
-                CurrentWeaponSlot  = _currentWeaponSlot,
-                Gold               = _gold
+                InventorySlots    = new PlayerInventoryItemData[_items.Length],
+                HotbarSlots       = new PlayerHotbarSlotData[_hotbar.Length],
+                CurrentWeaponSlot = _currentWeaponSlot,
+                Gold              = _gold,
+                PickaxeSlot       = CreateInventoryItemData(_pickaxeSlot),
+                WoodAxeSlot       = CreateInventoryItemData(_woodAxeSlot),
+                FishingPoleSlot   = CreateInventoryItemData(_fishingPoleSlot),
+                HeadSlot          = CreateInventoryItemData(_headSlot),
+                UpperBodySlot     = CreateInventoryItemData(_upperBodySlot),
+                LowerBodySlot     = CreateInventoryItemData(_lowerBodySlot)
             };
 
             for (int i = 0; i < _items.Length; i++)
             {
-                var slot = _items[i];
-                string configurationHash = slot.ConfigurationHash.ToString();
-
-                data.InventorySlots[i] = new PlayerInventoryItemData
-                {
-                    ItemDefinitionId = slot.ItemDefinitionId,
-                    Quantity = slot.Quantity,
-                    ConfigurationHash = string.IsNullOrEmpty(configurationHash) == false ? configurationHash : null
-                };
+                data.InventorySlots[i] = CreateInventoryItemData(_items[i]);
             }
 
             for (int i = 0; i < _hotbar.Length; i++)
             {
-                var weapon = _hotbar[i];
-                if (weapon == null)
-                {
-                    data.HotbarSlots[i] = default;
-                    continue;
-                }
-
-                string configurationHash = weapon.ConfigurationHash.ToString();
-
-                data.HotbarSlots[i] = new PlayerHotbarSlotData
-                {
-                    WeaponDefinitionId = weapon.Definition != null ? weapon.Definition.ID : 0,
-                    ConfigurationHash = string.IsNullOrEmpty(configurationHash) == false ? configurationHash : null
-                };
+                data.HotbarSlots[i] = CreateHotbarSlotData(_hotbar[i]);
             }
 
-            string pickaxeConfigurationHash = _pickaxeSlot.ConfigurationHash.ToString();
-            data.PickaxeSlot = new PlayerInventoryItemData
-            {
-                ItemDefinitionId = _pickaxeSlot.ItemDefinitionId,
-                Quantity = _pickaxeSlot.Quantity,
-                ConfigurationHash = string.IsNullOrEmpty(pickaxeConfigurationHash) == false ? pickaxeConfigurationHash : null
-            };
-
-            string woodAxeConfigurationHash = _woodAxeSlot.ConfigurationHash.ToString();
-            data.WoodAxeSlot = new PlayerInventoryItemData
-            {
-                ItemDefinitionId = _woodAxeSlot.ItemDefinitionId,
-                Quantity = _woodAxeSlot.Quantity,
-                ConfigurationHash = string.IsNullOrEmpty(woodAxeConfigurationHash) == false ? woodAxeConfigurationHash : null
-            };
-
-            string fishingPoleConfigurationHash = _fishingPoleSlot.ConfigurationHash.ToString();
-            data.FishingPoleSlot = new PlayerInventoryItemData
-            {
-                ItemDefinitionId = _fishingPoleSlot.ItemDefinitionId,
-                Quantity = _fishingPoleSlot.Quantity,
-                ConfigurationHash = string.IsNullOrEmpty(fishingPoleConfigurationHash) == false ? fishingPoleConfigurationHash : null
-            };
-
-            string headConfigurationHash = _headSlot.ConfigurationHash.ToString();
-            data.HeadSlot = new PlayerInventoryItemData
-            {
-                ItemDefinitionId = _headSlot.ItemDefinitionId,
-                Quantity = _headSlot.Quantity,
-                ConfigurationHash = string.IsNullOrEmpty(headConfigurationHash) == false ? headConfigurationHash : null
-            };
-
-            string upperBodyConfigurationHash = _upperBodySlot.ConfigurationHash.ToString();
-            data.UpperBodySlot = new PlayerInventoryItemData
-            {
-                ItemDefinitionId = _upperBodySlot.ItemDefinitionId,
-                Quantity = _upperBodySlot.Quantity,
-                ConfigurationHash = string.IsNullOrEmpty(upperBodyConfigurationHash) == false ? upperBodyConfigurationHash : null
-            };
-
-            string lowerBodyConfigurationHash = _lowerBodySlot.ConfigurationHash.ToString();
-            data.LowerBodySlot = new PlayerInventoryItemData
-            {
-                ItemDefinitionId = _lowerBodySlot.ItemDefinitionId,
-                Quantity = _lowerBodySlot.Quantity,
-                ConfigurationHash = string.IsNullOrEmpty(lowerBodyConfigurationHash) == false ? lowerBodyConfigurationHash : null
-            };
-
             return data;
+        }
+
+        private static PlayerInventoryItemData CreateInventoryItemData(InventorySlot slot)
+        {
+            if (slot.IsEmpty == true)
+            {
+                return default;
+            }
+
+            return new PlayerInventoryItemData
+            {
+                ItemDefinitionId = slot.ItemDefinitionId,
+                Quantity         = slot.Quantity,
+                ConfigurationHash = NormalizeConfigurationHash(slot.ConfigurationHash)
+            };
+        }
+
+        private static PlayerHotbarSlotData CreateHotbarSlotData(Weapon weapon)
+        {
+            if (weapon == null)
+            {
+                return default;
+            }
+
+            return new PlayerHotbarSlotData
+            {
+                WeaponDefinitionId = weapon.Definition != null ? weapon.Definition.ID : 0,
+                ConfigurationHash  = NormalizeConfigurationHash(weapon.ConfigurationHash)
+            };
+        }
+
+        private static InventorySlot CreateInventorySlot(in PlayerInventoryItemData data)
+        {
+            if (data.ItemDefinitionId == 0 || data.Quantity == 0)
+            {
+                return default;
+            }
+
+            return new InventorySlot(data.ItemDefinitionId, data.Quantity, ConvertHashToNetworkString(data.ConfigurationHash));
+        }
+
+        private static string NormalizeConfigurationHash(NetworkString<_32> hash)
+        {
+            string rawHash = hash.ToString();
+            return string.IsNullOrEmpty(rawHash) == false ? rawHash : null;
+        }
+
+        private static NetworkString<_32> ConvertHashToNetworkString(string hash)
+        {
+            return string.IsNullOrEmpty(hash) == false ? hash : default;
+        }
+
+        private void ApplySpecialSlotData(PlayerInventoryItemData slotData, ref InventorySlot targetSlot, Action refreshAction)
+        {
+            var newSlot = CreateInventorySlot(slotData);
+            if (targetSlot.Equals(newSlot) == true)
+            {
+                return;
+            }
+
+            targetSlot = newSlot;
+            refreshAction?.Invoke();
         }
 
         internal void ApplySaveData(PlayerCharacterInventorySaveData data)
@@ -404,8 +403,7 @@ namespace TPSBR
 
             for (int i = 0; i < _items.Length; i++)
             {
-                _items.Set(i, default);
-                UpdateWeaponDefinitionMapping(i, default);
+                SetInventorySlot(i, default);
             }
 
             if (data.InventorySlots != null)
@@ -413,93 +411,20 @@ namespace TPSBR
                 int count = Mathf.Min(data.InventorySlots.Length, _items.Length);
                 for (int i = 0; i < count; i++)
                 {
-                    var slotData = data.InventorySlots[i];
-                    if (slotData.ItemDefinitionId == 0 || slotData.Quantity == 0)
+                    var slot = CreateInventorySlot(data.InventorySlots[i]);
+                    if (slot.IsEmpty == true)
                         continue;
 
-                    NetworkString<_32> configurationHash = default;
-                    if (string.IsNullOrEmpty(slotData.ConfigurationHash) == false)
-                    {
-                        configurationHash = slotData.ConfigurationHash;
-                    }
-
-                    var slot = new InventorySlot(slotData.ItemDefinitionId, slotData.Quantity, configurationHash);
-                    _items.Set(i, slot);
-                    UpdateWeaponDefinitionMapping(i, slot);
+                    SetInventorySlot(i, slot);
                 }
             }
 
-            if (data.PickaxeSlot.ItemDefinitionId != 0 && data.PickaxeSlot.Quantity != 0)
-            {
-                NetworkString<_32> pickaxeHash = default;
-                if (string.IsNullOrEmpty(data.PickaxeSlot.ConfigurationHash) == false)
-                {
-                    pickaxeHash = data.PickaxeSlot.ConfigurationHash;
-                }
-
-                _pickaxeSlot = new InventorySlot(data.PickaxeSlot.ItemDefinitionId, data.PickaxeSlot.Quantity, pickaxeHash);
-                RefreshPickaxeSlot();
-            }
-
-            if (data.WoodAxeSlot.ItemDefinitionId != 0 && data.WoodAxeSlot.Quantity != 0)
-            {
-                NetworkString<_32> woodAxeHash = default;
-                if (string.IsNullOrEmpty(data.WoodAxeSlot.ConfigurationHash) == false)
-                {
-                    woodAxeHash = data.WoodAxeSlot.ConfigurationHash;
-                }
-
-                _woodAxeSlot = new InventorySlot(data.WoodAxeSlot.ItemDefinitionId, data.WoodAxeSlot.Quantity, woodAxeHash);
-                RefreshWoodAxeSlot();
-            }
-
-            if (data.FishingPoleSlot.ItemDefinitionId != 0 && data.FishingPoleSlot.Quantity != 0)
-            {
-                NetworkString<_32> fishingPoleHash = default;
-                if (string.IsNullOrEmpty(data.FishingPoleSlot.ConfigurationHash) == false)
-                {
-                    fishingPoleHash = data.FishingPoleSlot.ConfigurationHash;
-                }
-
-                _fishingPoleSlot = new InventorySlot(data.FishingPoleSlot.ItemDefinitionId, data.FishingPoleSlot.Quantity, fishingPoleHash);
-                RefreshFishingPoleSlot();
-            }
-
-            if (data.HeadSlot.ItemDefinitionId != 0 && data.HeadSlot.Quantity != 0)
-            {
-                NetworkString<_32> headHash = default;
-                if (string.IsNullOrEmpty(data.HeadSlot.ConfigurationHash) == false)
-                {
-                    headHash = data.HeadSlot.ConfigurationHash;
-                }
-
-                _headSlot = new InventorySlot(data.HeadSlot.ItemDefinitionId, data.HeadSlot.Quantity, headHash);
-                RefreshHeadSlot();
-            }
-
-            if (data.UpperBodySlot.ItemDefinitionId != 0 && data.UpperBodySlot.Quantity != 0)
-            {
-                NetworkString<_32> upperBodyHash = default;
-                if (string.IsNullOrEmpty(data.UpperBodySlot.ConfigurationHash) == false)
-                {
-                    upperBodyHash = data.UpperBodySlot.ConfigurationHash;
-                }
-
-                _upperBodySlot = new InventorySlot(data.UpperBodySlot.ItemDefinitionId, data.UpperBodySlot.Quantity, upperBodyHash);
-                RefreshUpperBodySlot();
-            }
-
-            if (data.LowerBodySlot.ItemDefinitionId != 0 && data.LowerBodySlot.Quantity != 0)
-            {
-                NetworkString<_32> lowerBodyHash = default;
-                if (string.IsNullOrEmpty(data.LowerBodySlot.ConfigurationHash) == false)
-                {
-                    lowerBodyHash = data.LowerBodySlot.ConfigurationHash;
-                }
-
-                _lowerBodySlot = new InventorySlot(data.LowerBodySlot.ItemDefinitionId, data.LowerBodySlot.Quantity, lowerBodyHash);
-                RefreshLowerBodySlot();
-            }
+            ApplySpecialSlotData(data.PickaxeSlot, ref _pickaxeSlot, RefreshPickaxeSlot);
+            ApplySpecialSlotData(data.WoodAxeSlot, ref _woodAxeSlot, RefreshWoodAxeSlot);
+            ApplySpecialSlotData(data.FishingPoleSlot, ref _fishingPoleSlot, RefreshFishingPoleSlot);
+            ApplySpecialSlotData(data.HeadSlot, ref _headSlot, RefreshHeadSlot);
+            ApplySpecialSlotData(data.UpperBodySlot, ref _upperBodySlot, RefreshUpperBodySlot);
+            ApplySpecialSlotData(data.LowerBodySlot, ref _lowerBodySlot, RefreshLowerBodySlot);
 
             if (data.HotbarSlots != null)
             {
@@ -646,14 +571,12 @@ namespace TPSBR
 
             if (slot.Quantity == quantity)
             {
-                _items.Set(inventoryIndex, default);
-                UpdateWeaponDefinitionMapping(inventoryIndex, default);
+                SetInventorySlot(inventoryIndex, default);
             }
             else
             {
                 slot.Remove(quantity);
-                _items.Set(inventoryIndex, slot);
-                UpdateWeaponDefinitionMapping(inventoryIndex, slot);
+                SetInventorySlot(inventoryIndex, slot);
             }
 
             RefreshItems();
@@ -1884,8 +1807,7 @@ namespace TPSBR
                     continue;
 
                 slot.Add(space);
-                _items.Set(i, slot);
-                UpdateWeaponDefinitionMapping(i, slot);
+                SetInventorySlot(i, slot);
                 remaining -= space;
             }
 
@@ -1897,8 +1819,7 @@ namespace TPSBR
 
                 byte addAmount = (byte)Mathf.Min(maxStackByte, remaining);
                 slot = new InventorySlot(definition.ID, addAmount, configurationHash);
-                _items.Set(i, slot);
-                UpdateWeaponDefinitionMapping(i, slot);
+                SetInventorySlot(i, slot);
                 remaining -= addAmount;
             }
 
@@ -1950,8 +1871,7 @@ namespace TPSBR
                 if (targetSlot.IsEmpty == false && IsPickaxeSlotItem(targetSlot) == false)
                     return;
 
-                _items.Set(toIndex, pickaxeSourceSlot);
-                UpdateWeaponDefinitionMapping(toIndex, pickaxeSourceSlot);
+                SetInventorySlot(toIndex, pickaxeSourceSlot);
 
                 if (targetSlot.IsEmpty == false && IsPickaxeSlotItem(targetSlot) == true)
                 {
@@ -1983,13 +1903,11 @@ namespace TPSBR
 
                 if (previousPickaxe.IsEmpty == true)
                 {
-                    _items.Set(fromIndex, default);
-                    UpdateWeaponDefinitionMapping(fromIndex, default);
+                    SetInventorySlot(fromIndex, default);
                 }
                 else
                 {
-                    _items.Set(fromIndex, previousPickaxe);
-                    UpdateWeaponDefinitionMapping(fromIndex, previousPickaxe);
+                    SetInventorySlot(fromIndex, previousPickaxe);
                 }
 
                 RefreshItems();
@@ -2010,8 +1928,7 @@ namespace TPSBR
                 if (targetSlot.IsEmpty == false && IsWoodAxeSlotItem(targetSlot) == false)
                     return;
 
-                _items.Set(toIndex, woodAxeSourceSlot);
-                UpdateWeaponDefinitionMapping(toIndex, woodAxeSourceSlot);
+                SetInventorySlot(toIndex, woodAxeSourceSlot);
 
                 if (targetSlot.IsEmpty == false && IsWoodAxeSlotItem(targetSlot) == true)
                 {
@@ -2041,8 +1958,7 @@ namespace TPSBR
                 if (targetSlot.IsEmpty == false && IsFishingPoleSlotItem(targetSlot) == false)
                     return;
 
-                _items.Set(toIndex, fishingSourceSlot);
-                UpdateWeaponDefinitionMapping(toIndex, fishingSourceSlot);
+                SetInventorySlot(toIndex, fishingSourceSlot);
 
                 if (targetSlot.IsEmpty == false && IsFishingPoleSlotItem(targetSlot) == true)
                 {
@@ -2074,13 +1990,11 @@ namespace TPSBR
 
                 if (previousWoodAxe.IsEmpty == true)
                 {
-                    _items.Set(fromIndex, default);
-                    UpdateWeaponDefinitionMapping(fromIndex, default);
+                    SetInventorySlot(fromIndex, default);
                 }
                 else
                 {
-                    _items.Set(fromIndex, previousWoodAxe);
-                    UpdateWeaponDefinitionMapping(fromIndex, previousWoodAxe);
+                    SetInventorySlot(fromIndex, previousWoodAxe);
                 }
 
                 RefreshItems();
@@ -2103,13 +2017,11 @@ namespace TPSBR
 
                 if (previousFishingPole.IsEmpty == true)
                 {
-                    _items.Set(fromIndex, default);
-                    UpdateWeaponDefinitionMapping(fromIndex, default);
+                    SetInventorySlot(fromIndex, default);
                 }
                 else
                 {
-                    _items.Set(fromIndex, previousFishingPole);
-                    UpdateWeaponDefinitionMapping(fromIndex, previousFishingPole);
+                    SetInventorySlot(fromIndex, previousFishingPole);
                 }
 
                 RefreshItems();
@@ -2127,8 +2039,7 @@ namespace TPSBR
                 var targetSlot = _items[toIndex];
                 if (targetSlot.IsEmpty == false && IsHeadSlotItem(targetSlot) == false)
                     return;
-                _items.Set(toIndex, headSourceSlot);
-                UpdateWeaponDefinitionMapping(toIndex, headSourceSlot);
+                SetInventorySlot(toIndex, headSourceSlot);
 
                 if (targetSlot.IsEmpty == false && IsHeadSlotItem(targetSlot) == true)
                 {
@@ -2157,13 +2068,11 @@ namespace TPSBR
 
                 if (previousHead.IsEmpty == true)
                 {
-                    _items.Set(fromIndex, default);
-                    UpdateWeaponDefinitionMapping(fromIndex, default);
+                    SetInventorySlot(fromIndex, default);
                 }
                 else
                 {
-                    _items.Set(fromIndex, previousHead);
-                    UpdateWeaponDefinitionMapping(fromIndex, previousHead);
+                    SetInventorySlot(fromIndex, previousHead);
                 }
 
                 RefreshItems();
@@ -2180,8 +2089,7 @@ namespace TPSBR
                 var targetSlot = _items[toIndex];
                 if (targetSlot.IsEmpty == false && IsUpperBodySlotItem(targetSlot) == false)
                     return;
-                _items.Set(toIndex, upperBodySourceSlot);
-                UpdateWeaponDefinitionMapping(toIndex, upperBodySourceSlot);
+                SetInventorySlot(toIndex, upperBodySourceSlot);
 
                 if (targetSlot.IsEmpty == false && IsUpperBodySlotItem(targetSlot) == true)
                 {
@@ -2210,13 +2118,11 @@ namespace TPSBR
 
                 if (previousUpperBody.IsEmpty == true)
                 {
-                    _items.Set(fromIndex, default);
-                    UpdateWeaponDefinitionMapping(fromIndex, default);
+                    SetInventorySlot(fromIndex, default);
                 }
                 else
                 {
-                    _items.Set(fromIndex, previousUpperBody);
-                    UpdateWeaponDefinitionMapping(fromIndex, previousUpperBody);
+                    SetInventorySlot(fromIndex, previousUpperBody);
                 }
 
                 RefreshItems();
@@ -2233,8 +2139,7 @@ namespace TPSBR
                 var targetSlot = _items[toIndex];
                 if (targetSlot.IsEmpty == false && IsLowerBodySlotItem(targetSlot) == false)
                     return;
-                _items.Set(toIndex, lowerBodySourceSlot);
-                UpdateWeaponDefinitionMapping(toIndex, lowerBodySourceSlot);
+                SetInventorySlot(toIndex, lowerBodySourceSlot);
 
                 if (targetSlot.IsEmpty == false && IsLowerBodySlotItem(targetSlot) == true)
                 {
@@ -2263,13 +2168,11 @@ namespace TPSBR
 
                 if (previousLowerBody.IsEmpty == true)
                 {
-                    _items.Set(fromIndex, default);
-                    UpdateWeaponDefinitionMapping(fromIndex, default);
+                    SetInventorySlot(fromIndex, default);
                 }
                 else
                 {
-                    _items.Set(fromIndex, previousLowerBody);
-                    UpdateWeaponDefinitionMapping(fromIndex, previousLowerBody);
+                    SetInventorySlot(fromIndex, previousLowerBody);
                 }
 
                 RefreshItems();
@@ -2290,8 +2193,8 @@ namespace TPSBR
                     SuppressFeedForSlot(toIndex);
                 }
 
-                _items.Set(toIndex, generalSourceSlot);
-                _items.Set(fromIndex, default);
+                SetInventorySlot(toIndex, generalSourceSlot);
+                SetInventorySlot(fromIndex, default);
                 RefreshItems();
                 return;
             }
@@ -2320,18 +2223,15 @@ namespace TPSBR
                         toSlot.Add(space);
                         generalSourceSlot.Remove(space);
 
-                        _items.Set(toIndex, toSlot);
-                        UpdateWeaponDefinitionMapping(toIndex, toSlot);
+                        SetInventorySlot(toIndex, toSlot);
 
                         if (generalSourceSlot.IsEmpty == true)
                         {
-                            _items.Set(fromIndex, default);
-                            UpdateWeaponDefinitionMapping(fromIndex, default);
+                            SetInventorySlot(fromIndex, default);
                         }
                         else
                         {
-                            _items.Set(fromIndex, generalSourceSlot);
-                            UpdateWeaponDefinitionMapping(fromIndex, generalSourceSlot);
+                            SetInventorySlot(fromIndex, generalSourceSlot);
                         }
 
                         RefreshItems();
@@ -2349,11 +2249,8 @@ namespace TPSBR
                 SuppressFeedForSlot(toIndex);
             }
 
-            _items.Set(toIndex, generalSourceSlot);
-            UpdateWeaponDefinitionMapping(toIndex, generalSourceSlot);
-
-            _items.Set(fromIndex, toSlot);
-            UpdateWeaponDefinitionMapping(fromIndex, toSlot);
+            SetInventorySlot(toIndex, generalSourceSlot);
+            SetInventorySlot(fromIndex, toSlot);
             RefreshItems();
         }
 
@@ -2464,8 +2361,7 @@ namespace TPSBR
             }
 
             var inventorySlot = new InventorySlot(definition.ID, 1, weapon.ConfigurationHash);
-            _items.Set(inventoryIndex, inventorySlot);
-            UpdateWeaponDefinitionMapping(inventoryIndex, inventorySlot);
+            SetInventorySlot(inventoryIndex, inventorySlot);
             RefreshItems();
 
             RemoveWeapon(slot);
@@ -2806,14 +2702,12 @@ namespace TPSBR
 
             if (inventorySlot.Quantity <= quantity)
             {
-                _items.Set(index, default);
-                UpdateWeaponDefinitionMapping(index, default);
+                SetInventorySlot(index, default);
             }
             else
             {
                 inventorySlot.Remove(quantity);
-                _items.Set(index, inventorySlot);
-                UpdateWeaponDefinitionMapping(index, inventorySlot);
+                SetInventorySlot(index, inventorySlot);
             }
 
             RefreshItems();
@@ -2833,8 +2727,7 @@ namespace TPSBR
 
             var slot = new InventorySlot(definition.ID, 1, configurationHash);
             SuppressFeedForSlot(index);
-            _items.Set(index, slot);
-            UpdateWeaponDefinitionMapping(index, slot);
+            SetInventorySlot(index, slot);
             RefreshItems();
         }
 
@@ -2855,8 +2748,7 @@ namespace TPSBR
 
             var slot = new InventorySlot(definition.ID, 1, weapon.ConfigurationHash);
             SuppressFeedForSlot(emptySlot);
-            _items.Set(emptySlot, slot);
-            UpdateWeaponDefinitionMapping(emptySlot, slot);
+            SetInventorySlot(emptySlot, slot);
             RefreshItems();
 
             RemoveWeapon(sourceSlot);
@@ -2866,6 +2758,23 @@ namespace TPSBR
             }
 
             return true;
+        }
+
+        private void SetInventorySlot(int index, InventorySlot slot)
+        {
+            if (index < 0 || index >= _items.Length)
+            {
+                return;
+            }
+
+            var currentSlot = _items[index];
+            if (currentSlot.Equals(slot) == true)
+            {
+                return;
+            }
+
+            _items.Set(index, slot);
+            UpdateWeaponDefinitionMapping(index, slot);
         }
 
         private void RefreshItems()
@@ -3289,8 +3198,7 @@ namespace TPSBR
             return false;
 
         var slot = new InventorySlot(definition.ID, 1, default);
-        _items.Set(emptySlot, slot);
-        UpdateWeaponDefinitionMapping(emptySlot, slot);
+        SetInventorySlot(emptySlot, slot);
         RefreshItems();
 
         return true;
@@ -3941,8 +3849,7 @@ namespace TPSBR
                 {
                     var slot = _items[pickaxeIndex];
                     _pickaxeSlot = slot;
-                    _items.Set(pickaxeIndex, default);
-                    UpdateWeaponDefinitionMapping(pickaxeIndex, default);
+                    SetInventorySlot(pickaxeIndex, default);
                     RefreshPickaxeSlot();
                     RefreshItems();
                     EnsurePickaxeInstance();
@@ -3992,8 +3899,7 @@ namespace TPSBR
                 {
                     var slot = _items[woodAxeIndex];
                     _woodAxeSlot = slot;
-                    _items.Set(woodAxeIndex, default);
-                    UpdateWeaponDefinitionMapping(woodAxeIndex, default);
+                    SetInventorySlot(woodAxeIndex, default);
                     RefreshWoodAxeSlot();
                     RefreshItems();
                     EnsureWoodAxeInstance();
