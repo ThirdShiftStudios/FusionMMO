@@ -50,6 +50,19 @@ namespace TPSBR
             return agent?.Inventory?.GetPickaxeSpeed() ?? 0;
         }
 
+        protected override bool TryStartAnimatedInteraction(in InteractionContext context)
+        {
+            CharacterAnimationController animationController = context.AnimationController;
+
+            if (animationController == null)
+                return false;
+
+            float cancelMoveDistance = context.Interactions != null ? context.Interactions.RuneCancelMoveDistance : 0f;
+            float cancelInputThreshold = context.Interactions != null ? context.Interactions.RuneCancelInputThreshold : 0f;
+
+            return animationController.TryStartRuneInteraction(this, cancelMoveDistance, cancelInputThreshold);
+        }
+
         protected override void OnInteractionStarted(Agent agent)
         {
             base.OnInteractionStarted(agent);

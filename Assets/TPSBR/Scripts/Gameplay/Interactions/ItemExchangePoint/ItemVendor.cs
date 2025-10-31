@@ -39,15 +39,18 @@ namespace TPSBR
             }
         }
 
-        public void Interact(Agent agent)
+        protected override bool HandleInteraction(Agent agent, out string message)
         {
+            message = string.Empty;
+
             if (agent == null)
-                return;
+                return false;
 
             if (HasStateAuthority == false)
-                return;
+                return false;
 
             RPC_RequestOpen(agent.Object.InputAuthority, agent.Object.Id);
+            return true;
         }
 
         [Rpc(RpcSources.StateAuthority, RpcTargets.All, Channel = RpcChannel.Reliable)]
