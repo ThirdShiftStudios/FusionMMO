@@ -88,6 +88,7 @@ namespace TPSBR
         private NetworkArray<ushort> _experience { get; }
 
         public event Action<ProfessionIndex, ProfessionSnapshot, ProfessionSnapshot> ProfessionChanged;
+        public event Action<ProfessionIndex, int, ProfessionSnapshot, ProfessionSnapshot> ExperienceGained;
 
         public ProfessionSnapshot Mining      => GetSnapshot(ProfessionIndex.Mining);
         public ProfessionSnapshot Woodcutting => GetSnapshot(ProfessionIndex.Woodcutting);
@@ -335,7 +336,16 @@ namespace TPSBR
             _cachedLevels[index] = currentLevel;
             _cachedExperience[index] = currentExperience;
 
-            OnProfessionChanged((ProfessionIndex)index, CreateSnapshot(startingLevel, startingExperience), CreateSnapshot(currentLevel, currentExperience));
+            var previousSnapshot = CreateSnapshot(startingLevel, startingExperience);
+            var newSnapshot      = CreateSnapshot(currentLevel, currentExperience);
+
+            OnProfessionChanged((ProfessionIndex)index, previousSnapshot, newSnapshot);
+
+            int gainedExperience = CalculateTotalExperience(currentLevel, currentExperience) - CalculateTotalExperience(startingLevel, startingExperience);
+            if (gainedExperience > 0)
+            {
+                ExperienceGained?.Invoke((ProfessionIndex)index, gainedExperience, previousSnapshot, newSnapshot);
+            }
         }
 
         internal PlayerProfessionSaveData[] CreateSaveData()
@@ -488,6 +498,30 @@ namespace TPSBR
             }
 
             return BaseExperienceRequirement + (level - MinLevel) * ExperienceIncrementPerLevel;
+        }
+
+        private static int CalculateTotalExperience(int level, int experience)
+        {
+            level = Mathf.Clamp(level, 0, MaxLevel);
+
+            if (level <= 0)
+            {
+                return Mathf.Clamp(experience, 0, GetExperienceRequiredForNextLevel(MinLevel));
+            }
+
+            int totalExperience = 0;
+
+            for (int currentLevel = MinLevel; currentLevel < level; ++currentLevel)
+            {
+                totalExperience += Mathf.Max(0, GetExperienceRequiredForNextLevel(currentLevel));
+            }
+
+            if (level < MaxLevel)
+            {
+                totalExperience += Mathf.Clamp(experience, 0, GetExperienceRequiredForNextLevel(level));
+            }
+
+            return totalExperience;
         }
 
         private ProfessionSnapshot CreateSnapshot(int level, int experience)
