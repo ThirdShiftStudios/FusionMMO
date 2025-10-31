@@ -799,6 +799,8 @@ namespace TPSBR.UI
         {
             if (_boundAgent == null)
                 return;
+            if(_characterDetails == false)
+                return;
 
             _characterDetails.UpdateCharacterDetails(Global.PlayerService.PlayerData);
             _characterDetails.UpdateStats(_boundAgent.Stats);
