@@ -33,6 +33,22 @@ namespace TPSBR
 
                 [SerializeField]
                 private Color _directionColor = Color.magenta;
+
+                public bool DrawWaypointPoints => _drawWaypointPoints;
+
+                public bool DrawPathConnections => _drawPathConnections;
+
+                public bool DrawCameraDirection => _drawCameraDirection;
+
+                public float WaypointRadius => _waypointRadius;
+
+                public float DirectionLength => _directionLength;
+
+                public Color WaypointColor => _waypointColor;
+
+                public Color PathColor => _pathColor;
+
+                public Color DirectionColor => _directionColor;
 #endif
 
                 public IReadOnlyList<CinematicWaypoint> Waypoints => _waypoints;
