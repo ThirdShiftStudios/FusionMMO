@@ -12,6 +12,7 @@ namespace TPSBR.UI
         [SerializeField]
         private RectTransform _dragLayer;
 
+        [SerializeField]
         private UIListItem[] _slots;
         private Inventory _inventory;
         private UIListItem _dragSource;
@@ -30,11 +31,15 @@ namespace TPSBR.UI
         {
             base.OnInitialize();
 
-            _slots = GetComponentsInChildren<UIListItem>(true);
-
-            for (int i = 0; i < _slots.Length; i++)
+            if (_slots != null && _slots.Length > 0)
             {
-                _slots[i].InitializeSlot(this, i);
+                for (int i = 0; i < _slots.Length; i++)
+                {
+                    if (_slots[i] == null)
+                        continue;
+
+                    _slots[i].InitializeSlot(this, i);
+                }
             }
 
             UpdateSelection(true);
@@ -63,16 +68,22 @@ namespace TPSBR.UI
             {
                 _inventory.HotbarSlotChanged += OnHotbarSlotChanged;
 
-                for (int i = 0; i < _slots.Length; i++)
+                if (_slots != null && _slots.Length > 0)
                 {
-                    var weapon = _inventory.GetWeapon(i + 1);
-                    UpdateSlot(i, weapon);
+                    for (int i = 0; i < _slots.Length; i++)
+                    {
+                        var weapon = _inventory.GetWeapon(i + 1);
+                        UpdateSlot(i, weapon);
+                    }
                 }
             }
-            else
+            else if (_slots != null && _slots.Length > 0)
             {
                 for (int i = 0; i < _slots.Length; i++)
                 {
+                    if (_slots[i] == null)
+                        continue;
+
                     _slots[i].Clear();
                 }
             }
@@ -232,9 +243,13 @@ namespace TPSBR.UI
             if (_slots == null || index < 0 || index >= _slots.Length)
                 return;
 
+            var slot = _slots[index];
+            if (slot == null)
+                return;
+
             if (weapon == null)
             {
-                _slots[index].Clear();
+                slot.Clear();
                 if (_selectedSlotIndex == index)
                 {
                     _selectedSlotIndex = -1;
@@ -244,7 +259,7 @@ namespace TPSBR.UI
                 return;
             }
 
-            _slots[index].SetItem(weapon.Icon, 1);
+            slot.SetItem(weapon.Icon, 1);
 
             if (_selectedSlotIndex == index)
             {
@@ -276,7 +291,11 @@ namespace TPSBR.UI
             for (int i = 0; i < _slots.Length; i++)
             {
                 bool isSelected = i == selectedSlot;
-                _slots[i].SetSelected(isSelected, _selectionColor);
+                var slot = _slots[i];
+                if (slot == null)
+                    continue;
+
+                slot.SetSelected(isSelected, _selectionColor);
             }
 
             UpdateSelectionHighlight();
@@ -290,7 +309,11 @@ namespace TPSBR.UI
             for (int i = 0; i < _slots.Length; i++)
             {
                 bool isSelected = i == _selectedSlotIndex;
-                _slots[i].SetSelectionHighlight(isSelected, _selectedSlotColor);
+                var slot = _slots[i];
+                if (slot == null)
+                    continue;
+
+                slot.SetSelectionHighlight(isSelected, _selectedSlotColor);
             }
         }
 
