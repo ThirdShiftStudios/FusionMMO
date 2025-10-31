@@ -5,9 +5,11 @@ namespace TPSBR.UI
 {
     public sealed class UIArcaneConduitView : UIItemContextView
     {
-        private readonly List<ArcaneConduit.AbilityOption> _abilityOptions = new List<ArcaneConduit.AbilityOption>();
-
-        public event Action<int> AbilityPurchaseRequested;
+        public event Action<int> AbilityPurchaseRequested
+        {
+            add => AbilityUnlockRequested += value;
+            remove => AbilityUnlockRequested -= value;
+        }
 
         internal void SetConduit(ArcaneConduit conduit)
         {
@@ -16,35 +18,24 @@ namespace TPSBR.UI
 
         internal void SetAbilityOptions(IReadOnlyList<ArcaneConduit.AbilityOption> options)
         {
-            _abilityOptions.Clear();
-
-            if (options != null)
-            {
-                _abilityOptions.AddRange(options);
-            }
-
-            // Concrete UI updates are handled within the Unity editor setup.
+            base.SetAbilityOptions(options);
         }
 
         internal void ClearAbilityOptions()
         {
-            _abilityOptions.Clear();
-            // Concrete UI updates are handled within the Unity editor setup.
+            base.ClearAbilityOptions();
         }
 
-        public IReadOnlyList<ArcaneConduit.AbilityOption> AbilityOptions => _abilityOptions;
+        public IReadOnlyList<ArcaneConduit.AbilityOption> AbilityOptions => base.GetAbilityOptions();
 
         public void RequestAbilityPurchase(int optionIndex)
         {
-            if (optionIndex < 0 || optionIndex >= _abilityOptions.Count)
-                return;
-
-            AbilityPurchaseRequested?.Invoke(_abilityOptions[optionIndex].Index);
+            base.RequestAbilityUnlockByOptionIndex(optionIndex);
         }
 
         public void RequestAbilityPurchaseByAbilityIndex(int abilityIndex)
         {
-            AbilityPurchaseRequested?.Invoke(abilityIndex);
+            base.RequestAbilityUnlockByAbilityIndex(abilityIndex);
         }
     }
 }

@@ -237,7 +237,55 @@ namespace TPSBR
             PopulateStatBonuses(random, statBonuses);
             string encodedStats = EncodeStatBonuses(statBonuses);
 
-            return $"{HASH_PREFIX}:{encodedSeed}:{encodedStats}";
+            List<int> defaultAbilityIndexes = null;
+            var definition = Definition as WeaponDefinition;
+
+            if (definition != null)
+            {
+                IReadOnlyList<AbilityDefinition> availableAbilities = definition.AvailableAbilities;
+
+                if (availableAbilities != null && availableAbilities.Count > 0)
+                {
+                    var selectableIndexes = new List<int>();
+
+                    for (int i = 0; i < availableAbilities.Count; ++i)
+                    {
+                        if (availableAbilities[i] is StaffAbilityDefinition)
+                        {
+                            selectableIndexes.Add(i);
+                        }
+                    }
+
+                    if (selectableIndexes.Count > 0)
+                    {
+                        int randomIndex = random.Next(selectableIndexes.Count);
+                        defaultAbilityIndexes = new List<int>(1) { selectableIndexes[randomIndex] };
+                    }
+                }
+            }
+
+            string baseHash = $"{HASH_PREFIX}:{encodedSeed}:{encodedStats}";
+
+            if (string.IsNullOrEmpty(encodedStats) == true)
+            {
+                baseHash = $"{HASH_PREFIX}:{encodedSeed}:";
+            }
+
+            string abilitySegment = EncodeAbilityIndexes(defaultAbilityIndexes);
+
+            if (string.IsNullOrEmpty(abilitySegment) == false)
+            {
+                string candidateHash = string.IsNullOrEmpty(encodedStats)
+                    ? $"{HASH_PREFIX}:{encodedSeed}::{abilitySegment}"
+                    : $"{HASH_PREFIX}:{encodedSeed}:{encodedStats}:{abilitySegment}";
+
+                if (candidateHash.Length <= 32)
+                {
+                    return candidateHash;
+                }
+            }
+
+            return baseHash;
         }
 
         protected override void OnConfigurationHashApplied(string configurationHash)
