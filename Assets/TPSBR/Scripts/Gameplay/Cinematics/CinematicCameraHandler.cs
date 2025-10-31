@@ -69,6 +69,7 @@ namespace TPSBR
         private Quaternion _currentRotation = Quaternion.identity;
         private bool _hasValidTransform;
         private Transform _sceneCameraTransform;
+        private bool _previousOverrideIsActive;
 
         private void Awake()
         {
@@ -78,6 +79,13 @@ namespace TPSBR
             }
 
             Instance = this;
+
+            _previousOverrideIsActive = OverrideIsActive;
+
+            if (OverrideIsActive == true)
+            {
+                HandleOverrideActivation();
+            }
         }
 
         private void OnDestroy()
@@ -90,6 +98,20 @@ namespace TPSBR
 
         private void Update()
         {
+            if (_previousOverrideIsActive != OverrideIsActive)
+            {
+                _previousOverrideIsActive = OverrideIsActive;
+
+                if (OverrideIsActive == true)
+                {
+                    HandleOverrideActivation();
+                }
+                else
+                {
+                    HandleOverrideDeactivation();
+                }
+            }
+
             if (IsActive == false)
                 return;
 
@@ -286,6 +308,33 @@ namespace TPSBR
 
             cameraTransform.SetPositionAndRotation(position, rotation);
             return true;
+        }
+
+        private void HandleOverrideActivation()
+        {
+            if (_currentPath == null)
+            {
+                if (_fallbackWaypointPath != null)
+                {
+                    _currentPath = _fallbackWaypointPath;
+                }
+                else
+                {
+                    EnsureCurrentPath();
+                }
+            }
+
+            ResetTraversal();
+            TryInitializeTraversal();
+        }
+
+        private void HandleOverrideDeactivation()
+        {
+            if (_isActive == false)
+            {
+                ResetTraversal();
+                _currentPath = null;
+            }
         }
     }
 }
