@@ -22,14 +22,17 @@ namespace TPSBR
 	{
 		// PRIVATE MEMBERS
 
-		[SerializeField]
-		private MoveState _move;
-		[SerializeField] 
-		private MoveStateCategories[] _moveStateCategories;
-		
-		private KCC _kcc;
-		private Agent _agent;
-		private WeaponSize _lastWeaponSize = WeaponSize.Unknown;
+                [SerializeField]
+                private MoveState _move;
+                [SerializeField]
+                private MoveState _swim;
+                [SerializeField]
+                private MoveStateCategories[] _moveStateCategories;
+
+                private KCC _kcc;
+                private Agent _agent;
+                private WeaponSize _lastWeaponSize = WeaponSize.Unknown;
+                private bool _isSwimming;
 
 		// AnimationState INTERFACE
 
@@ -38,41 +41,110 @@ namespace TPSBR
 			_kcc = Controller.GetComponentNoAlloc<KCC>();
 			_agent = Controller.GetComponentNoAlloc<Agent>();
 
-			for (int i = 0; i < _moveStateCategories.Length; i++)
-			{
-				_moveStateCategories[i].Move.SetAnimationCategory(AnimationCategory.UseFirstSet);
-			}
-		}
+                        if (_move != null)
+                        {
+                                _move.SetAnimationCategory(AnimationCategory.UseFirstSet);
+                        }
 
-		protected override void OnFixedUpdate()
-		{
-			KCCData kccData = _kcc.FixedData;
-			WeaponSize currentWeaponSize = _agent.Inventory.CurrentWeaponSize;
-			if(_lastWeaponSize == currentWeaponSize)
-				return;
-			_lastWeaponSize = currentWeaponSize;
+                        if (_swim != null)
+                        {
+                                _swim.SetAnimationCategory(AnimationCategory.UseFirstSet);
+                        }
 
-            // Activate the current weapon
-            for (int i = 0; i < _moveStateCategories.Length; i++)
-            {
-                _moveStateCategories[i].Move.Deactivate(0.0f);
-            }
+                        if (_moveStateCategories != null)
+                        {
+                                for (int i = 0; i < _moveStateCategories.Length; i++)
+                                {
+                                        _moveStateCategories[i].Move.SetAnimationCategory(AnimationCategory.UseFirstSet);
+                                }
+                        }
+                }
 
-            bool found = false;
-			for (int i = 0; i < _moveStateCategories.Length; i++)
-			{
-                if (_moveStateCategories[i].WeaponSize == currentWeaponSize)
-				{
-					_moveStateCategories[i].Move.Activate(0.0f);
-					found = true;
-					continue;
-				}
-			}
+                protected override void OnFixedUpdate()
+                {
+                        KCCData kccData = _kcc.FixedData;
+                        bool isSwimming = kccData.IsSwimming;
 
-			if (found == false)
-			{
-				Debug.LogError($"[LocomotionLayer]: Could not find MoveState for WeaponSize == {currentWeaponSize}");
-			}
-		}
-	}
+                        if (isSwimming == true)
+                        {
+                                if (_isSwimming == false)
+                                {
+                                        _isSwimming = true;
+
+                                        DeactivateWeaponMoveStates(0.0f);
+
+                                        if (_swim != null)
+                                        {
+                                                _swim.Activate(0.0f);
+                                        }
+                                }
+
+                                return;
+                        }
+
+                        if (_isSwimming == true)
+                        {
+                                _isSwimming = false;
+
+                                if (_swim != null)
+                                {
+                                        _swim.Deactivate(0.0f);
+                                }
+
+                                _lastWeaponSize = WeaponSize.Unknown;
+                        }
+
+                        WeaponSize currentWeaponSize = _agent.Inventory.CurrentWeaponSize;
+                        if (_lastWeaponSize == currentWeaponSize)
+                        {
+                                return;
+                        }
+
+                        _lastWeaponSize = currentWeaponSize;
+
+                        DeactivateWeaponMoveStates(0.0f);
+
+                        bool found = false;
+
+                        if (_moveStateCategories != null)
+                        {
+                                for (int i = 0; i < _moveStateCategories.Length; i++)
+                                {
+                                        if (_moveStateCategories[i].WeaponSize == currentWeaponSize)
+                                        {
+                                                _moveStateCategories[i].Move.Activate(0.0f);
+                                                found = true;
+                                                continue;
+                                        }
+                                }
+                        }
+
+                        if (found == false)
+                        {
+                                Debug.LogError($"[LocomotionLayer]: Could not find MoveState for WeaponSize == {currentWeaponSize}");
+                        }
+                }
+
+                private void DeactivateWeaponMoveStates(float blendTime)
+                {
+                        if (_move != null)
+                        {
+                                _move.Deactivate(blendTime);
+                        }
+
+                        if (_moveStateCategories == null)
+                        {
+                                return;
+                        }
+
+                        for (int i = 0; i < _moveStateCategories.Length; i++)
+                        {
+                                MoveState move = _moveStateCategories[i].Move;
+                                if (move != null)
+                                {
+                                        move.Deactivate(blendTime);
+                                }
+                        }
+                }
+        }
 }
