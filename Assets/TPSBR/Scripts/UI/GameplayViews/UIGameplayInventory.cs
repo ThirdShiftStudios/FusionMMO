@@ -30,6 +30,11 @@ namespace TPSBR.UI
         [SerializeField] private UIListItem _headSlot;
         [SerializeField] private UIListItem _upperBodySlot;
         [SerializeField] private UIListItem _lowerBodySlot;
+        [SerializeField] private UIListItem _bagSlotOne;
+        [SerializeField] private UIListItem _bagSlotTwo;
+        [SerializeField] private UIListItem _bagSlotThree;
+        [SerializeField] private UIListItem _bagSlotFour;
+        [SerializeField] private UIListItem _bagSlotFive;
         [SerializeField] private TextMeshProUGUI _goldLabel;
 
         private bool _menuVisible;
@@ -84,7 +89,19 @@ namespace TPSBR.UI
             if (_inventoryList != null && _inventoryPresenter == null)
             {
                 _inventoryPresenter = new InventoryListPresenter(this);
-                _inventoryPresenter.Initialize(_inventoryList, _inventoryDragLayer, _pickaxeSlot, _woodAxeSlot, _headSlot, _upperBodySlot, _lowerBodySlot);
+                _inventoryPresenter.Initialize(
+                    _inventoryList,
+                    _inventoryDragLayer,
+                    _pickaxeSlot,
+                    _woodAxeSlot,
+                    _headSlot,
+                    _upperBodySlot,
+                    _lowerBodySlot,
+                    _bagSlotOne,
+                    _bagSlotTwo,
+                    _bagSlotThree,
+                    _bagSlotFour,
+                    _bagSlotFive);
                 _inventoryPresenter.SetSelectionColor(_selectedInventorySlotColor);
                 _inventoryPresenter.ItemSelected += OnInventoryItemSelected;
             }
@@ -282,6 +299,11 @@ namespace TPSBR.UI
             private UIListItem _headSlotOverride;
             private UIListItem _upperBodySlotOverride;
             private UIListItem _lowerBodySlotOverride;
+            private UIListItem[] _bagSlotOverrides;
+            private List<UIListItem> _generalSlots;
+            private UIListItem _generalSlotTemplate;
+            private Transform _generalSlotParent;
+            private int _visibleGeneralSlotCount;
 
             internal event Action<IInventoryItemDetails, NetworkString<_32>> ItemSelected;
 
@@ -292,7 +314,19 @@ namespace TPSBR.UI
                 _view = view;
             }
 
-            internal void Initialize(UIList list, RectTransform dragLayer, UIListItem pickaxeSlot, UIListItem woodAxeSlot, UIListItem headSlot, UIListItem upperBodySlot, UIListItem lowerBodySlot)
+            internal void Initialize(
+                UIList list,
+                RectTransform dragLayer,
+                UIListItem pickaxeSlot,
+                UIListItem woodAxeSlot,
+                UIListItem headSlot,
+                UIListItem upperBodySlot,
+                UIListItem lowerBodySlot,
+                UIListItem bagSlotOne,
+                UIListItem bagSlotTwo,
+                UIListItem bagSlotThree,
+                UIListItem bagSlotFour,
+                UIListItem bagSlotFive)
             {
                 _list = list;
                 _dragLayer = dragLayer;
@@ -301,18 +335,20 @@ namespace TPSBR.UI
                 _headSlotOverride = headSlot;
                 _upperBodySlotOverride = upperBodySlot;
                 _lowerBodySlotOverride = lowerBodySlot;
+                _bagSlotOverrides = new[] { bagSlotOne, bagSlotTwo, bagSlotThree, bagSlotFour, bagSlotFive };
 
                 if (_list == null)
                 {
+                    _generalSlots = new List<UIListItem>();
                     _slots = Array.Empty<UIListItem>();
                     _slotIndices = Array.Empty<int>();
                     _slotLookup = new Dictionary<int, UIListItem>();
+                    _visibleGeneralSlotCount = 0;
                     UpdateSelectionHighlight();
                     return;
                 }
 
                 var discoveredSlots = _list.GetComponentsInChildren<UIListItem>(true);
-                var generalSlots = new List<UIListItem>(discoveredSlots.Length);
                 var specialSlots = new HashSet<UIListItem>();
 
                 AddSpecialSlot(_pickaxeSlotOverride, specialSlots);
@@ -321,6 +357,15 @@ namespace TPSBR.UI
                 AddSpecialSlot(_upperBodySlotOverride, specialSlots);
                 AddSpecialSlot(_lowerBodySlotOverride, specialSlots);
 
+                if (_bagSlotOverrides != null)
+                {
+                    for (int i = 0; i < _bagSlotOverrides.Length; i++)
+                    {
+                        AddSpecialSlot(_bagSlotOverrides[i], specialSlots);
+                    }
+                }
+
+                _generalSlots = new List<UIListItem>(discoveredSlots.Length);
                 for (int i = 0; i < discoveredSlots.Length; i++)
                 {
                     var slot = discoveredSlots[i];
@@ -330,95 +375,24 @@ namespace TPSBR.UI
                     if (specialSlots.Contains(slot) == true)
                         continue;
 
-                    generalSlots.Add(slot);
+                    _generalSlots.Add(slot);
                 }
 
-                var orderedSlots = new List<UIListItem>(generalSlots.Count + specialSlots.Count);
-                var indices = new List<int>(orderedSlots.Capacity);
-                _slotLookup = new Dictionary<int, UIListItem>(orderedSlots.Capacity);
+                _visibleGeneralSlotCount = _generalSlots.Count;
 
-                for (int i = 0; i < generalSlots.Count; i++)
+                _generalSlotTemplate = null;
+                for (int i = 0; i < _generalSlots.Count; i++)
                 {
-                    var slot = generalSlots[i];
-                    slot.InitializeSlot(this, i);
-                    orderedSlots.Add(slot);
-                    indices.Add(i);
-                    _slotLookup[i] = slot;
+                    if (_generalSlots[i] != null)
+                    {
+                        _generalSlotTemplate = _generalSlots[i];
+                        break;
+                    }
                 }
 
-                if (_pickaxeSlotOverride != null)
-                {
-                    _pickaxeSlotOverride.InitializeSlot(this, Inventory.PICKAXE_SLOT_INDEX);
-                    orderedSlots.Add(_pickaxeSlotOverride);
-                    indices.Add(Inventory.PICKAXE_SLOT_INDEX);
-                    _slotLookup[Inventory.PICKAXE_SLOT_INDEX] = _pickaxeSlotOverride;
-                }
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                else
-                {
-                    Debug.LogWarning($"{nameof(UIList)} inventory list is missing a pickaxe inventory slot.");
-                }
-#endif
+                _generalSlotParent = _generalSlotTemplate != null ? _generalSlotTemplate.transform.parent : _list.transform;
 
-                if (_woodAxeSlotOverride != null)
-                {
-                    _woodAxeSlotOverride.InitializeSlot(this, Inventory.WOOD_AXE_SLOT_INDEX);
-                    orderedSlots.Add(_woodAxeSlotOverride);
-                    indices.Add(Inventory.WOOD_AXE_SLOT_INDEX);
-                    _slotLookup[Inventory.WOOD_AXE_SLOT_INDEX] = _woodAxeSlotOverride;
-                }
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                else
-                {
-                    Debug.LogWarning($"{nameof(UIList)} inventory list is missing a wood axe inventory slot.");
-                }
-#endif
-
-                if (_headSlotOverride != null)
-                {
-                    _headSlotOverride.InitializeSlot(this, Inventory.HEAD_SLOT_INDEX);
-                    orderedSlots.Add(_headSlotOverride);
-                    indices.Add(Inventory.HEAD_SLOT_INDEX);
-                    _slotLookup[Inventory.HEAD_SLOT_INDEX] = _headSlotOverride;
-                }
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                else
-                {
-                    Debug.LogWarning($"{nameof(UIList)} inventory list is missing a head equipment inventory slot.");
-                }
-#endif
-
-                if (_upperBodySlotOverride != null)
-                {
-                    _upperBodySlotOverride.InitializeSlot(this, Inventory.UPPER_BODY_SLOT_INDEX);
-                    orderedSlots.Add(_upperBodySlotOverride);
-                    indices.Add(Inventory.UPPER_BODY_SLOT_INDEX);
-                    _slotLookup[Inventory.UPPER_BODY_SLOT_INDEX] = _upperBodySlotOverride;
-                }
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                else
-                {
-                    Debug.LogWarning($"{nameof(UIList)} inventory list is missing an upper body inventory slot.");
-                }
-#endif
-
-                if (_lowerBodySlotOverride != null)
-                {
-                    _lowerBodySlotOverride.InitializeSlot(this, Inventory.LOWER_BODY_SLOT_INDEX);
-                    orderedSlots.Add(_lowerBodySlotOverride);
-                    indices.Add(Inventory.LOWER_BODY_SLOT_INDEX);
-                    _slotLookup[Inventory.LOWER_BODY_SLOT_INDEX] = _lowerBodySlotOverride;
-                }
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                else
-                {
-                    Debug.LogWarning($"{nameof(UIList)} inventory list is missing a lower body inventory slot.");
-                }
-#endif
-
-                _slots = orderedSlots.ToArray();
-                _slotIndices = indices.ToArray();
-
+                RebuildSlotCache();
                 UpdateSelectionHighlight();
             }
 
@@ -430,12 +404,16 @@ namespace TPSBR.UI
                 if (_inventory != null)
                 {
                     _inventory.ItemSlotChanged -= OnItemSlotChanged;
+                    _inventory.GeneralInventorySizeChanged -= OnGeneralInventorySizeChanged;
                 }
 
                 _inventory = inventory;
 
                 if (_inventory != null)
                 {
+                    _inventory.GeneralInventorySizeChanged += OnGeneralInventorySizeChanged;
+                    OnGeneralInventorySizeChanged(_inventory.InventorySize);
+
                     if (_slotIndices != null)
                     {
                         for (int i = 0; i < _slotIndices.Length; i++)
@@ -458,6 +436,197 @@ namespace TPSBR.UI
                 SetDragVisible(false);
                 _dragSource = null;
                 ClearSelection();
+            }
+
+            private void OnGeneralInventorySizeChanged(int size)
+            {
+                EnsureGeneralSlotCount(size);
+
+                if (_inventory != null && _slotIndices != null)
+                {
+                    for (int i = 0; i < _slotIndices.Length; i++)
+                    {
+                        int index = _slotIndices[i];
+                        UpdateSlot(index, _inventory.GetItemSlot(index));
+                    }
+                }
+
+                if (_selectedSlotIndex >= size)
+                {
+                    _selectedSlotIndex = -1;
+                    UpdateSelectionHighlight();
+                    NotifySelectionChanged();
+                }
+                else
+                {
+                    UpdateSelectionHighlight();
+                }
+            }
+
+            private void EnsureGeneralSlotCount(int desiredCount)
+            {
+                if (_generalSlots == null)
+                {
+                    _generalSlots = new List<UIListItem>();
+                }
+
+                _visibleGeneralSlotCount = Mathf.Max(0, desiredCount);
+
+                if (_generalSlotTemplate == null)
+                {
+                    for (int i = 0; i < _generalSlots.Count; i++)
+                    {
+                        if (_generalSlots[i] != null)
+                        {
+                            _generalSlotTemplate = _generalSlots[i];
+                            break;
+                        }
+                    }
+                }
+
+                if (_generalSlotTemplate != null && _generalSlotParent == null)
+                {
+                    _generalSlotParent = _generalSlotTemplate.transform.parent;
+                }
+
+                while (_generalSlots.Count < _visibleGeneralSlotCount)
+                {
+                    if (_generalSlotTemplate == null || _generalSlotParent == null)
+                        break;
+
+                    var newSlot = UnityEngine.Object.Instantiate(_generalSlotTemplate, _generalSlotParent);
+                    newSlot.name = $"{_generalSlotTemplate.name}_{_generalSlots.Count}";
+                    newSlot.Clear();
+                    _generalSlots.Add(newSlot);
+                }
+
+                RebuildSlotCache();
+            }
+
+            private void RebuildSlotCache()
+            {
+                int estimatedCapacity = _visibleGeneralSlotCount;
+
+                if (_pickaxeSlotOverride != null) estimatedCapacity++;
+                if (_woodAxeSlotOverride != null) estimatedCapacity++;
+                if (_headSlotOverride != null) estimatedCapacity++;
+                if (_upperBodySlotOverride != null) estimatedCapacity++;
+                if (_lowerBodySlotOverride != null) estimatedCapacity++;
+
+                if (_bagSlotOverrides != null)
+                {
+                    for (int i = 0; i < _bagSlotOverrides.Length; i++)
+                    {
+                        if (_bagSlotOverrides[i] != null)
+                        {
+                            estimatedCapacity++;
+                        }
+                    }
+                }
+
+                var orderedSlots = new List<UIListItem>(estimatedCapacity);
+                var indices = new List<int>(estimatedCapacity);
+                _slotLookup = new Dictionary<int, UIListItem>(estimatedCapacity);
+
+                if (_generalSlots != null)
+                {
+                    for (int i = 0; i < _generalSlots.Count; i++)
+                    {
+                        var slot = _generalSlots[i];
+                        bool isVisible = i < _visibleGeneralSlotCount;
+                        if (slot != null)
+                        {
+                            slot.gameObject.SetActive(isVisible);
+
+                            if (isVisible == true)
+                            {
+                                slot.InitializeSlot(this, i);
+                                orderedSlots.Add(slot);
+                                indices.Add(i);
+                                _slotLookup[i] = slot;
+                            }
+                        }
+                    }
+                }
+
+                AddSpecialSlotMapping(
+                    _pickaxeSlotOverride,
+                    Inventory.PICKAXE_SLOT_INDEX,
+                    orderedSlots,
+                    indices,
+                    $"{nameof(UIList)} inventory list is missing a pickaxe inventory slot.");
+
+                AddSpecialSlotMapping(
+                    _woodAxeSlotOverride,
+                    Inventory.WOOD_AXE_SLOT_INDEX,
+                    orderedSlots,
+                    indices,
+                    $"{nameof(UIList)} inventory list is missing a wood axe inventory slot.");
+
+                AddSpecialSlotMapping(
+                    _headSlotOverride,
+                    Inventory.HEAD_SLOT_INDEX,
+                    orderedSlots,
+                    indices,
+                    $"{nameof(UIList)} inventory list is missing a head equipment inventory slot.");
+
+                AddSpecialSlotMapping(
+                    _upperBodySlotOverride,
+                    Inventory.UPPER_BODY_SLOT_INDEX,
+                    orderedSlots,
+                    indices,
+                    $"{nameof(UIList)} inventory list is missing an upper body inventory slot.");
+
+                AddSpecialSlotMapping(
+                    _lowerBodySlotOverride,
+                    Inventory.LOWER_BODY_SLOT_INDEX,
+                    orderedSlots,
+                    indices,
+                    $"{nameof(UIList)} inventory list is missing a lower body inventory slot.");
+
+                if (_bagSlotOverrides != null)
+                {
+                    for (int i = 0; i < _bagSlotOverrides.Length; i++)
+                    {
+                        int bagIndex = Inventory.GetBagSlotIndex(i);
+                        if (bagIndex < 0)
+                            continue;
+
+                        AddSpecialSlotMapping(
+                            _bagSlotOverrides[i],
+                            bagIndex,
+                            orderedSlots,
+                            indices,
+                            $"{nameof(UIList)} inventory list is missing bag inventory slot {i + 1}.");
+                    }
+                }
+
+                _slots = orderedSlots.ToArray();
+                _slotIndices = indices.ToArray();
+            }
+
+            private void AddSpecialSlotMapping(
+                UIListItem slot,
+                int slotIndex,
+                List<UIListItem> orderedSlots,
+                List<int> indices,
+                string warningMessage)
+            {
+                if (slot == null)
+                {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                    if (string.IsNullOrEmpty(warningMessage) == false)
+                    {
+                        Debug.LogWarning(warningMessage);
+                    }
+#endif
+                    return;
+                }
+
+                slot.InitializeSlot(this, slotIndex);
+                orderedSlots.Add(slot);
+                indices.Add(slotIndex);
+                _slotLookup[slotIndex] = slot;
             }
 
             internal void SetSelectionColor(Color color)
@@ -542,7 +711,7 @@ namespace TPSBR.UI
                 {
                     if (target.Index == Inventory.PICKAXE_SLOT_INDEX || target.Index == Inventory.WOOD_AXE_SLOT_INDEX ||
                         target.Index == Inventory.HEAD_SLOT_INDEX || target.Index == Inventory.UPPER_BODY_SLOT_INDEX ||
-                        target.Index == Inventory.LOWER_BODY_SLOT_INDEX)
+                        target.Index == Inventory.LOWER_BODY_SLOT_INDEX || Inventory.IsBagSlotIndex(target.Index))
                         return;
 
                     _inventory.RequestStoreHotbar(source.Index, target.Index);

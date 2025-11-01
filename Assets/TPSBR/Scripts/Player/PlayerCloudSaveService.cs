@@ -23,6 +23,7 @@ namespace TPSBR
         public PlayerInventoryItemData HeadSlot;
         public PlayerInventoryItemData UpperBodySlot;
         public PlayerInventoryItemData LowerBodySlot;
+        public PlayerInventoryItemData[] BagSlots;
         public int Gold;
         public PlayerCharacterSaveData[] Characters;
         public string ActiveCharacterId;
@@ -70,6 +71,7 @@ namespace TPSBR
         public PlayerInventoryItemData HeadSlot;
         public PlayerInventoryItemData UpperBodySlot;
         public PlayerInventoryItemData LowerBodySlot;
+        public PlayerInventoryItemData[] BagSlots;
         public int Gold;
     }
 
@@ -770,6 +772,7 @@ namespace TPSBR
                 HeadSlot = default,
                 UpperBodySlot = default,
                 LowerBodySlot = default,
+                BagSlots = new PlayerInventoryItemData[Inventory.BAG_SLOT_COUNT],
                 CurrentWeaponSlot = 0,
                 Gold = 0,
             };
@@ -1493,6 +1496,7 @@ namespace TPSBR
             _cachedData.HeadSlot = default;
             _cachedData.UpperBodySlot = default;
             _cachedData.LowerBodySlot = default;
+            _cachedData.BagSlots = null;
             _cachedData.Gold = 0;
 
             _cachedData.ActiveCharacterId = _activeCharacterId;
@@ -1622,6 +1626,7 @@ namespace TPSBR
                             HeadSlot = _cachedData.HeadSlot,
                             UpperBodySlot = _cachedData.UpperBodySlot,
                             LowerBodySlot = _cachedData.LowerBodySlot,
+                            BagSlots = _cachedData.BagSlots,
                             Gold = _cachedData.Gold,
                         };
 
