@@ -102,13 +102,21 @@ namespace TPSBR
         public int CurrentWeaponSlot => _currentWeaponSlot;
         public int PreviousWeaponSlot => _previousWeaponSlot;
         public WeaponSize CurrentWeaponSize => CurrentWeapon != null ? CurrentWeapon.Size : WeaponSize.Unarmed;
-        public const int INVENTORY_SIZE = 10;
+        public const int BASE_GENERAL_INVENTORY_SLOTS = 8;
+        public const int MAX_BAG_SLOT_BONUS = 40;
+        public const int INVENTORY_SIZE = BASE_GENERAL_INVENTORY_SLOTS + MAX_BAG_SLOT_BONUS;
+        public const int BAG_SLOT_COUNT = 5;
         public const int PICKAXE_SLOT_INDEX = byte.MaxValue;
         public const int WOOD_AXE_SLOT_INDEX = byte.MaxValue - 1;
         public const int FISHING_POLE_SLOT_INDEX = byte.MaxValue - 2;
         public const int HEAD_SLOT_INDEX = byte.MaxValue - 3;
         public const int UPPER_BODY_SLOT_INDEX = byte.MaxValue - 4;
         public const int LOWER_BODY_SLOT_INDEX = byte.MaxValue - 5;
+        public const int BAG_SLOT_1_INDEX = byte.MaxValue - 6;
+        public const int BAG_SLOT_2_INDEX = byte.MaxValue - 7;
+        public const int BAG_SLOT_3_INDEX = byte.MaxValue - 8;
+        public const int BAG_SLOT_4_INDEX = byte.MaxValue - 9;
+        public const int BAG_SLOT_5_INDEX = byte.MaxValue - 10;
         public const int HOTBAR_CAPACITY = 7;
         public const int HOTBAR_VISIBLE_SLOTS = HOTBAR_CAPACITY - 1;
         public const int HOTBAR_UNARMED_SLOT = 0;
@@ -140,6 +148,7 @@ namespace TPSBR
 
         [Networked, Capacity(HOTBAR_CAPACITY)] private NetworkArray<Weapon> _hotbar { get; }
         [Networked, Capacity(INVENTORY_SIZE)] private NetworkArray<InventorySlot> _items { get; }
+        [Networked, Capacity(BAG_SLOT_COUNT)] private NetworkArray<InventorySlot> _bagSlots { get; }
         [Networked] private InventorySlot _pickaxeSlot { get; set; }
         [Networked] private InventorySlot _woodAxeSlot { get; set; }
         [Networked] private InventorySlot _fishingPoleSlot { get; set; }
@@ -172,6 +181,7 @@ namespace TPSBR
         private Weapon[] _localWeapons = new Weapon[HOTBAR_CAPACITY];
         private Weapon[] _lastHotbarWeapons;
         private InventorySlot[] _localItems;
+        private InventorySlot[] _localBagSlots;
         private InventorySlot _localPickaxeSlot;
         private InventorySlot _localWoodAxeSlot;
         private InventorySlot _localFishingPoleSlot;
@@ -194,16 +204,26 @@ namespace TPSBR
         private ChangeDetector _changeDetector;
         private FishingLifecycleState _fishingLifecycleState = FishingLifecycleState.Inactive;
         private bool _isHookSetSuccessZoneActive;
+        private int _generalInventorySize = BASE_GENERAL_INVENTORY_SLOTS;
 
         private static readonly Dictionary<int, Weapon> _weaponPrefabsByDefinitionId = new Dictionary<int, Weapon>();
         private static PickaxeDefinition _cachedFallbackPickaxe;
         private static WoodAxeDefinition _cachedFallbackWoodAxe;
+        private static readonly int[] _bagSlotIndices =
+        {
+            BAG_SLOT_1_INDEX,
+            BAG_SLOT_2_INDEX,
+            BAG_SLOT_3_INDEX,
+            BAG_SLOT_4_INDEX,
+            BAG_SLOT_5_INDEX,
+        };
 
         public event Action<int, InventorySlot> ItemSlotChanged;
         public event Action<int, Weapon> HotbarSlotChanged;
         public event Action<int> GoldChanged;
         public event Action<bool> FishingPoleEquippedChanged;
         public event Action<FishingLifecycleState> FishingLifecycleStateChanged;
+        public event Action<int> GeneralInventorySizeChanged;
 
         public bool IsFishingPoleEquipped => _localFishingPoleEquipped;
         public FishingLifecycleState FishingLifecycleState => _fishingLifecycleState;
@@ -212,7 +232,7 @@ namespace TPSBR
 
         // PUBLIC METHODS
 
-        public int InventorySize => _items.Length;
+        public int InventorySize => _generalInventorySize;
         public int HotbarSize => _hotbar.Length;
 
         public Weapon GetHotbarWeapon(int index)
@@ -371,6 +391,19 @@ namespace TPSBR
                 ConfigurationHash = string.IsNullOrEmpty(lowerBodyConfigurationHash) == false ? lowerBodyConfigurationHash : null
             };
 
+            data.BagSlots = new PlayerInventoryItemData[BAG_SLOT_COUNT];
+            for (int i = 0; i < BAG_SLOT_COUNT; i++)
+            {
+                var bagSlot = _bagSlots[i];
+                string bagConfigurationHash = bagSlot.ConfigurationHash.ToString();
+                data.BagSlots[i] = new PlayerInventoryItemData
+                {
+                    ItemDefinitionId = bagSlot.ItemDefinitionId,
+                    Quantity = bagSlot.Quantity,
+                    ConfigurationHash = string.IsNullOrEmpty(bagConfigurationHash) == false ? bagConfigurationHash : null,
+                };
+            }
+
             return data;
         }
 
@@ -408,6 +441,11 @@ namespace TPSBR
                 UpdateWeaponDefinitionMapping(i, default);
             }
 
+            for (int i = 0; i < BAG_SLOT_COUNT; i++)
+            {
+                _bagSlots.Set(i, default);
+            }
+
             if (data.InventorySlots != null)
             {
                 int count = Mathf.Min(data.InventorySlots.Length, _items.Length);
@@ -426,6 +464,26 @@ namespace TPSBR
                     var slot = new InventorySlot(slotData.ItemDefinitionId, slotData.Quantity, configurationHash);
                     _items.Set(i, slot);
                     UpdateWeaponDefinitionMapping(i, slot);
+                }
+            }
+
+            if (data.BagSlots != null)
+            {
+                int count = Mathf.Min(data.BagSlots.Length, BAG_SLOT_COUNT);
+                for (int i = 0; i < count; i++)
+                {
+                    var slotData = data.BagSlots[i];
+                    if (slotData.ItemDefinitionId == 0 || slotData.Quantity == 0)
+                        continue;
+
+                    NetworkString<_32> configurationHash = default;
+                    if (string.IsNullOrEmpty(slotData.ConfigurationHash) == false)
+                    {
+                        configurationHash = slotData.ConfigurationHash;
+                    }
+
+                    var slot = new InventorySlot(slotData.ItemDefinitionId, slotData.Quantity, configurationHash);
+                    _bagSlots.Set(i, slot);
                 }
             }
 
@@ -571,7 +629,10 @@ namespace TPSBR
             if (index == LOWER_BODY_SLOT_INDEX)
                 return _lowerBodySlot;
 
-            if (index < 0 || index >= _items.Length)
+            if (TryGetBagArrayIndex(index, out int bagIndex) == true)
+                return _bagSlots[bagIndex];
+
+            if (index < 0 || index >= _generalInventorySize)
                 return default;
 
             return _items[index];
@@ -582,7 +643,7 @@ namespace TPSBR
             if (HasStateAuthority == false)
                 return false;
 
-            if (index < 0 || index >= _items.Length)
+            if (index < 0 || index >= _generalInventorySize)
                 return false;
 
             var slot = _items[index];
@@ -1340,6 +1401,8 @@ namespace TPSBR
                 Array.Clear(_localItems, 0, _localItems.Length);
             }
 
+            _localBagSlots = null;
+
             if (_lastHotbarWeapons != null)
             {
                 Array.Clear(_lastHotbarWeapons, 0, _lastHotbarWeapons.Length);
@@ -1361,6 +1424,8 @@ namespace TPSBR
 
             ItemSlotChanged = null;
             HotbarSlotChanged = null;
+            GeneralInventorySizeChanged = null;
+            _generalInventorySize = BASE_GENERAL_INVENTORY_SLOTS;
         }
 
         public void OnFixedUpdate()
@@ -1857,6 +1922,7 @@ namespace TPSBR
             bool isHead = slotCategory == ESlotCategory.Head;
             bool isUpperBody = slotCategory == ESlotCategory.UpperBody;
             bool isLowerBody = slotCategory == ESlotCategory.LowerBody;
+            bool isBag = slotCategory == ESlotCategory.Bag;
 
             ushort maxStack = ItemDefinition.GetMaxStack(definition.ID);
             if (maxStack == 0)
@@ -1899,7 +1965,14 @@ namespace TPSBR
                 remaining = AddToLowerBodySlot(definition, remaining, configurationHash);
             }
 
-            for (int i = 0; i < _items.Length && remaining > 0; i++)
+            if (isBag == true && remaining > 0)
+            {
+                remaining = AddToBagSlots(definition, remaining, configurationHash);
+            }
+
+            int generalCapacity = Mathf.Clamp(_generalInventorySize, 0, _items.Length);
+
+            for (int i = 0; i < generalCapacity && remaining > 0; i++)
             {
                 var slot = _items[i];
                 if (slot.IsEmpty == true)
@@ -1924,7 +1997,7 @@ namespace TPSBR
                 remaining -= space;
             }
 
-            for (int i = 0; i < _items.Length && remaining > 0; i++)
+            for (int i = 0; i < generalCapacity && remaining > 0; i++)
             {
                 var slot = _items[i];
                 if (slot.IsEmpty == false)
@@ -1962,14 +2035,16 @@ namespace TPSBR
             bool toUpperBody = toIndex == UPPER_BODY_SLOT_INDEX;
             bool fromLowerBody = fromIndex == LOWER_BODY_SLOT_INDEX;
             bool toLowerBody = toIndex == LOWER_BODY_SLOT_INDEX;
-            bool fromSpecial = fromPickaxe || fromWoodAxe || fromFishingPole || fromHead || fromUpperBody || fromLowerBody;
-            bool toSpecial = toPickaxe || toWoodAxe || toFishingPole || toHead || toUpperBody || toLowerBody;
+            bool fromBag = IsBagSlotIndex(fromIndex);
+            bool toBag = IsBagSlotIndex(toIndex);
+            bool fromSpecial = fromPickaxe || fromWoodAxe || fromFishingPole || fromHead || fromUpperBody || fromLowerBody || fromBag;
+            bool toSpecial = toPickaxe || toWoodAxe || toFishingPole || toHead || toUpperBody || toLowerBody || toBag;
             bool generalToGeneralTransfer = fromSpecial == false && toSpecial == false;
 
-            if (fromSpecial == false && fromIndex >= _items.Length)
+            if (fromSpecial == false && fromIndex >= _generalInventorySize)
                 return;
 
-            if (toSpecial == false && toIndex >= _items.Length)
+            if (toSpecial == false && toIndex >= _generalInventorySize)
                 return;
 
             if (fromPickaxe == true)
@@ -2307,6 +2382,88 @@ namespace TPSBR
                     UpdateWeaponDefinitionMapping(fromIndex, previousLowerBody);
                 }
 
+                RefreshItems();
+                return;
+            }
+
+            if (fromBag == true)
+            {
+                if (TryGetBagArrayIndex(fromIndex, out int fromBagIndex) == false)
+                    return;
+
+                var bagSourceSlot = _bagSlots[fromBagIndex];
+                if (bagSourceSlot.IsEmpty == true)
+                    return;
+
+                if (toBag == true)
+                {
+                    if (TryGetBagArrayIndex(toIndex, out int toBagIndex) == false)
+                        return;
+
+                    var targetBagSlot = _bagSlots[toBagIndex];
+                    _bagSlots.Set(fromBagIndex, targetBagSlot);
+                    _bagSlots.Set(toBagIndex, bagSourceSlot);
+                    RefreshBagSlots();
+                    return;
+                }
+
+                if (toIndex >= _generalInventorySize)
+                    return;
+
+                var targetSlot = _items[toIndex];
+                if (targetSlot.IsEmpty == false && IsBagSlotItem(targetSlot) == false)
+                    return;
+
+                _items.Set(toIndex, bagSourceSlot);
+                UpdateWeaponDefinitionMapping(toIndex, bagSourceSlot);
+
+                if (targetSlot.IsEmpty == false)
+                {
+                    _bagSlots.Set(fromBagIndex, targetSlot);
+                }
+                else
+                {
+                    _bagSlots.Set(fromBagIndex, default);
+                }
+
+                RefreshBagSlots();
+                RefreshItems();
+                return;
+            }
+
+            if (toBag == true)
+            {
+                if (fromIndex >= _generalInventorySize)
+                    return;
+
+                var sourceSlot = _items[fromIndex];
+                if (sourceSlot.IsEmpty == true)
+                    return;
+
+                if (IsBagSlotItem(sourceSlot) == false)
+                    return;
+
+                if (TryGetBagArrayIndex(toIndex, out int toBagIndex) == false)
+                    return;
+
+                var previousBagSlot = _bagSlots[toBagIndex];
+                if (previousBagSlot.IsEmpty == false && IsBagSlotItem(previousBagSlot) == false)
+                    return;
+
+                _bagSlots.Set(toBagIndex, sourceSlot);
+
+                if (previousBagSlot.IsEmpty == true)
+                {
+                    _items.Set(fromIndex, default);
+                    UpdateWeaponDefinitionMapping(fromIndex, default);
+                }
+                else
+                {
+                    _items.Set(fromIndex, previousBagSlot);
+                    UpdateWeaponDefinitionMapping(fromIndex, previousBagSlot);
+                }
+
+                RefreshBagSlots();
                 RefreshItems();
                 return;
             }
@@ -2688,6 +2845,25 @@ namespace TPSBR
                 return;
             }
 
+            if (TryGetBagArrayIndex(index, out int bagIndex) == true)
+            {
+                var bagSlotData = _bagSlots[bagIndex];
+                if (bagSlotData.IsEmpty == true)
+                    return;
+                var bagDefinition = bagSlotData.GetDefinition();
+                if (bagDefinition == null)
+                    return;
+                byte bagQuantity = bagSlotData.Quantity;
+                if (bagQuantity == 0)
+                    return;
+
+                _bagSlots.Set(bagIndex, default);
+                RefreshBagSlots();
+
+                SpawnInventoryItemPickup(bagDefinition, bagQuantity, bagSlotData.ConfigurationHash);
+                return;
+            }
+
             if (IsGeneralInventoryIndex(index) == false)
                 return;
 
@@ -2927,6 +3103,7 @@ namespace TPSBR
             RefreshHeadSlot();
             RefreshUpperBodySlot();
             RefreshLowerBodySlot();
+            RefreshBagSlots();
         }
 
         internal bool ConsumeFeedSuppression(int index)
@@ -3333,7 +3510,8 @@ namespace TPSBR
 
     private int FindEmptyInventorySlot()
     {
-        for (int i = 0; i < _items.Length; i++)
+        int generalCapacity = Mathf.Clamp(_generalInventorySize, 0, _items.Length);
+        for (int i = 0; i < generalCapacity; i++)
         {
             if (_items[i].IsEmpty == true)
                 return i;
@@ -3711,6 +3889,58 @@ namespace TPSBR
             return (byte)(quantity - space);
         }
 
+        private byte AddToBagSlots(ItemDefinition definition, byte quantity, NetworkString<_32> configurationHash)
+        {
+            if (quantity == 0)
+                return 0;
+
+            int clampedMaxStack = Mathf.Clamp((int)ItemDefinition.GetMaxStack(definition.ID), 1, byte.MaxValue);
+
+            for (int i = 0; i < BAG_SLOT_COUNT && quantity > 0; i++)
+            {
+                var slot = _bagSlots[i];
+                if (slot.IsEmpty == true)
+                    continue;
+
+                if (IsBagSlotItem(slot) == false)
+                    continue;
+
+                if (slot.ItemDefinitionId != definition.ID)
+                    continue;
+
+                if (slot.ConfigurationHash != configurationHash)
+                    continue;
+
+                if (slot.Quantity >= clampedMaxStack)
+                    continue;
+
+                byte space = (byte)Mathf.Min(clampedMaxStack - slot.Quantity, quantity);
+                if (space == 0)
+                    continue;
+
+                slot.Add(space);
+                _bagSlots.Set(i, slot);
+                quantity -= space;
+            }
+
+            for (int i = 0; i < BAG_SLOT_COUNT && quantity > 0; i++)
+            {
+                var slot = _bagSlots[i];
+                if (slot.IsEmpty == false)
+                    continue;
+
+                byte addAmount = (byte)Mathf.Min(clampedMaxStack, quantity);
+                if (addAmount == 0)
+                    continue;
+
+                slot = new InventorySlot(definition.ID, addAmount, configurationHash);
+                _bagSlots.Set(i, slot);
+                quantity -= addAmount;
+            }
+
+            return quantity;
+        }
+
         private void RefreshLowerBodySlot()
         {
             var slot = _lowerBodySlot;
@@ -3719,6 +3949,153 @@ namespace TPSBR
                 _localLowerBodySlot = slot;
                 ItemSlotChanged?.Invoke(LOWER_BODY_SLOT_INDEX, slot);
             }
+        }
+
+        private void RefreshBagSlots()
+        {
+            bool sizeDirty = false;
+
+            if (_localBagSlots == null || _localBagSlots.Length != BAG_SLOT_COUNT)
+            {
+                _localBagSlots = new InventorySlot[BAG_SLOT_COUNT];
+                sizeDirty = true;
+            }
+
+            for (int i = 0; i < BAG_SLOT_COUNT; i++)
+            {
+                var slot = _bagSlots[i];
+                if (_localBagSlots[i].Equals(slot) == false)
+                {
+                    _localBagSlots[i] = slot;
+                    ItemSlotChanged?.Invoke(GetBagSlotIndex(i), slot);
+                    sizeDirty = true;
+                }
+            }
+
+            if (sizeDirty == true)
+            {
+                RecalculateGeneralInventorySize();
+            }
+        }
+
+        private void RecalculateGeneralInventorySize()
+        {
+            int size = BASE_GENERAL_INVENTORY_SLOTS;
+
+            for (int i = 0; i < BAG_SLOT_COUNT; i++)
+            {
+                var slot = _bagSlots[i];
+                if (slot.IsEmpty == true)
+                    continue;
+
+                if (slot.GetDefinition() is BagDefinition bagDefinition)
+                {
+                    size += Mathf.Max(0, bagDefinition.Slots);
+                }
+            }
+
+            size = Mathf.Clamp(size, BASE_GENERAL_INVENTORY_SLOTS, _items.Length);
+
+            if (size == _generalInventorySize)
+                return;
+
+            int previousSize = _generalInventorySize;
+            _generalInventorySize = size;
+
+            if (HasStateAuthority == true && size < previousSize)
+            {
+                EnforceGeneralInventoryCapacity();
+            }
+
+            GeneralInventorySizeChanged?.Invoke(_generalInventorySize);
+        }
+
+        private void EnforceGeneralInventoryCapacity()
+        {
+            int capacity = Mathf.Clamp(_generalInventorySize, 0, _items.Length);
+
+            for (int i = capacity; i < _items.Length; i++)
+            {
+                var slot = _items[i];
+                if (slot.IsEmpty == true)
+                    continue;
+
+                byte remainingQuantity = slot.Quantity;
+                var definition = slot.GetDefinition();
+
+                if (definition != null)
+                {
+                    ushort maxStack = ItemDefinition.GetMaxStack(slot.ItemDefinitionId);
+                    if (maxStack == 0)
+                    {
+                        maxStack = 1;
+                    }
+
+                    int clampedMaxStack = Mathf.Clamp(maxStack, 1, byte.MaxValue);
+
+                    // Try to stack into existing slots
+                    for (int j = 0; j < capacity && remainingQuantity > 0; j++)
+                    {
+                        var targetSlot = _items[j];
+                        if (targetSlot.IsEmpty == true)
+                            continue;
+
+                        if (targetSlot.ItemDefinitionId != slot.ItemDefinitionId)
+                            continue;
+
+                        if (targetSlot.ConfigurationHash != slot.ConfigurationHash)
+                            continue;
+
+                        if (targetSlot.Quantity >= clampedMaxStack)
+                            continue;
+
+                        byte space = (byte)Mathf.Min(clampedMaxStack - targetSlot.Quantity, remainingQuantity);
+                        if (space == 0)
+                            continue;
+
+                        targetSlot.Add(space);
+                        _items.Set(j, targetSlot);
+                        UpdateWeaponDefinitionMapping(j, targetSlot);
+                        remainingQuantity -= space;
+                    }
+
+                    // Try to move to empty slots
+                    while (remainingQuantity > 0)
+                    {
+                        int emptyIndex = FindFirstEmptyInventorySlot(capacity);
+                        if (emptyIndex < 0)
+                            break;
+
+                        byte addAmount = (byte)Mathf.Min(clampedMaxStack, remainingQuantity);
+                        var newSlot = new InventorySlot(slot.ItemDefinitionId, addAmount, slot.ConfigurationHash);
+                        _items.Set(emptyIndex, newSlot);
+                        UpdateWeaponDefinitionMapping(emptyIndex, newSlot);
+                        remainingQuantity -= addAmount;
+                    }
+                }
+
+                if (remainingQuantity > 0 && definition != null)
+                {
+                    SpawnInventoryItemPickup(definition, remainingQuantity, slot.ConfigurationHash);
+                }
+
+                _items.Set(i, default);
+                UpdateWeaponDefinitionMapping(i, default);
+            }
+
+            RefreshItems();
+        }
+
+        private int FindFirstEmptyInventorySlot(int limit)
+        {
+            int length = Mathf.Clamp(limit, 0, _items.Length);
+            for (int i = 0; i < length; i++)
+            {
+                if (_items[i].IsEmpty == true)
+                    return i;
+            }
+
+            return -1;
         }
 
         private void RefreshPickaxeVisuals()
@@ -4439,7 +4816,8 @@ namespace TPSBR
             if (IsPickaxeSlotItem(_pickaxeSlot) == true)
                 return true;
 
-            for (int i = 0; i < _items.Length; i++)
+            int generalCapacity = Mathf.Clamp(_generalInventorySize, 0, _items.Length);
+            for (int i = 0; i < generalCapacity; i++)
             {
                 if (IsPickaxeSlotItem(_items[i]) == true)
                     return true;
@@ -4453,7 +4831,8 @@ namespace TPSBR
             if (IsWoodAxeSlotItem(_woodAxeSlot) == true)
                 return true;
 
-            for (int i = 0; i < _items.Length; i++)
+            int generalCapacity = Mathf.Clamp(_generalInventorySize, 0, _items.Length);
+            for (int i = 0; i < generalCapacity; i++)
             {
                 if (IsWoodAxeSlotItem(_items[i]) == true)
                     return true;
@@ -4464,7 +4843,8 @@ namespace TPSBR
 
         private int FindPickaxeInInventory()
         {
-            for (int i = 0; i < _items.Length; i++)
+            int generalCapacity = Mathf.Clamp(_generalInventorySize, 0, _items.Length);
+            for (int i = 0; i < generalCapacity; i++)
             {
                 if (IsPickaxeSlotItem(_items[i]) == true)
                     return i;
@@ -4475,7 +4855,8 @@ namespace TPSBR
 
         private int FindWoodAxeInInventory()
         {
-            for (int i = 0; i < _items.Length; i++)
+            int generalCapacity = Mathf.Clamp(_generalInventorySize, 0, _items.Length);
+            for (int i = 0; i < generalCapacity; i++)
             {
                 if (IsWoodAxeSlotItem(_items[i]) == true)
                     return i;
@@ -4486,14 +4867,19 @@ namespace TPSBR
 
         private bool IsGeneralInventoryIndex(int index)
         {
-            return index >= 0 && index < _items.Length;
+            return index >= 0 && index < _generalInventorySize;
         }
 
         private bool IsValidInventoryIndex(int index)
         {
-            return IsGeneralInventoryIndex(index) || index == PICKAXE_SLOT_INDEX || index == WOOD_AXE_SLOT_INDEX ||
-                   index == FISHING_POLE_SLOT_INDEX || index == HEAD_SLOT_INDEX || index == UPPER_BODY_SLOT_INDEX ||
-                   index == LOWER_BODY_SLOT_INDEX;
+            if (IsGeneralInventoryIndex(index) == true)
+                return true;
+
+            if (index == PICKAXE_SLOT_INDEX || index == WOOD_AXE_SLOT_INDEX || index == FISHING_POLE_SLOT_INDEX ||
+                index == HEAD_SLOT_INDEX || index == UPPER_BODY_SLOT_INDEX || index == LOWER_BODY_SLOT_INDEX)
+                return true;
+
+            return IsBagSlotIndex(index);
         }
 
         private static bool IsPickaxeSlotItem(InventorySlot slot)
@@ -4526,6 +4912,11 @@ namespace TPSBR
             return HasSlotCategory(slot, ESlotCategory.LowerBody);
         }
 
+        private static bool IsBagSlotItem(InventorySlot slot)
+        {
+            return HasSlotCategory(slot, ESlotCategory.Bag);
+        }
+
         private static bool HasSlotCategory(InventorySlot slot, ESlotCategory category)
         {
             if (slot.IsEmpty == true)
@@ -4536,6 +4927,44 @@ namespace TPSBR
                 return false;
 
             return definition.SlotCategory == category;
+        }
+
+        private static bool TryGetBagArrayIndex(int slotIndex, out int bagIndex)
+        {
+            switch (slotIndex)
+            {
+                case BAG_SLOT_1_INDEX:
+                    bagIndex = 0;
+                    return true;
+                case BAG_SLOT_2_INDEX:
+                    bagIndex = 1;
+                    return true;
+                case BAG_SLOT_3_INDEX:
+                    bagIndex = 2;
+                    return true;
+                case BAG_SLOT_4_INDEX:
+                    bagIndex = 3;
+                    return true;
+                case BAG_SLOT_5_INDEX:
+                    bagIndex = 4;
+                    return true;
+                default:
+                    bagIndex = -1;
+                    return false;
+            }
+        }
+
+        public static int GetBagSlotIndex(int bagIndex)
+        {
+            if (bagIndex < 0 || bagIndex >= _bagSlotIndices.Length)
+                return -1;
+
+            return _bagSlotIndices[bagIndex];
+        }
+
+        public static bool IsBagSlotIndex(int slotIndex)
+        {
+            return TryGetBagArrayIndex(slotIndex, out _);
         }
 
         private void SpawnInventoryItemPickup(ItemDefinition definition, byte quantity, NetworkString<_32> configurationHash = default)

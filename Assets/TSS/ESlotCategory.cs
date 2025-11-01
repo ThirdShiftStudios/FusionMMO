@@ -12,5 +12,6 @@ namespace TSS.Data
         FishingPole = 7,
         Consumable = 8,
         Fishing = 9,
+        Bag = 10,
     }
 }
