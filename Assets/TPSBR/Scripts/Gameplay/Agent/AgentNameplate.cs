@@ -1,9 +1,10 @@
+using Fusion;
 using TMPro;
 using UnityEngine;
 
 namespace TPSBR
 {
-	public sealed class AgentNameplate : ContextBehaviour
+	public sealed class AgentNameplate : MonoBehaviour
 	{
 		[SerializeField]
 		private TextMeshProUGUI _nameText;
@@ -11,7 +12,8 @@ namespace TPSBR
 		private Agent _agent;
 		private RectTransform _nameTransform;
 		private bool _hasAssignedName;
-
+		private bool _isServer;
+		private NetworkObject _object;
 		private void Awake()
 		{
 			if (_nameText != null)
@@ -22,12 +24,37 @@ namespace TPSBR
 			_agent = GetComponentInParent<Agent>();
 		}
 
-		public override void Spawned()
+		public void OnSpawned(Agent agent, bool isServer)
 		{
-			TryAssignName();
-		}
+			_isServer = isServer;
+            _agent = agent;
+			_object = _agent.Object;
+			if (_object.HasInputAuthority)
+            {
+                ClearName();
+				return;
+            }
+            TryAssignName();
+        }
 
-		private void LateUpdate()
+        private void ClearName()
+        {
+			_nameText.SetTextSafe("");
+        }
+
+        public void OnDespawned()
+        {
+            _isServer = false;
+            _agent = default;
+			_hasAssignedName = false;
+
+        }
+
+        public void OnAgentRender()
+		{
+			UpdateNameplate();
+		}
+		private void UpdateNameplate()
 		{
 			if (_nameTransform == null)
 			{
@@ -45,7 +72,7 @@ namespace TPSBR
 				return;
 			}
 
-			Vector3 forward = cameraTransform.position - _nameTransform.position;
+			Vector3 forward = _nameTransform.position - cameraTransform.position;
 			if (forward.sqrMagnitude <= 0.0001f)
 			{
 				return;
@@ -73,9 +100,9 @@ namespace TPSBR
 
 		private string GetDisplayName()
 		{
-			if (Context?.NetworkGame != null && Object != null)
+			if (_agent.Context?.NetworkGame != null && _agent.Object != null)
 			{
-				Player player = Context.NetworkGame.GetPlayer(Object.InputAuthority);
+				Player player = _agent.Context.NetworkGame.GetPlayer(_agent.Object.InputAuthority);
 				if (player != null)
 				{
 					if (player.CharacterName.HasValue() == true)
@@ -100,9 +127,9 @@ namespace TPSBR
 
 		private Transform ResolveCameraTransform()
 		{
-			if (Context?.Camera != null && Context.Camera.Camera != null)
+			if (_agent.Context?.Camera != null && _agent.Context.Camera.Camera != null)
 			{
-				return Context.Camera.Camera.transform;
+				return _agent.Context.Camera.Camera.transform;
 			}
 
 			if (Camera.main != null)

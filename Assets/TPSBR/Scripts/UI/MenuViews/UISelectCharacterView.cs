@@ -7,7 +7,7 @@ namespace TPSBR.UI
     public class UISelectCharacterView : UICloseView
     {
         [SerializeField]
-        private UICharacterList _characterList;
+        private UIList _characterList;
         [SerializeField]
         private UIButton _createCharacterButton;
         [SerializeField]
