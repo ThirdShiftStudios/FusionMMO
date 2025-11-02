@@ -149,6 +149,7 @@ namespace TPSBR.UI
 		}
 		private void OnPlayerButton()
 		{
+			return;
 			var agentSelection = Open<UIAgentSelectionView>();
 			agentSelection.BackView = this;
 
