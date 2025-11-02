@@ -378,6 +378,7 @@ namespace TPSBR
 
         protected override void OnEvaluate()
         {
+            RefreshSnapping();
         }
 
         // MonoBehaviour INTERFACE

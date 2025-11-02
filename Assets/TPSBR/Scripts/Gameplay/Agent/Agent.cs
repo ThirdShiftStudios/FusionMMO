@@ -178,6 +178,12 @@ namespace TPSBR
 
             CheckFallDamage();
 
+            CharacterAnimationController animationController = _character != null ? _character.AnimationController : null;
+            if (animationController != null)
+            {
+                animationController.RefreshSnapping();
+            }
+
             if (_health.IsAlive == true)
             {
                 float sortOrder = _agentInput.FixedInput.LocalAlpha;
