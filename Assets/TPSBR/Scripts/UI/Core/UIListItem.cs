@@ -7,91 +7,84 @@ using UnityEngine.UI;
 
 namespace TPSBR.UI
 {
-        public sealed class UIListItem : UIListItemBase<MonoBehaviour>
+        public sealed class UIListItem : UIInventorySlotListItem
         {
         }
 
-        public abstract class UIListItemBase<T> : UIWidget, IBeginDragHandler, IDragHandler, IEndDragHandler, IDropHandler, IPointerClickHandler where T : MonoBehaviour
+        public sealed class UICharacterListItem : UIListItemBase<MonoBehaviour>
         {
-                private static readonly Dictionary<int, UIListItemBase<T>> _lastDropTargets = new Dictionary<int, UIListItemBase<T>>();
+                [SerializeField]
+                private TextMeshProUGUI _characterName;
+                [SerializeField]
+                private TextMeshProUGUI _characterLevel;
+
+                public string CharacterName
+                {
+                        get => _characterName != null ? _characterName.text : string.Empty;
+                        set
+                        {
+                                if (_characterName != null)
+                                {
+                                        _characterName.text = value;
+                                }
+                        }
+                }
+
+                public string CharacterLevel
+                {
+                        get => _characterLevel != null ? _characterLevel.text : string.Empty;
+                        set
+                        {
+                                if (_characterLevel != null)
+                                {
+                                        _characterLevel.text = value;
+                                }
+                        }
+                }
+        }
+
+        public class UIInventorySlotListItem : UIListItemBase<MonoBehaviour>, IBeginDragHandler, IDragHandler, IEndDragHandler, IDropHandler, IPointerClickHandler
+        {
+                private static readonly Dictionary<int, UIInventorySlotListItem> _lastDropTargets = new Dictionary<int, UIInventorySlotListItem>();
                 private static readonly List<RaycastResult> _raycastResults = new List<RaycastResult>();
-                private static readonly List<UIListItemBase<T>> _allSlots = new List<UIListItemBase<T>>();
-                private static UIListItemBase<T> _activeDragSlot;
+                private static readonly List<UIInventorySlotListItem> _allSlots = new List<UIInventorySlotListItem>();
+                private static UIInventorySlotListItem _activeDragSlot;
 
                 // PUBLIC MEMBERS
 
-                public int  ID { get; set; }
-                public T    Content => _content;
-                public bool IsSelectable => _button != null;
-                public bool IsSelected { get { return _isSelected; } set { SetIsSelected(value); } }
-                public bool IsInteractable { get { return GetIsInteractable(); } set { SetIsInteractable(value); } }
-
-                public Action<int> Clicked;
-
                 public int Index { get; private set; } = -1;
-                public RectTransform SlotRectTransform => _rectTransform != null ? _rectTransform : (_rectTransform = transform as RectTransform);
+                public RectTransform SlotRectTransform => CachedRectTransform;
                 internal Sprite IconSprite => _iconSprite;
                 internal int Quantity => _quantity;
                 internal bool HasItem => _iconSprite != null && _quantity > 0;
                 internal IUIListItemOwner Owner => _owner;
+
                 private UIListItem OwnerSlot => this as UIListItem;
 
                 // PRIVATE MEMBERS
 
-                [SerializeField]
-                private Button _button;
-                [SerializeField]
-                private Animator _animator;
-                [SerializeField]
-                private T _content;
-                [SerializeField]
-                private string _selectedAnimatorParameter = "IsSelected";
-                [SerializeField]
-                private CanvasGroup _selectedGroup;
-                [SerializeField]
-                private CanvasGroup _deselectedGroup;
-                [SerializeField]
-                private Image _backgroundImage;
-                [SerializeField]
-                private Image _selectionBorderImage;
-
                 private IUIListItemOwner _owner;
-                private UIButton _buttonWrapper;
                 private CanvasGroup _canvasGroup;
                 private Image _iconImage;
                 private TextMeshProUGUI _quantityLabel;
                 private Sprite _iconSprite;
                 private int _quantity;
                 private bool _isDragging;
-                private bool _isSelected;
-                private Color _defaultBackgroundColor;
-                private bool _defaultBackgroundColorCached;
-                private Color _defaultSelectionBorderColor;
-                private bool _defaultSelectionBorderColorCached;
-                private RectTransform _rectTransform;
 
                 // MONOBEHAVIOR
 
-                protected override void OnInitialize()
+                protected override void RuntimeInitialize()
                 {
-                        base.OnInitialize();
-                        RuntimeInitialize();
-                }
+                        base.RuntimeInitialize();
 
-                private void Awake()
-                {
-                        RuntimeInitialize();
+                        if (_allSlots.Contains(this) == false)
+                        {
+                                _allSlots.Add(this);
+                        }
                 }
 
                 protected override void OnDeinitialize()
                 {
-                        Clicked = null;
-
-                        if (_button != null)
-                        {
-                                _button.onClick.RemoveListener(OnClick);
-                        }
-
                         _owner = null;
                         Index = -1;
 
@@ -149,26 +142,6 @@ namespace TPSBR.UI
                 internal void Clear()
                 {
                         SetItem(null, 0);
-                }
-
-                internal void SetSelected(bool selected, Color selectedColor)
-                {
-                        if (_backgroundImage == null)
-                                return;
-
-                        CacheDefaultBackgroundColor();
-
-                        _backgroundImage.color = selected ? selectedColor : _defaultBackgroundColor;
-                }
-
-                internal void SetSelectionHighlight(bool selected, Color selectedColor)
-                {
-                        if (_selectionBorderImage == null)
-                                return;
-
-                        CacheDefaultSelectionBorderColor();
-
-                        _selectionBorderImage.color = selected ? selectedColor : _defaultSelectionBorderColor;
                 }
 
                 // EVENT HANDLERS
@@ -251,7 +224,7 @@ namespace TPSBR.UI
                         if (_owner == null)
                                 return;
 
-                        var sourceSlot = eventData.pointerDrag != null ? eventData.pointerDrag.GetComponent<UIListItemBase<T>>() : null;
+                        var sourceSlot = eventData.pointerDrag != null ? eventData.pointerDrag.GetComponent<UIInventorySlotListItem>() : null;
                         if (sourceSlot == null)
                         {
                                 sourceSlot = _activeDragSlot;
@@ -282,84 +255,10 @@ namespace TPSBR.UI
 
                         _owner.HandleSlotSelected(ownerSlot);
 
-                        if (_buttonWrapper != null)
-                        {
-                                _buttonWrapper.PlayClickSound();
-                        }
+                        ButtonWrapper?.PlayClickSound();
                 }
 
                 // PRIVATE METHODS
-
-                private void RuntimeInitialize()
-                {
-                        SetIsSelected(false, true);
-
-                        if (_button != null)
-                        {
-                                _button.onClick.RemoveListener(OnClick);
-                                _button.onClick.AddListener(OnClick);
-                        }
-
-                        if (_buttonWrapper == null)
-                        {
-                                _buttonWrapper = GetComponent<UIButton>();
-                        }
-
-                        if (_button != null && _button.transition == Selectable.Transition.Animation)
-                        {
-                                _animator = _button.animator;
-                        }
-
-                        CacheDefaultBackgroundColor();
-                        CacheDefaultSelectionBorderColor();
-
-                        if (_allSlots.Contains(this) == false)
-                        {
-                                _allSlots.Add(this);
-                        }
-                }
-
-                private void SetIsSelected(bool value, bool force = false)
-                {
-                        if (_isSelected == value && force == false)
-                                return;
-
-                        _isSelected = value;
-
-                        _selectedGroup?.SetVisibility(value);
-                        _deselectedGroup?.SetVisibility(value == false);
-
-                        UpdateAnimator();
-                }
-
-                private bool GetIsInteractable()
-                {
-                        return _button != null ? _button.interactable : false;
-                }
-
-                private void SetIsInteractable(bool value)
-                {
-                        if (_button == null)
-                                return;
-
-                        _button.interactable = value;
-                }
-
-                private void OnClick()
-                {
-                        Clicked?.Invoke(ID);
-                }
-
-                private void UpdateAnimator()
-                {
-                        if (_animator == null)
-                                return;
-
-                        if (_selectedAnimatorParameter.HasValue() == false)
-                                return;
-
-                        _animator.SetBool(_selectedAnimatorParameter, _isSelected);
-                }
 
                 private void EnsureCanvasGroup()
                 {
@@ -371,24 +270,6 @@ namespace TPSBR.UI
                         {
                                 _canvasGroup = gameObject.AddComponent<CanvasGroup>();
                         }
-                }
-
-                private void CacheDefaultBackgroundColor()
-                {
-                        if (_backgroundImage == null || _defaultBackgroundColorCached == true)
-                                return;
-
-                        _defaultBackgroundColor = _backgroundImage.color;
-                        _defaultBackgroundColorCached = true;
-                }
-
-                private void CacheDefaultSelectionBorderColor()
-                {
-                        if (_selectionBorderImage == null || _defaultSelectionBorderColorCached == true)
-                                return;
-
-                        _defaultSelectionBorderColor = _selectionBorderImage.color;
-                        _defaultSelectionBorderColorCached = true;
                 }
 
                 private void EnsureIconImage()
@@ -435,7 +316,7 @@ namespace TPSBR.UI
                         }
                 }
 
-                private static void CacheDropTarget(int pointerId, UIListItemBase<T> slot)
+                private static void CacheDropTarget(int pointerId, UIInventorySlotListItem slot)
                 {
                         if (slot == null)
                                 return;
@@ -455,12 +336,12 @@ namespace TPSBR.UI
                         return false;
                 }
 
-                private static UIListItemBase<T> FindDropTarget(PointerEventData eventData)
+                private static UIInventorySlotListItem FindDropTarget(PointerEventData eventData)
                 {
                         var raycastObject = eventData.pointerCurrentRaycast.gameObject;
                         if (raycastObject != null)
                         {
-                                var directSlot = raycastObject.GetComponentInParent<UIListItemBase<T>>();
+                                var directSlot = raycastObject.GetComponentInParent<UIInventorySlotListItem>();
                                 if (directSlot != null)
                                         return directSlot;
                         }
@@ -472,7 +353,7 @@ namespace TPSBR.UI
                         EventSystem.current.RaycastAll(eventData, _raycastResults);
                         for (int i = 0; i < _raycastResults.Count; i++)
                         {
-                                var resultSlot = _raycastResults[i].gameObject.GetComponentInParent<UIListItemBase<T>>();
+                                var resultSlot = _raycastResults[i].gameObject.GetComponentInParent<UIInventorySlotListItem>();
                                 if (resultSlot != null)
                                 {
                                         _raycastResults.Clear();
@@ -501,6 +382,183 @@ namespace TPSBR.UI
                         }
 
                         return null;
+                }
+        }
+
+        public abstract class UIListItemBase<T> : UIWidget where T : MonoBehaviour
+        {
+                // PUBLIC MEMBERS
+
+                public int  ID { get; set; }
+                public T    Content => _content;
+                public bool IsSelectable => _button != null;
+                public bool IsSelected { get { return _isSelected; } set { SetIsSelected(value); } }
+                public bool IsInteractable
+                {
+                        get => _button != null && _button.interactable;
+                        set
+                        {
+                                if (_button != null)
+                                {
+                                        _button.interactable = value;
+                                }
+                        }
+                }
+
+                public Action<int> Clicked;
+
+                protected RectTransform CachedRectTransform => _rectTransform != null ? _rectTransform : (_rectTransform = transform as RectTransform);
+                protected UIButton ButtonWrapper => _buttonWrapper;
+                protected Image BackgroundImage => _backgroundImage;
+                protected Image SelectionBorderImage => _selectionBorderImage;
+
+                // PRIVATE MEMBERS
+
+                [SerializeField]
+                private Button _button;
+                [SerializeField]
+                private Animator _animator;
+                [SerializeField]
+                private T _content;
+                [SerializeField]
+                private string _selectedAnimatorParameter = "IsSelected";
+                [SerializeField]
+                private CanvasGroup _selectedGroup;
+                [SerializeField]
+                private CanvasGroup _deselectedGroup;
+                [SerializeField]
+                private Image _backgroundImage;
+                [SerializeField]
+                private Image _selectionBorderImage;
+
+                private UIButton _buttonWrapper;
+                private bool _isSelected;
+                private Color _defaultBackgroundColor;
+                private bool _defaultBackgroundColorCached;
+                private Color _defaultSelectionBorderColor;
+                private bool _defaultSelectionBorderColorCached;
+                private RectTransform _rectTransform;
+
+                // MONOBEHAVIOR
+
+                protected override void OnInitialize()
+                {
+                        base.OnInitialize();
+                        RuntimeInitialize();
+                }
+
+                private void Awake()
+                {
+                        RuntimeInitialize();
+                }
+
+                protected override void OnDeinitialize()
+                {
+                        Clicked = null;
+
+                        if (_button != null)
+                        {
+                                _button.onClick.RemoveListener(OnClick);
+                        }
+
+                        base.OnDeinitialize();
+                }
+
+                // INTERNAL METHODS
+
+                internal void SetSelected(bool selected, Color selectedColor)
+                {
+                        if (_backgroundImage == null)
+                                return;
+
+                        CacheDefaultBackgroundColor();
+
+                        _backgroundImage.color = selected ? selectedColor : _defaultBackgroundColor;
+                }
+
+                internal void SetSelectionHighlight(bool selected, Color selectedColor)
+                {
+                        if (_selectionBorderImage == null)
+                                return;
+
+                        CacheDefaultSelectionBorderColor();
+
+                        _selectionBorderImage.color = selected ? selectedColor : _defaultSelectionBorderColor;
+                }
+
+                // PROTECTED METHODS
+
+                protected virtual void RuntimeInitialize()
+                {
+                        SetIsSelected(false, true);
+
+                        if (_button != null)
+                        {
+                                _button.onClick.RemoveListener(OnClick);
+                                _button.onClick.AddListener(OnClick);
+                        }
+
+                        if (_buttonWrapper == null)
+                        {
+                                _buttonWrapper = GetComponent<UIButton>();
+                        }
+
+                        if (_button != null && _button.transition == Selectable.Transition.Animation)
+                        {
+                                _animator = _button.animator;
+                        }
+
+                        CacheDefaultBackgroundColor();
+                        CacheDefaultSelectionBorderColor();
+                }
+
+                protected void SetIsSelected(bool value, bool force = false)
+                {
+                        if (_isSelected == value && force == false)
+                                return;
+
+                        _isSelected = value;
+
+                        _selectedGroup?.SetVisibility(value);
+                        _deselectedGroup?.SetVisibility(value == false);
+
+                        UpdateAnimator();
+                }
+
+                protected void CacheDefaultBackgroundColor()
+                {
+                        if (_backgroundImage == null || _defaultBackgroundColorCached == true)
+                                return;
+
+                        _defaultBackgroundColor = _backgroundImage.color;
+                        _defaultBackgroundColorCached = true;
+                }
+
+                protected void CacheDefaultSelectionBorderColor()
+                {
+                        if (_selectionBorderImage == null || _defaultSelectionBorderColorCached == true)
+                                return;
+
+                        _defaultSelectionBorderColor = _selectionBorderImage.color;
+                        _defaultSelectionBorderColorCached = true;
+                }
+
+                // PRIVATE METHODS
+
+                private void OnClick()
+                {
+                        Clicked?.Invoke(ID);
+                }
+
+                private void UpdateAnimator()
+                {
+                        if (_animator == null)
+                                return;
+
+                        if (_selectedAnimatorParameter.HasValue() == false)
+                                return;
+
+                        _animator.SetBool(_selectedAnimatorParameter, _isSelected);
                 }
         }
 }
