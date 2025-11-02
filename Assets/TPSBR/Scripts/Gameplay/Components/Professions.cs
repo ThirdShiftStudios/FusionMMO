@@ -6,7 +6,7 @@ namespace TPSBR
 {
     public sealed class Professions : ContextBehaviour
     {
-        public const int Count = 11;
+        public const int Count = 10;
         public const int MinLevel = 1;
         public const int MaxLevel = 100;
         public const int BaseExperienceRequirement = 50;
@@ -17,14 +17,13 @@ namespace TPSBR
             Mining       = 0,
             Woodcutting  = 1,
             Fishing      = 2,
-            Luck         = 3,
+            Gambling     = 3,
             Runecrafting = 4,
             Herbalism    = 5,
             Smithing     = 6,
             Carpentry    = 7,
             Alchemy      = 8,
             Brewing      = 9,
-            Gambling     = 10,
         }
 
         public readonly struct ProfessionSnapshot
@@ -49,34 +48,31 @@ namespace TPSBR
         public const string MiningCode       = "MIN";
         public const string WoodcuttingCode  = "WDC";
         public const string FishingCode      = "FSH";
-        public const string LuckCode         = "LCK";
+        public const string GamblingCode     = "GMB";
         public const string RunecraftingCode = "RNC";
         public const string HerbalismCode    = "HRB";
         public const string SmithingCode     = "SMT";
         public const string CarpentryCode    = "CRP";
         public const string AlchemyCode      = "ALC";
         public const string BrewingCode      = "BRW";
-        public const string GamblingCode     = "GMB";
 
         private static readonly string[] _codes =
         {
             MiningCode,
             WoodcuttingCode,
             FishingCode,
-            LuckCode,
+            GamblingCode,
             RunecraftingCode,
             HerbalismCode,
             SmithingCode,
             CarpentryCode,
             AlchemyCode,
             BrewingCode,
-            GamblingCode,
         };
 
         [SerializeField]
         private int[] _initialLevels =
         {
-            1,
             1,
             1,
             1,
@@ -101,14 +97,13 @@ namespace TPSBR
         public ProfessionSnapshot Mining      => GetSnapshot(ProfessionIndex.Mining);
         public ProfessionSnapshot Woodcutting => GetSnapshot(ProfessionIndex.Woodcutting);
         public ProfessionSnapshot Fishing     => GetSnapshot(ProfessionIndex.Fishing);
-        public ProfessionSnapshot Luck        => GetSnapshot(ProfessionIndex.Luck);
+        public ProfessionSnapshot Gambling    => GetSnapshot(ProfessionIndex.Gambling);
         public ProfessionSnapshot Runecrafting => GetSnapshot(ProfessionIndex.Runecrafting);
         public ProfessionSnapshot Herbalism   => GetSnapshot(ProfessionIndex.Herbalism);
         public ProfessionSnapshot Smithing    => GetSnapshot(ProfessionIndex.Smithing);
         public ProfessionSnapshot Carpentry   => GetSnapshot(ProfessionIndex.Carpentry);
         public ProfessionSnapshot Alchemy     => GetSnapshot(ProfessionIndex.Alchemy);
         public ProfessionSnapshot Brewing     => GetSnapshot(ProfessionIndex.Brewing);
-        public ProfessionSnapshot Gambling    => GetSnapshot(ProfessionIndex.Gambling);
 
         private int[] _cachedLevels;
         private int[] _cachedExperience;
