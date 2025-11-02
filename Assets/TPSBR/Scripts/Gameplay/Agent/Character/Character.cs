@@ -295,11 +295,6 @@ namespace TPSBR
                 _cameraDistance = 0f;
                 _cameraChangeTime = _cameraChangeDuration;
 
-                if (_agent.HasInputAuthority == true)
-                {
-                    _animationController.RefreshSnapping();
-                }
-
                 return;
             }
 
@@ -313,10 +308,6 @@ namespace TPSBR
                     _cameraDistance = 0f;
                     _cameraChangeTime = _cameraChangeDuration;
 
-                    if (_agent.HasInputAuthority == true)
-                    {
-                        _animationController.RefreshSnapping();
-                    }
                 }
 
                 return;

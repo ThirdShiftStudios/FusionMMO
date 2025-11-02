@@ -2757,6 +2757,16 @@ MonoBehaviour:
   _itemDefinition: {fileID: 0}
   _slotCategory: 0
   _defaultObject: 0
+--- !u!4 &1304495285197857672 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -6185227605528292631, guid: faea6d6bfcf2f684387c00a94dd1de07, type: 3}
+  m_PrefabInstance: {fileID: 4049817776425546081}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &1489844847515772755 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -6008036986429401550, guid: faea6d6bfcf2f684387c00a94dd1de07, type: 3}
+  m_PrefabInstance: {fileID: 4049817776425546081}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &1553815854378552074 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 3288635460157618795, guid: faea6d6bfcf2f684387c00a94dd1de07, type: 3}
@@ -2950,6 +2960,11 @@ Transform:
 --- !u!4 &8852973948329597623 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4823288307654929366, guid: faea6d6bfcf2f684387c00a94dd1de07, type: 3}
+  m_PrefabInstance: {fileID: 4049817776425546081}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &9216956404548903618 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -4045671950988733533, guid: faea6d6bfcf2f684387c00a94dd1de07, type: 3}
   m_PrefabInstance: {fileID: 4049817776425546081}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &5962503691769372297
@@ -3488,6 +3503,18 @@ PrefabInstance:
       propertyPath: _animator
       value: 
       objectReference: {fileID: 7591171654561598704}
+    - target: {fileID: 6522195430194241608, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
+      propertyPath: _leftHand
+      value: 
+      objectReference: {fileID: 1489844847515772755}
+    - target: {fileID: 6522195430194241608, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
+      propertyPath: _leftLowerArm
+      value: 
+      objectReference: {fileID: 9216956404548903618}
+    - target: {fileID: 6522195430194241608, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
+      propertyPath: _leftUpperArm
+      value: 
+      objectReference: {fileID: 1304495285197857672}
     - target: {fileID: 6522195430194241608, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
       propertyPath: RootMotionTarget
       value: 

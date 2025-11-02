@@ -204,6 +204,7 @@ Transform:
   m_Children:
   - {fileID: 2604413403581939075}
   - {fileID: 309535127244442079}
+  - {fileID: 2321116935592873004}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &6738948642864995280
@@ -255,7 +256,7 @@ MonoBehaviour:
   _weaponDefinition: {fileID: 11400000, guid: 01f02ed27d2e3c04ca72796ad6d0177f, type: 2}
   _weaponSize: 2
   _validOnlyWithAmmo: 0
-  _leftHandTarget: {fileID: 0}
+  _leftHandTarget: {fileID: 2321116935592873004}
   _hitType: 0
   _aimFOV: 0
   _displayName: 
@@ -268,6 +269,11 @@ MonoBehaviour:
     RawGuidValue: 6b8b2b3c11cfd9941a0f8b6c1de2d4ac
   _lureProjectileSpeed: 12
   _parabolaString: {fileID: 0}
+  _renderers: []
+  _waitingSuccessZoneBobAmplitude: 0.1
+  _waitingSuccessZoneBobFrequency: 2
+  _availableFishDefinitions: []
+  _fightingFishOffset: {x: 0, y: -1, z: 0}
 --- !u!114 &-23164802236645595
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -314,6 +320,37 @@ Transform:
   m_Children: []
   m_Father: {fileID: 2604413403581939075}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &7584146641487150907
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2321116935592873004}
+  m_Layer: 0
+  m_Name: LeftHandTarget
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2321116935592873004
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7584146641487150907}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0.5235836, y: 0.39113298, z: -0.16367826, w: 0.73897547}
+  m_LocalPosition: {x: -0.091, y: 0.04, z: 0.1}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2245587626863157860}
+  m_LocalEulerAnglesHint: {x: -40.225, y: 78.995, z: -58.57}
 --- !u!1001 &6711869392012962467
 PrefabInstance:
   m_ObjectHideFlags: 0
