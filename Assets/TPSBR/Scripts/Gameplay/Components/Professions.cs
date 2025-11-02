@@ -6,7 +6,7 @@ namespace TPSBR
 {
     public sealed class Professions : ContextBehaviour
     {
-        public const int Count = 9;
+        public const int Count = 11;
         public const int MinLevel = 1;
         public const int MaxLevel = 100;
         public const int BaseExperienceRequirement = 50;
@@ -14,15 +14,17 @@ namespace TPSBR
 
         public enum ProfessionIndex
         {
-            Mining      = 0,
-            Woodcutting = 1,
-            Fishing     = 2,
-            Luck        = 3,
+            Mining       = 0,
+            Woodcutting  = 1,
+            Fishing      = 2,
+            Luck         = 3,
             Runecrafting = 4,
-            Herbalism   = 5,
-            Smithing    = 6,
-            Carpentry   = 7,
-            Alchemy     = 8,
+            Herbalism    = 5,
+            Smithing     = 6,
+            Carpentry    = 7,
+            Alchemy      = 8,
+            Brewing      = 9,
+            Gambling     = 10,
         }
 
         public readonly struct ProfessionSnapshot
@@ -53,6 +55,8 @@ namespace TPSBR
         public const string SmithingCode     = "SMT";
         public const string CarpentryCode    = "CRP";
         public const string AlchemyCode      = "ALC";
+        public const string BrewingCode      = "BRW";
+        public const string GamblingCode     = "GMB";
 
         private static readonly string[] _codes =
         {
@@ -65,11 +69,15 @@ namespace TPSBR
             SmithingCode,
             CarpentryCode,
             AlchemyCode,
+            BrewingCode,
+            GamblingCode,
         };
 
         [SerializeField]
         private int[] _initialLevels =
         {
+            1,
+            1,
             1,
             1,
             1,
@@ -99,6 +107,8 @@ namespace TPSBR
         public ProfessionSnapshot Smithing    => GetSnapshot(ProfessionIndex.Smithing);
         public ProfessionSnapshot Carpentry   => GetSnapshot(ProfessionIndex.Carpentry);
         public ProfessionSnapshot Alchemy     => GetSnapshot(ProfessionIndex.Alchemy);
+        public ProfessionSnapshot Brewing     => GetSnapshot(ProfessionIndex.Brewing);
+        public ProfessionSnapshot Gambling    => GetSnapshot(ProfessionIndex.Gambling);
 
         private int[] _cachedLevels;
         private int[] _cachedExperience;
