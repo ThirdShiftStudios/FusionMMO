@@ -75,28 +75,12 @@ namespace TPSBR.UI
                 protected override void OnInitialize()
                 {
                         base.OnInitialize();
+                        RuntimeInitialize();
+                }
 
-                        SetIsSelected(false, true);
-
-                        if (_button != null)
-                        {
-                                _button.onClick.AddListener(OnClick);
-                        }
-
-                        _buttonWrapper = GetComponent<UIButton>();
-
-                        if (_button != null && _button.transition == Selectable.Transition.Animation)
-                        {
-                                _animator = _button.animator;
-                        }
-
-                        CacheDefaultBackgroundColor();
-                        CacheDefaultSelectionBorderColor();
-
-                        if (_allSlots.Contains(this) == false)
-                        {
-                                _allSlots.Add(this);
-                        }
+                private void Awake()
+                {
+                        RuntimeInitialize();
                 }
 
                 protected override void OnDeinitialize()
@@ -114,6 +98,13 @@ namespace TPSBR.UI
                         _allSlots.Remove(this);
 
                         base.OnDeinitialize();
+                }
+
+                protected override void OnDestroy()
+                {
+                        _allSlots.Remove(this);
+
+                        base.OnDestroy();
                 }
 
                 // PUBLIC METHODS
@@ -298,6 +289,35 @@ namespace TPSBR.UI
                 }
 
                 // PRIVATE METHODS
+
+                private void RuntimeInitialize()
+                {
+                        SetIsSelected(false, true);
+
+                        if (_button != null)
+                        {
+                                _button.onClick.RemoveListener(OnClick);
+                                _button.onClick.AddListener(OnClick);
+                        }
+
+                        if (_buttonWrapper == null)
+                        {
+                                _buttonWrapper = GetComponent<UIButton>();
+                        }
+
+                        if (_button != null && _button.transition == Selectable.Transition.Animation)
+                        {
+                                _animator = _button.animator;
+                        }
+
+                        CacheDefaultBackgroundColor();
+                        CacheDefaultSelectionBorderColor();
+
+                        if (_allSlots.Contains(this) == false)
+                        {
+                                _allSlots.Add(this);
+                        }
+                }
 
                 private void SetIsSelected(bool value, bool force = false)
                 {
