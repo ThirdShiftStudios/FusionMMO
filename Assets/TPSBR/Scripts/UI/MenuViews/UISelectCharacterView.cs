@@ -119,6 +119,12 @@ namespace TPSBR.UI
             }
 
             UpdateSelectButtonState();
+
+            if (cloud != null)
+            {
+                TryApplySelectedCharacter(cloud);
+            }
+
             UpdateActiveCharacterLabel();
         }
 
@@ -160,7 +166,7 @@ namespace TPSBR.UI
             if (cloud == null)
                 return;
 
-            if (cloud.SelectCharacter(_selectedCharacterId) == true)
+            if (TryApplySelectedCharacter(cloud) == true)
             {
                 CloseWithBack();
             }
@@ -238,6 +244,17 @@ namespace TPSBR.UI
             var activeCharacter = selectedCharacter != null ? selectedCharacter : cloud.GetCharacter(cloud.ActiveCharacterId);
 
             _activeCharacterLabel.text = activeCharacter != null ? activeCharacter.CharacterName : string.Empty;
+        }
+
+        private bool TryApplySelectedCharacter(PlayerCloudSaveService cloud)
+        {
+            if (cloud == null || _selectedCharacterId.HasValue() == false)
+                return false;
+
+            if (string.Equals(cloud.ActiveCharacterId, _selectedCharacterId, StringComparison.Ordinal) == true)
+                return true;
+
+            return cloud.SelectCharacter(_selectedCharacterId);
         }
 
         private void UpdateEmptyState(bool isEmpty)
