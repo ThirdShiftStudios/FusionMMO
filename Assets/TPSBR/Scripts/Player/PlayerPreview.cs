@@ -60,6 +60,11 @@ namespace TPSBR
 			if (agentSetup == null)
 				return;
 
+			if (agentSetup.MenuAgentPrefab == false)
+			{
+				Debug.LogError("agentSetup.MenuAgentPrefab is null");
+				return;
+			}
 			_agentInstance = Instantiate(agentSetup.MenuAgentPrefab, _agentParent);
 			_agentID = agentID;
 		}
