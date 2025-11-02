@@ -379,6 +379,11 @@ namespace TSS.Tools
             var cellRect = args.GetCellRect(i);
             CenterRectUsingSingleLineHeight(ref cellRect);
 
+            if (i == 0)
+            {
+                DrawHierarchyLines(args.rowRect, item);
+            }
+
             // indent based on depth
             float indent = GetContentIndent(item);
             cellRect.xMin += indent;
@@ -394,6 +399,102 @@ namespace TSS.Tools
             EditorGUI.LabelField(cellRect, item.displayName);
         }
     }
+
+
+    private void DrawHierarchyLines(Rect rowRect, DashboardItem item)
+    {
+        if (item.depth <= 0)
+            return;
+
+        var lineColor = EditorGUIUtility.isProSkin
+            ? new Color(1f, 1f, 1f, 0.25f)
+            : new Color(0f, 0f, 0f, 0.35f);
+
+        float midY = rowRect.center.y;
+        float parentX = 0f;
+        var parent = item.parent as DashboardItem;
+
+        if (parent != null)
+        {
+            parentX = CalculateLineX(parent, rowRect.x);
+            float bottom = IsLastChild(item) ? midY : rowRect.yMax;
+            DrawVerticalLine(parentX, rowRect.y, bottom, lineColor);
+        }
+
+        var ancestor = parent?.parent as DashboardItem;
+        while (ancestor != null && ancestor.depth >= 0)
+        {
+            if (!IsLastChild(ancestor))
+            {
+                float ancestorX = CalculateLineX(ancestor, rowRect.x);
+                DrawVerticalLine(ancestorX, rowRect.y, rowRect.yMax, lineColor);
+            }
+
+            ancestor = ancestor.parent as DashboardItem;
+        }
+
+        float endX = rowRect.x + GetContentIndent(item) - HorizontalPadding;
+        float startX = parent != null ? parentX : CalculateLineX(item, rowRect.x);
+
+        if (endX > startX)
+        {
+            DrawHorizontalLine(startX, endX, midY, lineColor);
+        }
+    }
+
+
+    private float CalculateLineX(TreeViewItem item, float rowOriginX)
+    {
+        float indent = GetContentIndent(item);
+
+        if (indent <= 0f)
+            return rowOriginX + DefaultIndentWidth * 0.5f;
+
+        float parentIndent = (item.parent != null && item.parent.depth >= 0)
+            ? GetContentIndent(item.parent)
+            : Mathf.Max(0f, indent - DefaultIndentWidth);
+
+        float delta = Mathf.Max(DefaultIndentWidth, indent - parentIndent);
+        return rowOriginX + indent - (delta * 0.5f);
+    }
+
+
+    private static bool IsLastChild(DashboardItem item)
+    {
+        if (item?.parent == null)
+            return true;
+
+        var siblings = item.parent.children;
+        if (siblings == null || siblings.Count == 0)
+            return true;
+
+        return ReferenceEquals(item, siblings[siblings.Count - 1]);
+    }
+
+
+    private static void DrawVerticalLine(float x, float yMin, float yMax, Color color)
+    {
+        if (yMax <= yMin)
+            return;
+
+        var rect = new Rect(Mathf.Round(x - (LineThickness * 0.5f)), Mathf.Round(yMin), LineThickness, Mathf.Round(yMax - yMin));
+        EditorGUI.DrawRect(rect, color);
+    }
+
+
+    private static void DrawHorizontalLine(float xMin, float xMax, float y, Color color)
+    {
+        if (xMax <= xMin)
+            return;
+
+        var rect = new Rect(Mathf.Round(xMin), Mathf.Round(y - (LineThickness * 0.5f)), Mathf.Round(xMax - xMin), LineThickness);
+        EditorGUI.DrawRect(rect, color);
+    }
+
+
+    private const float DefaultIndentWidth = 14f;
+    private const float HorizontalPadding = 6f;
+    private const float LineThickness = 1f;
 
 
     // change the DashboardItem field type
