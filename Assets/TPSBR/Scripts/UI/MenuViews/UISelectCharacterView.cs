@@ -119,6 +119,7 @@ namespace TPSBR.UI
             }
 
             UpdateSelectButtonState();
+            UpdateActiveCharacterLabel();
         }
 
         private void OnUpdateCharacterContent(int index, MonoBehaviour content)
@@ -233,7 +234,9 @@ namespace TPSBR.UI
                 return;
             }
 
-            var activeCharacter = cloud.GetCharacter(cloud.ActiveCharacterId);
+            var selectedCharacter = _selectedCharacterId.HasValue() ? cloud.GetCharacter(_selectedCharacterId) : null;
+            var activeCharacter = selectedCharacter != null ? selectedCharacter : cloud.GetCharacter(cloud.ActiveCharacterId);
+
             _activeCharacterLabel.text = activeCharacter != null ? activeCharacter.CharacterName : string.Empty;
         }
 
