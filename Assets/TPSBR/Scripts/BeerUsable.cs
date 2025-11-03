@@ -115,9 +115,16 @@ namespace TPSBR
         {
             _isDrinking = false;
 
-            if (HasStateAuthority == true && _beerStack > 0)
+            if (HasStateAuthority == true)
             {
-                _beerStack--;
+                if (_beerStack > 0)
+                {
+                    _beerStack--;
+                }
+
+                Character character = Character;
+                Agent agent = character != null ? character.Agent : null;
+                agent?.Senses?.OnBeerDrank();
             }
         }
 
