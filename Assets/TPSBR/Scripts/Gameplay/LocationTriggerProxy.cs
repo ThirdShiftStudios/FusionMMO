@@ -31,29 +31,41 @@ namespace TPSBR
                 _listeners.Remove(behavior);
             }
 
-        public override void OnEnter(KCC kcc, KCCData data) 
-        {
-            if (_listeners.Count == 0)
+            public override void OnEnter(KCC kcc, KCCData data)
             {
-                return;
+                if (kcc == null)
+                {
+                    return;
+                }
+
+                Agent agent = kcc.GetComponent<Agent>();
+                if (agent == null)
+                {
+                    return;
+                }
+
+                LocationBehavior parentBehavior = GetComponentInParent<LocationBehavior>();
+                if (parentBehavior != null)
+                {
+                    parentBehavior.HandleAgentEntered(agent);
+                    return;
+                }
+
+                if (_listeners.Count == 0)
+                {
+                    return;
+                }
+
+                for (int i = 0; i < _listeners.Count; ++i)
+                {
+                    _listeners[i]?.HandleAgentEntered(agent);
+                }
             }
 
-            Agent agent = kcc.GetComponent<Agent>();
-            if (agent == null)
+            public override void OnExit(KCC kcc, KCCData data)
             {
-                return;
-            }
 
-            for (int i = 0; i < _listeners.Count; ++i)
-            {
-                _listeners[i]?.HandleAgentEntered(agent);
             }
-        }
-
-        public override void OnExit(KCC kcc, KCCData data) 
-        {
-        
-        }
         
         }
 }

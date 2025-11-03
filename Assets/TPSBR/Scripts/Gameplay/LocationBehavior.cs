@@ -15,8 +15,6 @@ namespace TPSBR
 
         private readonly List<LocationTriggerProxy> _proxies = new List<LocationTriggerProxy>();
 
-        private const float INSIDE_DISTANCE_THRESHOLD_SQR = 0.0001f;
-
         public override void Spawned()
         {
             base.Spawned();
@@ -30,60 +28,8 @@ namespace TPSBR
 
         public override void FixedUpdateNetwork()
         {
-            if (HasStateAuthority == false)
-            {
-                return;
-            }
-
-            if (_locationDefinition == null)
-            {
-                return;
-            }
-
-            if (Context == null || Context.NetworkGame == null)
-            {
-                return;
-            }
-
-            if (_proxies == null || _proxies.Count == 0)
-            {
-                return;
-            }
-
-            List<Player> activePlayers = Context.NetworkGame.ActivePlayers;
-            if (activePlayers == null || activePlayers.Count == 0)
-            {
-                return;
-            }
-
-            int locationId = _locationDefinition.ID;
-
-            for (int i = 0; i < activePlayers.Count; ++i)
-            {
-                Player player = activePlayers[i];
-                if (player == null)
-                {
-                    continue;
-                }
-
-                Agent agent = player.ActiveAgent;
-                if (agent == null)
-                {
-                    continue;
-                }
-
-                if (IsAgentInside(agent) == false)
-                {
-                    continue;
-                }
-
-                if (player.CurrentLocationID == locationId)
-                {
-                    continue;
-                }
-
-                player.CurrentLocationID = locationId;
-            }
+            // Location changes are handled by LocationTriggerProxy.OnEnter to avoid
+            // performing per-frame proximity checks.
         }
 
         internal void HandleAgentEntered(Agent agent)
@@ -204,38 +150,6 @@ namespace TPSBR
             };
 
             announcer.Announce?.Invoke(announcement);
-        }
-
-        private bool IsAgentInside(Agent agent)
-        {
-            if (agent == null)
-            {
-                return false;
-            }
-
-            Vector3 agentPosition = agent.transform.position;
-
-            for (int i = 0; i < _colliders.Length; ++i)
-            {
-                Collider collider = _colliders[i];
-                if (collider == null)
-                {
-                    continue;
-                }
-
-                if (collider.enabled == false || collider.gameObject.activeInHierarchy == false)
-                {
-                    continue;
-                }
-
-                Vector3 closestPoint = collider.ClosestPoint(agentPosition);
-                if ((closestPoint - agentPosition).sqrMagnitude <= INSIDE_DISTANCE_THRESHOLD_SQR)
-                {
-                    return true;
-                }
-            }
-
-            return false;
         }
     }
 }
