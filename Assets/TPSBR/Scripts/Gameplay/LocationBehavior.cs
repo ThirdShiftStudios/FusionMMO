@@ -1,28 +1,30 @@
+using Fusion;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
 
 namespace TPSBR
 {
-    public sealed class LocationBehavior : ContextBehaviour
+    public sealed partial class LocationBehavior : ContextBehaviour
     {
         [SerializeField]
         private LocationDefinition _locationDefinition;
 
         [SerializeField]
-        private Collider[] _colliders = Array.Empty<Collider>();
+        private Collider[] _colliders;
 
         private readonly List<LocationTriggerProxy> _proxies = new List<LocationTriggerProxy>();
 
         private const float INSIDE_DISTANCE_THRESHOLD_SQR = 0.0001f;
 
-        private void OnEnable()
+        public override void Spawned()
         {
+            base.Spawned();
             RegisterProxies();
         }
-
-        private void OnDisable()
+        public override void Despawned(NetworkRunner runner, bool hasState)
         {
+            base.Despawned(runner, hasState);
             UnregisterProxies();
         }
 
@@ -43,7 +45,7 @@ namespace TPSBR
                 return;
             }
 
-            if (_colliders == null || _colliders.Length == 0)
+            if (_proxies == null || _proxies.Count == 0)
             {
                 return;
             }
@@ -234,53 +236,6 @@ namespace TPSBR
             }
 
             return false;
-        }
-
-        private sealed class LocationTriggerProxy : MonoBehaviour
-        {
-            private readonly List<LocationBehavior> _listeners = new List<LocationBehavior>();
-
-            public void AddListener(LocationBehavior behavior)
-            {
-                if (behavior == null)
-                {
-                    return;
-                }
-
-                if (_listeners.Contains(behavior) == false)
-                {
-                    _listeners.Add(behavior);
-                }
-            }
-
-            public void RemoveListener(LocationBehavior behavior)
-            {
-                if (behavior == null)
-                {
-                    return;
-                }
-
-                _listeners.Remove(behavior);
-            }
-
-            private void OnTriggerEnter(Collider other)
-            {
-                if (_listeners.Count == 0)
-                {
-                    return;
-                }
-
-                Agent agent = other.GetComponentInParent<Agent>();
-                if (agent == null)
-                {
-                    return;
-                }
-
-                for (int i = 0; i < _listeners.Count; ++i)
-                {
-                    _listeners[i]?.HandleAgentEntered(agent);
-                }
-            }
         }
     }
 }
