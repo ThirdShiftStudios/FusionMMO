@@ -172,6 +172,11 @@ namespace TPSBR
             }
 
             player.CurrentLocationID = locationId;
+
+            string playerName = string.IsNullOrEmpty(player.Nickname) ? "Unknown" : player.Nickname;
+            string locationName = string.IsNullOrEmpty(_locationDefinition.Name) ? locationId.ToString() : _locationDefinition.Name;
+
+            Debug.Log($"Player '{playerName}' entered location '{locationName}' (ID {locationId}).", this);
         }
 
         private bool IsAgentInside(Agent agent)
