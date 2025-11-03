@@ -10,7 +10,8 @@ namespace TPSBR
                 [Networked, HideInInspector]
                 public float EyesFlashValue { get; set; }
 
-                [Networked(OnChanged = nameof(OnDrunkValueChanged)), HideInInspector]
+                [Networked][OnChangedRender(nameof(OnDrunkValueChanged))]
+                [HideInInspector]
                 public float DrunkValue { get; set; }
 
                 [SerializeField]
@@ -157,17 +158,12 @@ namespace TPSBR
                         }
                 }
 
-                private static void OnDrunkValueChanged(Changed<AgentSenses> changed)
+                private void OnDrunkValueChanged()
                 {
-                        AgentSenses senses = changed.Behaviour;
-
-                        if (senses == null)
+                        if (Object == null || Object.HasInputAuthority == false)
                                 return;
 
-                        if (senses.Object == null || senses.Object.HasInputAuthority == false)
-                                return;
-
-                        senses.ApplyDrunkPostProcess(senses.DrunkValue);
+                        ApplyDrunkPostProcess(DrunkValue);
                 }
 
                 private void ApplyDrunkPostProcess(float value)
