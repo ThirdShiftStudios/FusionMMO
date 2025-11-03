@@ -118,6 +118,7 @@ namespace TPSBR
         public const int HOTBAR_SECOND_CONSUMABLE_SLOT = 4;
         public const int HOTBAR_THIRD_CONSUMABLE_SLOT = 5;
         public const int HOTBAR_FISHING_POLE_SLOT = HOTBAR_CAPACITY - 1;
+        private const int ConfigurationHashCharacterLimit = 32;
         // PRIVATE MEMBERS
 
         [SerializeField] private WeaponSlot[] _slots;
@@ -417,11 +418,7 @@ namespace TPSBR
                     if (slotData.ItemDefinitionId == 0 || slotData.Quantity == 0)
                         continue;
 
-                    NetworkString<_32> configurationHash = default;
-                    if (string.IsNullOrEmpty(slotData.ConfigurationHash) == false)
-                    {
-                        configurationHash = slotData.ConfigurationHash;
-                    }
+                    NetworkString<_32> configurationHash = CreateConfigurationHash(slotData.ConfigurationHash);
 
                     var slot = new InventorySlot(slotData.ItemDefinitionId, slotData.Quantity, configurationHash);
                     _items.Set(i, slot);
@@ -431,11 +428,7 @@ namespace TPSBR
 
             if (data.PickaxeSlot.ItemDefinitionId != 0 && data.PickaxeSlot.Quantity != 0)
             {
-                NetworkString<_32> pickaxeHash = default;
-                if (string.IsNullOrEmpty(data.PickaxeSlot.ConfigurationHash) == false)
-                {
-                    pickaxeHash = data.PickaxeSlot.ConfigurationHash;
-                }
+                NetworkString<_32> pickaxeHash = CreateConfigurationHash(data.PickaxeSlot.ConfigurationHash);
 
                 _pickaxeSlot = new InventorySlot(data.PickaxeSlot.ItemDefinitionId, data.PickaxeSlot.Quantity, pickaxeHash);
                 RefreshPickaxeSlot();
@@ -443,11 +436,7 @@ namespace TPSBR
 
             if (data.WoodAxeSlot.ItemDefinitionId != 0 && data.WoodAxeSlot.Quantity != 0)
             {
-                NetworkString<_32> woodAxeHash = default;
-                if (string.IsNullOrEmpty(data.WoodAxeSlot.ConfigurationHash) == false)
-                {
-                    woodAxeHash = data.WoodAxeSlot.ConfigurationHash;
-                }
+                NetworkString<_32> woodAxeHash = CreateConfigurationHash(data.WoodAxeSlot.ConfigurationHash);
 
                 _woodAxeSlot = new InventorySlot(data.WoodAxeSlot.ItemDefinitionId, data.WoodAxeSlot.Quantity, woodAxeHash);
                 RefreshWoodAxeSlot();
@@ -455,11 +444,7 @@ namespace TPSBR
 
             if (data.FishingPoleSlot.ItemDefinitionId != 0 && data.FishingPoleSlot.Quantity != 0)
             {
-                NetworkString<_32> fishingPoleHash = default;
-                if (string.IsNullOrEmpty(data.FishingPoleSlot.ConfigurationHash) == false)
-                {
-                    fishingPoleHash = data.FishingPoleSlot.ConfigurationHash;
-                }
+                NetworkString<_32> fishingPoleHash = CreateConfigurationHash(data.FishingPoleSlot.ConfigurationHash);
 
                 _fishingPoleSlot = new InventorySlot(data.FishingPoleSlot.ItemDefinitionId, data.FishingPoleSlot.Quantity, fishingPoleHash);
                 RefreshFishingPoleSlot();
@@ -467,11 +452,7 @@ namespace TPSBR
 
             if (data.HeadSlot.ItemDefinitionId != 0 && data.HeadSlot.Quantity != 0)
             {
-                NetworkString<_32> headHash = default;
-                if (string.IsNullOrEmpty(data.HeadSlot.ConfigurationHash) == false)
-                {
-                    headHash = data.HeadSlot.ConfigurationHash;
-                }
+                NetworkString<_32> headHash = CreateConfigurationHash(data.HeadSlot.ConfigurationHash);
 
                 _headSlot = new InventorySlot(data.HeadSlot.ItemDefinitionId, data.HeadSlot.Quantity, headHash);
                 RefreshHeadSlot();
@@ -479,11 +460,7 @@ namespace TPSBR
 
             if (data.UpperBodySlot.ItemDefinitionId != 0 && data.UpperBodySlot.Quantity != 0)
             {
-                NetworkString<_32> upperBodyHash = default;
-                if (string.IsNullOrEmpty(data.UpperBodySlot.ConfigurationHash) == false)
-                {
-                    upperBodyHash = data.UpperBodySlot.ConfigurationHash;
-                }
+                NetworkString<_32> upperBodyHash = CreateConfigurationHash(data.UpperBodySlot.ConfigurationHash);
 
                 _upperBodySlot = new InventorySlot(data.UpperBodySlot.ItemDefinitionId, data.UpperBodySlot.Quantity, upperBodyHash);
                 RefreshUpperBodySlot();
@@ -491,11 +468,7 @@ namespace TPSBR
 
             if (data.LowerBodySlot.ItemDefinitionId != 0 && data.LowerBodySlot.Quantity != 0)
             {
-                NetworkString<_32> lowerBodyHash = default;
-                if (string.IsNullOrEmpty(data.LowerBodySlot.ConfigurationHash) == false)
-                {
-                    lowerBodyHash = data.LowerBodySlot.ConfigurationHash;
-                }
+                NetworkString<_32> lowerBodyHash = CreateConfigurationHash(data.LowerBodySlot.ConfigurationHash);
 
                 _lowerBodySlot = new InventorySlot(data.LowerBodySlot.ItemDefinitionId, data.LowerBodySlot.Quantity, lowerBodyHash);
                 RefreshLowerBodySlot();
@@ -528,8 +501,11 @@ namespace TPSBR
 
                     if (string.IsNullOrEmpty(slotData.ConfigurationHash) == false)
                     {
-                        NetworkString<_32> configurationHash = slotData.ConfigurationHash;
-                        weapon.SetConfigurationHash(configurationHash);
+                        NetworkString<_32> configurationHash = CreateConfigurationHash(slotData.ConfigurationHash);
+                        if (string.IsNullOrEmpty(configurationHash.ToString()) == false)
+                        {
+                            weapon.SetConfigurationHash(configurationHash);
+                        }
                     }
 
                     AddWeapon(weapon, i);
@@ -4494,6 +4470,37 @@ namespace TPSBR
             return IsGeneralInventoryIndex(index) || index == PICKAXE_SLOT_INDEX || index == WOOD_AXE_SLOT_INDEX ||
                    index == FISHING_POLE_SLOT_INDEX || index == HEAD_SLOT_INDEX || index == UPPER_BODY_SLOT_INDEX ||
                    index == LOWER_BODY_SLOT_INDEX;
+        }
+
+        private static NetworkString<_32> CreateConfigurationHash(string configurationHash)
+        {
+            if (string.IsNullOrWhiteSpace(configurationHash) == true)
+            {
+                return default;
+            }
+
+            string trimmed = configurationHash.Trim();
+            if (trimmed.Length == 0)
+            {
+                return default;
+            }
+
+            if (trimmed.Length > ConfigurationHashCharacterLimit)
+            {
+                Debug.LogWarning($"Configuration hash '{trimmed}' exceeds {ConfigurationHashCharacterLimit} characters and will be ignored.");
+                return default;
+            }
+
+            try
+            {
+                NetworkString<_32> networkHash = trimmed;
+                return networkHash;
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning($"Failed to apply configuration hash '{trimmed}': {exception.Message}");
+                return default;
+            }
         }
 
         private static bool IsPickaxeSlotItem(InventorySlot slot)
