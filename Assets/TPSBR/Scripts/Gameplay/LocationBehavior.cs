@@ -177,6 +177,31 @@ namespace TPSBR
             string locationName = string.IsNullOrEmpty(_locationDefinition.Name) ? locationId.ToString() : _locationDefinition.Name;
 
             Debug.Log($"Player '{playerName}' entered location '{locationName}' (ID {locationId}).", this);
+
+            AnnounceLocationEntry(playerName, locationName);
+        }
+
+        private void AnnounceLocationEntry(string playerName, string locationName)
+        {
+            if (Context == null)
+            {
+                return;
+            }
+
+            Announcer announcer = Context.Announcer;
+            if (announcer == null)
+            {
+                return;
+            }
+
+            AnnouncementData announcement = new AnnouncementData
+            {
+                Channel = EAnnouncementChannel.None,
+                TextMessage = $"{playerName} entered {locationName}",
+                Color = Color.white,
+            };
+
+            announcer.Announce?.Invoke(announcement);
         }
 
         private bool IsAgentInside(Agent agent)
