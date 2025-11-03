@@ -296,13 +296,19 @@ namespace TPSBR
             for (int i = 0; i < _items.Length; i++)
             {
                 var slot = _items[i];
-                string configurationHash = slot.ConfigurationHash.ToString();
+                bool slotSanitized;
+                slot = SanitizeSlot(slot, $"inventory slot {i}", out slotSanitized, HasStateAuthority);
+
+                if (slotSanitized == true && HasStateAuthority == true)
+                {
+                    _items.Set(i, slot);
+                }
 
                 data.InventorySlots[i] = new PlayerInventoryItemData
                 {
                     ItemDefinitionId = slot.ItemDefinitionId,
                     Quantity = slot.Quantity,
-                    ConfigurationHash = string.IsNullOrEmpty(configurationHash) == false ? configurationHash : null
+                    ConfigurationHash = GetConfigurationHashOrNull(slot.ConfigurationHash, $"inventory slot {i}")
                 };
             }
 
@@ -315,61 +321,89 @@ namespace TPSBR
                     continue;
                 }
 
-                string configurationHash = weapon.ConfigurationHash.ToString();
-
                 data.HotbarSlots[i] = new PlayerHotbarSlotData
                 {
                     WeaponDefinitionId = weapon.Definition != null ? weapon.Definition.ID : 0,
-                    ConfigurationHash = string.IsNullOrEmpty(configurationHash) == false ? configurationHash : null
+                    ConfigurationHash = GetConfigurationHashOrNull(weapon.ConfigurationHash, $"hotbar slot {i}")
                 };
             }
 
-            string pickaxeConfigurationHash = _pickaxeSlot.ConfigurationHash.ToString();
+            bool pickaxeSlotSanitized;
+            var pickaxeSlot = SanitizeSlot(_pickaxeSlot, "pickaxe slot", out pickaxeSlotSanitized, HasStateAuthority);
+            if (pickaxeSlotSanitized == true && HasStateAuthority == true)
+            {
+                _pickaxeSlot = pickaxeSlot;
+            }
             data.PickaxeSlot = new PlayerInventoryItemData
             {
-                ItemDefinitionId = _pickaxeSlot.ItemDefinitionId,
-                Quantity = _pickaxeSlot.Quantity,
-                ConfigurationHash = string.IsNullOrEmpty(pickaxeConfigurationHash) == false ? pickaxeConfigurationHash : null
+                ItemDefinitionId = pickaxeSlot.ItemDefinitionId,
+                Quantity = pickaxeSlot.Quantity,
+                ConfigurationHash = GetConfigurationHashOrNull(pickaxeSlot.ConfigurationHash, "pickaxe slot")
             };
 
-            string woodAxeConfigurationHash = _woodAxeSlot.ConfigurationHash.ToString();
+            bool woodAxeSlotSanitized;
+            var woodAxeSlot = SanitizeSlot(_woodAxeSlot, "wood axe slot", out woodAxeSlotSanitized, HasStateAuthority);
+            if (woodAxeSlotSanitized == true && HasStateAuthority == true)
+            {
+                _woodAxeSlot = woodAxeSlot;
+            }
             data.WoodAxeSlot = new PlayerInventoryItemData
             {
-                ItemDefinitionId = _woodAxeSlot.ItemDefinitionId,
-                Quantity = _woodAxeSlot.Quantity,
-                ConfigurationHash = string.IsNullOrEmpty(woodAxeConfigurationHash) == false ? woodAxeConfigurationHash : null
+                ItemDefinitionId = woodAxeSlot.ItemDefinitionId,
+                Quantity = woodAxeSlot.Quantity,
+                ConfigurationHash = GetConfigurationHashOrNull(woodAxeSlot.ConfigurationHash, "wood axe slot")
             };
 
-            string fishingPoleConfigurationHash = _fishingPoleSlot.ConfigurationHash.ToString();
+            bool fishingSlotSanitized;
+            var fishingSlot = SanitizeSlot(_fishingPoleSlot, "fishing pole slot", out fishingSlotSanitized, HasStateAuthority);
+            if (fishingSlotSanitized == true && HasStateAuthority == true)
+            {
+                _fishingPoleSlot = fishingSlot;
+            }
             data.FishingPoleSlot = new PlayerInventoryItemData
             {
-                ItemDefinitionId = _fishingPoleSlot.ItemDefinitionId,
-                Quantity = _fishingPoleSlot.Quantity,
-                ConfigurationHash = string.IsNullOrEmpty(fishingPoleConfigurationHash) == false ? fishingPoleConfigurationHash : null
+                ItemDefinitionId = fishingSlot.ItemDefinitionId,
+                Quantity = fishingSlot.Quantity,
+                ConfigurationHash = GetConfigurationHashOrNull(fishingSlot.ConfigurationHash, "fishing pole slot")
             };
 
-            string headConfigurationHash = _headSlot.ConfigurationHash.ToString();
+            bool headSlotSanitized;
+            var headSlot = SanitizeSlot(_headSlot, "head slot", out headSlotSanitized, HasStateAuthority);
+            if (headSlotSanitized == true && HasStateAuthority == true)
+            {
+                _headSlot = headSlot;
+            }
             data.HeadSlot = new PlayerInventoryItemData
             {
-                ItemDefinitionId = _headSlot.ItemDefinitionId,
-                Quantity = _headSlot.Quantity,
-                ConfigurationHash = string.IsNullOrEmpty(headConfigurationHash) == false ? headConfigurationHash : null
+                ItemDefinitionId = headSlot.ItemDefinitionId,
+                Quantity = headSlot.Quantity,
+                ConfigurationHash = GetConfigurationHashOrNull(headSlot.ConfigurationHash, "head slot")
             };
 
-            string upperBodyConfigurationHash = _upperBodySlot.ConfigurationHash.ToString();
+            bool upperBodySlotSanitized;
+            var upperBodySlot = SanitizeSlot(_upperBodySlot, "upper body slot", out upperBodySlotSanitized, HasStateAuthority);
+            if (upperBodySlotSanitized == true && HasStateAuthority == true)
+            {
+                _upperBodySlot = upperBodySlot;
+            }
             data.UpperBodySlot = new PlayerInventoryItemData
             {
-                ItemDefinitionId = _upperBodySlot.ItemDefinitionId,
-                Quantity = _upperBodySlot.Quantity,
-                ConfigurationHash = string.IsNullOrEmpty(upperBodyConfigurationHash) == false ? upperBodyConfigurationHash : null
+                ItemDefinitionId = upperBodySlot.ItemDefinitionId,
+                Quantity = upperBodySlot.Quantity,
+                ConfigurationHash = GetConfigurationHashOrNull(upperBodySlot.ConfigurationHash, "upper body slot")
             };
 
-            string lowerBodyConfigurationHash = _lowerBodySlot.ConfigurationHash.ToString();
+            bool lowerBodySlotSanitized;
+            var lowerBodySlot = SanitizeSlot(_lowerBodySlot, "lower body slot", out lowerBodySlotSanitized, HasStateAuthority);
+            if (lowerBodySlotSanitized == true && HasStateAuthority == true)
+            {
+                _lowerBodySlot = lowerBodySlot;
+            }
             data.LowerBodySlot = new PlayerInventoryItemData
             {
-                ItemDefinitionId = _lowerBodySlot.ItemDefinitionId,
-                Quantity = _lowerBodySlot.Quantity,
-                ConfigurationHash = string.IsNullOrEmpty(lowerBodyConfigurationHash) == false ? lowerBodyConfigurationHash : null
+                ItemDefinitionId = lowerBodySlot.ItemDefinitionId,
+                Quantity = lowerBodySlot.Quantity,
+                ConfigurationHash = GetConfigurationHashOrNull(lowerBodySlot.ConfigurationHash, "lower body slot")
             };
 
             return data;
@@ -2889,11 +2923,27 @@ namespace TPSBR
 
             for (int i = 0; i < length; i++)
             {
-                var slot = _items[i];
-                if (_localItems[i].Equals(slot) == false)
+                var networkSlot = _items[i];
+                bool networkSlotSanitized;
+                networkSlot = SanitizeSlot(networkSlot, $"inventory slot {i}", out networkSlotSanitized, HasStateAuthority);
+
+                if (networkSlotSanitized == true && HasStateAuthority == true)
                 {
-                    _localItems[i] = slot;
-                    ItemSlotChanged?.Invoke(i, slot);
+                    _items.Set(i, networkSlot);
+                }
+
+                var cachedSlot = _localItems[i];
+                bool cachedSlotSanitized;
+                cachedSlot = SanitizeSlot(cachedSlot, $"local inventory slot {i}", out cachedSlotSanitized, logWarnings: false);
+                if (cachedSlotSanitized == true)
+                {
+                    _localItems[i] = cachedSlot;
+                }
+
+                if (_localItems[i].Equals(networkSlot) == false)
+                {
+                    _localItems[i] = networkSlot;
+                    ItemSlotChanged?.Invoke(i, networkSlot);
                 }
             }
 
@@ -3343,6 +3393,12 @@ namespace TPSBR
                 return 0;
 
             var slot = _pickaxeSlot;
+            bool slotSanitized;
+            slot = SanitizeSlot(slot, "pickaxe slot", out slotSanitized, HasStateAuthority);
+            if (slotSanitized == true && HasStateAuthority == true)
+            {
+                _pickaxeSlot = slot;
+            }
 
             if (slot.IsEmpty == false && IsPickaxeSlotItem(slot) == false)
             {
@@ -3389,7 +3445,20 @@ namespace TPSBR
 
         private void RefreshPickaxeSlot()
         {
-            var slot = _pickaxeSlot;
+            bool networkSlotSanitized;
+            var slot = SanitizeSlot(_pickaxeSlot, "pickaxe slot", out networkSlotSanitized, HasStateAuthority);
+            if (networkSlotSanitized == true && HasStateAuthority == true)
+            {
+                _pickaxeSlot = slot;
+            }
+
+            bool localSlotSanitized;
+            var cachedSlot = SanitizeSlot(_localPickaxeSlot, "local pickaxe slot", out localSlotSanitized, logWarnings: false);
+            if (localSlotSanitized == true)
+            {
+                _localPickaxeSlot = cachedSlot;
+            }
+
             if (_localPickaxeSlot.Equals(slot) == false)
             {
                 _localPickaxeSlot = slot;
@@ -3403,6 +3472,12 @@ namespace TPSBR
                 return 0;
 
             var slot = _woodAxeSlot;
+            bool slotSanitized;
+            slot = SanitizeSlot(slot, "wood axe slot", out slotSanitized, HasStateAuthority);
+            if (slotSanitized == true && HasStateAuthority == true)
+            {
+                _woodAxeSlot = slot;
+            }
 
             if (slot.IsEmpty == false && IsWoodAxeSlotItem(slot) == false)
             {
@@ -3449,7 +3524,20 @@ namespace TPSBR
 
         private void RefreshWoodAxeSlot()
         {
-            var slot = _woodAxeSlot;
+            bool networkSlotSanitized;
+            var slot = SanitizeSlot(_woodAxeSlot, "wood axe slot", out networkSlotSanitized, HasStateAuthority);
+            if (networkSlotSanitized == true && HasStateAuthority == true)
+            {
+                _woodAxeSlot = slot;
+            }
+
+            bool localSlotSanitized;
+            var cachedSlot = SanitizeSlot(_localWoodAxeSlot, "local wood axe slot", out localSlotSanitized, logWarnings: false);
+            if (localSlotSanitized == true)
+            {
+                _localWoodAxeSlot = cachedSlot;
+            }
+
             if (_localWoodAxeSlot.Equals(slot) == false)
             {
                 _localWoodAxeSlot = slot;
@@ -3463,6 +3551,12 @@ namespace TPSBR
                 return 0;
 
             var slot = _fishingPoleSlot;
+            bool slotSanitized;
+            slot = SanitizeSlot(slot, "fishing pole slot", out slotSanitized, HasStateAuthority);
+            if (slotSanitized == true && HasStateAuthority == true)
+            {
+                _fishingPoleSlot = slot;
+            }
 
             if (slot.IsEmpty == false && IsFishingPoleSlotItem(slot) == false)
             {
@@ -3509,7 +3603,20 @@ namespace TPSBR
 
         private void RefreshFishingPoleSlot()
         {
-            var slot = _fishingPoleSlot;
+            bool networkSlotSanitized;
+            var slot = SanitizeSlot(_fishingPoleSlot, "fishing pole slot", out networkSlotSanitized, HasStateAuthority);
+            if (networkSlotSanitized == true && HasStateAuthority == true)
+            {
+                _fishingPoleSlot = slot;
+            }
+
+            bool localSlotSanitized;
+            var cachedSlot = SanitizeSlot(_localFishingPoleSlot, "local fishing pole slot", out localSlotSanitized, logWarnings: false);
+            if (localSlotSanitized == true)
+            {
+                _localFishingPoleSlot = cachedSlot;
+            }
+
             if (_localFishingPoleSlot.Equals(slot) == false)
             {
                 _localFishingPoleSlot = slot;
@@ -3523,6 +3630,12 @@ namespace TPSBR
                 return 0;
 
             var slot = _headSlot;
+            bool slotSanitized;
+            slot = SanitizeSlot(slot, "head slot", out slotSanitized, HasStateAuthority);
+            if (slotSanitized == true && HasStateAuthority == true)
+            {
+                _headSlot = slot;
+            }
 
             if (slot.IsEmpty == false && IsHeadSlotItem(slot) == false)
             {
@@ -3569,7 +3682,20 @@ namespace TPSBR
 
         private void RefreshHeadSlot()
         {
-            var slot = _headSlot;
+            bool networkSlotSanitized;
+            var slot = SanitizeSlot(_headSlot, "head slot", out networkSlotSanitized, HasStateAuthority);
+            if (networkSlotSanitized == true && HasStateAuthority == true)
+            {
+                _headSlot = slot;
+            }
+
+            bool localSlotSanitized;
+            var cachedSlot = SanitizeSlot(_localHeadSlot, "local head slot", out localSlotSanitized, logWarnings: false);
+            if (localSlotSanitized == true)
+            {
+                _localHeadSlot = cachedSlot;
+            }
+
             if (_localHeadSlot.Equals(slot) == false)
             {
                 _localHeadSlot = slot;
@@ -3583,6 +3709,12 @@ namespace TPSBR
                 return 0;
 
             var slot = _upperBodySlot;
+            bool slotSanitized;
+            slot = SanitizeSlot(slot, "upper body slot", out slotSanitized, HasStateAuthority);
+            if (slotSanitized == true && HasStateAuthority == true)
+            {
+                _upperBodySlot = slot;
+            }
 
             if (slot.IsEmpty == false && IsUpperBodySlotItem(slot) == false)
             {
@@ -3629,7 +3761,20 @@ namespace TPSBR
 
         private void RefreshUpperBodySlot()
         {
-            var slot = _upperBodySlot;
+            bool networkSlotSanitized;
+            var slot = SanitizeSlot(_upperBodySlot, "upper body slot", out networkSlotSanitized, HasStateAuthority);
+            if (networkSlotSanitized == true && HasStateAuthority == true)
+            {
+                _upperBodySlot = slot;
+            }
+
+            bool localSlotSanitized;
+            var cachedSlot = SanitizeSlot(_localUpperBodySlot, "local upper body slot", out localSlotSanitized, logWarnings: false);
+            if (localSlotSanitized == true)
+            {
+                _localUpperBodySlot = cachedSlot;
+            }
+
             if (_localUpperBodySlot.Equals(slot) == false)
             {
                 _localUpperBodySlot = slot;
@@ -3643,6 +3788,12 @@ namespace TPSBR
                 return 0;
 
             var slot = _lowerBodySlot;
+            bool slotSanitized;
+            slot = SanitizeSlot(slot, "lower body slot", out slotSanitized, HasStateAuthority);
+            if (slotSanitized == true && HasStateAuthority == true)
+            {
+                _lowerBodySlot = slot;
+            }
 
             if (slot.IsEmpty == false && IsLowerBodySlotItem(slot) == false)
             {
@@ -3689,7 +3840,20 @@ namespace TPSBR
 
         private void RefreshLowerBodySlot()
         {
-            var slot = _lowerBodySlot;
+            bool networkSlotSanitized;
+            var slot = SanitizeSlot(_lowerBodySlot, "lower body slot", out networkSlotSanitized, HasStateAuthority);
+            if (networkSlotSanitized == true && HasStateAuthority == true)
+            {
+                _lowerBodySlot = slot;
+            }
+
+            bool localSlotSanitized;
+            var cachedSlot = SanitizeSlot(_localLowerBodySlot, "local lower body slot", out localSlotSanitized, logWarnings: false);
+            if (localSlotSanitized == true)
+            {
+                _localLowerBodySlot = cachedSlot;
+            }
+
             if (_localLowerBodySlot.Equals(slot) == false)
             {
                 _localLowerBodySlot = slot;
@@ -3774,7 +3938,9 @@ namespace TPSBR
                 return Mathf.Max(0, toolInstance.Speed);
             }
 
-            string configurationHash = slot.ConfigurationHash.ToString();
+            slot = SanitizeSlot(slot, "tool slot", out _, HasStateAuthority);
+
+            string configurationHash = GetConfigurationHashOrNull(slot.ConfigurationHash, "tool slot");
             if (string.IsNullOrWhiteSpace(configurationHash) == false &&
                 Tool.TryDecodeConfiguration(configurationHash, out ToolConfiguration configuration) == true)
             {
@@ -4470,6 +4636,72 @@ namespace TPSBR
             return IsGeneralInventoryIndex(index) || index == PICKAXE_SLOT_INDEX || index == WOOD_AXE_SLOT_INDEX ||
                    index == FISHING_POLE_SLOT_INDEX || index == HEAD_SLOT_INDEX || index == UPPER_BODY_SLOT_INDEX ||
                    index == LOWER_BODY_SLOT_INDEX;
+        }
+
+        private InventorySlot SanitizeSlot(InventorySlot slot, string context, out bool wasModified, bool logWarnings = true)
+        {
+            wasModified = false;
+
+            if (slot.IsEmpty == true)
+            {
+                return slot;
+            }
+
+            if (TryGetConfigurationHashString(slot.ConfigurationHash, context, out string rawHash, logWarnings) == false)
+            {
+                wasModified = true;
+                return new InventorySlot(slot.ItemDefinitionId, slot.Quantity, default);
+            }
+
+            if (string.IsNullOrWhiteSpace(rawHash) == true)
+            {
+                wasModified = string.IsNullOrEmpty(rawHash) == false;
+                return new InventorySlot(slot.ItemDefinitionId, slot.Quantity, default);
+            }
+
+            NetworkString<_32> sanitizedHash = CreateConfigurationHash(rawHash);
+
+            if (TryGetConfigurationHashString(sanitizedHash, context, out string sanitizedValue, logWarnings) == false)
+            {
+                wasModified = true;
+                return new InventorySlot(slot.ItemDefinitionId, slot.Quantity, default);
+            }
+
+            if (string.Equals(rawHash, sanitizedValue, StringComparison.Ordinal) == false)
+            {
+                wasModified = true;
+            }
+
+            return new InventorySlot(slot.ItemDefinitionId, slot.Quantity, sanitizedHash);
+        }
+
+        private static bool TryGetConfigurationHashString(NetworkString<_32> configurationHash, string context, out string value, bool logWarning = true)
+        {
+            try
+            {
+                value = configurationHash.ToString();
+                return true;
+            }
+            catch (Exception exception)
+            {
+                if (logWarning == true)
+                {
+                    Debug.LogWarning($"Encountered invalid configuration hash while processing {context}: {exception.Message}. The hash will be cleared.");
+                }
+
+                value = string.Empty;
+                return false;
+            }
+        }
+
+        private static string GetConfigurationHashOrNull(NetworkString<_32> configurationHash, string context)
+        {
+            if (TryGetConfigurationHashString(configurationHash, context, out string value) == false)
+            {
+                return null;
+            }
+
+            return string.IsNullOrEmpty(value) == false ? value : null;
         }
 
         private static NetworkString<_32> CreateConfigurationHash(string configurationHash)
