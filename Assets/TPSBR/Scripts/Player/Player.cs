@@ -40,8 +40,10 @@ namespace TPSBR
 		public Agent            ActiveAgent    { get; private set; }
 		[Networked]
 		public NetworkPrefabRef AgentPrefab    { get; set; }
-		[Networked]
-		public PlayerStatistics Statistics     { get; private set; }
+                [Networked]
+                public PlayerStatistics Statistics     { get; private set; }
+                [Networked]
+                public int              CurrentLocationID { get; set; }
 
 		// PRIVATE MEMBERS
 		[Networked]
