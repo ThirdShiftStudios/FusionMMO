@@ -110,7 +110,7 @@ namespace TPSBR
             }
 
             GameMode gameMode = hasSessionInfo ? sessionInfo.GetGameMode() : runner.GameMode;
-            if (gameMode == GameMode.None)
+            //if (gameMode == GameMode.None)
             {
                 gameMode = runner.GameMode;
             }
