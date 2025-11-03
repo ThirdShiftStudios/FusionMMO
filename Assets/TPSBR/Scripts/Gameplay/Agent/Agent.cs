@@ -43,6 +43,7 @@ namespace TPSBR
         private Interactions _interactions;
         private AgentFootsteps _footsteps;
         private Character _character;
+        private ClimbController _climbController;
         private Inventory _inventory;
         private AgentSenses _senses;
         private Health _health;
@@ -231,6 +232,7 @@ namespace TPSBR
             _interactions = GetComponent<Interactions>();
             _footsteps = GetComponent<AgentFootsteps>();
             _character = GetComponent<Character>();
+            _climbController = GetComponent<ClimbController>();
             _inventory = GetComponent<Inventory>();
             _health = GetComponent<Health>();
             _mana = GetComponent<AgentMana>();
@@ -258,6 +260,8 @@ namespace TPSBR
             {
                 input = _agentInput.FixedInput;
             }
+
+            _climbController?.UpdateClimbing(kcc, ref input);
 
 
             if (_agentInput.WasActivated(EGameplayInputAction.Jump, input) == true &&

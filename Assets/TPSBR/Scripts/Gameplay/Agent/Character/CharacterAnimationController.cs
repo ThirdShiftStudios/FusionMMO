@@ -69,6 +69,8 @@ namespace TPSBR
                     return false;
                 if (_fullBody.Dead.IsActive(true) == true)
                     return false;
+                if (_fullBody.ClimbLadder != null && _fullBody.ClimbLadder.IsActive(true) == true)
+                    return false;
             }
 
             return true;
@@ -79,6 +81,8 @@ namespace TPSBR
             if (_fullBody.IsActive() == true)
             {
                 if (_fullBody.Dead.IsActive() == true)
+                    return false;
+                if (_fullBody.ClimbLadder != null && _fullBody.ClimbLadder.IsActive(true) == true)
                     return false;
             }
 
@@ -200,6 +204,47 @@ namespace TPSBR
                 _leftHand.position = leftHandTarget.position;
                 _leftHand.rotation = leftHandTarget.rotation;
             }
+        }
+
+        public bool TryBeginLadderClimb(Ladder ladder)
+        {
+            if (ladder == null)
+                return false;
+
+            if (_fullBody == null)
+                return false;
+
+            ClimbLadderState climbState = _fullBody.ClimbLadder;
+            if (climbState == null)
+                return false;
+
+            if (climbState.IsRunning == true)
+                return false;
+
+            climbState.BeginClimb();
+            return true;
+        }
+
+        public bool UpdateLadderClimb(float normalizedProgress, bool isMoving)
+        {
+            if (_fullBody == null)
+                return false;
+
+            ClimbLadderState climbState = _fullBody.ClimbLadder;
+            if (climbState == null)
+                return false;
+
+            return climbState.UpdateClimb(normalizedProgress, isMoving);
+        }
+
+        public void EndLadderClimb()
+        {
+            _fullBody?.ClimbLadder?.EndClimb();
+        }
+
+        public void CancelLadderClimb()
+        {
+            _fullBody?.ClimbLadder?.CancelClimb();
         }
 
         public bool TryStartItemBoxInteraction(ItemBox itemBox, float openNormalizedTime, float cancelMoveDistance,

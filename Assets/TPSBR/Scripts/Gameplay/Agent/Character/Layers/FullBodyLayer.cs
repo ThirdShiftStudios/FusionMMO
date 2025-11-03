@@ -10,21 +10,24 @@ namespace TPSBR
 	{
 		// PUBLIC MEMBERS
 
-		public JumpState    Jump    => _jump;
-		public FallState    Fall    => _fall;
-		public LandState    Land    => _land;
-		public DeadState    Dead    => _dead;
+                public JumpState        Jump        => _jump;
+                public FallState        Fall        => _fall;
+                public LandState        Land        => _land;
+                public DeadState        Dead        => _dead;
+                public ClimbLadderState ClimbLadder => _climbLadder;
 
 		// PRIVATE MEMBERS
 
 		[SerializeField]
-		private JumpState    _jump;
-		[SerializeField]
-		private FallState    _fall;
-		[SerializeField]
-		private LandState    _land;
-		[SerializeField]
-		private DeadState    _dead;
+                private JumpState       _jump;
+                [SerializeField]
+                private FallState       _fall;
+                [SerializeField]
+                private LandState       _land;
+                [SerializeField]
+                private DeadState       _dead;
+                [SerializeField]
+                private ClimbLadderState _climbLadder;
 
 		private KCC _kcc;
 
@@ -39,7 +42,12 @@ namespace TPSBR
 		{
 			KCCData kccData = _kcc.FixedData;
 
-			if (kccData.HasJumped == true)
+                        if (_climbLadder != null && _climbLadder.IsActive(true) == true)
+                        {
+                                return;
+                        }
+
+                        if (kccData.HasJumped == true)
 			{
 				_jump.Activate(0.2f);
 				return;
