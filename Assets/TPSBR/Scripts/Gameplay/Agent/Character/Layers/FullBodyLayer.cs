@@ -35,15 +35,25 @@ namespace TPSBR
 			_kcc = Controller.GetComponentNoAlloc<KCC>();
 		}
 
-		protected override void OnFixedUpdate()
-		{
-			KCCData kccData = _kcc.FixedData;
+                protected override void OnFixedUpdate()
+                {
+                        KCCData kccData = _kcc.FixedData;
 
-			if (kccData.HasJumped == true)
-			{
-				_jump.Activate(0.2f);
-				return;
-			}
+                        if (kccData.IsSwimming == true)
+                        {
+                                if (_fall != null && _fall.IsActive(true) == true)
+                                {
+                                        _fall.Deactivate(0.1f);
+                                }
+
+                                return;
+                        }
+
+                        if (kccData.HasJumped == true)
+                        {
+                                _jump.Activate(0.2f);
+                                return;
+                        }
 
 			AnimationState activeState = GetActiveState();
 			if (activeState == null)
