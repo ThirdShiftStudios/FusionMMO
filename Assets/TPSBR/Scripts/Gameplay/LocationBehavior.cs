@@ -1,4 +1,5 @@
 using Fusion;
+using Fusion.Addons.KCC;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -86,9 +87,9 @@ namespace TPSBR
             }
         }
 
-        internal void HandleAgentEntered(Agent agent)
+        internal void HandleAgentEntered(KCC kcc)
         {
-            if (agent == null)
+            if (kcc == null)
             {
                 return;
             }
@@ -108,11 +109,34 @@ namespace TPSBR
                 return;
             }
 
-            Player player = Context.NetworkGame.GetPlayer(agent.Object.InputAuthority);
+            Player player = null;
+
+            NetworkObject networkObject = kcc.Object;
+            if (networkObject != null)
+            {
+                player = Context.NetworkGame.GetPlayer(networkObject.InputAuthority);
+            }
+
+            Agent agent = player?.ActiveAgent;
+            if (agent == null || agent.Object == null)
+            {
+                agent = kcc.GetComponent<Agent>() ?? kcc.GetComponentInParent<Agent>();
+                if (agent != null && player == null && agent.Object != null)
+                {
+                    player = Context.NetworkGame.GetPlayer(agent.Object.InputAuthority);
+                }
+            }
+
             if (player == null)
             {
                 return;
             }
+
+            if (agent == null || agent.Character == null || agent.Character.CharacterController != kcc)
+            {
+                return;
+            }
+
             AssignLocation(player);
         }
 
