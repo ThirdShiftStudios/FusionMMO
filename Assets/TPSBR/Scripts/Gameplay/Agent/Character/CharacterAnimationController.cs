@@ -149,6 +149,7 @@ namespace TPSBR
                 return;
 
             Transform weaponHandle = _inventory.CurrentWeaponHandle;
+            if (false)
             if (HasInputAuthority == true || _agent.IsObserved == true)
             {
                 weaponHandle.localRotation = _inventory.CurrentWeaponBaseRotation;

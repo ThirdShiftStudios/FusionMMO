@@ -204,6 +204,7 @@ namespace TPSBR
             _character.OnAgentRender();
             _footsteps.OnAgentRender();
 
+
             if(Object.HasInputAuthority == false)
                 _agentNameplate.OnAgentRender();
         }
