@@ -38,7 +38,7 @@ namespace TPSBR
                 return;
             }
 
-            Agent agent = kcc.GetComponent<Agent>();
+            Agent agent = kcc.GetComponentInParent<Agent>();
             if (agent == null)
             {
                 return;
