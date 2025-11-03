@@ -1,5 +1,85 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!1 &45336208869045745
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2050570849927486094}
+  - component: {fileID: 5770142272113257373}
+  m_Layer: 8
+  m_Name: Move_Swim
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2050570849927486094
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 45336208869045745}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6715887083203119153}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &5770142272113257373
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 45336208869045745}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d172f9b63f873bb4ea26df1f01b83bc4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _sets:
+  - _speed: 1
+    _nodes:
+    - Clip: {fileID: 1827226128182048838, guid: 18df51488e1ec7345b77220a0683b4af, type: 3}
+      Speed: 1
+      Position: {x: 0, y: 0}
+    - Clip: {fileID: 1827226128182048838, guid: 384a456570f20174d97dfb2fecfdc2a0, type: 3}
+      Speed: 1
+      Position: {x: 0, y: 3.466}
+    - Clip: {fileID: 1827226128182048838, guid: 494bedbaffae17c4b97ddd924bc06179, type: 3}
+      Speed: 1
+      Position: {x: 0, y: -2.4839}
+    - Clip: {fileID: 1827226128182048838, guid: 20922b8a443fd7a4eaf9e7a93e4563fe, type: 3}
+      Speed: 1
+      Position: {x: -3.1064, y: 0}
+    - Clip: {fileID: 1827226128182048838, guid: 1f03ea3eb35bdc7458cf7c8af2c0514a, type: 3}
+      Speed: 1
+      Position: {x: 3.2702, y: 0}
+    - Clip: {fileID: 1827226128182048838, guid: 7dea418659fe046469c7fa4bc2422f14, type: 3}
+      Speed: 1
+      Position: {x: -2.3248963, y: 2.3248963}
+    - Clip: {fileID: 1827226128182048838, guid: 2bec26600b26ed849b48540a712a4033, type: 3}
+      Speed: 1
+      Position: {x: 2.372202, y: 2.372202}
+    - Clip: {fileID: 1827226128182048838, guid: 1c10ea91f8d7bfd48b6088a54a21c00b, type: 3}
+      Speed: 1
+      Position: {x: -2.0172343, y: -2.0172343}
+    - Clip: {fileID: 1827226128182048838, guid: 4dbb70e8cddccd4498b581e36770c415, type: 3}
+      Speed: 1
+      Position: {x: 1.9655447, y: -1.9655447}
+  _isLooping: 0
+  _blendTime: 0
+  _minAnimationSpeed: 0.25
+  _maxAnimationSpeed: 2
+  _directionSmoothingSpeed: 16
+  _magnitudeSmoothingSpeed: 16
 --- !u!1 &268277365544842072
 GameObject:
   m_ObjectHideFlags: 0
@@ -2726,6 +2806,10 @@ PrefabInstance:
       value: 1.686813
       objectReference: {fileID: 0}
     - target: {fileID: 8311684226520633936, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
+      propertyPath: _swim
+      value: 
+      objectReference: {fileID: 5770142272113257373}
+    - target: {fileID: 8311684226520633936, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
       propertyPath: _moveStateCategories.Array.size
       value: 3
       objectReference: {fileID: 0}
@@ -2843,6 +2927,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 6007643176418695006, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
       insertIndex: 2
       addedObject: {fileID: 7923445001256126210}
+    - targetCorrespondingSourceObject: {fileID: 1120426796163700408, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2050570849927486094}
     - targetCorrespondingSourceObject: {fileID: 1489436706626510999, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
       insertIndex: -1
       addedObject: {fileID: 6469272460644679264}
@@ -3029,7 +3116,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2ee36840b53a490eb17fd209c0f3860d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _initialLevels: 010000000100000001000000010000000100000001000000010000000100000001000000
+  _initialLevels: 01000000010000000100000001000000010000000100000001000000010000000100000001000000
 --- !u!114 &2934354635630320071
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3086,6 +3173,11 @@ MonoBehaviour:
   m_Script: {fileID: 1039544458, guid: e725a070cec140c4caffb81624c8c787, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!4 &6715887083203119153 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 1120426796163700408, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
+  m_PrefabInstance: {fileID: 5962503691769372297}
+  m_PrefabAsset: {fileID: 0}
 --- !u!114 &7714427873956525555 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 4156882667332348794, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
