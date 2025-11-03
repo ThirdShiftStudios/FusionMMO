@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace TPSBR
 {
-        public sealed class LocationTriggerProxy : NetworkTRSPProcessor
+        public sealed class LocationTriggerProxy : NetworkKCCProcessor
     {
             private readonly List<LocationBehavior> _listeners = new List<LocationBehavior>();
 
@@ -33,6 +33,9 @@ namespace TPSBR
 
             public override void OnEnter(KCC kcc, KCCData data)
             {
+                if (kcc.IsInFixedUpdate == false || HasStateAuthority == false)
+                    return;
+
                 if (kcc == null)
                 {
                     return;
