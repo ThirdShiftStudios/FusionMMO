@@ -51,6 +51,7 @@ namespace TPSBR.UI
 
                         EnsureCraftingStationView();
                         EnsureFishingView();
+                        EnsureSlotMachineView();
 
                         _deathView = Get<UIDeathView>();
                         _inventoryView = Get<UIGameplayInventory>();
@@ -149,6 +150,14 @@ namespace TPSBR.UI
                                 return;
 
                         CreateViewFromResource<UIFishingView>(UIFishingView.ResourcePath);
+                }
+
+                private void EnsureSlotMachineView()
+                {
+                        if (Get<UISlotMachineView>() != null)
+                                return;
+
+                        CreateViewFromResource<UISlotMachineView>(UISlotMachineView.ResourcePath);
                 }
 
 		private IEnumerator ShowGameOver_Coroutine(float delay)
