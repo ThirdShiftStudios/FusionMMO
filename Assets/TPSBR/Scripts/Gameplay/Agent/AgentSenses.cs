@@ -10,7 +10,7 @@ namespace TPSBR
                 [Networked, HideInInspector]
                 public float EyesFlashValue { get; set; }
 
-                [Networked, HideInInspector]
+                [Networked(OnChanged = nameof(OnDrunkValueChanged)), HideInInspector]
                 public float DrunkValue { get; set; }
 
                 [SerializeField]
@@ -73,6 +73,18 @@ namespace TPSBR
                         _drunkTotalDuration = Mathf.Max(_drunkTimeRemaining, 0.0001f);
                         _drunkStartValue = newStrength;
                         DrunkValue = newStrength;
+                }
+
+                public override void Spawned()
+                {
+                        base.Spawned();
+
+                        if (Object != null && Object.HasInputAuthority == true)
+                        {
+                                // Ensure the local effect reflects the current value when the behaviour spawns.
+                                _lastAppliedDrunkValue = -1f;
+                                ApplyDrunkPostProcess(DrunkValue);
+                        }
                 }
 
                 public override void FixedUpdateNetwork()
@@ -143,6 +155,19 @@ namespace TPSBR
                                 _drunkTotalDuration = 0f;
                                 _drunkTimeRemaining = 0f;
                         }
+                }
+
+                private static void OnDrunkValueChanged(Changed<AgentSenses> changed)
+                {
+                        AgentSenses senses = changed.Behaviour;
+
+                        if (senses == null)
+                                return;
+
+                        if (senses.Object == null || senses.Object.HasInputAuthority == false)
+                                return;
+
+                        senses.ApplyDrunkPostProcess(senses.DrunkValue);
                 }
 
                 private void ApplyDrunkPostProcess(float value)
