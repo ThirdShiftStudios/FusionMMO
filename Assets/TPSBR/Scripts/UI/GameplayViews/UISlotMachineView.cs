@@ -4,6 +4,8 @@ namespace TPSBR.UI
 {
     public sealed class UISlotMachineView : UIGamblingView
     {
+        public const string ResourcePath = "UI/GameplayViews/UISlotMachineView";
+
         public SlotMachine SlotMachine { get; private set; }
 
         protected override void OnConfigured(GamblingMachine machine, Agent agent)
