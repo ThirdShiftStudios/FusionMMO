@@ -56,6 +56,7 @@ namespace TPSBR
         private Stats _stats;
         private Professions _professions;
         private EquipmentVisualsManager _equipmentVisuals;
+        private AgentNameplate _agentNameplate;
 
         // NetworkBehaviour INTERFACE
 
@@ -75,7 +76,7 @@ namespace TPSBR
             _stats.OnSpawned(this);
             _professions.OnSpawned(this);
             _equipmentVisuals?.Initialize(_inventory);
-            
+            _agentNameplate?.OnSpawned(this, Runner.Mode == SimulationModes.Server);
             if (ApplicationSettings.IsStrippedBatch == true)
             {
                 gameObject.SetActive(false);
@@ -111,43 +112,16 @@ namespace TPSBR
 
         public override void Despawned(NetworkRunner runner, bool hasState)
         {
-            if (_inventory != null)
-            {
-                _inventory.OnDespawned();
-            }
-
-            if (_health != null)
-            {
-                _health.OnDespawned();
-            }
-
-            if (_mana != null)
-            {
-                _mana.OnDespawned();
-            }
-
-            if (_stamina != null)
-            {
-                _stamina.OnDespawned();
-            }
-
-            if (_agentVFX != null)
-            {
-                _agentVFX.OnDespawned();
-            }
-            
-            if (_stats != null)
-            {
-                _stats.OnDespawned();
-            }
-            
-            if (_professions != null)
-            {
-                _professions.OnDespawned();
-            }
+            if (_inventory != null) _inventory.OnDespawned();
+            if (_health != null) _health.OnDespawned();
+            if (_mana != null)  _mana.OnDespawned();
+            if (_stamina != null) _stamina.OnDespawned();
+            if (_agentVFX != null) _agentVFX.OnDespawned();
+            if (_stats != null) _stats.OnDespawned();
+            if (_professions != null) _professions.OnDespawned();
+            if (_agentNameplate != null) _agentNameplate.OnDespawned();
 
             _equipmentVisuals?.Initialize(null);
-            
         }
 
         public void EarlyFixedUpdateNetwork()
@@ -229,6 +203,10 @@ namespace TPSBR
 
             _character.OnAgentRender();
             _footsteps.OnAgentRender();
+
+
+            if(Object.HasInputAuthority == false)
+                _agentNameplate.OnAgentRender();
         }
 
         // ISortedUpdate INTERFACE
@@ -262,7 +240,9 @@ namespace TPSBR
             _interestView = GetComponent<AgentInterestView>();
             _stats = GetComponent<Stats>();
             _professions = GetComponent<Professions>();
+
             _equipmentVisuals = GetComponentInChildren<EquipmentVisualsManager>();
+            _agentNameplate = GetComponentInChildren<AgentNameplate>();
         }
 
         // PRIVATE METHODS

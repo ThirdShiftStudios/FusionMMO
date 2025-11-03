@@ -5,6 +5,11 @@ namespace TPSBR
 {
     public class FishingPoleUseState : MixerState
     {
+        public  FishingCastParentState CastState => _castState;
+        public  FishingWaitingState Waiting => _waiting;
+        public  FishingFightingState Fighting => _fighting;
+        public  FishingCatchParentState Catch => _catch;
+
         [SerializeField] private FishingCastParentState _castState;
         [SerializeField] private FishingWaitingState _waiting;
         [SerializeField] private FishingFightingState _fighting;

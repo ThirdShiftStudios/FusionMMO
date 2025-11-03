@@ -278,6 +278,11 @@ namespace TPSBR
             if (_agent.IsObserved == false)
                 return;
 
+            //if (_agent.HasInputAuthority == true)
+            {
+                _animationController.RefreshSnapping();
+            }
+
             float aimFOV = _aimFOV;
             if (_agent.Inventory.CurrentWeapon != null && _agent.Inventory.CurrentWeapon.AimFOV > 1.0f)
             {
@@ -295,11 +300,6 @@ namespace TPSBR
                 _cameraDistance = 0f;
                 _cameraChangeTime = _cameraChangeDuration;
 
-                if (_agent.HasInputAuthority == true)
-                {
-                    _animationController.RefreshSnapping();
-                }
-
                 return;
             }
 
@@ -313,10 +313,6 @@ namespace TPSBR
                     _cameraDistance = 0f;
                     _cameraChangeTime = _cameraChangeDuration;
 
-                    if (_agent.HasInputAuthority == true)
-                    {
-                        _animationController.RefreshSnapping();
-                    }
                 }
 
                 return;
@@ -386,11 +382,6 @@ namespace TPSBR
 
                 _camera.transform.position = raycastStart + raycastDirection * _cameraDistance;
                 _camera.transform.rotation = cameraTransform.Rotation;
-            }
-
-            if (_agent.HasInputAuthority == true)
-            {
-                _animationController.RefreshSnapping();
             }
         }
 
