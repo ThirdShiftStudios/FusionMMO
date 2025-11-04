@@ -46,7 +46,7 @@ namespace TPSBR
                     return false;
                 }
 
-                if (SteamUserStats.RequestCurrentStats() == false)
+                if (SteamUserStats.GetStat(_achievementId, out int pData) == false)
                 {
                     Debug.LogWarning($"[{nameof(SteamAchievementDataDefinition)}] Unable to request current stats before granting achievement '{_achievementId}'.");
                     return false;
