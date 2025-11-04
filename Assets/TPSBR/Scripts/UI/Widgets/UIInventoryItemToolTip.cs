@@ -1,5 +1,6 @@
 using Fusion;
 using TMPro;
+using TSS.Data;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -15,6 +16,8 @@ namespace TPSBR.UI
 
         private RectTransform _rectTransform;
         private bool _isVisible;
+        private Color _defaultTitleColor;
+        private bool _defaultTitleColorSet;
 
         protected override void OnInitialize()
         {
@@ -37,6 +40,7 @@ namespace TPSBR.UI
                 }
             }
 
+            CacheDefaultTitleColor();
             SetVisible(false, true);
         }
 
@@ -46,7 +50,7 @@ namespace TPSBR.UI
             SetVisible(false, true);
         }
 
-        public void Show(IInventoryItemDetails details, NetworkString<_32> configurationHash, Vector2 screenPosition)
+        public void Show(IInventoryItemDetails details, ItemDefinition definition, NetworkString<_32> configurationHash, Vector2 screenPosition)
         {
             if (details == null)
             {
@@ -66,35 +70,25 @@ namespace TPSBR.UI
                 description = details.GetDescription();
             }
 
-            Show(displayName, description, screenPosition);
+            ApplyTitleColor(definition ?? ResolveDefinition(details));
+            ShowInternal(displayName, description, screenPosition);
+        }
+
+        public void Show(IInventoryItemDetails details, NetworkString<_32> configurationHash, Vector2 screenPosition)
+        {
+            Show(details, ResolveDefinition(details), configurationHash, screenPosition);
+        }
+
+        public void Show(ItemDefinition definition, string title, string description, Vector2 screenPosition)
+        {
+            ApplyTitleColor(definition);
+            ShowInternal(title, description, screenPosition);
         }
 
         public void Show(string title, string description, Vector2 screenPosition)
         {
-            if (string.IsNullOrEmpty(title) && string.IsNullOrEmpty(description))
-            {
-                Hide();
-                return;
-            }
-
-            if (_titleLabel != null)
-            {
-                _titleLabel.text = title ?? string.Empty;
-            }
-
-            if (_descriptionLabel != null)
-            {
-                _descriptionLabel.text = description ?? string.Empty;
-                _descriptionLabel.gameObject.SetActive(string.IsNullOrEmpty(_descriptionLabel.text) == false);
-            }
-
-            if (_rectTransform != null)
-            {
-                LayoutRebuilder.ForceRebuildLayoutImmediate(_rectTransform);
-            }
-
-            UpdatePosition(screenPosition);
-            SetVisible(true);
+            ApplyDefaultTitleColor();
+            ShowInternal(title, description, screenPosition);
         }
 
         public void UpdatePosition(Vector2 screenPosition)
@@ -181,6 +175,7 @@ namespace TPSBR.UI
 
         public void Hide()
         {
+            ApplyDefaultTitleColor();
             SetVisible(false);
         }
 
@@ -196,6 +191,94 @@ namespace TPSBR.UI
             _canvasGroup.alpha = visible ? 1f : 0f;
             _canvasGroup.blocksRaycasts = false;
             _canvasGroup.interactable = false;
+        }
+
+        private void ShowInternal(string title, string description, Vector2 screenPosition)
+        {
+            if (string.IsNullOrEmpty(title) && string.IsNullOrEmpty(description))
+            {
+                Hide();
+                return;
+            }
+
+            if (_titleLabel != null)
+            {
+                _titleLabel.text = title ?? string.Empty;
+            }
+
+            if (_descriptionLabel != null)
+            {
+                _descriptionLabel.text = description ?? string.Empty;
+                _descriptionLabel.gameObject.SetActive(string.IsNullOrEmpty(_descriptionLabel.text) == false);
+            }
+
+            if (_rectTransform != null)
+            {
+                LayoutRebuilder.ForceRebuildLayoutImmediate(_rectTransform);
+            }
+
+            UpdatePosition(screenPosition);
+            SetVisible(true);
+        }
+
+        private void CacheDefaultTitleColor()
+        {
+            if (_defaultTitleColorSet == true || _titleLabel == null)
+            {
+                return;
+            }
+
+            _defaultTitleColor = _titleLabel.color;
+            _defaultTitleColorSet = true;
+        }
+
+        private void ApplyDefaultTitleColor()
+        {
+            CacheDefaultTitleColor();
+
+            if (_titleLabel != null && _defaultTitleColorSet == true)
+            {
+                _titleLabel.color = _defaultTitleColor;
+            }
+        }
+
+        private void ApplyTitleColor(ItemDefinition definition)
+        {
+            if (definition == null)
+            {
+                ApplyDefaultTitleColor();
+                return;
+            }
+
+            var rarityResources = ItemRarityResourcesDefinition.Instance;
+            if (rarityResources != null && rarityResources.TryGetPrimaryColor(definition.ItemRarity, out Color color))
+            {
+                if (_titleLabel != null)
+                {
+                    _titleLabel.color = color;
+                }
+            }
+            else
+            {
+                ApplyDefaultTitleColor();
+            }
+        }
+
+        private ItemDefinition ResolveDefinition(IInventoryItemDetails details)
+        {
+            switch (details)
+            {
+                case Weapon weapon when weapon.Definition != null:
+                    return weapon.Definition;
+                case Pickaxe pickaxe when pickaxe.Definition != null:
+                    return pickaxe.Definition;
+                case WoodAxe woodAxe when woodAxe.Definition != null:
+                    return woodAxe.Definition;
+                case ItemDefinition itemDefinition:
+                    return itemDefinition;
+                default:
+                    return null;
+            }
         }
     }
 }
