@@ -13,6 +13,8 @@ namespace TPSBR
         private Renderer[] _renderers;
         [SerializeField]
         private Collider[] _colliders;
+        [SerializeField]
+        private DrunkBuffDefinition _drunkBuffDefinition;
 
         private bool _renderersResolved;
         private bool _collidersResolved;
@@ -124,7 +126,12 @@ namespace TPSBR
 
                 Character character = Character;
                 Agent agent = character != null ? character.Agent : null;
-                agent?.Senses?.OnBeerDrank();
+
+                if (_drunkBuffDefinition != null)
+                {
+                    BuffSystem buffSystem = agent != null ? agent.BuffSystem : null;
+                    buffSystem?.ApplyBuff(_drunkBuffDefinition);
+                }
             }
         }
 

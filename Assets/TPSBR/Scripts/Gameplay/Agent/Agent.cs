@@ -24,6 +24,7 @@ namespace TPSBR
         public AgentInterestView InterestView => _interestView;
         public Stats Stats => _stats;
         public Professions Professions => _professions;
+        public BuffSystem BuffSystem => _buffSystem;
 
         // PRIVATE MEMBERS
 
@@ -57,6 +58,7 @@ namespace TPSBR
         private Professions _professions;
         private EquipmentVisualsManager _equipmentVisuals;
         private AgentNameplate _agentNameplate;
+        private BuffSystem _buffSystem;
 
         // NetworkBehaviour INTERFACE
 
@@ -240,6 +242,7 @@ namespace TPSBR
             _interestView = GetComponent<AgentInterestView>();
             _stats = GetComponent<Stats>();
             _professions = GetComponent<Professions>();
+            _buffSystem = GetComponent<BuffSystem>();
 
             _equipmentVisuals = GetComponentInChildren<EquipmentVisualsManager>();
             _agentNameplate = GetComponentInChildren<AgentNameplate>();

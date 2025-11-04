@@ -17,16 +17,6 @@ namespace TPSBR
                 [SerializeField]
                 private Ease _eyesFlashFalloff;
 
-                [Header("Drunk Effect")]
-                [SerializeField, Range(0f, 1f)]
-                private float _drunkIntensityPerDrink = 0.25f;
-
-                [SerializeField]
-                private float _drunkDurationPerDrink = 10f;
-
-                [SerializeField, Range(0f, 1f)]
-                private float _drunkMaxIntensity = 1f;
-
                 private float _eyesFlashStartValue;
                 private int _eyesFlashStartTick;
                 private int _eyesFlashEndTick;
@@ -36,6 +26,43 @@ namespace TPSBR
                 private float _drunkTotalDuration;
 
                 private float _lastAppliedDrunkValue = -1f;
+
+                public void ApplyDrunkStacks(float intensityPerStack, float durationPerStack, float maxIntensity, int stacksApplied)
+                {
+                        if (HasStateAuthority == false)
+                                return;
+
+                        if (stacksApplied <= 0)
+                        {
+                                stacksApplied = 1;
+                        }
+
+                        float clampedMaxIntensity = Mathf.Max(0f, maxIntensity);
+                        float intensityIncrease = Mathf.Max(0f, intensityPerStack) * stacksApplied;
+                        float newStrength = Mathf.Clamp(Mathf.Max(DrunkValue, 0f) + intensityIncrease, 0f, clampedMaxIntensity);
+
+                        float addedDuration = Mathf.Max(0f, durationPerStack) * stacksApplied;
+                        if (addedDuration > 0f)
+                        {
+                                if (_drunkTimeRemaining <= 0f)
+                                {
+                                        _drunkTimeRemaining = addedDuration;
+                                }
+                                else
+                                {
+                                        _drunkTimeRemaining += addedDuration;
+                                }
+
+                                _drunkTotalDuration = Mathf.Max(_drunkTimeRemaining, 0.0001f);
+                        }
+                        else if (_drunkTimeRemaining <= 0f)
+                        {
+                                _drunkTotalDuration = 0f;
+                        }
+
+                        _drunkStartValue = newStrength;
+                        DrunkValue = newStrength;
+                }
 
                 public void SetEyesFlash(float value, float duration, float falloffDelay)
                 {
@@ -52,28 +79,6 @@ namespace TPSBR
 
                         _eyesFlashStartValue = value;
                         EyesFlashValue = value;
-                }
-
-                public void OnBeerDrank()
-                {
-                        if (HasStateAuthority == false)
-                                return;
-
-                        float currentStrength = Mathf.Max(DrunkValue, 0f);
-                        float newStrength = Mathf.Clamp(currentStrength + _drunkIntensityPerDrink, 0f, _drunkMaxIntensity);
-
-                        if (_drunkTimeRemaining <= 0f)
-                        {
-                                _drunkTimeRemaining = _drunkDurationPerDrink;
-                        }
-                        else
-                        {
-                                _drunkTimeRemaining += _drunkDurationPerDrink;
-                        }
-
-                        _drunkTotalDuration = Mathf.Max(_drunkTimeRemaining, 0.0001f);
-                        _drunkStartValue = newStrength;
-                        DrunkValue = newStrength;
                 }
 
                 public override void Spawned()
