@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Fusion;
 using UnityEngine;
 
@@ -205,6 +206,29 @@ namespace TPSBR
 
             data = _activeBuffs.Get(index);
             return data.IsValid;
+        }
+
+        public int GetActiveBuffs(List<BuffData> buffer)
+        {
+            if (buffer == null)
+            {
+                return 0;
+            }
+
+            buffer.Clear();
+
+            for (int i = 0; i < MaxBuffSlots; ++i)
+            {
+                BuffData data = _activeBuffs.Get(i);
+                if (data.IsValid == false)
+                {
+                    continue;
+                }
+
+                buffer.Add(data);
+            }
+
+            return buffer.Count;
         }
 
         private int FindBuffIndex(int definitionId)

@@ -12,6 +12,7 @@ namespace TPSBR.UI
         [SerializeField] private UIHealth _health;
         [SerializeField] private UIGameplayInteractions _interactions;
         [SerializeField] private UIAgentEffects _effects;
+        [SerializeField] private UIBuffsWidget _buffs;
         [SerializeField] private UIGameplayEvents _events;
         [SerializeField] private UIKillFeed _killFeed;
         [SerializeField] private UIGoldFeed _goldFeed;
@@ -163,6 +164,7 @@ namespace TPSBR.UI
             _mana?.UpdateMana(_localAgent.Mana);
             _stamina?.UpdateStamina(_localAgent.Stamina);
             _effects.UpdateEffects(_localAgent);
+            _buffs?.UpdateBuffs(_localAgent);
             _interactions.UpdateInteractions(Context, _localAgent);
             _teamPlayerPanels.UpdateTeamPlayerPanels(Context, _localAgent);
         }
@@ -293,6 +295,7 @@ namespace TPSBR.UI
             _stamina?.SetActive(true);
             _interactions.SetActive(true);
             _effects.SetActive(true);
+            _buffs?.SetAgent(agent);
             _spectatingGroup.SetActive(isLocalPlayer == false);
 
             _player.SetData(Context, player);
@@ -341,6 +344,7 @@ namespace TPSBR.UI
             _stamina?.SetActive(false);
             _interactions.SetActive(false);
             _effects.SetActive(false);
+            _buffs?.Clear();
             _spectatingGroup.SetActive(false);
 
             _inventoryFeed?.Bind(null);
