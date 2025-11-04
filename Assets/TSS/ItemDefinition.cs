@@ -15,6 +15,7 @@ namespace TSS.Data
         [SerializeField] private Texture2D _iconTexture;
         [SerializeField] private Sprite _iconSprite;
         [SerializeField] private ushort maxStack = 100;
+        [SerializeField] private EItemRarity _itemRarity = EItemRarity.Common;
         [SerializeField] private string _shortCode;
         [SerializeField] private ESlotCategory _slotCategory = ESlotCategory.General;
 
@@ -33,6 +34,7 @@ namespace TSS.Data
         public override Texture2D Icon => _iconSprite != null ? _iconSprite.texture : _iconTexture;
         public virtual ushort MaxStack => maxStack;
         public virtual ESlotCategory SlotCategory => _slotCategory;
+        public EItemRarity ItemRarity => _itemRarity;
         public Sprite IconSprite => _iconSprite != null ? _iconSprite : GetOrCreateSprite();
 
         public static ushort GetMaxStack(int id)
@@ -79,6 +81,30 @@ namespace TSS.Data
             }
 
             Debug.Log($"Total items in registry: {_map.Count}");
+        }
+
+        public ItemRarityData GetRarityResource()
+        {
+            var rarityResources = ItemRarityResourcesDefinition.Instance;
+
+            if (rarityResources == null)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogWarning($"Unable to load {nameof(ItemRarityResourcesDefinition)} when requesting rarity for {name}.");
+#endif
+                return default;
+            }
+
+            if (rarityResources.TryGetData(_itemRarity, out var rarityData))
+            {
+                return rarityData;
+            }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.LogWarning($"No rarity data configured for {_itemRarity} in {nameof(ItemRarityResourcesDefinition)}.");
+#endif
+
+            return default;
         }
 
         private Sprite GetOrCreateSprite()
