@@ -48,6 +48,16 @@ namespace TPSBR.UI
         
         internal SceneUI GameplaySceneUI => SceneUI;
 
+        internal void ShowItemTooltip(IInventoryItemDetails details, ItemDefinition definition, NetworkString<_32> configurationHash, Vector2 screenPosition)
+        {
+            _itemToolTip?.Show(details, definition, configurationHash, screenPosition);
+        }
+
+        internal void ShowItemTooltip(ItemDefinition definition, string title, string description, Vector2 screenPosition)
+        {
+            _itemToolTip?.Show(definition, title, description, screenPosition);
+        }
+
         internal void ShowItemTooltip(IInventoryItemDetails details, NetworkString<_32> configurationHash, Vector2 screenPosition)
         {
             _itemToolTip?.Show(details, configurationHash, screenPosition);
@@ -981,7 +991,7 @@ namespace TPSBR.UI
                 var details = ResolveItemDetails(definition);
                 if (details != null)
                 {
-                    _view.ShowItemTooltip(details, slot.ConfigurationHash, screenPosition);
+                    _view.ShowItemTooltip(details, definition, slot.ConfigurationHash, screenPosition);
                     return true;
                 }
 
@@ -994,7 +1004,7 @@ namespace TPSBR.UI
                 if (string.IsNullOrEmpty(title))
                     return false;
 
-                _view.ShowItemTooltip(title, string.Empty, screenPosition);
+                _view.ShowItemTooltip(definition, title, string.Empty, screenPosition);
                 return true;
             }
 

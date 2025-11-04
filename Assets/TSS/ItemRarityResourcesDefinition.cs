@@ -76,5 +76,17 @@ namespace TSS.Data
             rarityData = default;
             return false;
         }
+
+        public bool TryGetPrimaryColor(EItemRarity rarity, out Color color)
+        {
+            if (TryGetData(rarity, out ItemRarityData rarityData) == true)
+            {
+                color = rarityData.PrimaryTextColor;
+                return true;
+            }
+
+            color = default;
+            return false;
+        }
     }
 }
