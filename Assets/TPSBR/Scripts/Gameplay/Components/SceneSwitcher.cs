@@ -25,6 +25,8 @@ namespace TPSBR
         private SceneContext _context;
         private bool _switchRequested;
         private float _triggerDistanceSqr;
+        private Agent _registeredAgent;
+        private SceneRef _pendingSceneRef;
 
         public SceneContext Context
         {
@@ -35,6 +37,7 @@ namespace TPSBR
         private void Awake()
         {
             _triggerDistanceSqr = _triggerDistance * _triggerDistance;
+            _pendingSceneRef = SceneRef.None;
         }
 
         private void OnValidate()
@@ -63,7 +66,12 @@ namespace TPSBR
 
             var agent = _context.ObservedAgent;
             if (agent == null)
+            {
+                EnsureAgentSubscription(null);
                 return;
+            }
+
+            EnsureAgentSubscription(agent);
 
             if (agent.Object == null || agent.Object.HasInputAuthority == false)
                 return;
@@ -102,6 +110,22 @@ namespace TPSBR
             if (desiredMode == SceneSwitchMode.Unload && RunnerAdditiveSceneManager.IsSceneLoaded(runner, sceneRef) == false)
                 return;
 
+            var agent = _context.ObservedAgent;
+            if (runner.IsSceneAuthority == false)
+            {
+                if (agent != null && agent.RequestSceneSwitch(sceneRef, desiredMode, _localPhysicsMode, _setActiveOnLoad) == true)
+                {
+                    _pendingSceneRef = sceneRef;
+                    _switchRequested = true;
+                }
+                else
+                {
+                    Debug.LogWarning($"{nameof(SceneSwitcher)} on {name} could not request a scene switch because the runner lacks scene authority and no valid agent was found.", this);
+                }
+
+                return;
+            }
+
             NetworkSceneAsyncOp operation;
             try
             {
@@ -131,15 +155,65 @@ namespace TPSBR
             }
 
             _switchRequested = true;
+            _pendingSceneRef = sceneRef;
 
             if (operation.IsValid == true)
             {
-                operation.AddOnCompleted(_ => _switchRequested = false);
+                operation.AddOnCompleted(_ =>
+                {
+                    _switchRequested = false;
+                    _pendingSceneRef = SceneRef.None;
+                });
             }
             else
             {
                 _switchRequested = false;
+                _pendingSceneRef = SceneRef.None;
             }
+        }
+
+        private void EnsureAgentSubscription(Agent agent)
+        {
+            if (_registeredAgent == agent)
+                return;
+
+            if (_registeredAgent != null)
+            {
+                _registeredAgent.SceneSwitchRequestProcessed -= OnAgentSceneSwitchProcessed;
+            }
+
+            _registeredAgent = agent;
+
+            if (_registeredAgent != null)
+            {
+                _registeredAgent.SceneSwitchRequestProcessed += OnAgentSceneSwitchProcessed;
+            }
+        }
+
+        private void OnAgentSceneSwitchProcessed(SceneRef sceneRef, SceneSwitchMode mode, bool success, string message)
+        {
+            if (sceneRef != _pendingSceneRef)
+                return;
+
+            _switchRequested = false;
+            _pendingSceneRef = SceneRef.None;
+
+            if (success == false)
+            {
+                Debug.LogWarning($"{nameof(SceneSwitcher)} on {name} failed to switch scene '{sceneRef}': {message}", this);
+            }
+        }
+
+        private void OnDisable()
+        {
+            EnsureAgentSubscription(null);
+            _switchRequested = false;
+            _pendingSceneRef = SceneRef.None;
+        }
+
+        private void OnDestroy()
+        {
+            EnsureAgentSubscription(null);
         }
 
         private static string NormalizeScenePath(string scenePath)
@@ -158,11 +232,15 @@ namespace TPSBR
             return scenePath;
         }
 
-        private enum SceneSwitchMode
-        {
-            Load,
-            Unload,
-            Toggle,
-        }
+    }
+}
+
+namespace TPSBR
+{
+    public enum SceneSwitchMode
+    {
+        Load,
+        Unload,
+        Toggle,
     }
 }

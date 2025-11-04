@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.Profiling;
 using Fusion;
@@ -25,6 +26,7 @@ namespace TPSBR
         public Stats Stats => _stats;
         public Professions Professions => _professions;
         public BuffSystem BuffSystem => _buffSystem;
+        public event Action<SceneRef, SceneSwitchMode, bool, string> SceneSwitchRequestProcessed;
 
         // PRIVATE MEMBERS
 
@@ -185,6 +187,94 @@ namespace TPSBR
             }
 
             _character.OnRender();
+        }
+
+        public bool RequestSceneSwitch(SceneRef sceneRef, SceneSwitchMode mode, LocalPhysicsMode localPhysicsMode, bool setActiveOnLoad)
+        {
+            if (Runner == null)
+                return false;
+
+            if (Object == null || Object.HasInputAuthority == false)
+                return false;
+
+            RPC_RequestSceneSwitch(sceneRef, mode, localPhysicsMode, setActiveOnLoad);
+            return true;
+        }
+
+        [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority, Channel = RpcChannel.Reliable, InvokeLocal = false)]
+        private void RPC_RequestSceneSwitch(SceneRef sceneRef, SceneSwitchMode mode, LocalPhysicsMode physicsMode, bool setActiveOnLoad, RpcInfo rpcInfo = default)
+        {
+            if (Runner == null)
+                return;
+
+            if (sceneRef.IsValid == false)
+            {
+                RPC_NotifySceneSwitchProcessed(sceneRef, mode, false, "Invalid scene reference.");
+                return;
+            }
+
+            if (RunnerAdditiveSceneManager.IsSceneOperationInProgress(Runner, sceneRef) == true)
+            {
+                RPC_NotifySceneSwitchProcessed(sceneRef, mode, false, "Another scene operation is already in progress.");
+                return;
+            }
+
+            SceneSwitchMode desiredMode = mode;
+
+            if (mode == SceneSwitchMode.Toggle)
+            {
+                desiredMode = RunnerAdditiveSceneManager.IsSceneLoaded(Runner, sceneRef) ? SceneSwitchMode.Unload : SceneSwitchMode.Load;
+            }
+
+            if (desiredMode == SceneSwitchMode.Unload && RunnerAdditiveSceneManager.IsSceneLoaded(Runner, sceneRef) == false)
+            {
+                RPC_NotifySceneSwitchProcessed(sceneRef, desiredMode, true, null);
+                return;
+            }
+
+            try
+            {
+                NetworkSceneAsyncOp operation;
+
+                switch (desiredMode)
+                {
+                    case SceneSwitchMode.Load:
+                        operation = RunnerAdditiveSceneManager.LoadAdditiveScene(Runner, sceneRef, physicsMode, setActiveOnLoad);
+                        break;
+
+                    case SceneSwitchMode.Unload:
+                        operation = RunnerAdditiveSceneManager.UnloadAdditiveScene(Runner, sceneRef);
+                        break;
+
+                    default:
+                        RPC_NotifySceneSwitchProcessed(sceneRef, mode, false, "Unsupported scene switch mode.");
+                        return;
+                }
+
+                if (operation.IsValid)
+                {
+                    operation.AddOnCompleted(result =>
+                    {
+                        bool success = result.Error == null;
+                        string message = success ? null : result.Error.Message;
+                        RPC_NotifySceneSwitchProcessed(sceneRef, desiredMode, success, message);
+                    });
+                }
+                else
+                {
+                    RPC_NotifySceneSwitchProcessed(sceneRef, desiredMode, false, "Scene operation is invalid.");
+                }
+            }
+            catch (Exception exception)
+            {
+                RPC_NotifySceneSwitchProcessed(sceneRef, desiredMode, false, exception.Message);
+            }
+        }
+
+        [Rpc(RpcSources.StateAuthority, RpcTargets.InputAuthority, Channel = RpcChannel.Reliable)]
+        private void RPC_NotifySceneSwitchProcessed(SceneRef sceneRef, SceneSwitchMode mode, bool success, string message, RpcInfo rpcInfo = default)
+        {
+            SceneSwitchRequestProcessed?.Invoke(sceneRef, mode, success, message);
         }
 
         public override void Render()
