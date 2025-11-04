@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 using UnityEngine.Profiling;
+using UnityEngine.SceneManagement;
 using Fusion;
 using Fusion.Addons.KCC;
 
