@@ -1,6 +1,7 @@
 using System;
 using Fusion;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace TPSBR
 {
@@ -12,9 +13,20 @@ namespace TPSBR
         [SerializeField, Min(0f)]
         private float _triggerDistance = 3f;
 
+        [SerializeField]
+        private SceneSwitchMode _switchMode = SceneSwitchMode.Toggle;
+
+        [SerializeField]
+        private LocalPhysicsMode _localPhysicsMode = LocalPhysicsMode.Physics3D;
+
+        [SerializeField]
+        private bool _setActiveOnLoad = true;
+
         private SceneContext _context;
         private bool _switchRequested;
         private float _triggerDistanceSqr;
+        private Agent _registeredAgent;
+        private SceneRef _pendingSceneRef;
 
         public SceneContext Context
         {
@@ -25,6 +37,7 @@ namespace TPSBR
         private void Awake()
         {
             _triggerDistanceSqr = _triggerDistance * _triggerDistance;
+            _pendingSceneRef = SceneRef.None;
         }
 
         private void OnValidate()
@@ -53,7 +66,12 @@ namespace TPSBR
 
             var agent = _context.ObservedAgent;
             if (agent == null)
+            {
+                EnsureAgentSubscription(null);
                 return;
+            }
+
+            EnsureAgentSubscription(agent);
 
             if (agent.Object == null || agent.Object.HasInputAuthority == false)
                 return;
@@ -67,10 +85,6 @@ namespace TPSBR
 
         private void RequestSceneSwitch(NetworkRunner runner)
         {
-            var networking = Global.Networking;
-            if (networking == null || networking.IsConnected == false)
-                return;
-
             string normalizedScenePath = NormalizeScenePath(_scenePath);
             if (normalizedScenePath.HasValue() == false)
             {
@@ -78,61 +92,128 @@ namespace TPSBR
                 return;
             }
 
-            var request = BuildSessionRequest(runner, normalizedScenePath);
+            if (RunnerAdditiveSceneManager.TryResolveSceneRef(runner, normalizedScenePath, out var sceneRef) == false)
+            {
+                Debug.LogWarning($"{nameof(SceneSwitcher)} on {name} failed to resolve scene '{normalizedScenePath}'. Ensure the scene is added to build settings.", this);
+                return;
+            }
+
+            if (RunnerAdditiveSceneManager.IsSceneOperationInProgress(runner, sceneRef) == true)
+                return;
+
+            SceneSwitchMode desiredMode = _switchMode;
+            if (desiredMode == SceneSwitchMode.Toggle && RunnerAdditiveSceneManager.IsSceneLoaded(runner, sceneRef) == true)
+            {
+                desiredMode = SceneSwitchMode.Unload;
+            }
+
+            if (desiredMode == SceneSwitchMode.Unload && RunnerAdditiveSceneManager.IsSceneLoaded(runner, sceneRef) == false)
+                return;
+
+            var agent = _context.ObservedAgent;
+            if (runner.IsSceneAuthority == false)
+            {
+                if (agent != null && agent.RequestSceneSwitch(sceneRef, desiredMode, _localPhysicsMode, _setActiveOnLoad) == true)
+                {
+                    _pendingSceneRef = sceneRef;
+                    _switchRequested = true;
+                }
+                else
+                {
+                    Debug.LogWarning($"{nameof(SceneSwitcher)} on {name} could not request a scene switch because the runner lacks scene authority and no valid agent was found.", this);
+                }
+
+                return;
+            }
+
+            NetworkSceneAsyncOp operation;
+            try
+            {
+                switch (desiredMode)
+                {
+                    case SceneSwitchMode.Load:
+                        operation = RunnerAdditiveSceneManager.LoadAdditiveScene(runner, sceneRef, _localPhysicsMode, _setActiveOnLoad);
+                        break;
+
+                    case SceneSwitchMode.Unload:
+                        operation = RunnerAdditiveSceneManager.UnloadAdditiveScene(runner, sceneRef);
+                        break;
+
+                    case SceneSwitchMode.Toggle:
+                        operation = RunnerAdditiveSceneManager.LoadAdditiveScene(runner, sceneRef, _localPhysicsMode, _setActiveOnLoad);
+                        break;
+
+                    default:
+                        Debug.LogWarning($"{nameof(SceneSwitcher)} on {name} has an unsupported mode {desiredMode}.", this);
+                        return;
+                }
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning($"{nameof(SceneSwitcher)} on {name} encountered an error while switching scenes: {exception.Message}", this);
+                return;
+            }
 
             _switchRequested = true;
-            networking.StartGame(request);
+            _pendingSceneRef = sceneRef;
+
+            if (operation.IsValid == true)
+            {
+                operation.AddOnCompleted(_ =>
+                {
+                    _switchRequested = false;
+                    _pendingSceneRef = SceneRef.None;
+                });
+            }
+            else
+            {
+                _switchRequested = false;
+                _pendingSceneRef = SceneRef.None;
+            }
         }
 
-        private SessionRequest BuildSessionRequest(NetworkRunner runner, string scenePath)
+        private void EnsureAgentSubscription(Agent agent)
         {
-            var playerData = _context?.PlayerData;
-            var sessionInfo = runner.SessionInfo;
-            bool hasSessionInfo = sessionInfo.IsValid;
+            if (_registeredAgent == agent)
+                return;
 
-            string userID = playerData != null && playerData.UserID.HasValue()
-                ? playerData.UserID
-                : Guid.NewGuid().ToString();
-
-            string sessionName = hasSessionInfo && sessionInfo.Name.HasValue()
-                ? sessionInfo.Name
-                : Guid.NewGuid().ToString();
-
-            string displayName = hasSessionInfo ? sessionInfo.GetDisplayName() : null;
-            if (displayName.HasValue() == false && playerData != null)
+            if (_registeredAgent != null)
             {
-                displayName = playerData.Nickname.HasValue() ? playerData.Nickname : playerData.CharacterName;
+                _registeredAgent.SceneSwitchRequestProcessed -= OnAgentSceneSwitchProcessed;
             }
 
-            if (displayName.HasValue() == false)
+            _registeredAgent = agent;
+
+            if (_registeredAgent != null)
             {
-                displayName = userID;
+                _registeredAgent.SceneSwitchRequestProcessed += OnAgentSceneSwitchProcessed;
             }
+        }
 
-            GameMode gameMode = hasSessionInfo ? sessionInfo.GetGameMode() : runner.GameMode;
-            //if (gameMode == GameMode.None)
+        private void OnAgentSceneSwitchProcessed(SceneRef sceneRef, SceneSwitchMode mode, bool success, string message)
+        {
+            if (sceneRef != _pendingSceneRef)
+                return;
+
+            _switchRequested = false;
+            _pendingSceneRef = SceneRef.None;
+
+            if (success == false)
             {
-                gameMode = runner.GameMode;
+                Debug.LogWarning($"{nameof(SceneSwitcher)} on {name} failed to switch scene '{sceneRef}': {message}", this);
             }
+        }
 
-            EGameplayType gameplayType = hasSessionInfo ? sessionInfo.GetGameplayType() : EGameplayType.None;
-            if (gameplayType == EGameplayType.None && _context?.GameplayMode != null)
-            {
-                gameplayType = _context.GameplayMode.Type;
-            }
+        private void OnDisable()
+        {
+            EnsureAgentSubscription(null);
+            _switchRequested = false;
+            _pendingSceneRef = SceneRef.None;
+        }
 
-            var request = new SessionRequest
-            {
-                UserID = userID,
-                DisplayName = displayName,
-                GameMode = gameMode,
-                SessionName = sessionName,
-                ScenePath = scenePath,
-                GameplayType = gameplayType,
-                MaxPlayers = hasSessionInfo ? sessionInfo.MaxPlayers : 0,
-            };
-
-            return request;
+        private void OnDestroy()
+        {
+            EnsureAgentSubscription(null);
         }
 
         private static string NormalizeScenePath(string scenePath)
@@ -150,5 +231,16 @@ namespace TPSBR
 
             return scenePath;
         }
+
+    }
+}
+
+namespace TPSBR
+{
+    public enum SceneSwitchMode
+    {
+        Load,
+        Unload,
+        Toggle,
     }
 }
