@@ -442,9 +442,21 @@ namespace TPSBR.UI
                                         HandleVendorSlotSelected(slot);
                                         break;
                                 case SlotCategory.Inventory:
-                                        HandleInventorySlotSelected(slot);
-                                        break;
+                                HandleInventorySlotSelected(slot);
+                                break;
                         }
+                }
+
+                void IUIListItemOwner.HandleSlotPointerEnter(UIListItem slot, PointerEventData eventData)
+                {
+                }
+
+                void IUIListItemOwner.HandleSlotPointerExit(UIListItem slot)
+                {
+                }
+
+                void IUIListItemOwner.HandleSlotPointerMove(UIListItem slot, PointerEventData eventData)
+                {
                 }
 
                 private void RefreshSelectedItemDetails()

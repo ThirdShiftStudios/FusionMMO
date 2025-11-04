@@ -1,0 +1,209 @@
+using Fusion;
+using TMPro;
+using UnityEngine;
+using UnityEngine.UI;
+
+namespace TPSBR.UI
+{
+    public class UIInventoryItemToolTip : UIWidget
+    {
+        [SerializeField] private CanvasGroup _canvasGroup;
+        [SerializeField] private TextMeshProUGUI _titleLabel;
+        [SerializeField] private TextMeshProUGUI _descriptionLabel;
+        [SerializeField] private float _screenPadding = 16f;
+        [SerializeField] private Vector2 _cursorOffset = new Vector2(24f, 24f);
+
+        private RectTransform _rectTransform;
+        private bool _isVisible;
+
+        protected override void OnInitialize()
+        {
+            base.OnInitialize();
+
+            _rectTransform = transform as RectTransform;
+            if (_rectTransform != null)
+            {
+                _rectTransform.pivot = new Vector2(0f, 1f);
+            }
+
+            if (_canvasGroup == null)
+            {
+                _canvasGroup = GetComponent<CanvasGroup>();
+                if (_canvasGroup == null)
+                {
+                    _canvasGroup = gameObject.AddComponent<CanvasGroup>();
+                }
+            }
+
+            SetVisible(false, true);
+        }
+
+        protected override void OnHidden()
+        {
+            base.OnHidden();
+            SetVisible(false, true);
+        }
+
+        public void Show(IInventoryItemDetails details, NetworkString<_32> configurationHash, Vector2 screenPosition)
+        {
+            if (details == null)
+            {
+                Hide();
+                return;
+            }
+
+            string displayName = details.GetDisplayName(configurationHash);
+            if (string.IsNullOrEmpty(displayName))
+            {
+                displayName = details.DisplayName;
+            }
+
+            string description = details.GetDescription(configurationHash);
+            if (string.IsNullOrEmpty(description))
+            {
+                description = details.GetDescription();
+            }
+
+            Show(displayName, description, screenPosition);
+        }
+
+        public void Show(string title, string description, Vector2 screenPosition)
+        {
+            if (string.IsNullOrEmpty(title) && string.IsNullOrEmpty(description))
+            {
+                Hide();
+                return;
+            }
+
+            if (_titleLabel != null)
+            {
+                _titleLabel.text = title ?? string.Empty;
+            }
+
+            if (_descriptionLabel != null)
+            {
+                _descriptionLabel.text = description ?? string.Empty;
+                _descriptionLabel.gameObject.SetActive(string.IsNullOrEmpty(_descriptionLabel.text) == false);
+            }
+
+            if (_rectTransform != null)
+            {
+                LayoutRebuilder.ForceRebuildLayoutImmediate(_rectTransform);
+            }
+
+            UpdatePosition(screenPosition);
+            SetVisible(true);
+        }
+
+        public void UpdatePosition(Vector2 screenPosition)
+        {
+            if (_rectTransform == null || SceneUI?.Canvas == null)
+                return;
+
+            var canvas = SceneUI.Canvas;
+            var canvasRect = canvas.transform as RectTransform;
+            if (canvasRect == null)
+                return;
+
+            Camera uiCamera = canvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : canvas.worldCamera;
+
+            if (RectTransformUtility.ScreenPointToLocalPointInRectangle(canvasRect, screenPosition, uiCamera, out Vector2 localPoint) == false)
+                return;
+
+            Vector2 size = _rectTransform.rect.size;
+            Rect pixelRect = canvas.pixelRect;
+            float padding = Mathf.Max(0f, _screenPadding);
+
+            int horizontalDirection = 1;
+            if (screenPosition.x + size.x + padding > pixelRect.xMax && screenPosition.x - size.x - padding >= pixelRect.xMin)
+            {
+                horizontalDirection = -1;
+            }
+            else if (screenPosition.x - size.x - padding < pixelRect.xMin && screenPosition.x + size.x + padding > pixelRect.xMax)
+            {
+                horizontalDirection = screenPosition.x <= pixelRect.center.x ? 1 : -1;
+            }
+            else if (screenPosition.x - size.x - padding < pixelRect.xMin)
+            {
+                horizontalDirection = 1;
+            }
+
+            int verticalDirection = 1;
+            if (screenPosition.y + size.y + padding > pixelRect.yMax && screenPosition.y - size.y - padding >= pixelRect.yMin)
+            {
+                verticalDirection = -1;
+            }
+            else if (screenPosition.y - size.y - padding < pixelRect.yMin && screenPosition.y + size.y + padding > pixelRect.yMax)
+            {
+                verticalDirection = screenPosition.y <= pixelRect.center.y ? 1 : -1;
+            }
+            else if (screenPosition.y - size.y - padding < pixelRect.yMin)
+            {
+                verticalDirection = 1;
+            }
+
+            Vector2 anchoredPosition = localPoint;
+            float offsetX = Mathf.Abs(_cursorOffset.x);
+            float offsetY = Mathf.Abs(_cursorOffset.y);
+
+            if (horizontalDirection >= 0)
+            {
+                anchoredPosition.x += offsetX;
+            }
+            else
+            {
+                anchoredPosition.x -= offsetX + size.x;
+            }
+
+            if (verticalDirection >= 0)
+            {
+                anchoredPosition.y += offsetY + size.y;
+            }
+            else
+            {
+                anchoredPosition.y -= offsetY;
+            }
+
+            float minX = canvasRect.rect.xMin + padding;
+            float maxX = canvasRect.rect.xMax - padding - size.x;
+            float minY = canvasRect.rect.yMin + padding + size.y;
+            float maxY = canvasRect.rect.yMax - padding;
+
+            if (minX > maxX)
+            {
+                float centerX = (minX + maxX) * 0.5f;
+                minX = maxX = centerX;
+            }
+
+            if (minY > maxY)
+            {
+                float centerY = (minY + maxY) * 0.5f;
+                minY = maxY = centerY;
+            }
+
+            anchoredPosition.x = Mathf.Clamp(anchoredPosition.x, minX, maxX);
+            anchoredPosition.y = Mathf.Clamp(anchoredPosition.y, minY, maxY);
+
+            _rectTransform.anchoredPosition = anchoredPosition;
+        }
+
+        public void Hide()
+        {
+            SetVisible(false);
+        }
+
+        private void SetVisible(bool visible, bool immediate = false)
+        {
+            if (_canvasGroup == null)
+                return;
+
+            if (_isVisible == visible && immediate == false)
+                return;
+
+            _isVisible = visible;
+            _canvasGroup.alpha = visible ? 1f : 0f;
+            _canvasGroup.blocksRaycasts = false;
+            _canvasGroup.interactable = false;
+        }
+    }
+}

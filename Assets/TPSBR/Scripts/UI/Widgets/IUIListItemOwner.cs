@@ -10,5 +10,8 @@ namespace TPSBR.UI
         void HandleSlotDrop(UIListItem source, UIListItem target);
         void HandleSlotDropOutside(UIListItem slot, PointerEventData eventData);
         void HandleSlotSelected(UIListItem slot);
+        void HandleSlotPointerEnter(UIListItem slot, PointerEventData eventData);
+        void HandleSlotPointerExit(UIListItem slot);
+        void HandleSlotPointerMove(UIListItem slot, PointerEventData eventData);
     }
 }

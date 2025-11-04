@@ -6,7 +6,7 @@ using UnityEngine.UI;
 
 namespace TPSBR.UI
 {
-    public class UIInventorySlotListItem : UIListItemBase<MonoBehaviour>, IBeginDragHandler, IDragHandler, IEndDragHandler, IDropHandler, IPointerClickHandler
+    public class UIInventorySlotListItem : UIListItemBase<MonoBehaviour>, IBeginDragHandler, IDragHandler, IEndDragHandler, IDropHandler, IPointerClickHandler, IPointerEnterHandler, IPointerExitHandler, IPointerMoveHandler
         {
                 private static readonly Dictionary<int, UIInventorySlotListItem> _lastDropTargets = new Dictionary<int, UIInventorySlotListItem>();
                 private static readonly List<RaycastResult> _raycastResults = new List<RaycastResult>();
@@ -33,6 +33,7 @@ namespace TPSBR.UI
                 private Sprite _iconSprite;
                 private int _quantity;
                 private bool _isDragging;
+                private bool _isPointerOver;
 
                 // MONOBEHAVIOR
 
@@ -51,6 +52,8 @@ namespace TPSBR.UI
                         _owner = null;
                         Index = -1;
 
+                        _isPointerOver = false;
+
                         _allSlots.Remove(this);
 
                         base.OnDeinitialize();
@@ -58,6 +61,7 @@ namespace TPSBR.UI
 
                 protected override void OnDestroy()
                 {
+                        _isPointerOver = false;
                         _allSlots.Remove(this);
 
                         base.OnDestroy();
@@ -118,6 +122,15 @@ namespace TPSBR.UI
                                 return;
 
                         _isDragging = true;
+                        if (_isPointerOver == true)
+                        {
+                                _isPointerOver = false;
+                                var hoveredSlot = OwnerSlot;
+                                if (hoveredSlot != null)
+                                {
+                                        _owner.HandleSlotPointerExit(hoveredSlot);
+                                }
+                        }
                         _activeDragSlot = this;
                         EnsureCanvasGroup();
                         _canvasGroup.alpha = 0.35f;
@@ -168,18 +181,26 @@ namespace TPSBR.UI
                         if (targetSlot == null)
                         {
                                 _owner?.HandleSlotDropOutside(ownerSlot, eventData);
+                                TryRestoreHoverState(eventData);
                                 return;
                         }
 
                         if (ReferenceEquals(targetSlot, this))
+                        {
+                                TryRestoreHoverState(eventData);
                                 return;
+                        }
 
                         var targetOwnerSlot = targetSlot as UIListItem;
                         if (targetOwnerSlot == null)
+                        {
+                                TryRestoreHoverState(eventData);
                                 return;
+                        }
 
                         var targetOwner = targetSlot.Owner;
                         targetOwner?.HandleSlotDrop(ownerSlot, targetOwnerSlot);
+                        TryRestoreHoverState(eventData);
                 }
 
                 public void OnDrop(PointerEventData eventData)
@@ -219,6 +240,53 @@ namespace TPSBR.UI
                         _owner.HandleSlotSelected(ownerSlot);
 
                         ButtonWrapper?.PlayClickSound();
+                }
+
+                public void OnPointerEnter(PointerEventData eventData)
+                {
+                        if (_owner == null || eventData == null)
+                                return;
+
+                        if (_isDragging == true)
+                                return;
+
+                        var ownerSlot = OwnerSlot;
+                        if (ownerSlot == null)
+                                return;
+
+                        _isPointerOver = true;
+                        _owner.HandleSlotPointerEnter(ownerSlot, eventData);
+                }
+
+                public void OnPointerExit(PointerEventData eventData)
+                {
+                        if (_owner == null)
+                                return;
+
+                        var ownerSlot = OwnerSlot;
+                        if (ownerSlot == null)
+                                return;
+
+                        _isPointerOver = false;
+                        _owner.HandleSlotPointerExit(ownerSlot);
+                }
+
+                public void OnPointerMove(PointerEventData eventData)
+                {
+                        if (_owner == null || eventData == null)
+                                return;
+
+                        if (_isDragging == true)
+                                return;
+
+                        if (_isPointerOver == false)
+                                return;
+
+                        var ownerSlot = OwnerSlot;
+                        if (ownerSlot == null)
+                                return;
+
+                        _owner.HandleSlotPointerMove(ownerSlot, eventData);
                 }
 
                 // PRIVATE METHODS
@@ -345,6 +413,23 @@ namespace TPSBR.UI
                         }
 
                         return null;
+                }
+
+                private void TryRestoreHoverState(PointerEventData eventData)
+                {
+                        if (_owner == null || eventData == null)
+                                return;
+
+                        var ownerSlot = OwnerSlot;
+                        if (ownerSlot == null)
+                                return;
+
+                        var camera = eventData.enterEventCamera != null ? eventData.enterEventCamera : eventData.pressEventCamera;
+                        if (RectTransformUtility.RectangleContainsScreenPoint(SlotRectTransform, eventData.position, camera) == false)
+                                return;
+
+                        _isPointerOver = true;
+                        _owner.HandleSlotPointerEnter(ownerSlot, eventData);
                 }
         }
 }

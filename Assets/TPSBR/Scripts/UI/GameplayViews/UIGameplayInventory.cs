@@ -6,6 +6,7 @@ using UnityEngine;
 using TMPro;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using TSS.Data;
 
 namespace TPSBR.UI
 {
@@ -36,6 +37,7 @@ namespace TPSBR.UI
         [SerializeField] private UIListItem _bagSlotFour;
         [SerializeField] private UIListItem _bagSlotFive;
         [SerializeField] private TextMeshProUGUI _goldLabel;
+        [SerializeField] private UIInventoryItemToolTip _itemToolTip;
 
         private bool _menuVisible;
         private Agent _boundAgent;
@@ -45,6 +47,26 @@ namespace TPSBR.UI
         private UICharacterDetailsView _characterDetails;
         
         internal SceneUI GameplaySceneUI => SceneUI;
+
+        internal void ShowItemTooltip(IInventoryItemDetails details, NetworkString<_32> configurationHash, Vector2 screenPosition)
+        {
+            _itemToolTip?.Show(details, configurationHash, screenPosition);
+        }
+
+        internal void ShowItemTooltip(string title, string description, Vector2 screenPosition)
+        {
+            _itemToolTip?.Show(title, description, screenPosition);
+        }
+
+        internal void UpdateItemTooltipPosition(Vector2 screenPosition)
+        {
+            _itemToolTip?.UpdatePosition(screenPosition);
+        }
+
+        internal void HideItemTooltip()
+        {
+            _itemToolTip?.Hide();
+        }
 
         // PUBLIC METHODS
 
@@ -119,6 +141,7 @@ namespace TPSBR.UI
             }
 
             _detailsPanel?.Hide();
+            _itemToolTip?.Hide();
         }
 
         protected override void OnDeinitialize()
@@ -150,6 +173,8 @@ namespace TPSBR.UI
                 _cancelButton.onClick.RemoveListener(OnCancelButton);
             }
 
+            _itemToolTip?.Hide();
+
             base.OnDeinitialize();
         }
 
@@ -165,6 +190,7 @@ namespace TPSBR.UI
 
             RefreshInventoryBinding();
             _detailsPanel?.Hide();
+            _itemToolTip?.Hide();
         }
 
         protected override void OnClose()
@@ -175,6 +201,8 @@ namespace TPSBR.UI
                 CanvasGroup.interactable = false;
                 NotifyInventoryCameraState(false);
             }
+
+            _itemToolTip?.Hide();
 
             base.OnClose();
         }
@@ -308,6 +336,8 @@ namespace TPSBR.UI
             internal event Action<IInventoryItemDetails, NetworkString<_32>> ItemSelected;
 
             private int _selectedSlotIndex = -1;
+            private int _hoveredSlotIndex = -1;
+            private Vector2 _lastPointerPosition;
 
             internal InventoryListPresenter(UIGameplayInventory view)
             {
@@ -436,6 +466,8 @@ namespace TPSBR.UI
                 SetDragVisible(false);
                 _dragSource = null;
                 ClearSelection();
+                _hoveredSlotIndex = -1;
+                _view?.HideItemTooltip();
             }
 
             private void OnGeneralInventorySizeChanged(int size)
@@ -460,6 +492,12 @@ namespace TPSBR.UI
                 else
                 {
                     UpdateSelectionHighlight();
+                }
+
+                if (_hoveredSlotIndex >= size)
+                {
+                    _hoveredSlotIndex = -1;
+                    _view?.HideItemTooltip();
                 }
             }
 
@@ -745,6 +783,73 @@ namespace TPSBR.UI
                 NotifySelectionChanged();
             }
 
+            void IUIListItemOwner.HandleSlotPointerEnter(UIListItem slot, PointerEventData eventData)
+            {
+                if (slot == null || eventData == null || _inventory == null || _view == null)
+                {
+                    _hoveredSlotIndex = -1;
+                    HideTooltip();
+                    return;
+                }
+
+                int index = slot.Index;
+                if (index < 0)
+                {
+                    _hoveredSlotIndex = -1;
+                    HideTooltip();
+                    return;
+                }
+
+                _lastPointerPosition = eventData.position;
+
+                if (TryShowTooltip(index, _lastPointerPosition))
+                {
+                    _hoveredSlotIndex = index;
+                }
+                else
+                {
+                    _hoveredSlotIndex = -1;
+                    HideTooltip();
+                }
+            }
+
+            void IUIListItemOwner.HandleSlotPointerExit(UIListItem slot)
+            {
+                if (slot != null && _hoveredSlotIndex == slot.Index)
+                {
+                    _hoveredSlotIndex = -1;
+                    HideTooltip();
+                }
+            }
+
+            void IUIListItemOwner.HandleSlotPointerMove(UIListItem slot, PointerEventData eventData)
+            {
+                if (slot == null || eventData == null)
+                    return;
+
+                if (slot.Index != _hoveredSlotIndex)
+                    return;
+
+                _lastPointerPosition = eventData.position;
+
+                if (_inventory == null)
+                {
+                    _hoveredSlotIndex = -1;
+                    HideTooltip();
+                    return;
+                }
+
+                var hoveredSlot = _inventory.GetItemSlot(_hoveredSlotIndex);
+                if (hoveredSlot.IsEmpty)
+                {
+                    _hoveredSlotIndex = -1;
+                    HideTooltip();
+                    return;
+                }
+
+                _view?.UpdateItemTooltipPosition(_lastPointerPosition);
+            }
+
             private void OnItemSlotChanged(int index, InventorySlot slot)
             {
                 UpdateSlot(index, slot);
@@ -760,6 +865,20 @@ namespace TPSBR.UI
                     else
                     {
                         NotifySelectionChanged();
+                    }
+                }
+
+                if (_hoveredSlotIndex == index)
+                {
+                    if (slot.IsEmpty)
+                    {
+                        _hoveredSlotIndex = -1;
+                        HideTooltip();
+                    }
+                    else if (TryShowTooltip(index, _lastPointerPosition) == false)
+                    {
+                        _hoveredSlotIndex = -1;
+                        HideTooltip();
                     }
                 }
             }
@@ -816,27 +935,72 @@ namespace TPSBR.UI
                 }
 
                 var definition = slot.GetDefinition();
-
-                IInventoryItemDetails itemDetails = null;
-
-                if (definition is WeaponDefinition weaponDefinition && weaponDefinition.WeaponPrefab != null)
-                {
-                    itemDetails = weaponDefinition.WeaponPrefab;
-                }
-                else if (definition is PickaxeDefinition pickaxeDefinition && pickaxeDefinition.PickaxePrefab != null)
-                {
-                    itemDetails = pickaxeDefinition.PickaxePrefab;
-                }
-                else if (definition is WoodAxeDefinition woodAxeDefinition && woodAxeDefinition.WoodAxePrefab != null)
-                {
-                    itemDetails = woodAxeDefinition.WoodAxePrefab;
-                }
-                else if (definition is FishingPoleDefinition fishingPoleDefinition && fishingPoleDefinition.FishingPolePrefab != null)
-                {
-                    itemDetails = fishingPoleDefinition.FishingPolePrefab;
-                }
+                var itemDetails = ResolveItemDetails(definition);
 
                 ItemSelected.Invoke(itemDetails, slot.ConfigurationHash);
+            }
+
+            private IInventoryItemDetails ResolveItemDetails(ItemDefinition definition)
+            {
+                if (definition is WeaponDefinition weaponDefinition && weaponDefinition.WeaponPrefab != null)
+                {
+                    return weaponDefinition.WeaponPrefab;
+                }
+
+                if (definition is PickaxeDefinition pickaxeDefinition && pickaxeDefinition.PickaxePrefab != null)
+                {
+                    return pickaxeDefinition.PickaxePrefab;
+                }
+
+                if (definition is WoodAxeDefinition woodAxeDefinition && woodAxeDefinition.WoodAxePrefab != null)
+                {
+                    return woodAxeDefinition.WoodAxePrefab;
+                }
+
+                if (definition is FishingPoleDefinition fishingPoleDefinition && fishingPoleDefinition.FishingPolePrefab != null)
+                {
+                    return fishingPoleDefinition.FishingPolePrefab;
+                }
+
+                return null;
+            }
+
+            private bool TryShowTooltip(int slotIndex, Vector2 screenPosition)
+            {
+                if (_inventory == null || _view == null || slotIndex < 0)
+                    return false;
+
+                var slot = _inventory.GetItemSlot(slotIndex);
+                if (slot.IsEmpty)
+                    return false;
+
+                var definition = slot.GetDefinition();
+                if (definition == null)
+                    return false;
+
+                var details = ResolveItemDetails(definition);
+                if (details != null)
+                {
+                    _view.ShowItemTooltip(details, slot.ConfigurationHash, screenPosition);
+                    return true;
+                }
+
+                string title = definition.Name;
+                if (slot.Quantity > 1)
+                {
+                    title = string.IsNullOrEmpty(title) ? $"x{slot.Quantity}" : $"{title} x{slot.Quantity}";
+                }
+
+                if (string.IsNullOrEmpty(title))
+                    return false;
+
+                _view.ShowItemTooltip(title, string.Empty, screenPosition);
+                return true;
+            }
+
+            private void HideTooltip()
+            {
+                _view?.HideItemTooltip();
             }
 
             private void EnsureDragVisual()
@@ -935,6 +1099,7 @@ namespace TPSBR.UI
                     _inventoryPresenter?.Bind(null);
                     _hotbar?.Bind(null);
                     UpdateGoldLabel(0);
+                    _itemToolTip?.Hide();
                 }
                 return;
             }
@@ -952,6 +1117,7 @@ namespace TPSBR.UI
             _boundInventory = agent != null ? agent.Inventory : null;
             _inventoryPresenter?.Bind(_boundInventory);
             _hotbar?.Bind(_boundInventory);
+            _itemToolTip?.Hide();
 
             if (_boundInventory != null)
             {

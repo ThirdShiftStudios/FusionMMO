@@ -206,6 +206,18 @@ namespace TPSBR.UI
             NotifySelectionChanged(weapon);
         }
 
+        void IUIListItemOwner.HandleSlotPointerEnter(UIListItem slot, PointerEventData eventData)
+        {
+        }
+
+        void IUIListItemOwner.HandleSlotPointerExit(UIListItem slot)
+        {
+        }
+
+        void IUIListItemOwner.HandleSlotPointerMove(UIListItem slot, PointerEventData eventData)
+        {
+        }
+
         internal void ClearSelection(bool notify = true)
         {
             if (_selectedSlotIndex < 0)

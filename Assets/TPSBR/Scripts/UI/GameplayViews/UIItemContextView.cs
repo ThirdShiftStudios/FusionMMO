@@ -534,6 +534,18 @@ namespace TPSBR.UI
             destination.AddRange(source);
         }
 
+        void IUIListItemOwner.HandleSlotPointerEnter(UIListItem slot, PointerEventData eventData)
+        {
+        }
+
+        void IUIListItemOwner.HandleSlotPointerExit(UIListItem slot)
+        {
+        }
+
+        void IUIListItemOwner.HandleSlotPointerMove(UIListItem slot, PointerEventData eventData)
+        {
+        }
+
         private void UpdateSelectionVisuals()
         {
             for (int i = 0; i < _spawnedSlots.Count; ++i)
