@@ -38,6 +38,8 @@ namespace TPSBR.UI
         [SerializeField] private UIListItem _bagSlotFive;
         [SerializeField] private TextMeshProUGUI _goldLabel;
         [SerializeField] private UIInventoryItemToolTip _itemToolTip;
+        [SerializeField] private UIStatToolTip _statToolTip;
+        [SerializeField] private UIProfessionToolTip _professionToolTip;
 
         private bool _menuVisible;
         private Agent _boundAgent;
@@ -66,6 +68,36 @@ namespace TPSBR.UI
         internal void HideItemTooltip()
         {
             _itemToolTip?.Hide();
+        }
+
+        internal void ShowStatTooltip(string statCode, int statValue, Vector2 screenPosition)
+        {
+            _statToolTip?.Show(statCode, statValue, screenPosition);
+        }
+
+        internal void UpdateStatTooltipPosition(Vector2 screenPosition)
+        {
+            _statToolTip?.UpdatePosition(screenPosition);
+        }
+
+        internal void HideStatTooltip()
+        {
+            _statToolTip?.Hide();
+        }
+
+        internal void ShowProfessionTooltip(string professionCode, Professions.ProfessionSnapshot snapshot, Vector2 screenPosition)
+        {
+            _professionToolTip?.Show(professionCode, snapshot, screenPosition);
+        }
+
+        internal void UpdateProfessionTooltipPosition(Vector2 screenPosition)
+        {
+            _professionToolTip?.UpdatePosition(screenPosition);
+        }
+
+        internal void HideProfessionTooltip()
+        {
+            _professionToolTip?.Hide();
         }
 
         // PUBLIC METHODS
@@ -142,6 +174,8 @@ namespace TPSBR.UI
 
             _detailsPanel?.Hide();
             _itemToolTip?.Hide();
+            _statToolTip?.Hide();
+            _professionToolTip?.Hide();
         }
 
         protected override void OnDeinitialize()
@@ -174,6 +208,8 @@ namespace TPSBR.UI
             }
 
             _itemToolTip?.Hide();
+            _statToolTip?.Hide();
+            _professionToolTip?.Hide();
 
             base.OnDeinitialize();
         }
@@ -191,6 +227,8 @@ namespace TPSBR.UI
             RefreshInventoryBinding();
             _detailsPanel?.Hide();
             _itemToolTip?.Hide();
+            _statToolTip?.Hide();
+            _professionToolTip?.Hide();
         }
 
         protected override void OnClose()
@@ -203,6 +241,8 @@ namespace TPSBR.UI
             }
 
             _itemToolTip?.Hide();
+            _statToolTip?.Hide();
+            _professionToolTip?.Hide();
 
             base.OnClose();
         }

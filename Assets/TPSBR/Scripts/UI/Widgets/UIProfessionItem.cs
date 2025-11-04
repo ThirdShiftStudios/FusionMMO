@@ -4,9 +4,9 @@ using UnityEngine.UI;
 
 namespace TPSBR.UI
 {
-    public class UIProfessionItem : UIWidget
+    public class UIProfessionItem : UIWidget, UnityEngine.EventSystems.IPointerEnterHandler, UnityEngine.EventSystems.IPointerExitHandler, UnityEngine.EventSystems.IPointerMoveHandler
     {
-        
+
         [SerializeField] private TextMeshProUGUI _professionCode;
         [SerializeField] private TextMeshProUGUI _professionLevel;
         [SerializeField] private Image _professionIcon;
@@ -15,9 +15,17 @@ namespace TPSBR.UI
 
         private int _professionCurrentExperience;
         private int _professionExperienceNextLevel;
+        private string _professionCodeValue;
+        private Professions.ProfessionSnapshot _snapshot;
+        private UIGameplayInventory _inventoryView;
+        private bool _hasData;
 
         public void SetData(string professionCode, Professions.ProfessionSnapshot snapshot)
         {
+            _professionCodeValue = professionCode;
+            _snapshot = snapshot;
+            _hasData = string.IsNullOrWhiteSpace(professionCode) == false;
+
             _professionCurrentExperience = snapshot.Experience;
             _professionExperienceNextLevel = snapshot.ExperienceToNextLevel;
 
@@ -84,6 +92,42 @@ namespace TPSBR.UI
             {
                 _currentExperience.SetTextSafe($"{_professionCurrentExperience.ToString()} / {_professionExperienceNextLevel.ToString()}");
             }
+        }
+
+        protected override void OnInitialize()
+        {
+            base.OnInitialize();
+
+            _inventoryView = GetComponentInParent<UIGameplayInventory>();
+        }
+
+        void UnityEngine.EventSystems.IPointerEnterHandler.OnPointerEnter(UnityEngine.EventSystems.PointerEventData eventData)
+        {
+            if (_hasData == false || eventData == null)
+                return;
+
+            if (_inventoryView == null)
+            {
+                _inventoryView = GetComponentInParent<UIGameplayInventory>();
+            }
+
+            _inventoryView?.ShowProfessionTooltip(_professionCodeValue, _snapshot, eventData.position);
+        }
+
+        void UnityEngine.EventSystems.IPointerExitHandler.OnPointerExit(UnityEngine.EventSystems.PointerEventData eventData)
+        {
+            if (_inventoryView == null)
+                return;
+
+            _inventoryView.HideProfessionTooltip();
+        }
+
+        void UnityEngine.EventSystems.IPointerMoveHandler.OnPointerMove(UnityEngine.EventSystems.PointerEventData eventData)
+        {
+            if (_hasData == false || eventData == null)
+                return;
+
+            _inventoryView?.UpdateProfessionTooltipPosition(eventData.position);
         }
     }
 }
