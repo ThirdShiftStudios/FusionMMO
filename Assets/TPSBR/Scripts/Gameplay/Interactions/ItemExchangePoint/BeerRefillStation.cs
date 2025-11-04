@@ -170,7 +170,7 @@ namespace TPSBR
 
                         if (fromInventory == true)
                         {
-                                int maxStack = Mathf.Clamp((int)ItemDefinition.GetMaxStack(inventorySlot.ItemDefinitionId), 1, byte.MaxValue);
+                                int maxStack = GetInventorySlotStackLimit(inventorySlot);
 
                                 if (inventorySlot.Quantity >= maxStack)
                                         return;
@@ -314,7 +314,7 @@ namespace TPSBR
 
                         if (fromInventory == true)
                         {
-                                int maxStack = Mathf.Clamp((int)ItemDefinition.GetMaxStack(inventorySlot.ItemDefinitionId), 1, byte.MaxValue);
+                                int maxStack = GetInventorySlotStackLimit(inventorySlot);
                                 return inventorySlot.Quantity < maxStack;
                         }
 
@@ -354,6 +354,16 @@ namespace TPSBR
                         {
                                 _previewedBeer.SetPreviewVisibility(true);
                         }
+                }
+
+                private static int GetInventorySlotStackLimit(InventorySlot slot)
+                {
+                        ushort maxStack = ItemDefinition.GetMaxStack(slot.ItemDefinitionId);
+
+                        if (maxStack == 0)
+                                return byte.MaxValue;
+
+                        return Mathf.Clamp(maxStack, 1, byte.MaxValue);
                 }
 
                 private void EnsureBeerFilters()

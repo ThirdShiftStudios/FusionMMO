@@ -672,7 +672,12 @@ namespace TPSBR
             if (slot.IsEmpty == true)
                 return false;
 
-            int maxStack = Mathf.Clamp((int)ItemDefinition.GetMaxStack(slot.ItemDefinitionId), 1, byte.MaxValue);
+            ushort rawMaxStack = ItemDefinition.GetMaxStack(slot.ItemDefinitionId);
+            int maxStack = Mathf.Clamp((int)rawMaxStack, 1, byte.MaxValue);
+            if (rawMaxStack == 0)
+            {
+                maxStack = byte.MaxValue;
+            }
             if (slot.Quantity >= maxStack)
                 return false;
 
