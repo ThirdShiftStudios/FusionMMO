@@ -23,7 +23,9 @@ namespace TPSBR.UI
             _rectTransform = transform as RectTransform;
             if (_rectTransform != null)
             {
-                _rectTransform.pivot = new Vector2(0f, 1f);
+                _rectTransform.anchorMin = new Vector2(0.5f, 0.5f);
+                _rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
+                _rectTransform.pivot = new Vector2(0.5f, 0.5f);
             }
 
             if (_canvasGroup == null)
@@ -142,32 +144,22 @@ namespace TPSBR.UI
                 verticalDirection = 1;
             }
 
-            Vector2 anchoredPosition = localPoint;
+            Vector2 pivot = new Vector2(horizontalDirection >= 0 ? 0f : 1f, verticalDirection >= 0 ? 0f : 1f);
+            _rectTransform.pivot = pivot;
+
             float offsetX = Mathf.Abs(_cursorOffset.x);
             float offsetY = Mathf.Abs(_cursorOffset.y);
 
-            if (horizontalDirection >= 0)
-            {
-                anchoredPosition.x += offsetX;
-            }
-            else
-            {
-                anchoredPosition.x -= offsetX + size.x;
-            }
+            Vector2 anchoredPosition = localPoint;
+            anchoredPosition.x += horizontalDirection >= 0 ? offsetX : -offsetX;
+            anchoredPosition.y += verticalDirection >= 0 ? offsetY : -offsetY;
 
-            if (verticalDirection >= 0)
-            {
-                anchoredPosition.y += offsetY + size.y;
-            }
-            else
-            {
-                anchoredPosition.y -= offsetY;
-            }
+            Rect rect = canvasRect.rect;
 
-            float minX = canvasRect.rect.xMin + padding;
-            float maxX = canvasRect.rect.xMax - padding - size.x;
-            float minY = canvasRect.rect.yMin + padding + size.y;
-            float maxY = canvasRect.rect.yMax - padding;
+            float minX = rect.xMin + padding + size.x * pivot.x;
+            float maxX = rect.xMax - padding - size.x * (1f - pivot.x);
+            float minY = rect.yMin + padding + size.y * pivot.y;
+            float maxY = rect.yMax - padding - size.y * (1f - pivot.y);
 
             if (minX > maxX)
             {
