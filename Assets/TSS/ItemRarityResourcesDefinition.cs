@@ -31,6 +31,7 @@ namespace TSS.Data
     public class ItemRarityResourcesDefinition : DataDefinition
     {
         private const string ResourcePath = "ItemRarityResources";
+        private const string FallbackResourcePath = "ItemRarityResourcesDefinition";
         private static ItemRarityResourcesDefinition _instance;
 
         [SerializeField] private Texture2D _icon;
@@ -45,10 +46,15 @@ namespace TSS.Data
                 {
                     _instance = Resources.Load<ItemRarityResourcesDefinition>(ResourcePath);
 
+                    if (_instance == null)
+                    {
+                        _instance = Resources.Load<ItemRarityResourcesDefinition>(FallbackResourcePath);
+                    }
+
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                     if (_instance == null)
                     {
-                        Debug.LogWarning($"Unable to locate {nameof(ItemRarityResourcesDefinition)} asset at Resources/{ResourcePath}.");
+                        Debug.LogWarning($"Unable to locate {nameof(ItemRarityResourcesDefinition)} asset at Resources/{ResourcePath} or Resources/{FallbackResourcePath}.");
                     }
 #endif
                 }
