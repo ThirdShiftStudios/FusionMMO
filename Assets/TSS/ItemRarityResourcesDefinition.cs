@@ -17,8 +17,8 @@ namespace TSS.Data
     public struct ItemRarityData
     {
         [SerializeField] private EItemRarity _rarity;
-        [SerializeField] private Color _primaryTextColor = Color.white;
-        [SerializeField] private Color _secondaryTextColor = Color.white;
+        [SerializeField] private Color _primaryTextColor;
+        [SerializeField] private Color _secondaryTextColor;
         [SerializeField] private GameObject _pickupVisuals;
 
         public EItemRarity Rarity => _rarity;
