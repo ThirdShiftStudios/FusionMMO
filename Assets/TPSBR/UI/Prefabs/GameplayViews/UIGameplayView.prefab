@@ -198,6 +198,7 @@ MonoBehaviour:
   _health: {fileID: 7883639134739582943}
   _interactions: {fileID: 1455179352794002078}
   _effects: {fileID: 2779413618032897793}
+  _buffs: {fileID: 7000000000000000600}
   _events: {fileID: 5245633478296631636}
   _killFeed: {fileID: 7141240771637244402}
   _goldFeed: {fileID: 1644970288938634402}
@@ -12554,8 +12555,19 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5b751036ee384eeeb16a22489174e711, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
+--- !u!114 &7000000000000000600 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 7000000000000000300, guid: fd8e54b88f72e3c49982cb44fad57b38, type: 3}
+  m_PrefabInstance: {fileID: 8506219772914015720}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6cc38fddc5bf48e5867092b67f5f7562, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
 --- !u!1001 &8686140018691565140
 PrefabInstance:
   m_ObjectHideFlags: 0

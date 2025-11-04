@@ -20,7 +20,9 @@ namespace TPSBR.UI
             int totalOtherPlayers = allPlayers.Count - 1;
             for (int i = 0; i < _teamPlayerPanels.Length; i++)
             {
-                _teamPlayerPanels[i].GameObject.SetActive(false);
+                var panel = _teamPlayerPanels[i];
+                panel.GameObject.SetActive(false);
+                panel.Buffs?.Clear();
             }
             if (totalOtherPlayers <= 0)
             {
@@ -47,6 +49,7 @@ namespace TPSBR.UI
                 panel.Mana?.UpdateMana(agent.Mana);
                 panel.Stamina?.UpdateStamina(agent.Stamina);
                 panel.Player.SetData(context, allPlayers[i]);
+                panel.Buffs?.UpdateBuffs(agent);
                 playerCounter++;
             }
         }
@@ -71,12 +74,14 @@ namespace TPSBR.UI
             public UIMana Mana => _mana;
             public UIStamina Stamina => _stamina;
             public UIPlayer Player => _player;
+            public UIBuffsWidget Buffs => _buffs;
 
             private GameObject _gameObject;
             private UIHealth  _health;
             private UIMana    _mana;
             private UIStamina _stamina;
             private UIPlayer  _player;
+            private UIBuffsWidget _buffs;
 
             public UITeamPlayerPanel(GameObject gameObject)
             {
@@ -85,6 +90,7 @@ namespace TPSBR.UI
                 _mana = gameObject.GetComponent<UIMana>();
                 _stamina = gameObject.GetComponent<UIStamina>();
                 _player = gameObject.GetComponent<UIPlayer>();
+                _buffs = gameObject.GetComponent<UIBuffsWidget>();
             }
         }
     }
