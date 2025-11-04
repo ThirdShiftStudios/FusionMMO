@@ -657,6 +657,42 @@ namespace TPSBR
             return true;
         }
 
+        public bool TryAddToInventorySlot(int index, byte quantity)
+        {
+            if (HasStateAuthority == false)
+                return false;
+
+            if (quantity == 0)
+                return true;
+
+            if (IsGeneralInventoryIndex(index) == false)
+                return false;
+
+            var slot = _items[index];
+            if (slot.IsEmpty == true)
+                return false;
+
+            ushort rawMaxStack = ItemDefinition.GetMaxStack(slot.ItemDefinitionId);
+            int maxStack = Mathf.Clamp((int)rawMaxStack, 1, byte.MaxValue);
+            if (rawMaxStack == 0)
+            {
+                maxStack = byte.MaxValue;
+            }
+            if (slot.Quantity >= maxStack)
+                return false;
+
+            byte addAmount = (byte)Mathf.Min(quantity, maxStack - slot.Quantity);
+            if (addAmount == 0)
+                return false;
+
+            slot.Add(addAmount);
+            _items.Set(index, slot);
+            UpdateWeaponDefinitionMapping(index, slot);
+            RefreshItems();
+
+            return addAmount == quantity;
+        }
+
         public bool TrySetHotbarConfiguration(int index, NetworkString<_32> configurationHash)
         {
             if (HasStateAuthority == false)

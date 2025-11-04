@@ -1,3 +1,5 @@
+using System;
+using System.Globalization;
 using Fusion;
 using UnityEngine;
 
@@ -5,6 +7,8 @@ namespace TPSBR
 {
     public class BeerUsable : Weapon
     {
+        private const string ConfigurationPrefix = "beer:";
+
         [Networked]
         private byte _beerStack { get; set; }
 
@@ -21,6 +25,21 @@ namespace TPSBR
         private bool _previewVisible;
 
         public byte BeerStack => _beerStack;
+
+        internal static byte GetBeerStack(NetworkString<_32> configurationHash)
+        {
+            return ParseBeerStack(configurationHash.ToString());
+        }
+
+        internal static NetworkString<_32> CreateConfigurationHash(byte beerStack)
+        {
+            string configuration = string.Concat(ConfigurationPrefix, beerStack.ToString(CultureInfo.InvariantCulture));
+
+            NetworkString<_32> hash = default;
+            hash = configuration;
+
+            return hash;
+        }
 
         private void Awake()
         {
@@ -121,7 +140,13 @@ namespace TPSBR
             {
                 if (_beerStack > 0)
                 {
+                    byte previousStack = _beerStack;
                     _beerStack--;
+
+                    if (_beerStack != previousStack)
+                    {
+                        UpdateConfigurationHash();
+                    }
                 }
 
                 Character character = Character;
@@ -148,7 +173,13 @@ namespace TPSBR
             }
 
             int newValue = Mathf.Clamp(_beerStack + amount, 0, byte.MaxValue);
+            byte previousStack = _beerStack;
             _beerStack = (byte)newValue;
+
+            if (_beerStack != previousStack)
+            {
+                UpdateConfigurationHash();
+            }
         }
 
         public void SetPreviewVisibility(bool visible)
@@ -231,6 +262,52 @@ namespace TPSBR
                     }
                 }
             }
+        }
+
+        protected override void OnConfigurationHashApplied(string configurationHash)
+        {
+            base.OnConfigurationHashApplied(configurationHash);
+
+            _beerStack = ParseBeerStack(configurationHash);
+        }
+
+        private static byte ParseBeerStack(string configurationHash)
+        {
+            if (string.IsNullOrEmpty(configurationHash) == true)
+            {
+                return 0;
+            }
+
+            if (configurationHash.StartsWith(ConfigurationPrefix, StringComparison.OrdinalIgnoreCase) == false)
+            {
+                return 0;
+            }
+
+            string valueText = configurationHash.Substring(ConfigurationPrefix.Length);
+
+            if (byte.TryParse(valueText, NumberStyles.Integer, CultureInfo.InvariantCulture, out byte value) == false)
+            {
+                return 0;
+            }
+
+            return value;
+        }
+
+        private void UpdateConfigurationHash()
+        {
+            if (HasStateAuthority == false)
+            {
+                return;
+            }
+
+            NetworkString<_32> newHash = CreateConfigurationHash(_beerStack);
+
+            if (ConfigurationHash.Equals(newHash) == true)
+            {
+                return;
+            }
+
+            SetConfigurationHash(newHash);
         }
     }
 }

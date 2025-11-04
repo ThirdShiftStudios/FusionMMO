@@ -165,57 +165,112 @@ namespace TPSBR
                         if (inventory == null)
                                 return;
 
-                        if (TryGetSelectedBeer(inventory, out BeerUsable beer) == false)
+                        if (TryGetSelectedBeer(inventory, out BeerUsable beer, out InventorySlot inventorySlot, out bool fromInventory) == false)
                                 return;
 
-                        if (beer.BeerStack >= byte.MaxValue)
-                                return;
+                        if (fromInventory == true)
+                        {
+                                byte currentStack = BeerUsable.GetBeerStack(inventorySlot.ConfigurationHash);
+                                bool canIncreaseStack = currentStack < byte.MaxValue;
+                                int maxStack = GetInventorySlotStackLimit(inventorySlot);
+                                bool canIncreaseQuantity = inventorySlot.Quantity < maxStack;
 
-                        if (RefillCost > 0 && inventory.TrySpendGold(RefillCost) == false)
-                                return;
+                                if (canIncreaseStack == false && canIncreaseQuantity == false)
+                                        return;
 
-                        beer.AddBeerStack(1);
+                                if (RefillCost > 0 && inventory.TrySpendGold(RefillCost) == false)
+                                        return;
+
+                                if (canIncreaseStack == true)
+                                {
+                                        byte newStack = (byte)Mathf.Min(byte.MaxValue, currentStack + 1);
+                                        NetworkString<_32> newConfiguration = BeerUsable.CreateConfigurationHash(newStack);
+
+                                        if (inventory.TrySetInventorySlotConfiguration(_currentSelectedSourceIndex, newConfiguration) == false)
+                                        {
+                                                if (RefillCost > 0)
+                                                {
+                                                        inventory.AddGold(RefillCost);
+                                                }
+
+                                                return;
+                                        }
+                                }
+                                else if (inventory.TryAddToInventorySlot(_currentSelectedSourceIndex, 1) == false)
+                                {
+                                        if (RefillCost > 0)
+                                        {
+                                                inventory.AddGold(RefillCost);
+                                        }
+
+                                        return;
+                                }
+                        }
+                        else
+                        {
+                                if (beer == null)
+                                        return;
+
+                                if (beer.BeerStack >= byte.MaxValue)
+                                        return;
+
+                                if (RefillCost > 0 && inventory.TrySpendGold(RefillCost) == false)
+                                        return;
+
+                                beer.AddBeerStack(1);
+                        }
 
                         UpdatePurchaseButtonState();
                 }
 
-                private bool TryGetSelectedBeer(Inventory inventory, out BeerUsable beer)
+                private bool TryGetSelectedBeer(Inventory inventory, out BeerUsable beer, out InventorySlot inventorySlot, out bool fromInventory)
                 {
                         beer = null;
+                        inventorySlot = default;
+                        fromInventory = false;
 
                         if (inventory == null)
                                 return false;
 
-                        Weapon weapon = null;
-
                         if (_currentSelectedSourceType == ItemSourceType.Hotbar)
                         {
-                                weapon = inventory.GetHotbarWeapon(_currentSelectedSourceIndex);
+                                Weapon weapon = inventory.GetHotbarWeapon(_currentSelectedSourceIndex);
+                                beer = weapon as BeerUsable;
+                                return beer != null;
                         }
-                        else if (_currentSelectedSourceType == ItemSourceType.Inventory)
+
+                        if (_currentSelectedSourceType == ItemSourceType.Inventory)
                         {
                                 InventorySlot slot = inventory.GetItemSlot(_currentSelectedSourceIndex);
+
+                                if (slot.IsEmpty == true)
+                                        return false;
+
                                 ItemDefinition definition = slot.GetDefinition();
 
-                                if (definition is ItemDefinition weaponDefinition)
+                                if (definition is BeerDefinition)
                                 {
+                                        fromInventory = true;
+                                        inventorySlot = slot;
+
                                         int hotbarSize = inventory.HotbarSize;
 
                                         for (int i = 0; i < hotbarSize; ++i)
                                         {
                                                 Weapon candidate = inventory.GetHotbarWeapon(i);
 
-                                                if (candidate != null && candidate.Definition == weaponDefinition)
+                                                if (candidate is BeerUsable candidateBeer && candidate.Definition == definition)
                                                 {
-                                                        weapon = candidate;
+                                                        beer = candidateBeer;
                                                         break;
                                                 }
                                         }
+
+                                        return true;
                                 }
                         }
 
-                        beer = weapon as BeerUsable;
-                        return beer != null;
+                        return false;
                 }
 
                 private void SubscribeToInventory(Inventory inventory)
@@ -272,10 +327,21 @@ namespace TPSBR
                         if (RefillCost > 0 && inventory.Gold < RefillCost)
                                 return false;
 
-                        if (TryGetSelectedBeer(inventory, out BeerUsable beer) == false)
+                        if (TryGetSelectedBeer(inventory, out BeerUsable beer, out InventorySlot inventorySlot, out bool fromInventory) == false)
                                 return false;
 
-                        return beer.BeerStack < byte.MaxValue;
+                        if (fromInventory == true)
+                        {
+                                byte currentStack = BeerUsable.GetBeerStack(inventorySlot.ConfigurationHash);
+
+                                if (currentStack < byte.MaxValue)
+                                        return true;
+
+                                int maxStack = GetInventorySlotStackLimit(inventorySlot);
+                                return inventorySlot.Quantity < maxStack;
+                        }
+
+                        return beer != null && beer.BeerStack < byte.MaxValue;
                 }
 
                 private void UpdateSelectedBeerPreview()
@@ -286,7 +352,10 @@ namespace TPSBR
 
                         if (inventory != null)
                         {
-                                TryGetSelectedBeer(inventory, out selectedBeer);
+                                if (TryGetSelectedBeer(inventory, out selectedBeer, out _, out _) == false)
+                                {
+                                        selectedBeer = null;
+                                }
                         }
 
                         SetPreviewedBeer(selectedBeer);
@@ -308,6 +377,16 @@ namespace TPSBR
                         {
                                 _previewedBeer.SetPreviewVisibility(true);
                         }
+                }
+
+                private static int GetInventorySlotStackLimit(InventorySlot slot)
+                {
+                        ushort maxStack = ItemDefinition.GetMaxStack(slot.ItemDefinitionId);
+
+                        if (maxStack == 0)
+                                return byte.MaxValue;
+
+                        return Mathf.Clamp(maxStack, 1, byte.MaxValue);
                 }
 
                 private void EnsureBeerFilters()
