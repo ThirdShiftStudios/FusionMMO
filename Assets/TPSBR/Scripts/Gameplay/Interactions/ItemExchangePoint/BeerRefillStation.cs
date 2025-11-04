@@ -170,15 +170,33 @@ namespace TPSBR
 
                         if (fromInventory == true)
                         {
+                                byte currentStack = BeerUsable.GetBeerStack(inventorySlot.ConfigurationHash);
+                                bool canIncreaseStack = currentStack < byte.MaxValue;
                                 int maxStack = GetInventorySlotStackLimit(inventorySlot);
+                                bool canIncreaseQuantity = inventorySlot.Quantity < maxStack;
 
-                                if (inventorySlot.Quantity >= maxStack)
+                                if (canIncreaseStack == false && canIncreaseQuantity == false)
                                         return;
 
                                 if (RefillCost > 0 && inventory.TrySpendGold(RefillCost) == false)
                                         return;
 
-                                if (inventory.TryAddToInventorySlot(_currentSelectedSourceIndex, 1) == false)
+                                if (canIncreaseStack == true)
+                                {
+                                        byte newStack = (byte)Mathf.Min(byte.MaxValue, currentStack + 1);
+                                        NetworkString<_32> newConfiguration = BeerUsable.CreateConfigurationHash(newStack);
+
+                                        if (inventory.TrySetInventorySlotConfiguration(_currentSelectedSourceIndex, newConfiguration) == false)
+                                        {
+                                                if (RefillCost > 0)
+                                                {
+                                                        inventory.AddGold(RefillCost);
+                                                }
+
+                                                return;
+                                        }
+                                }
+                                else if (inventory.TryAddToInventorySlot(_currentSelectedSourceIndex, 1) == false)
                                 {
                                         if (RefillCost > 0)
                                         {
@@ -314,6 +332,11 @@ namespace TPSBR
 
                         if (fromInventory == true)
                         {
+                                byte currentStack = BeerUsable.GetBeerStack(inventorySlot.ConfigurationHash);
+
+                                if (currentStack < byte.MaxValue)
+                                        return true;
+
                                 int maxStack = GetInventorySlotStackLimit(inventorySlot);
                                 return inventorySlot.Quantity < maxStack;
                         }
