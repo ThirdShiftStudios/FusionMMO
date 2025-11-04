@@ -26,7 +26,6 @@ namespace TPSBR
 
         private class SceneEntry
         {
-            public NetworkSceneLoadId LoadId;
             public NetworkSceneAsyncOp Operation;
             public SceneOperationState State;
         }
@@ -105,8 +104,7 @@ namespace TPSBR
             if (sceneRef.IsValid == false)
                 throw new ArgumentException("The provided sceneRef is not valid.", nameof(sceneRef));
 
-            var sceneManager = runner.SceneManager as NetworkSceneManagerDefault;
-            if (sceneManager == null)
+            if (runner.SceneManager is NetworkSceneManagerDefault == false)
                 throw new InvalidOperationException("Runner does not use NetworkSceneManagerDefault; additive scene loading is not supported.");
 
             if (TryGetSceneEntry(runner, sceneRef, out var existing) == true)
@@ -121,20 +119,9 @@ namespace TPSBR
                     throw new InvalidOperationException("Cannot load a scene that is currently unloading.");
             }
 
-            var parameters = new NetworkLoadSceneParameters
-            {
-                LoadSceneMode = LoadSceneMode.Additive,
-                LocalPhysicsMode = physicsMode,
-                LoadSceneParameters = new LoadSceneParameters(LoadSceneMode.Additive, physicsMode),
-                LoadId = NetworkSceneLoadId.New(),
-                IsActiveOnLoad = setActiveOnLoad,
-                IsSingleLoad = false,
-            };
-
-            var asyncOp = sceneManager.LoadScene(sceneRef, parameters);
+            var asyncOp = runner.LoadScene(sceneRef, LoadSceneMode.Additive, physicsMode, setActiveOnLoad);
 
             var entry = RegisterSceneEntry(runner, sceneRef);
-            entry.LoadId = parameters.LoadId;
             entry.Operation = asyncOp;
             entry.State = SceneOperationState.Loading;
 
@@ -179,8 +166,7 @@ namespace TPSBR
             if (sceneRef.IsValid == false)
                 throw new ArgumentException("The provided sceneRef is not valid.", nameof(sceneRef));
 
-            var sceneManager = runner.SceneManager as NetworkSceneManagerDefault;
-            if (sceneManager == null)
+            if (runner.SceneManager is NetworkSceneManagerDefault == false)
                 throw new InvalidOperationException("Runner does not use NetworkSceneManagerDefault; additive scene unloading is not supported.");
 
             if (TryGetSceneEntry(runner, sceneRef, out var entry) == false)
@@ -192,7 +178,7 @@ namespace TPSBR
             if (entry.State == SceneOperationState.Unloading)
                 return entry.Operation;
 
-            var asyncOp = sceneManager.UnloadScene(sceneRef);
+            var asyncOp = runner.UnloadScene(sceneRef);
 
             entry.Operation = asyncOp;
             entry.State = SceneOperationState.Unloading;
