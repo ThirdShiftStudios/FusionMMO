@@ -633,17 +633,18 @@ namespace TPSBR
 
 			Task shutdownTask = null;
 
-			if (peer.Runner != null)
-			{
-				Debug.LogWarning($"Shutdown {peer.Runner.name} ...");
+                        if (peer.Runner != null)
+                        {
+                                Debug.LogWarning($"Shutdown {peer.Runner.name} ...");
 
-				try
-				{
-					shutdownTask = peer.Runner.Shutdown(true);
-				}
-				catch (Exception exception)
-				{
-					Debug.LogException(exception);
+                                try
+                                {
+                                        RunnerAdditiveSceneManager.ClearRunner(peer.Runner);
+                                        shutdownTask = peer.Runner.Shutdown(true);
+                                }
+                                catch (Exception exception)
+                                {
+                                        Debug.LogException(exception);
 				}
 			}
 

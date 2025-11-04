@@ -1,6 +1,7 @@
 using System;
 using Fusion;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace TPSBR
 {
@@ -11,6 +12,15 @@ namespace TPSBR
 
         [SerializeField, Min(0f)]
         private float _triggerDistance = 3f;
+
+        [SerializeField]
+        private SceneSwitchMode _switchMode = SceneSwitchMode.Toggle;
+
+        [SerializeField]
+        private LocalPhysicsMode _localPhysicsMode = LocalPhysicsMode.Physics3D;
+
+        [SerializeField]
+        private bool _setActiveOnLoad = true;
 
         private SceneContext _context;
         private bool _switchRequested;
@@ -67,10 +77,6 @@ namespace TPSBR
 
         private void RequestSceneSwitch(NetworkRunner runner)
         {
-            var networking = Global.Networking;
-            if (networking == null || networking.IsConnected == false)
-                return;
-
             string normalizedScenePath = NormalizeScenePath(_scenePath);
             if (normalizedScenePath.HasValue() == false)
             {
@@ -78,61 +84,62 @@ namespace TPSBR
                 return;
             }
 
-            var request = BuildSessionRequest(runner, normalizedScenePath);
+            if (RunnerAdditiveSceneManager.TryResolveSceneRef(runner, normalizedScenePath, out var sceneRef) == false)
+            {
+                Debug.LogWarning($"{nameof(SceneSwitcher)} on {name} failed to resolve scene '{normalizedScenePath}'. Ensure the scene is added to build settings.", this);
+                return;
+            }
+
+            if (RunnerAdditiveSceneManager.IsSceneOperationInProgress(runner, sceneRef) == true)
+                return;
+
+            SceneSwitchMode desiredMode = _switchMode;
+            if (desiredMode == SceneSwitchMode.Toggle && RunnerAdditiveSceneManager.IsSceneLoaded(runner, sceneRef) == true)
+            {
+                desiredMode = SceneSwitchMode.Unload;
+            }
+
+            if (desiredMode == SceneSwitchMode.Unload && RunnerAdditiveSceneManager.IsSceneLoaded(runner, sceneRef) == false)
+                return;
+
+            NetworkSceneAsyncOp operation;
+            try
+            {
+                switch (desiredMode)
+                {
+                    case SceneSwitchMode.Load:
+                        operation = RunnerAdditiveSceneManager.LoadAdditiveScene(runner, sceneRef, _localPhysicsMode, _setActiveOnLoad);
+                        break;
+
+                    case SceneSwitchMode.Unload:
+                        operation = RunnerAdditiveSceneManager.UnloadAdditiveScene(runner, sceneRef);
+                        break;
+
+                    case SceneSwitchMode.Toggle:
+                        operation = RunnerAdditiveSceneManager.LoadAdditiveScene(runner, sceneRef, _localPhysicsMode, _setActiveOnLoad);
+                        break;
+
+                    default:
+                        Debug.LogWarning($"{nameof(SceneSwitcher)} on {name} has an unsupported mode {desiredMode}.", this);
+                        return;
+                }
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning($"{nameof(SceneSwitcher)} on {name} encountered an error while switching scenes: {exception.Message}", this);
+                return;
+            }
 
             _switchRequested = true;
-            networking.StartGame(request);
-        }
 
-        private SessionRequest BuildSessionRequest(NetworkRunner runner, string scenePath)
-        {
-            var playerData = _context?.PlayerData;
-            var sessionInfo = runner.SessionInfo;
-            bool hasSessionInfo = sessionInfo.IsValid;
-
-            string userID = playerData != null && playerData.UserID.HasValue()
-                ? playerData.UserID
-                : Guid.NewGuid().ToString();
-
-            string sessionName = hasSessionInfo && sessionInfo.Name.HasValue()
-                ? sessionInfo.Name
-                : Guid.NewGuid().ToString();
-
-            string displayName = hasSessionInfo ? sessionInfo.GetDisplayName() : null;
-            if (displayName.HasValue() == false && playerData != null)
+            if (operation.IsValid == true)
             {
-                displayName = playerData.Nickname.HasValue() ? playerData.Nickname : playerData.CharacterName;
+                operation.AddOnCompleted(_ => _switchRequested = false);
             }
-
-            if (displayName.HasValue() == false)
+            else
             {
-                displayName = userID;
+                _switchRequested = false;
             }
-
-            GameMode gameMode = hasSessionInfo ? sessionInfo.GetGameMode() : runner.GameMode;
-            //if (gameMode == GameMode.None)
-            {
-                gameMode = runner.GameMode;
-            }
-
-            EGameplayType gameplayType = hasSessionInfo ? sessionInfo.GetGameplayType() : EGameplayType.None;
-            if (gameplayType == EGameplayType.None && _context?.GameplayMode != null)
-            {
-                gameplayType = _context.GameplayMode.Type;
-            }
-
-            var request = new SessionRequest
-            {
-                UserID = userID,
-                DisplayName = displayName,
-                GameMode = gameMode,
-                SessionName = sessionName,
-                ScenePath = scenePath,
-                GameplayType = gameplayType,
-                MaxPlayers = hasSessionInfo ? sessionInfo.MaxPlayers : 0,
-            };
-
-            return request;
         }
 
         private static string NormalizeScenePath(string scenePath)
@@ -149,6 +156,13 @@ namespace TPSBR
             }
 
             return scenePath;
+        }
+
+        private enum SceneSwitchMode
+        {
+            Load,
+            Unload,
+            Toggle,
         }
     }
 }
