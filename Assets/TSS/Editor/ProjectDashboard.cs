@@ -414,6 +414,9 @@ namespace TSS.Tools
     protected override void RowGUI(RowGUIArgs args)
     {
         var item = (DashboardItem)args.item;
+        var definition = item.payload as DataDefinition;
+        var highlightAsMissingId = definition != null && definition.ID == 0;
+
         for (int i = 0; i < args.GetNumVisibleColumns(); i++)
         {
             var cellRect = args.GetCellRect(i);
@@ -436,7 +439,15 @@ namespace TSS.Tools
                 cellRect.xMin += iconSize + 4f;
             }
 
+            var previousColor = GUI.contentColor;
+            if (highlightAsMissingId)
+            {
+                GUI.contentColor = Color.red;
+            }
+
             EditorGUI.LabelField(cellRect, item.displayName);
+
+            GUI.contentColor = previousColor;
         }
     }
 

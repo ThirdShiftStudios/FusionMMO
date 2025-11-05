@@ -38,10 +38,10 @@ namespace TSS.Data
 
         public void RecalculateAllDefinitionIds()
         {
-            ResetLastAssignedId();
-
             var guids = AssetDatabase.FindAssets($"t:{nameof(DataDefinition)}");
-            var definitions = new List<(DataDefinition definition, string path)>();
+            var definitionsWithZeroId = new List<(DataDefinition definition, string path)>();
+
+            var maxExistingId = -1;
 
             foreach (var guid in guids)
             {
@@ -53,14 +53,25 @@ namespace TSS.Data
                 if (definition == null)
                     continue;
 
-                definitions.Add((definition, assetPath));
+                maxExistingId = Mathf.Max(maxExistingId, definition.ID);
+
+                if (definition.ID == 0)
+                {
+                    definitionsWithZeroId.Add((definition, assetPath));
+                }
             }
 
-            var orderedDefinitions = definitions
+            var orderedDefinitions = definitionsWithZeroId
                 .OrderBy(d => d.path, StringComparer.OrdinalIgnoreCase)
                 .ToList();
 
-            var nextId = 0;
+            if (orderedDefinitions.Count == 0)
+            {
+                UpdateLastAssignedId(maxExistingId);
+                return;
+            }
+
+            var nextId = Mathf.Max(lastAssignedId, maxExistingId) + 1;
 
             AssetDatabase.StartAssetEditing();
 
@@ -77,18 +88,21 @@ namespace TSS.Data
                 AssetDatabase.StopAssetEditing();
             }
 
-            if (nextId > 0)
-            {
-                lastAssignedId = nextId - 1;
-                Persist();
-            }
-            else
-            {
-                ResetLastAssignedId();
-            }
+            UpdateLastAssignedId(nextId - 1);
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
+        }
+
+        private void UpdateLastAssignedId(int candidateId)
+        {
+            var newLastAssignedId = Mathf.Max(candidateId, lastAssignedId);
+
+            if (newLastAssignedId != lastAssignedId)
+            {
+                lastAssignedId = newLastAssignedId;
+                Persist();
+            }
         }
 
         private static void AssignId(DataDefinition definition, int newId)
