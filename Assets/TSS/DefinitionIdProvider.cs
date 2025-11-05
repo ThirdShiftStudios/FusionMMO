@@ -30,9 +30,15 @@ namespace TSS.Data
             return lastAssignedId;
         }
 
+        public void ResetLastAssignedId()
+        {
+            lastAssignedId = -1;
+            Persist();
+        }
+
         public void RecalculateAllDefinitionIds()
         {
-            Reset();
+            ResetLastAssignedId();
 
             var guids = AssetDatabase.FindAssets($"t:{nameof(DataDefinition)}");
             var definitions = new List<(DataDefinition definition, string path)>();
@@ -54,13 +60,16 @@ namespace TSS.Data
                 .OrderBy(d => d.path, StringComparer.OrdinalIgnoreCase)
                 .ToList();
 
+            var nextId = 0;
+
             AssetDatabase.StartAssetEditing();
 
             try
             {
                 foreach (var (definition, _) in orderedDefinitions)
                 {
-                    AssignId(definition, GetNextSequentialId());
+                    AssignId(definition, nextId);
+                    nextId++;
                 }
             }
             finally
@@ -68,21 +77,18 @@ namespace TSS.Data
                 AssetDatabase.StopAssetEditing();
             }
 
-            Persist();
+            if (nextId > 0)
+            {
+                lastAssignedId = nextId - 1;
+                Persist();
+            }
+            else
+            {
+                ResetLastAssignedId();
+            }
+
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
-        }
-
-        private void Reset()
-        {
-            lastAssignedId = -1;
-            Persist();
-        }
-
-        private int GetNextSequentialId()
-        {
-            lastAssignedId += 1;
-            return lastAssignedId;
         }
 
         private static void AssignId(DataDefinition definition, int newId)
