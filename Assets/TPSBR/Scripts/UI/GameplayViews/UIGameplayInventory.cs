@@ -182,6 +182,9 @@ namespace TPSBR.UI
                 _hotbar.SetSelectedColor(_selectedHotbarColor);
                 _hotbar.SetSelectionHighlightColor(_selectedHotbarSlotColor);
                 _hotbar.ItemSelected += OnHotbarItemSelected;
+                _hotbar.ItemPointerEnter += OnHotbarItemPointerEnter;
+                _hotbar.ItemPointerMove += OnHotbarItemPointerMove;
+                _hotbar.ItemPointerExit += OnHotbarItemPointerExit;
             }
 
             if (_cancelButton != null)
@@ -214,6 +217,9 @@ namespace TPSBR.UI
             if (_hotbar != null)
             {
                 _hotbar.ItemSelected -= OnHotbarItemSelected;
+                _hotbar.ItemPointerEnter -= OnHotbarItemPointerEnter;
+                _hotbar.ItemPointerMove -= OnHotbarItemPointerMove;
+                _hotbar.ItemPointerExit -= OnHotbarItemPointerExit;
                 _hotbar.Bind(null);
             }
 
@@ -300,6 +306,27 @@ namespace TPSBR.UI
             }
 
             ShowItemDetails(item, configurationHash);
+        }
+
+        private void OnHotbarItemPointerEnter(Weapon weapon, Vector2 screenPosition)
+        {
+            if (weapon == null)
+            {
+                HideItemTooltip();
+                return;
+            }
+
+            ShowItemTooltip(weapon, weapon.ConfigurationHash, screenPosition);
+        }
+
+        private void OnHotbarItemPointerMove(Vector2 screenPosition)
+        {
+            UpdateItemTooltipPosition(screenPosition);
+        }
+
+        private void OnHotbarItemPointerExit()
+        {
+            HideItemTooltip();
         }
 
         private void ShowItemDetails(IInventoryItemDetails item, NetworkString<_32> configurationHash)

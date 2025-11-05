@@ -25,7 +25,13 @@ namespace TPSBR.UI
         private Color _selectedSlotColor = Color.white;
         internal event Action<IInventoryItemDetails, NetworkString<_32>> ItemSelected;
 
+        internal event Action<Weapon, Vector2> ItemPointerEnter;
+        internal event Action<Vector2> ItemPointerMove;
+        internal event Action ItemPointerExit;
+
         private int _selectedSlotIndex = -1;
+        private int _hoveredSlotIndex = -1;
+        private Vector2 _lastPointerPosition;
 
         protected override void OnInitialize()
         {
@@ -63,6 +69,8 @@ namespace TPSBR.UI
             }
 
             _inventory = inventory;
+
+            ClearHover();
 
             if (_inventory != null)
             {
@@ -208,14 +216,63 @@ namespace TPSBR.UI
 
         void IUIListItemOwner.HandleSlotPointerEnter(UIListItem slot, PointerEventData eventData)
         {
+            if (slot == null || eventData == null)
+            {
+                ClearHover();
+                return;
+            }
+
+            int slotIndex = slot.Index;
+            if (slotIndex < 0)
+            {
+                ClearHover();
+                return;
+            }
+
+            _lastPointerPosition = eventData.position;
+
+            if (TryShowTooltip(slotIndex, _lastPointerPosition) == true)
+            {
+                _hoveredSlotIndex = slotIndex;
+            }
+            else
+            {
+                ClearHover();
+            }
         }
 
         void IUIListItemOwner.HandleSlotPointerExit(UIListItem slot)
         {
+            if (slot != null && _hoveredSlotIndex == slot.Index)
+            {
+                ClearHover();
+            }
         }
 
         void IUIListItemOwner.HandleSlotPointerMove(UIListItem slot, PointerEventData eventData)
         {
+            if (slot == null || eventData == null)
+                return;
+
+            if (slot.Index != _hoveredSlotIndex)
+                return;
+
+            _lastPointerPosition = eventData.position;
+
+            if (_inventory == null)
+            {
+                ClearHover();
+                return;
+            }
+
+            var weapon = _inventory.GetWeapon(_hoveredSlotIndex + 1);
+            if (weapon == null)
+            {
+                ClearHover();
+                return;
+            }
+
+            ItemPointerMove?.Invoke(_lastPointerPosition);
         }
 
         internal void ClearSelection(bool notify = true)
@@ -277,6 +334,8 @@ namespace TPSBR.UI
             {
                 NotifySelectionChanged(weapon);
             }
+
+            RefreshHover(index);
         }
 
         private void UpdateSelection(bool forceUpdate = false)
@@ -339,6 +398,40 @@ namespace TPSBR.UI
             }
 
             ItemSelected?.Invoke(weapon, configurationHash);
+        }
+
+        private bool TryShowTooltip(int slotIndex, Vector2 screenPosition)
+        {
+            if (_inventory == null)
+                return false;
+
+            var weapon = _inventory.GetWeapon(slotIndex + 1);
+            if (weapon == null)
+                return false;
+
+            ItemPointerEnter?.Invoke(weapon, screenPosition);
+            return true;
+        }
+
+        private void RefreshHover(int slotIndex)
+        {
+            if (_hoveredSlotIndex != slotIndex)
+                return;
+
+            if (TryShowTooltip(slotIndex, _lastPointerPosition) == false)
+            {
+                ClearHover();
+            }
+        }
+
+        private void ClearHover()
+        {
+            if (_hoveredSlotIndex < 0)
+                return;
+
+            _hoveredSlotIndex = -1;
+            _lastPointerPosition = Vector2.zero;
+            ItemPointerExit?.Invoke();
         }
 
         private void EnsureDragVisual()
