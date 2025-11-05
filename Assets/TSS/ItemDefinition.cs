@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System;
 using Unity.Burst;
 using Unity.Collections;
 using UnityEngine;
@@ -12,15 +11,13 @@ namespace TSS.Data
     {
         [SerializeField] private string displayName;
         [FormerlySerializedAs("icon")]
-        [SerializeField] private Texture2D _iconTexture;
-        [SerializeField] private Sprite _iconSprite;
+        [FormerlySerializedAs("_iconTexture")]
+        [FormerlySerializedAs("_iconSprite")]
+        [SerializeField] private Sprite _icon;
         [SerializeField] private ushort maxStack = 100;
         [SerializeField] private EItemRarity _itemRarity = EItemRarity.Common;
         [SerializeField] private string _shortCode;
         [SerializeField] private ESlotCategory _slotCategory = ESlotCategory.General;
-
-        [NonSerialized]
-        private Sprite _generatedSprite;
 
         private static Dictionary<int, ItemDefinition> _map;
         private static readonly SharedStatic<NativeHashMap<int, ushort>> _maxStacks =
@@ -31,11 +28,10 @@ namespace TSS.Data
         }
 
         public override string Name => displayName;
-        public override Texture2D Icon => _iconSprite != null ? _iconSprite.texture : _iconTexture;
+        public override Sprite Icon => _icon;
         public virtual ushort MaxStack => maxStack;
         public virtual ESlotCategory SlotCategory => _slotCategory;
         public EItemRarity ItemRarity => _itemRarity;
-        public Sprite IconSprite => _iconSprite != null ? _iconSprite : GetOrCreateSprite();
 
         public static ushort GetMaxStack(int id)
         {
@@ -105,32 +101,6 @@ namespace TSS.Data
 #endif
 
             return default;
-        }
-
-        private Sprite GetOrCreateSprite()
-        {
-            if (_iconSprite != null)
-            {
-                return _iconSprite;
-            }
-
-            if (_iconTexture == null)
-            {
-                return null;
-            }
-
-            if (_generatedSprite != null)
-            {
-                return _generatedSprite;
-            }
-
-            _generatedSprite = Sprite.Create(
-                _iconTexture,
-                new Rect(0f, 0f, _iconTexture.width, _iconTexture.height),
-                new Vector2(0.5f, 0.5f),
-                100f);
-            _generatedSprite.name = $"{name}_Icon";
-            return _generatedSprite;
         }
     }
 }

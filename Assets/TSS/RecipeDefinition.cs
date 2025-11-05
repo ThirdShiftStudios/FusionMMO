@@ -32,8 +32,7 @@ namespace TPSBR
         private Sprite _generatedSprite;
 
         public override string Name => _displayName;
-        public override Texture2D Icon => _iconSprite != null ? _iconSprite.texture : _iconTexture;
-        public Sprite IconSprite => _iconSprite != null ? _iconSprite : GetOrCreateSprite();
+        public override Sprite Icon => _iconSprite != null ? _iconSprite : GetOrCreateSprite();
 
         public IReadOnlyList<ItemQuantity> Inputs => _inputs ?? Array.Empty<ItemQuantity>();
         public IReadOnlyList<ItemQuantity> Outputs => _outputs ?? Array.Empty<ItemQuantity>();

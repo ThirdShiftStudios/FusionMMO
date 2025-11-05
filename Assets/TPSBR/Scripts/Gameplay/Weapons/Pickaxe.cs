@@ -24,7 +24,7 @@ namespace TPSBR
 
         protected override Sprite GetIcon()
         {
-            return _pickaxeDefinition != null ? _pickaxeDefinition.IconSprite : null;
+            return _pickaxeDefinition != null ? _pickaxeDefinition.Icon : null;
         }
     }
 }

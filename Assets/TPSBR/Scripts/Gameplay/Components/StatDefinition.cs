@@ -18,8 +18,7 @@ namespace TPSBR
         private string _code = "???";
 
         public override string Name => _displayName;
-        public override Texture2D Icon => _icon != null ? _icon.texture : null;
-        public Sprite IconSprite => _icon;
+        public override Sprite Icon => _icon;
         public string Code => _code;
 
         public virtual float GetTotalHealth(int statLevel)

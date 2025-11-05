@@ -24,7 +24,7 @@ namespace TPSBR
 
         protected override Sprite GetIcon()
         {
-            return _woodAxeDefinition != null ? _woodAxeDefinition.IconSprite : null;
+            return _woodAxeDefinition != null ? _woodAxeDefinition.Icon : null;
         }
     }
 }

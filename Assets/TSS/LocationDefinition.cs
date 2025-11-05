@@ -10,10 +10,10 @@ namespace TPSBR
         private string _displayName;
 
         [SerializeField]
-        private Texture2D _icon;
+        private Sprite _icon;
 
         public override string Name => _displayName;
 
-        public override Texture2D Icon => _icon;
+        public override Sprite Icon => _icon;
     }
 }

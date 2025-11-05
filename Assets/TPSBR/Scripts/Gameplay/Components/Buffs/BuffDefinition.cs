@@ -7,7 +7,7 @@ namespace TPSBR
     public abstract class BuffDefinition : DataDefinition
     {
         [SerializeField] private string _displayName;
-        [SerializeField] private Texture2D _icon;
+        [SerializeField] private Sprite _icon;
         [SerializeField] private bool _isStackable = true;
         [SerializeField, Min(1)] private int _maxStacks = 1;
         [SerializeField, Min(0f)] private float _duration = 0f;
@@ -15,7 +15,7 @@ namespace TPSBR
         private static Dictionary<int, BuffDefinition> _definitions;
 
         public override string Name => _displayName;
-        public override Texture2D Icon => _icon;
+        public override Sprite Icon => _icon;
 
         public bool IsStackable => _isStackable;
         public int MaxStacks => Mathf.Max(1, _maxStacks);

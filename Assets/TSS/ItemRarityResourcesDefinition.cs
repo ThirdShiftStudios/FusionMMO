@@ -34,7 +34,7 @@ namespace TSS.Data
         private const string FallbackResourcePath = "ItemRarityResourcesDefinition";
         private static ItemRarityResourcesDefinition _instance;
 
-        [SerializeField] private Texture2D _icon;
+        [SerializeField] private Sprite _icon;
         [SerializeField] private string _displayName = "Item Rarity Resources";
         [SerializeField] private ItemRarityData[] _rarities = Array.Empty<ItemRarityData>();
 
@@ -64,7 +64,7 @@ namespace TSS.Data
         }
 
         public override string Name => string.IsNullOrWhiteSpace(_displayName) ? name : _displayName;
-        public override Texture2D Icon => _icon;
+        public override Sprite Icon => _icon;
 
         public ItemRarityData[] Rarities => _rarities;
 

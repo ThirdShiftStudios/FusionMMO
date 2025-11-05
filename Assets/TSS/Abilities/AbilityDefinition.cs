@@ -12,14 +12,14 @@ namespace TPSBR.Abilities
 
         [SerializeField]
         [Tooltip("Icon displayed in UI when referencing this ability.")]
-        private Texture2D _icon;
+        private Sprite _icon;
 
         [SerializeField]
         [Tooltip("Unique string identifier used when referencing this ability across systems.")]
         private string _stringCode;
 
         public override string Name => _displayName;
-        public override Texture2D Icon => _icon;
+        public override Sprite Icon => _icon;
         public string StringCode => _stringCode;
 
         public bool IsStringCode(string value, StringComparison comparison = StringComparison.Ordinal)

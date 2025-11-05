@@ -31,7 +31,7 @@ namespace TPSBR
                 return null;
             }
 
-            Sprite sprite = definition.IconSprite;
+            Sprite sprite = definition.Icon;
             if (sprite == null)
             {
                 return null;
@@ -61,7 +61,7 @@ namespace TPSBR
                 return;
             }
 
-            Sprite sprite = definition.IconSprite;
+            Sprite sprite = definition.Icon;
             if (sprite == null)
             {
                 Clear();

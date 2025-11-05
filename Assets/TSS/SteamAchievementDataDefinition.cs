@@ -14,14 +14,14 @@ namespace TPSBR
         [SerializeField, TextArea]
         private string _description;
         [SerializeField]
-        private Texture2D _icon;
+        private Sprite _icon;
 
         [Header("Steam")]
         [SerializeField]
         private string _achievementId;
 
         public override string Name => _displayName;
-        public override Texture2D Icon => _icon;
+        public override Sprite Icon => _icon;
 
         public string AchievementId => _achievementId;
         public string Description => _description;

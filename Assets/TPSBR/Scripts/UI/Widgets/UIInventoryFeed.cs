@@ -138,7 +138,7 @@ namespace TPSBR.UI
                                 IsAddition     = added,
                                 QuantityChange = amount,
                                 ItemName       = definition.Name,
-                                Icon           = definition.IconSprite != null ? definition.IconSprite : _fallbackIcon,
+                                Icon           = definition.Icon != null ? definition.Icon : _fallbackIcon,
                         };
 
                         ShowFeed(data);

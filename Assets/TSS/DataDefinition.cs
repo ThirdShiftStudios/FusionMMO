@@ -13,7 +13,7 @@ namespace TSS.Data
         public int ID => id;
 
         public abstract string Name { get; }
-        public abstract Texture2D Icon { get; }
+        public abstract Sprite Icon { get; }
 
 #if UNITY_EDITOR
         protected virtual void OnValidate()
