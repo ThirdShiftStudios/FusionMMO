@@ -21,8 +21,9 @@ namespace TPSBR.UI
 
             if (_iconImage != null)
             {
-                _iconImage.texture = definition.Icon;
-                _iconImage.enabled = definition.Icon != null;
+                Sprite icon = definition.Icon;
+                _iconImage.texture = icon != null ? icon.texture : null;
+                _iconImage.enabled = icon != null;
             }
 
             UpdateStackLabel(definition, data);

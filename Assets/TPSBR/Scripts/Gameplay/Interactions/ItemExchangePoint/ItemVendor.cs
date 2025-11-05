@@ -149,7 +149,7 @@ namespace TPSBR
                 if (definition == null)
                     continue;
 
-                Sprite icon = definition.IconSprite;
+                Sprite icon = definition.Icon;
                 string configurationHash = slot.ConfigurationHash.ToString();
                 destination.Add(new VendorItemData(icon, slot.Quantity, definition, configurationHash, i));
             }

@@ -10,7 +10,7 @@ namespace TPSBR
         private static DefaultItemDefinitions _instance;
 
         public override string Name => "Default Items";
-        public override Texture2D Icon { get; }
+        public override Sprite Icon { get; }
 
         [SerializeField]
         private PickaxeDefinition _defaultPickaxe;

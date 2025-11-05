@@ -22,8 +22,7 @@ namespace TSS.Data
         private static Dictionary<string, CharacterDefinition> _definitionsByCode;
 
         public override string Name => displayName;
-        public override Texture2D Icon => icon != null ? icon.texture : null;
-        public Sprite IconSprite => icon;
+        public override Sprite Icon => icon;
         public string StringCode => stringCode;
         public NetworkPrefabRef AgentPrefab => agentPrefab;
 

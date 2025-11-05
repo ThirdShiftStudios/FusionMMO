@@ -151,7 +151,7 @@ namespace TPSBR.UI
 
                         if (_iconImage != null)
                         {
-                                Sprite icon = recipe != null ? recipe.IconSprite : null;
+                                Sprite icon = recipe != null ? recipe.Icon : null;
                                 if (icon != null)
                                 {
                                         _iconImage.sprite = icon;

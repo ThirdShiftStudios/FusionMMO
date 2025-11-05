@@ -908,7 +908,7 @@ namespace TPSBR.UI
                 }
 
                 var definition = slot.GetDefinition();
-                var sprite = definition != null ? definition.IconSprite : null;
+                var sprite = definition != null ? definition.Icon : null;
 
                 uiSlot.SetItem(sprite, slot.Quantity);
             }

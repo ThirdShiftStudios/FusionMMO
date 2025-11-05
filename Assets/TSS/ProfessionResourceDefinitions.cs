@@ -24,7 +24,7 @@ namespace TPSBR
         [SerializeField]
         ProfessionResource[] _resources;
         public override string Name => "Profession Resources";
-        public override Texture2D Icon { get; }
+        public override Sprite Icon { get; }
 
         public static ProfessionResourceDefinitions Instance
         {

@@ -218,7 +218,7 @@ namespace TPSBR.UI
                                         if (definition == null)
                                                 continue;
 
-                                        Sprite icon = definition.IconSprite;
+                                        Sprite icon = definition.Icon;
                                         string configurationHash = slot.ConfigurationHash.ToString();
                                         _currentInventoryItems.Add(new ItemVendor.VendorItemData(icon, slot.Quantity, definition, configurationHash, i));
                                 }

@@ -32,15 +32,15 @@ namespace TSS.Tools
 
         private void OnEnable()
         {
-            _treeState ??= new TreeViewState();
-            _treeView ??= new DashboardTreeView(_treeState);
-            _treeView.onSelectionChanged += OnTreeSelectionChanged;
-            _searchField ??= new SearchField();
+            EnsureTreeInitialized();
         }
 
         private void OnDisable()
         {
-            _treeView.onSelectionChanged -= OnTreeSelectionChanged;
+            if (_treeView != null)
+            {
+                _treeView.onSelectionChanged -= OnTreeSelectionChanged;
+            }
             DestroyImmediate(_activeInspector);
             _activeInspector = null;
             _activeSelection = null;
@@ -48,6 +48,8 @@ namespace TSS.Tools
 
         private void OnGUI()
         {
+            EnsureTreeInitialized();
+
             using (new EditorGUILayout.HorizontalScope())
             {
                 using (new EditorGUILayout.VerticalScope(GUILayout.Width(Mathf.Clamp(position.width * 0.35f, LeftPaneMin, LeftPaneMax))))
@@ -66,6 +68,12 @@ namespace TSS.Tools
 
         private void DrawLeftPane()
         {
+            if (_treeView == null)
+            {
+                EditorGUILayout.HelpBox("Failed to initialize dashboard tree.", MessageType.Error);
+                return;
+            }
+
             using (new EditorGUILayout.HorizontalScope(EditorStyles.toolbar))
             {
                 if (GUILayout.Button("Refresh", EditorStyles.toolbarButton, GUILayout.Width(70)))
@@ -121,6 +129,18 @@ namespace TSS.Tools
             _activeInspector = null;
 
             Repaint();
+        }
+
+        private void EnsureTreeInitialized()
+        {
+            _treeState ??= new TreeViewState();
+            _searchField ??= new SearchField();
+
+            if (_treeView == null)
+            {
+                _treeView = new DashboardTreeView(_treeState);
+                _treeView.onSelectionChanged += OnTreeSelectionChanged;
+            }
         }
 
         // ---------------- TreeView ----------------
@@ -297,7 +317,21 @@ namespace TSS.Tools
 
         foreach (var asset in assets)
         {
-            var icon = asset.Icon != null ? asset.Icon : AssetPreview.GetMiniThumbnail(asset);
+            Texture icon;
+
+            if (asset.Icon != null)
+            {
+                icon = AssetPreview.GetAssetPreview(asset.Icon);
+                if (icon == null)
+                {
+                    icon = asset.Icon.texture;
+                }
+            }
+            else
+            {
+                icon = AssetPreview.GetMiniThumbnail(asset);
+            }
+
             var label = string.IsNullOrEmpty(asset.Name) ? asset.name : asset.Name;
 
             var item = new DashboardItem(NewId(), parentNode.depth + 1, label, icon)

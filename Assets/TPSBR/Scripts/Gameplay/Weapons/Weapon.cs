@@ -55,7 +55,7 @@ namespace TPSBR
         public float AimFOV => _aimFOV;
         public string DisplayName => _displayName;
         public string NameShortcut => _nameShortcut;
-        public Sprite Icon => _weaponDefinition.IconSprite;
+        public Sprite Icon => _weaponDefinition.Icon;
         public virtual string GetDescription()
         {
             return _description + " this is the description";

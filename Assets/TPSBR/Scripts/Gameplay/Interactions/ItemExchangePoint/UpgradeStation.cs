@@ -160,7 +160,7 @@ namespace TPSBR
                     if (MatchesFilter(weaponDefinition) == false)
                         continue;
 
-                    Sprite icon = weaponDefinition.IconSprite;
+                    Sprite icon = weaponDefinition.Icon;
                     destination.Add(new ItemData(icon, slot.Quantity, ItemSourceType.Inventory, i, weaponDefinition, null));
                     hasAny = true;
                 }
@@ -180,7 +180,7 @@ namespace TPSBR
                 Sprite icon = weapon.Icon;
                 if (icon == null && definition != null)
                 {
-                    icon = definition.IconSprite;
+                    icon = definition.Icon;
                 }
 
                 destination.Add(new ItemData(icon, 1, ItemSourceType.Hotbar, i, definition, weapon));

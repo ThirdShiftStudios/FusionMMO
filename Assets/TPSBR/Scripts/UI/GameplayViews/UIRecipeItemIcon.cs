@@ -14,7 +14,7 @@ namespace TPSBR.UI
 
                 public void Configure(ItemDefinition definition, int quantity)
                 {
-                        Sprite icon = definition != null ? definition.IconSprite : null;
+                        Sprite icon = definition != null ? definition.Icon : null;
                         UpdateIcon(icon);
                         UpdateQuantity(quantity);
                 }

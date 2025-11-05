@@ -49,7 +49,7 @@ namespace TPSBR.UI
 
                         if (_icon != null)
                         {
-                                var sprite = definition != null ? definition.IconSprite : null;
+                                var sprite = definition != null ? definition.Icon : null;
                                 _icon.sprite = sprite;
                                 _icon.enabled = sprite != null;
                         }
@@ -69,7 +69,7 @@ namespace TPSBR.UI
 
                         if (_icon != null)
                         {
-                                var sprite = definition != null ? definition.IconSprite : null;
+                                var sprite = definition != null ? definition.Icon : null;
                                 _icon.sprite = sprite;
                                 _icon.enabled = sprite != null;
                         }
