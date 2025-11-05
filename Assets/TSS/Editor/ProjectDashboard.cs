@@ -297,7 +297,21 @@ namespace TSS.Tools
 
         foreach (var asset in assets)
         {
-            var icon = asset.Icon != null ? asset.Icon : AssetPreview.GetMiniThumbnail(asset);
+            Texture icon;
+
+            if (asset.Icon != null)
+            {
+                icon = AssetPreview.GetAssetPreview(asset.Icon);
+                if (icon == null)
+                {
+                    icon = asset.Icon.texture;
+                }
+            }
+            else
+            {
+                icon = AssetPreview.GetMiniThumbnail(asset);
+            }
+
             var label = string.IsNullOrEmpty(asset.Name) ? asset.name : asset.Name;
 
             var item = new DashboardItem(NewId(), parentNode.depth + 1, label, icon)
