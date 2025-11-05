@@ -38,6 +38,8 @@ namespace TPSBR.UI
         [SerializeField] private UIListItem _bagSlotFive;
         [SerializeField] private TextMeshProUGUI _goldLabel;
         [SerializeField] private UIInventoryItemToolTip _itemToolTip;
+        [SerializeField] private UIStatToolTip _statToolTip;
+        [SerializeField] private UIProfessionToolTip _professionToolTip;
 
         private bool _menuVisible;
         private Agent _boundAgent;
@@ -76,6 +78,43 @@ namespace TPSBR.UI
         internal void HideItemTooltip()
         {
             _itemToolTip?.Hide();
+        }
+
+        internal void ShowStatTooltip(Stats.StatIndex statIndex, string statCode, int statValue, Vector2 screenPosition)
+        {
+            _statToolTip?.Show(statIndex, statCode, statValue, screenPosition);
+        }
+
+        internal void UpdateStatTooltipPosition(Vector2 screenPosition)
+        {
+            _statToolTip?.UpdatePosition(screenPosition);
+        }
+
+        internal void HideStatTooltip()
+        {
+            _statToolTip?.Hide();
+        }
+
+        internal void ShowProfessionTooltip(Professions.ProfessionIndex professionIndex, string professionCode, Professions.ProfessionSnapshot snapshot, Vector2 screenPosition)
+        {
+            _professionToolTip?.Show(professionIndex, professionCode, snapshot, screenPosition);
+        }
+
+        internal void UpdateProfessionTooltipPosition(Vector2 screenPosition)
+        {
+            _professionToolTip?.UpdatePosition(screenPosition);
+        }
+
+        internal void HideProfessionTooltip()
+        {
+            _professionToolTip?.Hide();
+        }
+
+        private void HideAllTooltips()
+        {
+            _itemToolTip?.Hide();
+            _statToolTip?.Hide();
+            _professionToolTip?.Hide();
         }
 
         // PUBLIC METHODS
@@ -151,7 +190,7 @@ namespace TPSBR.UI
             }
 
             _detailsPanel?.Hide();
-            _itemToolTip?.Hide();
+            HideAllTooltips();
         }
 
         protected override void OnDeinitialize()
@@ -183,7 +222,7 @@ namespace TPSBR.UI
                 _cancelButton.onClick.RemoveListener(OnCancelButton);
             }
 
-            _itemToolTip?.Hide();
+            HideAllTooltips();
 
             base.OnDeinitialize();
         }
@@ -200,7 +239,7 @@ namespace TPSBR.UI
 
             RefreshInventoryBinding();
             _detailsPanel?.Hide();
-            _itemToolTip?.Hide();
+            HideAllTooltips();
         }
 
         protected override void OnClose()
@@ -212,7 +251,7 @@ namespace TPSBR.UI
                 NotifyInventoryCameraState(false);
             }
 
-            _itemToolTip?.Hide();
+            HideAllTooltips();
 
             base.OnClose();
         }
@@ -1109,7 +1148,7 @@ namespace TPSBR.UI
                     _inventoryPresenter?.Bind(null);
                     _hotbar?.Bind(null);
                     UpdateGoldLabel(0);
-                    _itemToolTip?.Hide();
+                    HideAllTooltips();
                 }
                 return;
             }
@@ -1127,7 +1166,7 @@ namespace TPSBR.UI
             _boundInventory = agent != null ? agent.Inventory : null;
             _inventoryPresenter?.Bind(_boundInventory);
             _hotbar?.Bind(_boundInventory);
-            _itemToolTip?.Hide();
+            HideAllTooltips();
 
             if (_boundInventory != null)
             {
