@@ -4,6 +4,16 @@ using UnityEngine;
 
 namespace TPSBR
 {
+    public interface IExperienceMultiplierBuff
+    {
+        float GetExperienceMultiplier(BuffSystem buffSystem, BuffData data);
+    }
+
+    public interface IMovementSpeedMultiplierBuff
+    {
+        float GetMovementSpeedMultiplier(BuffSystem buffSystem, BuffData data);
+    }
+
     public abstract class BuffDefinition : DataDefinition
     {
         [SerializeField] private string _displayName;

@@ -116,15 +116,19 @@ namespace TPSBR
                         if (amount <= 0)
                                 return;
 
+                        int adjustedAmount = GetExperienceAdjustedAmount(amount);
+                        if (adjustedAmount <= 0)
+                                return;
+
                         if (HasStateAuthority == true)
                         {
                                 bool hasExperienceGiver = experienceGiver != null;
                                 Vector3 experiencePosition = hasExperienceGiver == true ? experienceGiver.ExperiencePosition : Vector3.zero;
-                                RPC_AddExperience(amount, experiencePosition, hasExperienceGiver);
+                                RPC_AddExperience(adjustedAmount, experiencePosition, hasExperienceGiver);
                         }
                         else if (HasInputAuthority == true && Context?.PlayerData != null)
                         {
-                                Context.PlayerData.AddExperience(amount, experienceGiver);
+                                Context.PlayerData.AddExperience(adjustedAmount, experienceGiver);
                         }
                 }
 
@@ -141,6 +145,24 @@ namespace TPSBR
                 }
 
 		// PlayerInterestManager INTERFACE
+
+		private int GetExperienceAdjustedAmount(int baseAmount)
+		{
+			if (baseAmount <= 0)
+				return 0;
+
+			Agent activeAgent = ActiveAgent != null ? ActiveAgent : _activeAgent;
+			BuffSystem buffSystem = activeAgent != null ? activeAgent.BuffSystem : null;
+			float multiplier = buffSystem != null ? buffSystem.GetExperienceMultiplier() : 1f;
+
+			if (multiplier <= 0f)
+				return 0;
+
+			if (Mathf.Approximately(multiplier, 1f) == true)
+				return baseAmount;
+
+			return Mathf.Max(1, Mathf.CeilToInt(baseAmount * multiplier));
+		}
 
 		protected override void OnSpawned()
 		{
