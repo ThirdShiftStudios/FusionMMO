@@ -81,6 +81,12 @@ namespace TSS.Tools
                     _treeView.Reload();
                 }
 
+                if (GUILayout.Button("Recalculate IDs", EditorStyles.toolbarButton, GUILayout.Width(120)))
+                {
+                    DefinitionIdProvider.instance.RecalculateAllDefinitionIds();
+                    _treeView.Reload();
+                }
+
                 GUILayout.FlexibleSpace();
                 _treeView.searchString = _searchField.OnToolbarGUI(_treeView.searchString);
             }

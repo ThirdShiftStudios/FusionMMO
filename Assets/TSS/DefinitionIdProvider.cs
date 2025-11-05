@@ -1,6 +1,8 @@
 // Assets/TSS/Editor/DefinitionIdProvider.cs
 #if UNITY_EDITOR
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
@@ -26,6 +28,75 @@ namespace TSS.Data
             }
 
             return lastAssignedId;
+        }
+
+        public void RecalculateAllDefinitionIds()
+        {
+            Reset();
+
+            var guids = AssetDatabase.FindAssets($"t:{nameof(DataDefinition)}");
+            var definitions = new List<(DataDefinition definition, string path)>();
+
+            foreach (var guid in guids)
+            {
+                var assetPath = AssetDatabase.GUIDToAssetPath(guid);
+                if (string.IsNullOrEmpty(assetPath))
+                    continue;
+
+                var definition = AssetDatabase.LoadAssetAtPath<DataDefinition>(assetPath);
+                if (definition == null)
+                    continue;
+
+                definitions.Add((definition, assetPath));
+            }
+
+            var orderedDefinitions = definitions
+                .OrderBy(d => d.path, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            AssetDatabase.StartAssetEditing();
+
+            try
+            {
+                foreach (var (definition, _) in orderedDefinitions)
+                {
+                    AssignId(definition, GetNextSequentialId());
+                }
+            }
+            finally
+            {
+                AssetDatabase.StopAssetEditing();
+            }
+
+            Persist();
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+        }
+
+        private void Reset()
+        {
+            lastAssignedId = -1;
+            Persist();
+        }
+
+        private int GetNextSequentialId()
+        {
+            lastAssignedId += 1;
+            return lastAssignedId;
+        }
+
+        private static void AssignId(DataDefinition definition, int newId)
+        {
+            var serializedObject = new SerializedObject(definition);
+            serializedObject.Update();
+            var idProperty = serializedObject.FindProperty("id");
+
+            if (idProperty == null)
+                return;
+
+            idProperty.intValue = newId;
+            serializedObject.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(definition);
         }
 
         private int GetCurrentMaxDefinitionId()
