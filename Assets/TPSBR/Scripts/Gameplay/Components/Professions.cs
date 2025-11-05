@@ -108,6 +108,8 @@ namespace TPSBR
         private int[] _cachedLevels;
         private int[] _cachedExperience;
         private bool _cacheInitialized;
+        private Agent _agent;
+
 
         public static string GetCode(ProfessionIndex profession)
         {
@@ -186,6 +188,11 @@ namespace TPSBR
         public int GetProfession(int index)
         {
             return GetLevel(index);
+        }
+
+        private void Awake()
+        {
+            _agent = GetComponent<Agent>();
         }
 
         public int GetExperience(ProfessionIndex profession)
@@ -278,6 +285,12 @@ namespace TPSBR
             }
 
             if (HasStateAuthority == false)
+            {
+                return;
+            }
+
+            amount = AdjustExperienceAmount(amount);
+            if (amount <= 0)
             {
                 return;
             }
@@ -537,6 +550,29 @@ namespace TPSBR
             int clampedExperience = experienceToNextLevel > 0 ? Mathf.Clamp(experience, 0, experienceToNextLevel) : 0;
 
             return new ProfessionSnapshot(clampedLevel, clampedExperience, experienceToNextLevel);
+        }
+
+        private int AdjustExperienceAmount(int baseAmount)
+        {
+            if (baseAmount <= 0)
+            {
+                return 0;
+            }
+
+            BuffSystem buffSystem = _agent != null ? _agent.BuffSystem : null;
+            float multiplier = buffSystem != null ? buffSystem.GetExperienceMultiplier() : 1f;
+
+            if (multiplier <= 0f)
+            {
+                return 0;
+            }
+
+            if (Mathf.Approximately(multiplier, 1f) == true)
+            {
+                return baseAmount;
+            }
+
+            return Mathf.Max(1, Mathf.CeilToInt(baseAmount * multiplier));
         }
 
         private void EnsureCacheInitialized()

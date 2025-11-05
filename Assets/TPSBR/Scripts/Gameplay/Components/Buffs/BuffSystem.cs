@@ -190,6 +190,51 @@ namespace TPSBR
             RemoveBuffInternal(index, definition, ref data);
         }
 
+
+        public float GetExperienceMultiplier()
+        {
+            float total = 1f;
+
+            for (int i = 0; i < MaxBuffSlots; ++i)
+            {
+                BuffData data = _activeBuffs.Get(i);
+                if (data.IsValid == false)
+                {
+                    continue;
+                }
+
+                BuffDefinition definition = BuffDefinition.Get(data.DefinitionId);
+                if (definition is IExperienceMultiplierBuff experienceBuff)
+                {
+                    total *= Mathf.Max(0f, experienceBuff.GetExperienceMultiplier(this, data));
+                }
+            }
+
+            return Mathf.Max(0f, total);
+        }
+
+        public float GetMovementSpeedMultiplier()
+        {
+            float total = 1f;
+
+            for (int i = 0; i < MaxBuffSlots; ++i)
+            {
+                BuffData data = _activeBuffs.Get(i);
+                if (data.IsValid == false)
+                {
+                    continue;
+                }
+
+                BuffDefinition definition = BuffDefinition.Get(data.DefinitionId);
+                if (definition is IMovementSpeedMultiplierBuff speedBuff)
+                {
+                    total *= Mathf.Max(0f, speedBuff.GetMovementSpeedMultiplier(this, data));
+                }
+            }
+
+            return Mathf.Max(0f, total);
+        }
+
         public bool TryGetBuff(BuffDefinition definition, out BuffData data)
         {
             data = default;

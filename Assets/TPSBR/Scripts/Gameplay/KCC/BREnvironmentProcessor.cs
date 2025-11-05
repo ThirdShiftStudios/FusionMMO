@@ -307,6 +307,7 @@ namespace TPSBR
 
 			data.KinematicSpeed = kcc.MoveState.GetBaseSpeed((Quaternion.Inverse(data.TransformRotation) * data.KinematicDirection).XZ0().normalized, default);
 			data.KinematicSpeed *= _speedMultiplier;
+			data.KinematicSpeed *= GetBuffMovementMultiplier(kcc);
 
 			// SetKinematicVelocity
 
@@ -540,10 +541,11 @@ namespace TPSBR
                         Vector3 currentVelocity = fixedData.KinematicVelocity;
                         Vector3 desiredVelocity = Vector3.zero;
 
+                        float buffMultiplier = GetBuffMovementMultiplier(kcc);
                         bool hasInput = data.KinematicDirection.IsAlmostZero(0.0001f) == false;
                         if (hasInput == true)
                         {
-                                desiredVelocity = data.KinematicDirection.normalized * _swimSpeed;
+                                desiredVelocity = data.KinematicDirection.normalized * (_swimSpeed * buffMultiplier);
                         }
 
                         Vector3 currentXZ    = currentVelocity.OnlyXZ();
@@ -553,7 +555,7 @@ namespace TPSBR
                         Vector3 newVelocity = new Vector3(newVelocityXZ.x, 0.0f, newVelocityXZ.z);
 
                         data.KinematicVelocity = newVelocity;
-                        data.KinematicSpeed    = _swimSpeed;
+                        data.KinematicSpeed    = _swimSpeed * buffMultiplier;
 
                         Vector3 tangent;
                         if (newVelocity.sqrMagnitude > 0.0001f)
@@ -572,6 +574,18 @@ namespace TPSBR
 
                         data.KinematicTangent = tangent;
                         data.DynamicVelocity  = new Vector3(data.DynamicVelocity.x, 0.0f, data.DynamicVelocity.z);
+                }
+
+                private static float GetBuffMovementMultiplier(KCC kcc)
+                {
+                        if (kcc == null)
+                                return 1f;
+
+                        if (kcc.TryGetComponent(out Agent agent) == false)
+                                return 1f;
+
+                        BuffSystem buffSystem = agent != null ? agent.BuffSystem : null;
+                        return buffSystem != null ? Mathf.Max(0f, buffSystem.GetMovementSpeedMultiplier()) : 1f;
                 }
 
                 private void StickToWaterSurface(KCC kcc, KCCData data)
