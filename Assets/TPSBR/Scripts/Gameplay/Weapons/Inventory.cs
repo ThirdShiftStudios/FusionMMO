@@ -3220,6 +3220,29 @@ namespace TPSBR
                 return true;
             }
 
+            if (index == PIPE_SLOT_INDEX)
+            {
+                if (quantity == 0)
+                    return false;
+
+                var pipeSlotData = _pipeSlot;
+                if (pipeSlotData.IsEmpty == true)
+                    return false;
+
+                if (pipeSlotData.Quantity <= quantity)
+                {
+                    _pipeSlot = default;
+                }
+                else
+                {
+                    pipeSlotData.Remove(quantity);
+                    _pipeSlot = pipeSlotData;
+                }
+
+                RefreshPipeSlot();
+                return true;
+            }
+
             if (IsGeneralInventoryIndex(index) == false)
                 return false;
 
