@@ -85,6 +85,7 @@ namespace TPSBR.UI
                         _slotCache[Inventory.HEAD_SLOT_INDEX] = _inventory.GetItemSlot(Inventory.HEAD_SLOT_INDEX);
                         _slotCache[Inventory.UPPER_BODY_SLOT_INDEX] = _inventory.GetItemSlot(Inventory.UPPER_BODY_SLOT_INDEX);
                         _slotCache[Inventory.LOWER_BODY_SLOT_INDEX] = _inventory.GetItemSlot(Inventory.LOWER_BODY_SLOT_INDEX);
+                        _slotCache[Inventory.PIPE_SLOT_INDEX] = _inventory.GetItemSlot(Inventory.PIPE_SLOT_INDEX);
                 }
 
                 private void OnItemSlotChanged(int index, InventorySlot slot)

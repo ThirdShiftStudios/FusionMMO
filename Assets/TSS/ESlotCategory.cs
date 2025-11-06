@@ -13,5 +13,6 @@ namespace TSS.Data
         Consumable = 8,
         Fishing = 9,
         Bag = 10,
+        Pipe = 11,
     }
 }

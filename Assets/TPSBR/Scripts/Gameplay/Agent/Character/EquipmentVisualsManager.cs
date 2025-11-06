@@ -19,6 +19,7 @@ namespace TPSBR
             ESlotCategory.Head,
             ESlotCategory.UpperBody,
             ESlotCategory.LowerBody,
+            ESlotCategory.Pipe,
         };
 
         private void Awake()
@@ -108,6 +109,9 @@ namespace TPSBR
                     break;
                 case Inventory.LOWER_BODY_SLOT_INDEX:
                     RefreshCategory(ESlotCategory.LowerBody, slot);
+                    break;
+                case Inventory.PIPE_SLOT_INDEX:
+                    RefreshCategory(ESlotCategory.Pipe, slot);
                     break;
             }
         }

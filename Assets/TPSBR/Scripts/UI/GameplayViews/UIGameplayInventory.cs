@@ -31,6 +31,7 @@ namespace TPSBR.UI
         [SerializeField] private UIListItem _headSlot;
         [SerializeField] private UIListItem _upperBodySlot;
         [SerializeField] private UIListItem _lowerBodySlot;
+        [SerializeField] private UIListItem _pipeSlot;
         [SerializeField] private UIListItem _bagSlotOne;
         [SerializeField] private UIListItem _bagSlotTwo;
         [SerializeField] private UIListItem _bagSlotThree;
@@ -168,6 +169,7 @@ namespace TPSBR.UI
                     _headSlot,
                     _upperBodySlot,
                     _lowerBodySlot,
+                    _pipeSlot,
                     _bagSlotOne,
                     _bagSlotTwo,
                     _bagSlotThree,
@@ -403,6 +405,7 @@ namespace TPSBR.UI
             private UIListItem _headSlotOverride;
             private UIListItem _upperBodySlotOverride;
             private UIListItem _lowerBodySlotOverride;
+            private UIListItem _pipeSlotOverride;
             private UIListItem[] _bagSlotOverrides;
             private List<UIListItem> _generalSlots;
             private UIListItem _generalSlotTemplate;
@@ -428,6 +431,7 @@ namespace TPSBR.UI
                 UIListItem headSlot,
                 UIListItem upperBodySlot,
                 UIListItem lowerBodySlot,
+                UIListItem pipeSlot,
                 UIListItem bagSlotOne,
                 UIListItem bagSlotTwo,
                 UIListItem bagSlotThree,
@@ -441,6 +445,7 @@ namespace TPSBR.UI
                 _headSlotOverride = headSlot;
                 _upperBodySlotOverride = upperBodySlot;
                 _lowerBodySlotOverride = lowerBodySlot;
+                _pipeSlotOverride = pipeSlot;
                 _bagSlotOverrides = new[] { bagSlotOne, bagSlotTwo, bagSlotThree, bagSlotFour, bagSlotFive };
 
                 if (_list == null)
@@ -462,6 +467,7 @@ namespace TPSBR.UI
                 AddSpecialSlot(_headSlotOverride, specialSlots);
                 AddSpecialSlot(_upperBodySlotOverride, specialSlots);
                 AddSpecialSlot(_lowerBodySlotOverride, specialSlots);
+                AddSpecialSlot(_pipeSlotOverride, specialSlots);
 
                 if (_bagSlotOverrides != null)
                 {
@@ -626,6 +632,7 @@ namespace TPSBR.UI
                 if (_headSlotOverride != null) estimatedCapacity++;
                 if (_upperBodySlotOverride != null) estimatedCapacity++;
                 if (_lowerBodySlotOverride != null) estimatedCapacity++;
+                if (_pipeSlotOverride != null) estimatedCapacity++;
 
                 if (_bagSlotOverrides != null)
                 {
@@ -697,6 +704,13 @@ namespace TPSBR.UI
                     orderedSlots,
                     indices,
                     $"{nameof(UIList)} inventory list is missing a lower body inventory slot.");
+
+                AddSpecialSlotMapping(
+                    _pipeSlotOverride,
+                    Inventory.PIPE_SLOT_INDEX,
+                    orderedSlots,
+                    indices,
+                    $"{nameof(UIList)} inventory list is missing a pipe inventory slot.");
 
                 if (_bagSlotOverrides != null)
                 {
@@ -825,7 +839,7 @@ namespace TPSBR.UI
                 {
                     if (target.Index == Inventory.PICKAXE_SLOT_INDEX || target.Index == Inventory.WOOD_AXE_SLOT_INDEX ||
                         target.Index == Inventory.HEAD_SLOT_INDEX || target.Index == Inventory.UPPER_BODY_SLOT_INDEX ||
-                        target.Index == Inventory.LOWER_BODY_SLOT_INDEX || Inventory.IsBagSlotIndex(target.Index))
+                        target.Index == Inventory.LOWER_BODY_SLOT_INDEX || target.Index == Inventory.PIPE_SLOT_INDEX || Inventory.IsBagSlotIndex(target.Index))
                         return;
 
                     _inventory.RequestStoreHotbar(source.Index, target.Index);

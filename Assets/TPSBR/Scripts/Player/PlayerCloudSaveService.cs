@@ -23,6 +23,7 @@ namespace TPSBR
         public PlayerInventoryItemData HeadSlot;
         public PlayerInventoryItemData UpperBodySlot;
         public PlayerInventoryItemData LowerBodySlot;
+        public PlayerInventoryItemData PipeSlot;
         public PlayerInventoryItemData[] BagSlots;
         public int Gold;
         public PlayerCharacterSaveData[] Characters;
@@ -71,6 +72,7 @@ namespace TPSBR
         public PlayerInventoryItemData HeadSlot;
         public PlayerInventoryItemData UpperBodySlot;
         public PlayerInventoryItemData LowerBodySlot;
+        public PlayerInventoryItemData PipeSlot;
         public PlayerInventoryItemData[] BagSlots;
         public int Gold;
     }
@@ -772,6 +774,7 @@ namespace TPSBR
                 HeadSlot = default,
                 UpperBodySlot = default,
                 LowerBodySlot = default,
+                PipeSlot = default,
                 BagSlots = new PlayerInventoryItemData[Inventory.BAG_SLOT_COUNT],
                 CurrentWeaponSlot = 0,
                 Gold = 0,
@@ -1496,6 +1499,7 @@ namespace TPSBR
             _cachedData.HeadSlot = default;
             _cachedData.UpperBodySlot = default;
             _cachedData.LowerBodySlot = default;
+            _cachedData.PipeSlot = default;
             _cachedData.BagSlots = null;
             _cachedData.Gold = 0;
 
@@ -1596,6 +1600,7 @@ namespace TPSBR
                          _cachedData.HeadSlot.ItemDefinitionId != 0 ||
                          _cachedData.UpperBodySlot.ItemDefinitionId != 0 ||
                          _cachedData.LowerBodySlot.ItemDefinitionId != 0 ||
+                         _cachedData.PipeSlot.ItemDefinitionId != 0 ||
                          _cachedData.Gold != 0)
                 {
                     string legacyCharacterId = _cachedData.ActiveCharacterId;
@@ -1626,6 +1631,7 @@ namespace TPSBR
                             HeadSlot = _cachedData.HeadSlot,
                             UpperBodySlot = _cachedData.UpperBodySlot,
                             LowerBodySlot = _cachedData.LowerBodySlot,
+                            PipeSlot = _cachedData.PipeSlot,
                             BagSlots = _cachedData.BagSlots,
                             Gold = _cachedData.Gold,
                         };
