@@ -117,16 +117,17 @@ namespace TPSBR
 
             if (HasStateAuthority == true)
             {
+                bool cigaretteConsumed = false;
+
                 if (TryGetInventorySlot(out Inventory inventory, out int slotIndex, out InventorySlot slot) == true && slot.Quantity > 0)
                 {
-                    inventory.TryConsumeInventoryItem(slotIndex, 1);
+                    cigaretteConsumed = inventory.TryConsumeInventoryItem(slotIndex, 1);
                 }
 
-                Character character = Character;
-                Agent agent = character != null ? character.Agent : null;
-
-                if (_cigaretteBuffDefinition != null)
+                if (cigaretteConsumed == true && _cigaretteBuffDefinition != null)
                 {
+                    Character character = Character;
+                    Agent agent = character != null ? character.Agent : null;
                     BuffSystem buffSystem = agent != null ? agent.BuffSystem : null;
                     buffSystem?.ApplyBuff(_cigaretteBuffDefinition);
                 }
