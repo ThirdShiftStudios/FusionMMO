@@ -134,6 +134,54 @@ MonoBehaviour:
   GizmosColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   _damageMultiplier: 1
   _isCritical: 0
+--- !u!1 &308778482390703106
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 9094354909704941589}
+  - component: {fileID: 8236131098124079455}
+  m_Layer: 8
+  m_Name: CigaretteUse
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &9094354909704941589
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 308778482390703106}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 7445849196406537464}
+  m_Father: {fileID: 5049831846904921630}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &8236131098124079455
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 308778482390703106}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 272553aa18e5488d9980695a713ff8a6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _smokeState: {fileID: 7418465582630858388}
+  _blendInDuration: 0.1
+  _blendOutDuration: 0.15
 --- !u!1 &701089063114127358
 GameObject:
   m_ObjectHideFlags: 0
@@ -484,6 +532,54 @@ MonoBehaviour:
     IsLooping: 1
   _blendInDuration: 0.1
   _blendOutDuration: 0.1
+--- !u!1 &1747848386958203805
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7445849196406537464}
+  - component: {fileID: 7418465582630858388}
+  m_Layer: 8
+  m_Name: CigaretteSmoke
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7445849196406537464
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1747848386958203805}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 9094354909704941589}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &7418465582630858388
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1747848386958203805}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4154c10337614becb224c3584946d319, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _node:
+    Clip: {fileID: 1827226128182048838, guid: 53db7e4674506e74d8af4f8287cd19e8, type: 3}
+    Speed: 1
+    IsLooping: 0
 --- !u!1 &2099819015873955679
 GameObject:
   m_ObjectHideFlags: 0
@@ -2964,6 +3060,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 1489436706626510999, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
       insertIndex: -1
       addedObject: {fileID: 7375036221829558348}
+    - targetCorrespondingSourceObject: {fileID: 1489436706626510999, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 9094354909704941589}
     - targetCorrespondingSourceObject: {fileID: 1697087244603040655, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
       insertIndex: -1
       addedObject: {fileID: 4605147604364869545}
@@ -3110,6 +3209,7 @@ MonoBehaviour:
   staffAttack: {fileID: 3954794708403379349}
   fishingPoleUse: {fileID: 6087183381381594988}
   beerUse: {fileID: 3130146283118759857}
+  cigaretteUse: {fileID: 8236131098124079455}
 --- !u!1 &4282139267378355678 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 7625200539080901463, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}

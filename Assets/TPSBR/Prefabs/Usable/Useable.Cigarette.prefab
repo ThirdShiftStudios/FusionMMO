@@ -128,6 +128,7 @@ GameObject:
   - component: {fileID: 8192459240707817307}
   - component: {fileID: 7915634501953144910}
   - component: {fileID: 9099256801725517549}
+  - component: {fileID: 4525926509529227313}
   m_Layer: 0
   m_Name: Useable.Cigarette
   m_TagString: Untagged
@@ -163,7 +164,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 50b8f0876aa9da7428a8e0dd8b04d9fa, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _weaponDefinition: {fileID: 0}
+  _weaponDefinition: {fileID: 11400000, guid: 7b6d2ec49cda5814390bb48b3aa3924d, type: 2}
   _weaponSize: 0
   _validOnlyWithAmmo: 0
   _leftHandTarget: {fileID: 0}
@@ -194,7 +195,22 @@ MonoBehaviour:
   NestedObjects: []
   NetworkedBehaviours:
   - {fileID: 7915634501953144910}
+  - {fileID: 4525926509529227313}
   ForceRemoteRenderTimeframe: 0
+--- !u!114 &4525926509529227313
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6594745375533148273}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ecff45261f75b014fb16db195df51219, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _stateAuthorityChangeErrorCorrectionDelta: 0.15
+  _positionSource: {fileID: 0}
 --- !u!1 &7784483857035644898
 GameObject:
   m_ObjectHideFlags: 0
