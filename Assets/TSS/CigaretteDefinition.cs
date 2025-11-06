@@ -7,6 +7,9 @@ namespace TPSBR
 {
     public class CigaretteDefinition : WeaponDefinition
     {
+        [SerializeField, Min(1)] private ushort _maxStack = 20;
+
         public override ESlotCategory SlotCategory => ESlotCategory.Consumable;
+        public override ushort MaxStack => _maxStack;
     }
 }
