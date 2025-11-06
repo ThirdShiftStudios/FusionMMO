@@ -11,6 +11,12 @@ namespace TPSBR
                 [SerializeField]
                 private int _refillCost = 5;
 
+                [SerializeField]
+                private Animator _animator;
+
+                [SerializeField]
+                private string _fillAnimation = string.Empty;
+
                 private UIBeerRefillStationView _beerRefillView;
                 private Agent _activeAgent;
                 private Inventory _activeInventory;
@@ -168,6 +174,8 @@ namespace TPSBR
                         if (TryGetSelectedBeer(inventory, out BeerUsable beer, out InventorySlot inventorySlot, out bool fromInventory) == false)
                                 return;
 
+                        bool refillSuccessful = false;
+
                         if (fromInventory == true)
                         {
                                 byte currentStack = BeerUsable.GetBeerStack(inventorySlot.ConfigurationHash);
@@ -195,6 +203,8 @@ namespace TPSBR
 
                                                 return;
                                         }
+
+                                        refillSuccessful = true;
                                 }
                                 else if (inventory.TryAddToInventorySlot(_currentSelectedSourceIndex, 1) == false)
                                 {
@@ -204,6 +214,10 @@ namespace TPSBR
                                         }
 
                                         return;
+                                }
+                                else
+                                {
+                                        refillSuccessful = true;
                                 }
                         }
                         else
@@ -218,9 +232,26 @@ namespace TPSBR
                                         return;
 
                                 beer.AddBeerStack(1);
+                                refillSuccessful = true;
+                        }
+
+                        if (refillSuccessful == true)
+                        {
+                                PlayFillAnimation();
                         }
 
                         UpdatePurchaseButtonState();
+                }
+
+                private void PlayFillAnimation()
+                {
+                        if (_animator == null)
+                                return;
+
+                        if (string.IsNullOrEmpty(_fillAnimation) == true)
+                                return;
+
+                        _animator.Play(_fillAnimation, 0, 0f);
                 }
 
                 private bool TryGetSelectedBeer(Inventory inventory, out BeerUsable beer, out InventorySlot inventorySlot, out bool fromInventory)
