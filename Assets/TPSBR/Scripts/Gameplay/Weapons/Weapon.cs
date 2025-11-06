@@ -13,6 +13,7 @@ namespace TPSBR
         Ability,
         FishingCast,
         BeerDrink,
+        CigaretteSmoke,
     }
 
     public readonly struct WeaponUseRequest

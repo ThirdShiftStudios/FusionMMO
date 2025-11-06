@@ -3,23 +3,16 @@ using UnityEngine;
 
 namespace TPSBR
 {
-    public interface IConsumableUse
+    public class CigaretteUseState : MixerState
     {
-        Weapon OwnerWeapon { get; }
-        Character Character { get; }
-        void NotifyUseFinished();
-    }
-
-    public class BeerUseState : MixerState
-    {
-        [SerializeField] private BeerDrinkState _drinkState;
+        [SerializeField] private CigaretteSmokeState _smokeState;
         [SerializeField] private float _blendInDuration = 0.1f;
         [SerializeField] private float _blendOutDuration = 0.15f;
 
         private IConsumableUse _activeConsumable;
         private Weapon _activeWeapon;
 
-        public void PlayDrink(IConsumableUse consumable)
+        public void PlaySmoke(IConsumableUse consumable)
         {
             if (consumable == null)
             {
@@ -34,10 +27,10 @@ namespace TPSBR
             _activeConsumable = consumable;
             _activeWeapon = consumable.OwnerWeapon;
 
-            if (_drinkState != null)
+            if (_smokeState != null)
             {
-                _drinkState.SetAnimationTime(0f);
-                _drinkState.Activate(_blendInDuration);
+                _smokeState.SetAnimationTime(0f);
+                _smokeState.Activate(_blendInDuration);
             }
 
             Activate(_blendInDuration);
@@ -52,7 +45,7 @@ namespace TPSBR
                 return;
             }
 
-            if (_drinkState == null)
+            if (_smokeState == null)
             {
                 Finish();
                 return;
@@ -68,7 +61,7 @@ namespace TPSBR
                 return;
             }
 
-            if (_drinkState.IsFinished(0.99f) == true || _drinkState.IsActive(true) == false)
+            if (_smokeState.IsFinished(0.99f) == true || _smokeState.IsActive(true) == false)
             {
                 Finish();
             }
@@ -76,9 +69,9 @@ namespace TPSBR
 
         private void Finish()
         {
-            if (_drinkState != null && _drinkState.IsActive(true) == true)
+            if (_smokeState != null && _smokeState.IsActive(true) == true)
             {
-                _drinkState.Deactivate(_blendOutDuration);
+                _smokeState.Deactivate(_blendOutDuration);
             }
 
             if (IsActive(true) == true)

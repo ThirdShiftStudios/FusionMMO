@@ -2,40 +2,39 @@ using System;
 using System.Globalization;
 using Fusion;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace TPSBR
 {
-    public class BeerUsable : Weapon, IConsumableUse
+    public class CigaretteConsumable : Weapon, IConsumableUse
     {
-        private const string ConfigurationPrefix = "beer:";
+        private const string ConfigurationPrefix = "cigarette:";
 
         [Networked]
-        private byte _beerStack { get; set; }
+        private byte _cigaretteStack { get; set; }
 
-        private bool _isDrinking;
+        private bool _isSmoking;
+
         [SerializeField]
         private Renderer[] _renderers;
         [SerializeField]
         private Collider[] _colliders;
-        [FormerlySerializedAs("_drunkBuffDefinition")]
         [SerializeField]
-        private BuffDefinition _buffDefinition;
+        private CigaretteBuff _cigaretteBuffDefinition;
 
         private bool _renderersResolved;
         private bool _collidersResolved;
         private bool _previewVisible;
 
-        public byte BeerStack => _beerStack;
+        public byte CigaretteStack => _cigaretteStack;
 
-        internal static byte GetBeerStack(NetworkString<_32> configurationHash)
+        internal static byte GetCigaretteStack(NetworkString<_32> configurationHash)
         {
-            return ParseBeerStack(configurationHash.ToString());
+            return ParseCigaretteStack(configurationHash.ToString());
         }
 
-        internal static NetworkString<_32> CreateConfigurationHash(byte beerStack)
+        internal static NetworkString<_32> CreateConfigurationHash(byte cigaretteStack)
         {
-            string configuration = string.Concat(ConfigurationPrefix, beerStack.ToString(CultureInfo.InvariantCulture));
+            string configuration = string.Concat(ConfigurationPrefix, cigaretteStack.ToString(CultureInfo.InvariantCulture));
 
             NetworkString<_32> hash = default;
             hash = configuration;
@@ -67,12 +66,11 @@ namespace TPSBR
 
         public override void Fire(Vector3 firePosition, Vector3 targetPosition, LayerMask hitMask)
         {
-
         }
 
         public override WeaponUseRequest EvaluateUse(bool attackActivated, bool attackHeld, bool attackReleased)
         {
-            if (_isDrinking == true)
+            if (_isSmoking == true)
             {
                 return WeaponUseRequest.None;
             }
@@ -82,19 +80,19 @@ namespace TPSBR
                 return WeaponUseRequest.None;
             }
 
-            if (_beerStack == 0)
+            if (_cigaretteStack == 0)
             {
                 return WeaponUseRequest.None;
             }
 
-            return WeaponUseRequest.CreateAnimation(WeaponUseAnimation.BeerDrink);
+            return WeaponUseRequest.CreateAnimation(WeaponUseAnimation.CigaretteSmoke);
         }
 
         public override void OnUseStarted(in WeaponUseRequest request)
         {
-            if (request.Animation == WeaponUseAnimation.BeerDrink)
+            if (request.Animation == WeaponUseAnimation.CigaretteSmoke)
             {
-                _isDrinking = true;
+                _isSmoking = true;
             }
         }
 
@@ -112,7 +110,7 @@ namespace TPSBR
 
         public override bool HandleAnimationRequest(UseLayer attackLayer, in WeaponUseRequest request)
         {
-            if (request.Animation != WeaponUseAnimation.BeerDrink)
+            if (request.Animation != WeaponUseAnimation.CigaretteSmoke)
             {
                 return base.HandleAnimationRequest(attackLayer, request);
             }
@@ -122,30 +120,30 @@ namespace TPSBR
                 return false;
             }
 
-            BeerUseState beerUseState = attackLayer.BeerUseState;
+            CigaretteUseState cigaretteUseState = attackLayer.CigaretteUseState;
 
-            if (beerUseState == null)
+            if (cigaretteUseState == null)
             {
                 return false;
             }
 
-            beerUseState.PlayDrink(this);
+            cigaretteUseState.PlaySmoke(this);
 
             return true;
         }
 
-        internal void NotifyDrinkFinished()
+        internal void NotifyUseFinished()
         {
-            _isDrinking = false;
+            _isSmoking = false;
 
             if (HasStateAuthority == true)
             {
-                if (_beerStack > 0)
+                if (_cigaretteStack > 0)
                 {
-                    byte previousStack = _beerStack;
-                    _beerStack--;
+                    byte previousStack = _cigaretteStack;
+                    _cigaretteStack--;
 
-                    if (_beerStack != previousStack)
+                    if (_cigaretteStack != previousStack)
                     {
                         UpdateConfigurationHash();
                     }
@@ -154,16 +152,15 @@ namespace TPSBR
                 Character character = Character;
                 Agent agent = character != null ? character.Agent : null;
 
-                BuffDefinition buffDefinition = _buffDefinition;
-                if (buffDefinition != null)
+                if (_cigaretteBuffDefinition != null)
                 {
                     BuffSystem buffSystem = agent != null ? agent.BuffSystem : null;
-                    buffSystem?.ApplyBuff(buffDefinition);
+                    buffSystem?.ApplyBuff(_cigaretteBuffDefinition);
                 }
             }
         }
 
-        public void AddBeerStack(int amount)
+        public void AddCigaretteStack(int amount)
         {
             if (amount <= 0)
             {
@@ -175,11 +172,11 @@ namespace TPSBR
                 return;
             }
 
-            int newValue = Mathf.Clamp(_beerStack + amount, 0, byte.MaxValue);
-            byte previousStack = _beerStack;
-            _beerStack = (byte)newValue;
+            int newValue = Mathf.Clamp(_cigaretteStack + amount, 0, byte.MaxValue);
+            byte previousStack = _cigaretteStack;
+            _cigaretteStack = (byte)newValue;
 
-            if (_beerStack != previousStack)
+            if (_cigaretteStack != previousStack)
             {
                 UpdateConfigurationHash();
             }
@@ -271,10 +268,10 @@ namespace TPSBR
         {
             base.OnConfigurationHashApplied(configurationHash);
 
-            _beerStack = ParseBeerStack(configurationHash);
+            _cigaretteStack = ParseCigaretteStack(configurationHash);
         }
 
-        private static byte ParseBeerStack(string configurationHash)
+        private static byte ParseCigaretteStack(string configurationHash)
         {
             if (string.IsNullOrEmpty(configurationHash) == true)
             {
@@ -303,7 +300,7 @@ namespace TPSBR
                 return;
             }
 
-            NetworkString<_32> newHash = CreateConfigurationHash(_beerStack);
+            NetworkString<_32> newHash = CreateConfigurationHash(_cigaretteStack);
 
             if (ConfigurationHash.Equals(newHash) == true)
             {
@@ -319,7 +316,7 @@ namespace TPSBR
 
         void IConsumableUse.NotifyUseFinished()
         {
-            NotifyDrinkFinished();
+            NotifyUseFinished();
         }
     }
 }
