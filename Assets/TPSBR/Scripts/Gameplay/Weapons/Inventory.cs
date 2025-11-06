@@ -1841,20 +1841,39 @@ namespace TPSBR
                         slot.BaseRotation = slot.Active.localRotation;
                     }
 
-                    _weaponSizeToSlotIndex[slot.Size] = i;
+                    if (slot.Size != WeaponSize.Unknown)
+                    {
+                        _weaponSizeToSlotIndex[slot.Size] = i;
+                    }
                 }
             }
 
-            if (_weaponSizeSlots != null)
+            if (_weaponSizeSlots != null && _slots != null)
             {
                 foreach (var sizeSlot in _weaponSizeSlots)
                 {
-                    if (sizeSlot.SlotIndex < 0)
+                    int slotIndex = sizeSlot.SlotIndex;
+                    if (slotIndex < 0 || slotIndex >= _slots.Length)
                     {
                         continue;
                     }
 
-                    _weaponSizeToSlotIndex[sizeSlot.Size] = sizeSlot.SlotIndex;
+                    if (_weaponSizeToSlotIndex.ContainsKey(sizeSlot.Size) == true)
+                    {
+                        continue;
+                    }
+
+                    WeaponSlot slot = _slots[slotIndex];
+                    if (slot == null)
+                    {
+                        continue;
+                    }
+
+                    _weaponSizeToSlotIndex[sizeSlot.Size] = slotIndex;
+                    if (slot.Size == WeaponSize.Unarmed || slot.Size == WeaponSize.Unknown)
+                    {
+                        slot.Size = sizeSlot.Size;
+                    }
                 }
             }
         }
@@ -1870,7 +1889,11 @@ namespace TPSBR
 
             if (_weaponSizeToSlotIndex.TryGetValue(size, out int slotIndex) == false)
             {
-                slotIndex = GetDefaultSlotIndex(size);
+                slotIndex = FindSlotIndexBySize(size);
+                if (slotIndex < 0)
+                {
+                    slotIndex = GetDefaultSlotIndex(size);
+                }
             }
 
             if (slotIndex < 0)
@@ -1884,6 +1907,25 @@ namespace TPSBR
             }
 
             return slotIndex;
+        }
+
+        private int FindSlotIndexBySize(WeaponSize size)
+        {
+            if (_slots == null)
+            {
+                return -1;
+            }
+
+            for (int i = 0; i < _slots.Length; ++i)
+            {
+                WeaponSlot slot = _slots[i];
+                if (slot != null && slot.Size == size)
+                {
+                    return i;
+                }
+            }
+
+            return -1;
         }
 
         private int ClampToValidSlot(int slotIndex)
