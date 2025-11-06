@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace TPSBR
 {
-    public class ItemSlotTransform : MonoBehaviour
+    public class HeirarchyTransferPerserve : MonoBehaviour
     {
         
     }

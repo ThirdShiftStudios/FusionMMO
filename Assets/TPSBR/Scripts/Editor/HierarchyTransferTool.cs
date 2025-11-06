@@ -21,7 +21,7 @@ public class HierarchyTransferTool : EditorWindow
 
     private void OnGUI()
     {
-        EditorGUILayout.LabelField("Transfer renderer configs, EquipmentVisual components, & ItemSlotTransform objects by matching hierarchy paths.", EditorStyles.wordWrappedLabel);
+        EditorGUILayout.LabelField("Transfer renderer configs, EquipmentVisual components, & HeirarchyTransferPerserve objects by matching hierarchy paths.", EditorStyles.wordWrappedLabel);
         EditorGUILayout.Space();
 
         currentRoot = (Transform)EditorGUILayout.ObjectField("Current Root", currentRoot, typeof(Transform), true);
@@ -41,7 +41,7 @@ public class HierarchyTransferTool : EditorWindow
             "• SkinnedMeshRenderer bones/rootBone are remapped by the same path.\n" +
             "• If a renderer doesn’t exist on the New side, it will be added.\n" +
             "• EquipmentVisual components are moved to their equivalent GameObjects under New.\n" +
-            "• ItemSlotTransform GameObjects are MOVED to the equivalent path under New.\n",
+            "• HeirarchyTransferPerserve GameObjects are MOVED to the equivalent path under New.\n",
             MessageType.Info
         );
     }
@@ -165,7 +165,7 @@ public class HierarchyTransferTool : EditorWindow
             foreach (var kvp in currentMap)
             {
                 Transform t = kvp.Value;
-                if (HasComponentNamed(t.gameObject, "ItemSlotTransform"))
+                if (HasComponentNamed(t.gameObject, "HeirarchyTransferPerserve"))
                 {
                     var relPath = CalculatePath(currentRoot, t);
 
@@ -173,7 +173,7 @@ public class HierarchyTransferTool : EditorWindow
                     {
                         // Move the WHOLE GameObject under the equivalent transform in "New".
                         // We’ll keep local alignment (not world), so pass worldPositionStays = false.
-                        Undo.SetTransformParent(t, newEquivalentParent, "Move ItemSlotTransform GameObject");
+                        Undo.SetTransformParent(t, newEquivalentParent, "Move HeirarchyTransferPerserve GameObject");
                         Vector3 localPos = new Vector3(t.localPosition.x, t.localPosition.y, t.localPosition.z);
                         Quaternion localRot = t.localRotation;
                         
@@ -198,7 +198,7 @@ public class HierarchyTransferTool : EditorWindow
                 $"SkinnedMeshRenderers copied: {copiedSMR} (added: {addedSMR})\n" +
                 $"EquipmentVisual components moved: {movedEquipmentVisuals} (skipped: {skippedEquipmentVisuals})\n" +
                 $"Missing equivalent targets in New: {missingTargets}\n" +
-                $"ItemSlotTransform GameObjects moved: {movedItemSlots} (skipped: {skippedItemSlots})",
+                $"HeirarchyTransferPerserve GameObjects moved: {movedItemSlots} (skipped: {skippedItemSlots})",
                 "OK"
             );
         }
