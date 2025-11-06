@@ -48,6 +48,7 @@ namespace TPSBR
     {
         public int WeaponDefinitionId;
         public string ConfigurationHash;
+        public byte Quantity;
     }
 
     [Serializable]

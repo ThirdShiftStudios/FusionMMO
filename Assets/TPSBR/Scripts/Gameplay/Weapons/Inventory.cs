@@ -127,6 +127,7 @@ namespace TPSBR
         public const int HOTBAR_SECOND_CONSUMABLE_SLOT = 4;
         public const int HOTBAR_THIRD_CONSUMABLE_SLOT = 5;
         public const int HOTBAR_FISHING_POLE_SLOT = HOTBAR_CAPACITY - 1;
+        private const int HOTBAR_INVENTORY_INDEX_BASE = -1000;
         // PRIVATE MEMBERS
 
         [SerializeField] private WeaponSlot[] _slots;
@@ -148,6 +149,7 @@ namespace TPSBR
         [Header("Audio")] [SerializeField] private Transform _fireAudioEffectsRoot;
 
         [Networked, Capacity(HOTBAR_CAPACITY)] private NetworkArray<Weapon> _hotbar { get; }
+        [Networked, Capacity(HOTBAR_CAPACITY)] private NetworkArray<InventorySlot> _hotbarItems { get; }
         [Networked, Capacity(INVENTORY_SIZE)] private NetworkArray<InventorySlot> _items { get; }
         [Networked, Capacity(BAG_SLOT_COUNT)] private NetworkArray<InventorySlot> _bagSlots { get; }
         [Networked] private InventorySlot _pickaxeSlot { get; set; }
@@ -257,6 +259,16 @@ namespace TPSBR
             return _hotbar[index];
         }
 
+        public InventorySlot GetHotbarItemSlot(int index)
+        {
+            if (index < 0 || index >= _hotbarItems.Length)
+            {
+                return default;
+            }
+
+            return _hotbarItems[index];
+        }
+
         public void SetGold(int amount)
         {
             if (HasStateAuthority == false)
@@ -337,12 +349,24 @@ namespace TPSBR
                     continue;
                 }
 
-                string configurationHash = weapon.ConfigurationHash.ToString();
+                var hotbarSlot = _hotbarItems[i];
+                string configurationHash = hotbarSlot.ConfigurationHash.ToString();
+                if (string.IsNullOrEmpty(configurationHash) == true)
+                {
+                    configurationHash = weapon.ConfigurationHash.ToString();
+                }
+
+                byte quantity = hotbarSlot.Quantity;
+                if (quantity == 0)
+                {
+                    quantity = 1;
+                }
 
                 data.HotbarSlots[i] = new PlayerHotbarSlotData
                 {
                     WeaponDefinitionId = weapon.Definition != null ? weapon.Definition.ID : 0,
-                    ConfigurationHash = string.IsNullOrEmpty(configurationHash) == false ? configurationHash : null
+                    ConfigurationHash = string.IsNullOrEmpty(configurationHash) == false ? configurationHash : null,
+                    Quantity = quantity
                 };
             }
 
@@ -594,8 +618,15 @@ namespace TPSBR
 
                     if(data.HotbarSlots[i].WeaponDefinitionId == 0)
                         continue;
-                    
+
                     var slotData = data.HotbarSlots[i];
+
+                    byte quantity = slotData.Quantity;
+                    if (quantity == 0)
+                        quantity = 1;
+
+                    bool hasConfiguration = string.IsNullOrEmpty(slotData.ConfigurationHash) == false;
+                    NetworkString<_32> configurationHash = default;
 
                     var itemDefinition = ItemDefinition.Get(slotData.WeaponDefinitionId) as WeaponDefinition;
                     if (itemDefinition == null)
@@ -609,13 +640,21 @@ namespace TPSBR
                     if (weapon == null)
                         continue;
 
-                    if (string.IsNullOrEmpty(slotData.ConfigurationHash) == false)
+                    if (hasConfiguration == true)
                     {
-                        NetworkString<_32> configurationHash = slotData.ConfigurationHash;
+                        configurationHash = slotData.ConfigurationHash;
                         weapon.SetConfigurationHash(configurationHash);
                     }
+                    else
+                    {
+                        configurationHash = weapon.ConfigurationHash;
+                    }
+
+                    var hotbarSlot = new InventorySlot(slotData.WeaponDefinitionId, quantity, configurationHash);
+                    _hotbarItems.Set(i, hotbarSlot);
 
                     AddWeapon(weapon, i);
+                    NotifyHotbarSlotStackChanged(i);
                 }
             }
 
@@ -657,6 +696,9 @@ namespace TPSBR
             if (index == PIPE_SLOT_INDEX)
                 return _pipeSlot;
 
+            if (TryGetHotbarSlotFromInventoryIndex(index, out int hotbarSlot) == true)
+                return _hotbarItems[hotbarSlot];
+
             if (TryGetBagArrayIndex(index, out int bagIndex) == true)
                 return _bagSlots[bagIndex];
 
@@ -664,6 +706,79 @@ namespace TPSBR
                 return default;
 
             return _items[index];
+        }
+
+        public bool TryFindInventorySlot(ItemDefinition definition, out int index, out InventorySlot slot)
+        {
+            index = -1;
+            slot = default;
+
+            if (definition == null)
+            {
+                return false;
+            }
+
+            if (_pipeSlot.IsEmpty == false && _pipeSlot.ItemDefinitionId == definition.ID && _pipeSlot.Quantity > 0)
+            {
+                index = PIPE_SLOT_INDEX;
+                slot = _pipeSlot;
+                return true;
+            }
+
+            int generalCapacity = Mathf.Clamp(_generalInventorySize, 0, _items.Length);
+            for (int i = 0; i < generalCapacity; i++)
+            {
+                var candidate = _items[i];
+                if (candidate.IsEmpty == true)
+                    continue;
+
+                if (candidate.ItemDefinitionId != definition.ID)
+                    continue;
+
+                if (candidate.Quantity == 0)
+                    continue;
+
+                index = i;
+                slot = candidate;
+                return true;
+            }
+
+            int bagCount = _bagSlots.Length;
+            for (int i = 0; i < bagCount; i++)
+            {
+                var candidate = _bagSlots[i];
+                if (candidate.IsEmpty == true)
+                    continue;
+
+                if (candidate.ItemDefinitionId != definition.ID)
+                    continue;
+
+                if (candidate.Quantity == 0)
+                    continue;
+
+                index = GetBagSlotIndex(i);
+                slot = candidate;
+                return true;
+            }
+
+            for (int i = 0; i < _hotbarItems.Length; i++)
+            {
+                var candidate = _hotbarItems[i];
+                if (candidate.IsEmpty == true)
+                    continue;
+
+                if (candidate.ItemDefinitionId != definition.ID)
+                    continue;
+
+                if (candidate.Quantity == 0)
+                    continue;
+
+                index = GetHotbarInventoryIndex(i);
+                slot = candidate;
+                return true;
+            }
+
+            return false;
         }
 
         public bool TrySetInventorySlotConfiguration(int index, NetworkString<_32> configurationHash)
@@ -719,6 +834,20 @@ namespace TPSBR
             RefreshItems();
 
             return addAmount == quantity;
+        }
+
+        public bool TryConsumeInventoryItem(int index, byte quantity)
+        {
+            if (HasStateAuthority == false)
+                return false;
+
+            if (quantity == 0)
+                return true;
+
+            if (IsValidInventoryIndex(index) == false)
+                return false;
+
+            return RemoveInventoryItemInternal(index, quantity);
         }
 
         public bool TrySetHotbarConfiguration(int index, NetworkString<_32> configurationHash)
@@ -2701,14 +2830,12 @@ namespace TPSBR
             if (definition == null)
                 return;
 
-            var configurationHash = inventorySlot.ConfigurationHash;
-
             var weaponPrefab = EnsureWeaponPrefabRegistered(definition);
             if (weaponPrefab == null)
                 return;
 
             SuppressFeedForSlot(inventoryIndex);
-            if (RemoveInventoryItemInternal(inventoryIndex, 1) == false)
+            if (TryDetachInventorySlot(inventoryIndex, out InventorySlot detachedSlot) == false)
             {
                 ClearFeedSuppression(inventoryIndex);
                 return;
@@ -2719,7 +2846,7 @@ namespace TPSBR
             {
                 if (TryStoreWeapon(existingWeapon, slot) == false)
                 {
-                    RestoreInventoryItem(inventoryIndex, definition, configurationHash);
+                    RestoreInventorySlot(inventoryIndex, detachedSlot);
                     return;
                 }
             }
@@ -2727,12 +2854,15 @@ namespace TPSBR
             var spawnedWeapon = Runner.Spawn(weaponPrefab, inputAuthority: Object.InputAuthority);
             if (spawnedWeapon == null)
             {
-                RestoreInventoryItem(inventoryIndex, definition, configurationHash);
+                RestoreInventorySlot(inventoryIndex, detachedSlot);
                 return;
             }
 
-            spawnedWeapon.SetConfigurationHash(configurationHash);
+            spawnedWeapon.SetConfigurationHash(detachedSlot.ConfigurationHash);
             AddWeapon(spawnedWeapon, slot);
+
+            _hotbarItems.Set(slot, detachedSlot);
+            NotifyHotbarSlotStackChanged(slot);
 
             if (_currentWeaponSlot == slot)
             {
@@ -2783,10 +2913,17 @@ namespace TPSBR
                 _previousWeaponSlot = 0;
             }
 
-            var inventorySlot = new InventorySlot(definition.ID, 1, weapon.ConfigurationHash);
+            var inventorySlot = _hotbarItems[slot];
+            if (inventorySlot.IsEmpty == true)
+            {
+                inventorySlot = new InventorySlot(definition.ID, 1, weapon.ConfigurationHash);
+            }
+
             _items.Set(inventoryIndex, inventorySlot);
             UpdateWeaponDefinitionMapping(inventoryIndex, inventorySlot);
             RefreshItems();
+
+            _hotbarItems.Set(slot, default);
 
             RemoveWeapon(slot);
 
@@ -2825,6 +2962,11 @@ namespace TPSBR
             _hotbar.Set(fromSlot, toWeapon);
             _hotbar.Set(toSlot, fromWeapon);
 
+            var fromHotbarItem = _hotbarItems[fromSlot];
+            var toHotbarItem = _hotbarItems[toSlot];
+            _hotbarItems.Set(fromSlot, toHotbarItem);
+            _hotbarItems.Set(toSlot, fromHotbarItem);
+
             if (_currentWeaponSlot == fromSlot)
             {
                 _currentWeaponSlot = (byte)toSlot;
@@ -2842,6 +2984,9 @@ namespace TPSBR
             {
                 _previousWeaponSlot = (byte)fromSlot;
             }
+
+            NotifyHotbarSlotStackChanged(fromSlot);
+            NotifyHotbarSlotStackChanged(toSlot);
 
             NotifyHotbarSlotChanged(fromSlot);
             NotifyHotbarSlotChanged(toSlot);
@@ -3150,6 +3295,92 @@ namespace TPSBR
                 return true;
             }
 
+            if (index == PIPE_SLOT_INDEX)
+            {
+                if (quantity == 0)
+                    return false;
+
+                var pipeSlotData = _pipeSlot;
+                if (pipeSlotData.IsEmpty == true)
+                    return false;
+
+                if (pipeSlotData.Quantity <= quantity)
+                {
+                    _pipeSlot = default;
+                }
+                else
+                {
+                    pipeSlotData.Remove(quantity);
+                    _pipeSlot = pipeSlotData;
+                }
+
+                RefreshPipeSlot();
+                return true;
+            }
+
+            if (TryGetHotbarSlotFromInventoryIndex(index, out int hotbarSlot) == true)
+            {
+                if (quantity == 0)
+                    return false;
+
+                if (hotbarSlot <= 0 || hotbarSlot >= _hotbarItems.Length)
+                    return false;
+
+                var hotbarItem = _hotbarItems[hotbarSlot];
+                if (hotbarItem.IsEmpty == true)
+                    return false;
+
+                if (hotbarItem.Quantity < quantity)
+                    return false;
+
+                bool removedAll = hotbarItem.Quantity == quantity;
+                if (removedAll == true)
+                {
+                    _hotbarItems.Set(hotbarSlot, default);
+                }
+                else
+                {
+                    hotbarItem.Remove(quantity);
+                    _hotbarItems.Set(hotbarSlot, hotbarItem);
+                }
+
+                if (removedAll == true)
+                {
+                    if (hotbarSlot == _currentWeaponSlot)
+                    {
+                        byte bestWeaponSlot = _previousWeaponSlot;
+                        if (bestWeaponSlot == 0 || bestWeaponSlot == _currentWeaponSlot)
+                        {
+                            bestWeaponSlot = FindBestWeaponSlot(_currentWeaponSlot);
+                        }
+
+                        SetCurrentWeapon(bestWeaponSlot);
+                        ArmCurrentWeapon();
+                    }
+                    else if (_previousWeaponSlot == hotbarSlot)
+                    {
+                        _previousWeaponSlot = 0;
+                    }
+
+                    var weapon = _hotbar[hotbarSlot];
+                    if (weapon != null)
+                    {
+                        RemoveWeapon(hotbarSlot);
+
+                        if (weapon.Object != null)
+                        {
+                            Runner.Despawn(weapon.Object);
+                        }
+                    }
+                }
+                else
+                {
+                    NotifyHotbarSlotStackChanged(hotbarSlot);
+                }
+
+                return true;
+            }
+
             if (IsGeneralInventoryIndex(index) == false)
                 return false;
 
@@ -3183,12 +3414,30 @@ namespace TPSBR
             return true;
         }
 
-        private void RestoreInventoryItem(int index, WeaponDefinition definition, NetworkString<_32> configurationHash)
+        private bool TryDetachInventorySlot(int index, out InventorySlot slot)
         {
-            if (IsGeneralInventoryIndex(index) == false || definition == null)
+            slot = default;
+
+            if (IsGeneralInventoryIndex(index) == false)
+                return false;
+
+            var currentSlot = _items[index];
+            if (currentSlot.IsEmpty == true)
+                return false;
+
+            slot = currentSlot;
+            _items.Set(index, default);
+            UpdateWeaponDefinitionMapping(index, default);
+            RefreshItems();
+
+            return true;
+        }
+
+        private void RestoreInventorySlot(int index, InventorySlot slot)
+        {
+            if (IsGeneralInventoryIndex(index) == false)
                 return;
 
-            var slot = new InventorySlot(definition.ID, 1, configurationHash);
             SuppressFeedForSlot(index);
             _items.Set(index, slot);
             UpdateWeaponDefinitionMapping(index, slot);
@@ -3206,15 +3455,22 @@ namespace TPSBR
 
             EnsureWeaponPrefabRegistered(definition, weapon);
 
+            var storedSlot = _hotbarItems[sourceSlot];
+            if (storedSlot.IsEmpty == true)
+            {
+                storedSlot = new InventorySlot(definition.ID, 1, weapon.ConfigurationHash);
+            }
+
             int emptySlot = FindEmptyInventorySlot();
             if (emptySlot < 0)
                 return false;
 
-            var slot = new InventorySlot(definition.ID, 1, weapon.ConfigurationHash);
             SuppressFeedForSlot(emptySlot);
-            _items.Set(emptySlot, slot);
-            UpdateWeaponDefinitionMapping(emptySlot, slot);
+            _items.Set(emptySlot, storedSlot);
+            UpdateWeaponDefinitionMapping(emptySlot, storedSlot);
             RefreshItems();
+
+            _hotbarItems.Set(sourceSlot, default);
 
             RemoveWeapon(sourceSlot);
             if (weapon.Object != null)
@@ -3375,6 +3631,16 @@ namespace TPSBR
             RecalculateHotbarStats();
         }
 
+        private void NotifyHotbarSlotStackChanged(int slot)
+        {
+            if (_lastHotbarWeapons != null && slot >= 0 && slot < _lastHotbarWeapons.Length)
+            {
+                _lastHotbarWeapons[slot] = null;
+            }
+
+            NotifyHotbarSlotChanged(slot);
+        }
+
         internal void RecalculateHotbarStats()
         {
             if (HasStateAuthority == false)
@@ -3511,33 +3777,46 @@ namespace TPSBR
                 return;
 
             var definition = weapon.Definition;
+            var slotData = _hotbarItems[weaponSlot];
+            byte quantity = slotData.Quantity;
+            NetworkString<_32> dropConfiguration = slotData.ConfigurationHash;
 
-            weapon.Deinitialize(Object);
-
-        if (weaponSlot == _currentWeaponSlot)
-        {
-            byte bestWeaponSlot = _previousWeaponSlot;
-            if (bestWeaponSlot == 0 || bestWeaponSlot == _currentWeaponSlot)
+            if (quantity == 0)
             {
-                bestWeaponSlot = FindBestWeaponSlot(_currentWeaponSlot);
+                quantity = 1;
+                dropConfiguration = weapon.ConfigurationHash;
             }
 
-            SetCurrentWeapon(bestWeaponSlot);
-            ArmCurrentWeapon();
-        }
+            if (weaponSlot == _currentWeaponSlot)
+            {
+                byte bestWeaponSlot = _previousWeaponSlot;
+                if (bestWeaponSlot == 0 || bestWeaponSlot == _currentWeaponSlot)
+                {
+                    bestWeaponSlot = FindBestWeaponSlot(_currentWeaponSlot);
+                }
 
-        RemoveWeapon(weaponSlot);
+                SetCurrentWeapon(bestWeaponSlot);
+                ArmCurrentWeapon();
+            }
+            else if (_previousWeaponSlot == weaponSlot)
+            {
+                _previousWeaponSlot = 0;
+            }
 
-        if (definition != null)
-        {
-            SpawnInventoryItemPickup(definition, 1, weapon.ConfigurationHash);
+            _hotbarItems.Set(weaponSlot, default);
+
+            RemoveWeapon(weaponSlot);
+
+            if (definition != null)
+            {
+                SpawnInventoryItemPickup(definition, quantity, dropConfiguration);
+            }
+
+            if (weapon != null && weapon.Object != null)
+            {
+                Runner.Despawn(weapon.Object);
+            }
         }
-        
-        if (weapon != null && weapon.Object != null)
-        {
-            Runner.Despawn(weapon.Object);
-        }
-    }
 
     private Weapon EnsureWeaponPrefabRegistered(WeaponDefinition definition, Weapon weaponInstance = null)
     {
@@ -3655,17 +3934,35 @@ namespace TPSBR
         return true;
     }
 
-    private int FindEmptyInventorySlot()
-    {
-        int generalCapacity = Mathf.Clamp(_generalInventorySize, 0, _items.Length);
-        for (int i = 0; i < generalCapacity; i++)
+        private int FindEmptyInventorySlot()
         {
-            if (_items[i].IsEmpty == true)
-                return i;
+            int generalCapacity = Mathf.Clamp(_generalInventorySize, 0, _items.Length);
+            for (int i = 0; i < generalCapacity; i++)
+            {
+                if (_items[i].IsEmpty == true)
+                    return i;
+            }
+
+            return -1;
         }
 
-        return -1;
-    }
+        private static int GetHotbarInventoryIndex(int slot)
+        {
+            return HOTBAR_INVENTORY_INDEX_BASE - slot;
+        }
+
+        private static bool TryGetHotbarSlotFromInventoryIndex(int index, out int slot)
+        {
+            int offset = HOTBAR_INVENTORY_INDEX_BASE - index;
+            if (offset >= 0 && offset < HOTBAR_CAPACITY)
+            {
+                slot = offset;
+                return true;
+            }
+
+            slot = -1;
+            return false;
+        }
 
         private void UpdateWeaponDefinitionMapping(int index, InventorySlot slot)
         {
@@ -5085,6 +5382,9 @@ namespace TPSBR
             if (index == PICKAXE_SLOT_INDEX || index == WOOD_AXE_SLOT_INDEX || index == FISHING_POLE_SLOT_INDEX ||
                 index == HEAD_SLOT_INDEX || index == UPPER_BODY_SLOT_INDEX || index == LOWER_BODY_SLOT_INDEX || index == PIPE_SLOT_INDEX)
                 return true;
+
+            if (TryGetHotbarSlotFromInventoryIndex(index, out int hotbarSlot) == true)
+                return hotbarSlot > 0 && hotbarSlot < _hotbar.Length;
 
             return IsBagSlotIndex(index);
         }

@@ -8,5 +8,6 @@ namespace TPSBR
     public class CigaretteDefinition : WeaponDefinition
     {
         public override ESlotCategory SlotCategory => ESlotCategory.Consumable;
+        public override ushort MaxStack => ItemDefinitionMaxStack;
     }
 }

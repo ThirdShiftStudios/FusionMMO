@@ -1,17 +1,11 @@
-using System;
-using System.Globalization;
 using Fusion;
+using Unity.Template.CompetitiveActionMultiplayer;
 using UnityEngine;
 
 namespace TPSBR
 {
     public class CigaretteConsumable : Weapon, IConsumableUse
     {
-        private const string ConfigurationPrefix = "cigarette:";
-
-        [Networked]
-        private byte _cigaretteStack { get; set; }
-
         private bool _isSmoking;
 
         [SerializeField]
@@ -25,22 +19,7 @@ namespace TPSBR
         private bool _collidersResolved;
         private bool _previewVisible;
 
-        public byte CigaretteStack => _cigaretteStack;
-
-        internal static byte GetCigaretteStack(NetworkString<_32> configurationHash)
-        {
-            return ParseCigaretteStack(configurationHash.ToString());
-        }
-
-        internal static NetworkString<_32> CreateConfigurationHash(byte cigaretteStack)
-        {
-            string configuration = string.Concat(ConfigurationPrefix, cigaretteStack.ToString(CultureInfo.InvariantCulture));
-
-            NetworkString<_32> hash = default;
-            hash = configuration;
-
-            return hash;
-        }
+        public byte CigaretteStack => GetInventoryCigaretteStack();
 
         private void Awake()
         {
@@ -80,7 +59,7 @@ namespace TPSBR
                 return WeaponUseRequest.None;
             }
 
-            if (_cigaretteStack == 0)
+            if (CigaretteStack == 0)
             {
                 return WeaponUseRequest.None;
             }
@@ -138,15 +117,9 @@ namespace TPSBR
 
             if (HasStateAuthority == true)
             {
-                if (_cigaretteStack > 0)
+                if (TryGetInventorySlot(out Inventory inventory, out int slotIndex, out InventorySlot slot) == true && slot.Quantity > 0)
                 {
-                    byte previousStack = _cigaretteStack;
-                    _cigaretteStack--;
-
-                    if (_cigaretteStack != previousStack)
-                    {
-                        UpdateConfigurationHash();
-                    }
+                    inventory.TryConsumeInventoryItem(slotIndex, 1);
                 }
 
                 Character character = Character;
@@ -157,28 +130,6 @@ namespace TPSBR
                     BuffSystem buffSystem = agent != null ? agent.BuffSystem : null;
                     buffSystem?.ApplyBuff(_cigaretteBuffDefinition);
                 }
-            }
-        }
-
-        public void AddCigaretteStack(int amount)
-        {
-            if (amount <= 0)
-            {
-                return;
-            }
-
-            if (HasStateAuthority == false)
-            {
-                return;
-            }
-
-            int newValue = Mathf.Clamp(_cigaretteStack + amount, 0, byte.MaxValue);
-            byte previousStack = _cigaretteStack;
-            _cigaretteStack = (byte)newValue;
-
-            if (_cigaretteStack != previousStack)
-            {
-                UpdateConfigurationHash();
             }
         }
 
@@ -264,52 +215,6 @@ namespace TPSBR
             }
         }
 
-        protected override void OnConfigurationHashApplied(string configurationHash)
-        {
-            base.OnConfigurationHashApplied(configurationHash);
-
-            _cigaretteStack = ParseCigaretteStack(configurationHash);
-        }
-
-        private static byte ParseCigaretteStack(string configurationHash)
-        {
-            if (string.IsNullOrEmpty(configurationHash) == true)
-            {
-                return 0;
-            }
-
-            if (configurationHash.StartsWith(ConfigurationPrefix, StringComparison.OrdinalIgnoreCase) == false)
-            {
-                return 0;
-            }
-
-            string valueText = configurationHash.Substring(ConfigurationPrefix.Length);
-
-            if (byte.TryParse(valueText, NumberStyles.Integer, CultureInfo.InvariantCulture, out byte value) == false)
-            {
-                return 0;
-            }
-
-            return value;
-        }
-
-        private void UpdateConfigurationHash()
-        {
-            if (HasStateAuthority == false)
-            {
-                return;
-            }
-
-            NetworkString<_32> newHash = CreateConfigurationHash(_cigaretteStack);
-
-            if (ConfigurationHash.Equals(newHash) == true)
-            {
-                return;
-            }
-
-            SetConfigurationHash(newHash);
-        }
-
         Weapon IConsumableUse.OwnerWeapon => this;
 
         Character IConsumableUse.Character => Character;
@@ -317,6 +222,47 @@ namespace TPSBR
         void IConsumableUse.NotifyUseFinished()
         {
             NotifyUseFinished();
+        }
+
+        private byte GetInventoryCigaretteStack()
+        {
+            if (TryGetInventorySlot(out _, out _, out InventorySlot slot) == true)
+            {
+                return slot.Quantity;
+            }
+
+            return 0;
+        }
+
+        private bool TryGetInventorySlot(out Inventory inventory, out int slotIndex, out InventorySlot slot)
+        {
+            Character character = Character;
+            Agent agent = character != null ? character.Agent : null;
+            inventory = agent != null ? agent.Inventory : null;
+
+            slotIndex = -1;
+            slot = default;
+
+            if (inventory == null)
+            {
+                return false;
+            }
+
+            WeaponDefinition definition = Definition;
+            if (definition == null)
+            {
+                return false;
+            }
+
+            if (inventory.TryFindInventorySlot(definition, out slotIndex, out slot) == true)
+            {
+                return true;
+            }
+
+            inventory = null;
+            slotIndex = -1;
+            slot = default;
+            return false;
         }
     }
 }
