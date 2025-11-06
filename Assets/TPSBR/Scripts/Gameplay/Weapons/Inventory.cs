@@ -1918,6 +1918,18 @@ namespace TPSBR
 
             if (weapon != null)
             {
+                if (_weaponSizeToSlotIndex.TryGetValue(weapon.Size, out int mappedIndex) == true)
+                {
+                    if (mappedIndex >= 0 && mappedIndex < _slots.Length)
+                    {
+                        WeaponSlot mappedSlot = _slots[mappedIndex];
+                        if (mappedSlot != null)
+                        {
+                            return mappedSlot;
+                        }
+                    }
+                }
+
                 for (int i = 0; i < _slots.Length; ++i)
                 {
                     WeaponSlot slot = _slots[i];
