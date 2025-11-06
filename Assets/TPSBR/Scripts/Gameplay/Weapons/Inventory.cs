@@ -666,6 +666,62 @@ namespace TPSBR
             return _items[index];
         }
 
+        public bool TryFindInventorySlot(ItemDefinition definition, out int index, out InventorySlot slot)
+        {
+            index = -1;
+            slot = default;
+
+            if (definition == null)
+            {
+                return false;
+            }
+
+            if (_pipeSlot.IsEmpty == false && _pipeSlot.ItemDefinitionId == definition.ID && _pipeSlot.Quantity > 0)
+            {
+                index = PIPE_SLOT_INDEX;
+                slot = _pipeSlot;
+                return true;
+            }
+
+            int generalCapacity = Mathf.Clamp(_generalInventorySize, 0, _items.Length);
+            for (int i = 0; i < generalCapacity; i++)
+            {
+                var candidate = _items[i];
+                if (candidate.IsEmpty == true)
+                    continue;
+
+                if (candidate.ItemDefinitionId != definition.ID)
+                    continue;
+
+                if (candidate.Quantity == 0)
+                    continue;
+
+                index = i;
+                slot = candidate;
+                return true;
+            }
+
+            int bagCount = _bagSlots.Length;
+            for (int i = 0; i < bagCount; i++)
+            {
+                var candidate = _bagSlots[i];
+                if (candidate.IsEmpty == true)
+                    continue;
+
+                if (candidate.ItemDefinitionId != definition.ID)
+                    continue;
+
+                if (candidate.Quantity == 0)
+                    continue;
+
+                index = GetBagSlotIndex(i);
+                slot = candidate;
+                return true;
+            }
+
+            return false;
+        }
+
         public bool TrySetInventorySlotConfiguration(int index, NetworkString<_32> configurationHash)
         {
             if (HasStateAuthority == false)
@@ -719,6 +775,20 @@ namespace TPSBR
             RefreshItems();
 
             return addAmount == quantity;
+        }
+
+        public bool TryConsumeInventoryItem(int index, byte quantity)
+        {
+            if (HasStateAuthority == false)
+                return false;
+
+            if (quantity == 0)
+                return true;
+
+            if (IsValidInventoryIndex(index) == false)
+                return false;
+
+            return RemoveInventoryItemInternal(index, quantity);
         }
 
         public bool TrySetHotbarConfiguration(int index, NetworkString<_32> configurationHash)
