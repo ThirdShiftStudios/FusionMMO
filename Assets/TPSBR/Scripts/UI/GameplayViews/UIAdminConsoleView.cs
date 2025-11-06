@@ -251,6 +251,7 @@ namespace TPSBR.UI
             AppendEquipmentSlotLine(builder, inventory, "Head", Inventory.HEAD_SLOT_INDEX);
             AppendEquipmentSlotLine(builder, inventory, "Upper Body", Inventory.UPPER_BODY_SLOT_INDEX);
             AppendEquipmentSlotLine(builder, inventory, "Lower Body", Inventory.LOWER_BODY_SLOT_INDEX);
+            AppendEquipmentSlotLine(builder, inventory, "Pipe", Inventory.PIPE_SLOT_INDEX);
 
             AppendSystemLog(builder.ToString(), LogType.Log);
         }
