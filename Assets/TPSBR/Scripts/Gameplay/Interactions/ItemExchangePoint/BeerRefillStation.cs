@@ -251,7 +251,7 @@ namespace TPSBR
                         if (string.IsNullOrEmpty(_fillAnimation) == true)
                                 return;
 
-                        _animator.Play(_fillAnimation);
+                        _animator.Play(_fillAnimation, 0, 0f);
                 }
 
                 private bool TryGetSelectedBeer(Inventory inventory, out BeerUsable beer, out InventorySlot inventorySlot, out bool fromInventory)
