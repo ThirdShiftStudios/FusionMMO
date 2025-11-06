@@ -328,7 +328,17 @@ namespace TPSBR.UI
                 return;
             }
 
-            slot.SetItem(weapon.Icon, 1);
+            int quantity = 1;
+            if (_inventory != null)
+            {
+                var hotbarSlot = _inventory.GetHotbarItemSlot(index + 1);
+                if (hotbarSlot.Quantity > 0)
+                {
+                    quantity = hotbarSlot.Quantity;
+                }
+            }
+
+            slot.SetItem(weapon.Icon, quantity);
 
             if (_selectedSlotIndex == index)
             {
