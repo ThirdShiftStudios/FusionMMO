@@ -68,13 +68,13 @@ namespace TPSBR
             ResolveRenderers();
             ResolveColliders();
             SetVisualsVisible(false);
-            SnapFillAnimation(_beerStack);
+            SnapFillAnimation(GetSafeBeerStack());
         }
 
         private void OnEnable()
         {
             UpdateVisualState();
-            SnapFillAnimation(_beerStack);
+            SnapFillAnimation(GetSafeBeerStack());
         }
 
         private void OnDisable()
@@ -347,6 +347,18 @@ namespace TPSBR
         void IConsumableUse.NotifyUseFinished()
         {
             NotifyDrinkFinished();
+        }
+
+        private byte GetSafeBeerStack()
+        {
+            NetworkObject networkObject = Object;
+
+            if (networkObject == null || networkObject.IsSpawned == false)
+            {
+                return 0;
+            }
+
+            return _beerStack;
         }
 
         private void HandleBeerStackChanged(byte previousStack, byte newStack, bool immediate)
