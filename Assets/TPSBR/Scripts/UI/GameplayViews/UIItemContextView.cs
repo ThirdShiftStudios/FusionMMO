@@ -6,7 +6,7 @@ using UnityEngine.EventSystems;
 
 namespace TPSBR.UI
 {
-    public class UIItemContextView : UICloseView, IUIListItemOwner
+    public class UIItemContextView : UIExclusiveCloseView, IUIListItemOwner
     {
         [Header("Items")]
         [SerializeField]
@@ -56,8 +56,6 @@ namespace TPSBR.UI
         private readonly List<ArcaneConduit.AbilityOption> _allAbilityOptions = new List<ArcaneConduit.AbilityOption>();
         private readonly List<ArcaneConduit.AbilityOption> _lockedAbilityOptions = new List<ArcaneConduit.AbilityOption>();
         private readonly List<ArcaneConduit.AbilityOption> _unlockedAbilityOptions = new List<ArcaneConduit.AbilityOption>();
-        private readonly List<UIView> _suppressedViews = new List<UIView>();
-        private readonly List<UIView> _viewBuffer = new List<UIView>();
         private Func<List<UpgradeStation.ItemData>, UpgradeStation.ItemStatus> _itemProvider;
         private UpgradeStation.ItemStatus _lastStatus = UpgradeStation.ItemStatus.NoAgent;
         private int _selectedIndex = -1;
@@ -129,101 +127,6 @@ namespace TPSBR.UI
             base.OnTick();
 
             RefreshItemSlots(false);
-        }
-
-        private void EnsureExclusiveOpen()
-        {
-            if (SceneUI == null)
-                return;
-
-            if (_suppressedViews.Count > 0)
-                return;
-
-            _viewBuffer.Clear();
-            SceneUI.GetAll(_viewBuffer);
-
-            for (int i = 0; i < _viewBuffer.Count; ++i)
-            {
-                UIView otherView = _viewBuffer[i];
-
-                if (otherView == null)
-                    continue;
-
-                if (ReferenceEquals(otherView, this) == true)
-                    continue;
-
-                if (otherView.IsOpen == false)
-                    continue;
-
-                _suppressedViews.Add(otherView);
-            }
-
-            for (int i = 0; i < _suppressedViews.Count; ++i)
-            {
-                UIView suppressedView = _suppressedViews[i];
-
-                suppressedView?.Close();
-            }
-
-            _viewBuffer.Clear();
-        }
-
-        private void TryRestoreSuppressedViews()
-        {
-            if (_suppressedViews.Count == 0)
-                return;
-
-            if (SceneUI == null)
-            {
-                _suppressedViews.Clear();
-                return;
-            }
-
-            if (HasOtherOpenContextView() == true)
-                return;
-
-            for (int i = 0; i < _suppressedViews.Count; ++i)
-            {
-                UIView suppressedView = _suppressedViews[i];
-
-                if (suppressedView == null)
-                    continue;
-
-                suppressedView.Open();
-            }
-
-            _suppressedViews.Clear();
-        }
-
-        private bool HasOtherOpenContextView()
-        {
-            _viewBuffer.Clear();
-
-            if (SceneUI == null)
-                return false;
-
-            SceneUI.GetAll(_viewBuffer);
-
-            bool hasOther = false;
-
-            for (int i = 0; i < _viewBuffer.Count; ++i)
-            {
-                if (_viewBuffer[i] is UIItemContextView otherContextView)
-                {
-                    if (ReferenceEquals(otherContextView, this) == true)
-                        continue;
-
-                    if (otherContextView.IsOpen == true)
-                    {
-                        hasOther = true;
-                        break;
-                    }
-                }
-            }
-
-            _viewBuffer.Clear();
-
-            return hasOther;
         }
 
         public void SetAbilityOptions(IReadOnlyList<ArcaneConduit.AbilityOption> options)

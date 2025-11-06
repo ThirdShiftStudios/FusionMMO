@@ -10,7 +10,7 @@ using TSS.Data;
 
 namespace TPSBR.UI
 {
-        public sealed class UIVendorView : UICloseView, IUIListItemOwner
+        public sealed class UIVendorView : UIExclusiveCloseView, IUIListItemOwner
         {
                 [SerializeField]
                 private TextMeshProUGUI _emptyStateLabel;
@@ -86,6 +86,8 @@ namespace TPSBR.UI
 
                 protected override void OnOpen()
                 {
+                        EnsureExclusiveOpen();
+
                         base.OnOpen();
 
                         RefreshVendorItems(true);
@@ -124,6 +126,8 @@ namespace TPSBR.UI
                                 _sellButton.onClick.RemoveListener(HandleSellButtonClicked);
                                 _sellButton.interactable = false;
                         }
+
+                        TryRestoreSuppressedViews();
                 }
 
                 protected override void OnTick()

@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace TPSBR.UI
 {
-    public sealed class UICraftingStationView : UICloseView
+    public sealed class UICraftingStationView : UIExclusiveCloseView
     {
         public const string ResourcePath = "UI/GameplayViews/UICraftingStationView";
 
@@ -47,6 +47,8 @@ namespace TPSBR.UI
 
         protected override void OnOpen()
         {
+            EnsureExclusiveOpen();
+
             base.OnOpen();
 
             RefreshRecipeList();
@@ -88,6 +90,8 @@ namespace TPSBR.UI
             {
                 _recipeList.Refresh(0);
             }
+
+            TryRestoreSuppressedViews();
         }
 
         public void Configure(CraftingStation station, Agent agent)
