@@ -31,6 +31,8 @@ namespace TPSBR
         protected int _currentSelectedSourceIndex = -1;
         private ChangeDetector _changeDetector;
 
+        protected Weapon CurrentWeaponPreview => _weaponPreviewInstance;
+
 
         protected override bool HandleInteraction(Agent agent, out string message)
         {
@@ -313,6 +315,10 @@ namespace TPSBR
             ApplyCameraAuthority(CurrentCameraAgent);
         }
 
+        protected virtual void ConfigureWeaponPreview(Weapon preview)
+        {
+        }
+
         private void ShowWeaponPreview(WeaponDefinition definition)
         {
             if (_weaponViewTransform == null || definition == null || definition.WeaponPrefab == null)
@@ -337,6 +343,8 @@ namespace TPSBR
             previewTransform.localRotation = Quaternion.identity;
             previewTransform.localScale = Vector3.one;
             _currentPreviewDefinitionId = definition.ID;
+
+            ConfigureWeaponPreview(_weaponPreviewInstance);
         }
 
         private void ClearWeaponPreview()

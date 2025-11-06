@@ -111,6 +111,13 @@ namespace TPSBR
                         UpdatePurchaseButtonState();
                 }
 
+                protected override void ConfigureWeaponPreview(Weapon preview)
+                {
+                        base.ConfigureWeaponPreview(preview);
+
+                        UpdatePreviewStackAnimation(_previewedBeer);
+                }
+
                 protected override void OnDisable()
                 {
                         SetPreviewedBeer(null);
@@ -395,7 +402,10 @@ namespace TPSBR
                 private void SetPreviewedBeer(BeerUsable beer)
                 {
                         if (_previewedBeer == beer)
+                        {
+                                UpdatePreviewStackAnimation(beer);
                                 return;
+                        }
 
                         if (_previewedBeer != null)
                         {
@@ -408,6 +418,54 @@ namespace TPSBR
                         {
                                 _previewedBeer.SetPreviewVisibility(true);
                         }
+
+                        UpdatePreviewStackAnimation(_previewedBeer);
+                }
+
+                private void UpdatePreviewStackAnimation(BeerUsable sourceBeer)
+                {
+                        BeerUsable beerPreview = CurrentWeaponPreview as BeerUsable;
+
+                        if (beerPreview == null)
+                                return;
+
+                        byte stack = 0;
+
+                        if (sourceBeer != null)
+                        {
+                                stack = GetSafeBeerStack(sourceBeer);
+                        }
+                        else
+                        {
+                                Inventory inventory = _activeAgent != null ? _activeAgent.Inventory : null;
+
+                                if (inventory != null && TryGetSelectedBeer(inventory, out BeerUsable selectedBeer, out InventorySlot inventorySlot, out bool fromInventory) == true)
+                                {
+                                        if (fromInventory == true)
+                                        {
+                                                stack = BeerUsable.GetBeerStack(inventorySlot.ConfigurationHash);
+                                        }
+                                        else if (selectedBeer != null)
+                                        {
+                                                stack = GetSafeBeerStack(selectedBeer);
+                                        }
+                                }
+                        }
+
+                        beerPreview.SnapPreviewToStack(stack);
+                }
+
+                private static byte GetSafeBeerStack(BeerUsable beer)
+                {
+                        if (beer == null)
+                                return 0;
+
+                        NetworkObject networkObject = beer.Object;
+
+                        if (networkObject == null || networkObject.IsValid == false)
+                                return 0;
+
+                        return beer.BeerStack;
                 }
 
                 private static int GetInventorySlotStackLimit(InventorySlot slot)

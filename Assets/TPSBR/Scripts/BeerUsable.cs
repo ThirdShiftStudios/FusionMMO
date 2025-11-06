@@ -353,12 +353,17 @@ namespace TPSBR
         {
             NetworkObject networkObject = Object;
 
-            if (networkObject == null || networkObject.IsSpawned == false)
+            if (networkObject == null || networkObject.IsValid == false)
             {
                 return 0;
             }
 
             return _beerStack;
+        }
+
+        internal void SnapPreviewToStack(byte stack)
+        {
+            SnapFillAnimation(stack);
         }
 
         private void HandleBeerStackChanged(byte previousStack, byte newStack, bool immediate)
