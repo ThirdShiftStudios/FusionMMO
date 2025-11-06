@@ -182,6 +182,50 @@ MonoBehaviour:
   _smokeState: {fileID: 7418465582630858388}
   _blendInDuration: 0.1
   _blendOutDuration: 0.15
+--- !u!1 &419732959089532841
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7383674953889522933}
+  - component: {fileID: 1675613303109603197}
+  m_Layer: 0
+  m_Name: BeerSlot_Active
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7383674953889522933
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 419732959089532841}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.029409148, y: -0.9927169, z: 0.0030529927, w: 0.11678571}
+  m_LocalPosition: {x: -0.0361, y: -0.0026, z: -0.0004}
+  m_LocalScale: {x: 0.125, y: 0.12499993, z: 0.125}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6640903996214337467}
+  m_LocalEulerAnglesHint: {x: 0.741, y: -166.602, z: 356.693}
+--- !u!114 &1675613303109603197
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 419732959089532841}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efb407adcd61a2742b097e1056cc451c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &701089063114127358
 GameObject:
   m_ObjectHideFlags: 0
@@ -2393,6 +2437,9 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 339274988930049843}
     - targetCorrespondingSourceObject: {fileID: 8204795915353947771, guid: 31a4fb56c558cb5498a0f4c7d3ae2b66, type: 3}
+      insertIndex: 6
+      addedObject: {fileID: 7383674953889522933}
+    - targetCorrespondingSourceObject: {fileID: 8204795915353947771, guid: 31a4fb56c558cb5498a0f4c7d3ae2b66, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1374440538475504649}
     m_AddedComponents:
@@ -3142,6 +3189,18 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 6932580404305520922}
     - target: {fileID: 8019168302190258968, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
+      propertyPath: _slots.Array.data[1].Size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8019168302190258968, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
+      propertyPath: _slots.Array.data[2].Size
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 8019168302190258968, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
+      propertyPath: _slots.Array.data[3].Size
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 8019168302190258968, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
       propertyPath: _fishingPoleEquippedParent
       value: 
       objectReference: {fileID: 2536378059457876374}
@@ -3168,7 +3227,7 @@ PrefabInstance:
     - target: {fileID: 8019168302190258968, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
       propertyPath: _slots.Array.data[3].Active
       value: 
-      objectReference: {fileID: 2536378059457876374}
+      objectReference: {fileID: 7383674953889522933}
     - target: {fileID: 8019168302190258968, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
       propertyPath: _slots.Array.data[4].Active
       value: 
@@ -3251,7 +3310,7 @@ PrefabInstance:
       objectReference: {fileID: 5770142272113257373}
     - target: {fileID: 8311684226520633936, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
       propertyPath: _moveStateCategories.Array.size
-      value: 3
+      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 8311684226520633936, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
       propertyPath: _moveStateCategories.Array.data[0]._move
@@ -3266,12 +3325,20 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 5828649028299758170}
     - target: {fileID: 8311684226520633936, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
+      propertyPath: _moveStateCategories.Array.data[3]._move
+      value: 
+      objectReference: {fileID: 7714427873956525555}
+    - target: {fileID: 8311684226520633936, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
       propertyPath: _moveStateCategories.Array.data[1]._weaponSize
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8311684226520633936, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
       propertyPath: _moveStateCategories.Array.data[2]._weaponSize
       value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 8311684226520633936, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
+      propertyPath: _moveStateCategories.Array.data[3]._weaponSize
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 8328825549916750378, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
       propertyPath: m_RootOrder
