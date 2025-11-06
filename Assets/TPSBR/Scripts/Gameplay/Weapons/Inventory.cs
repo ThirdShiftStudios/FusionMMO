@@ -10,6 +10,7 @@ namespace TPSBR
     [Serializable]
     public sealed class WeaponSlot
     {
+        public WeaponSize Size;
         public Transform Active;
         public Transform Inactive;
         [NonSerialized] public Quaternion BaseRotation;
@@ -1212,14 +1213,11 @@ namespace TPSBR
         {
             RefreshWeapons();
 
-            if (_currentWeaponSlot < _slots.Length)
+            var currentSlot = ResolveWeaponSlotForIndex(_currentWeaponSlot);
+            if (currentSlot != null)
             {
-                var currentSlot = _slots[_currentWeaponSlot];
-                if (currentSlot != null)
-                {
-                    CurrentWeaponHandle = currentSlot.Active;
-                    CurrentWeaponBaseRotation = currentSlot.BaseRotation;
-                }
+                CurrentWeaponHandle = currentSlot.Active;
+                CurrentWeaponBaseRotation = currentSlot.BaseRotation;
             }
 
             if (CurrentWeapon != null && CurrentWeapon.IsArmed == false)
@@ -1828,24 +1826,54 @@ namespace TPSBR
             _weaponDefinitionsBySlot.Clear();
             _weaponSizeToSlotIndex.Clear();
 
-            if (_weaponSizeSlots != null)
+            if (_slots != null)
             {
-                foreach (var sizeSlot in _weaponSizeSlots)
+                for (int i = 0; i < _slots.Length; ++i)
                 {
-                    if (sizeSlot.SlotIndex < 0)
+                    WeaponSlot slot = _slots[i];
+                    if (slot == null)
                     {
                         continue;
                     }
 
-                    _weaponSizeToSlotIndex[sizeSlot.Size] = sizeSlot.SlotIndex;
+                    if (slot.Active != null)
+                    {
+                        slot.BaseRotation = slot.Active.localRotation;
+                    }
+
+                    if (slot.Size != WeaponSize.Unknown)
+                    {
+                        _weaponSizeToSlotIndex[slot.Size] = i;
+                    }
                 }
             }
 
-            foreach (WeaponSlot slot in _slots)
+            if (_weaponSizeSlots != null && _slots != null)
             {
-                if (slot.Active != null)
+                foreach (var sizeSlot in _weaponSizeSlots)
                 {
-                    slot.BaseRotation = slot.Active.localRotation;
+                    int slotIndex = sizeSlot.SlotIndex;
+                    if (slotIndex < 0 || slotIndex >= _slots.Length)
+                    {
+                        continue;
+                    }
+
+                    if (_weaponSizeToSlotIndex.ContainsKey(sizeSlot.Size) == true)
+                    {
+                        continue;
+                    }
+
+                    WeaponSlot slot = _slots[slotIndex];
+                    if (slot == null)
+                    {
+                        continue;
+                    }
+
+                    _weaponSizeToSlotIndex[sizeSlot.Size] = slotIndex;
+                    if (slot.Size == WeaponSize.Unarmed || slot.Size == WeaponSize.Unknown)
+                    {
+                        slot.Size = sizeSlot.Size;
+                    }
                 }
             }
         }
@@ -1861,7 +1889,11 @@ namespace TPSBR
 
             if (_weaponSizeToSlotIndex.TryGetValue(size, out int slotIndex) == false)
             {
-                slotIndex = GetDefaultSlotIndex(size);
+                slotIndex = FindSlotIndexBySize(size);
+                if (slotIndex < 0)
+                {
+                    slotIndex = GetDefaultSlotIndex(size);
+                }
             }
 
             if (slotIndex < 0)
@@ -1875,6 +1907,25 @@ namespace TPSBR
             }
 
             return slotIndex;
+        }
+
+        private int FindSlotIndexBySize(WeaponSize size)
+        {
+            if (_slots == null)
+            {
+                return -1;
+            }
+
+            for (int i = 0; i < _slots.Length; ++i)
+            {
+                WeaponSlot slot = _slots[i];
+                if (slot != null && slot.Size == size)
+                {
+                    return i;
+                }
+            }
+
+            return -1;
         }
 
         private int ClampToValidSlot(int slotIndex)
@@ -1892,8 +1943,44 @@ namespace TPSBR
 
         private WeaponSlot ResolveWeaponSlotForIndex(int slotIndex)
         {
+            return ResolveWeaponSlotForIndex(slotIndex, null);
+        }
+
+        private WeaponSlot ResolveWeaponSlotForIndex(int slotIndex, Weapon weaponOverride)
+        {
             if (_slots == null || _slots.Length == 0)
                 return null;
+
+            Weapon weapon = weaponOverride;
+
+            if (weapon == null && slotIndex >= 0 && slotIndex < _hotbar.Length)
+            {
+                weapon = _hotbar[slotIndex];
+            }
+
+            if (weapon != null)
+            {
+                if (_weaponSizeToSlotIndex.TryGetValue(weapon.Size, out int mappedIndex) == true)
+                {
+                    if (mappedIndex >= 0 && mappedIndex < _slots.Length)
+                    {
+                        WeaponSlot mappedSlot = _slots[mappedIndex];
+                        if (mappedSlot != null)
+                        {
+                            return mappedSlot;
+                        }
+                    }
+                }
+
+                for (int i = 0; i < _slots.Length; ++i)
+                {
+                    WeaponSlot slot = _slots[i];
+                    if (slot != null && slot.Size == weapon.Size)
+                    {
+                        return slot;
+                    }
+                }
+            }
 
             if (slotIndex >= 0 && slotIndex < _slots.Length)
                 return _slots[slotIndex];
@@ -3558,7 +3645,7 @@ namespace TPSBR
                 }
 
                 bool cacheChanged = i < _localWeapons.Length && _localWeapons[i] != weapon;
-                WeaponSlot targetSlot = i < _slots.Length ? _slots[i] : null;
+                WeaponSlot targetSlot = ResolveWeaponSlotForIndex(i, weapon);
                 if (targetSlot != null && (weapon.IsInitialized == false || cacheChanged == true))
                 {
                     weapon.Initialize(Object, targetSlot.Active, targetSlot.Inactive);
@@ -3587,8 +3674,13 @@ namespace TPSBR
                 }
 
                 CurrentWeapon = nextWeapon;
-                CurrentWeaponHandle = _slots[_currentWeaponSlot].Active;
-                CurrentWeaponBaseRotation = _slots[_currentWeaponSlot].BaseRotation;
+
+                WeaponSlot currentSlot = ResolveWeaponSlotForIndex(_currentWeaponSlot, CurrentWeapon);
+                if (currentSlot != null)
+                {
+                    CurrentWeaponHandle = currentSlot.Active;
+                    CurrentWeaponBaseRotation = currentSlot.BaseRotation;
+                }
 
                 if (CurrentWeapon != null)
                 {
@@ -5076,10 +5168,18 @@ namespace TPSBR
                     int slotsLength = _slots?.Length ?? 0;
                     if (slotsLength > 0)
                     {
-                        int targetSlotIndex = HOTBAR_FISHING_POLE_SLOT < slotsLength ? HOTBAR_FISHING_POLE_SLOT : 0;
-                        WeaponSlot baseSlot = _slots[targetSlotIndex];
-                        equippedParent ??= baseSlot.Active;
-                        unequippedParent ??= baseSlot.Inactive;
+                        WeaponSlot baseSlot = ResolveWeaponSlotForIndex(HOTBAR_FISHING_POLE_SLOT, _localFishingPole);
+                        if (baseSlot == null)
+                        {
+                            int targetSlotIndex = HOTBAR_FISHING_POLE_SLOT < slotsLength ? HOTBAR_FISHING_POLE_SLOT : 0;
+                            baseSlot = targetSlotIndex < _slots.Length ? _slots[targetSlotIndex] : null;
+                        }
+
+                        if (baseSlot != null)
+                        {
+                            equippedParent ??= baseSlot.Active;
+                            unequippedParent ??= baseSlot.Inactive;
+                        }
                     }
 
                     _localFishingPole.Initialize(Object, equippedParent, unequippedParent);
@@ -5578,7 +5678,7 @@ namespace TPSBR
         RemoveWeapon(targetSlot);
 
         weapon.Object.AssignInputAuthority(Object.InputAuthority);
-        WeaponSlot slot = ResolveWeaponSlotForIndex(targetSlot);
+        WeaponSlot slot = ResolveWeaponSlotForIndex(targetSlot, weapon);
         Transform activeParent = slot != null ? slot.Active : null;
         Transform inactiveParent = slot != null ? slot.Inactive : null;
 
