@@ -1,0 +1,1 @@
+To cycle the animations in playmode press c to play the animation p.

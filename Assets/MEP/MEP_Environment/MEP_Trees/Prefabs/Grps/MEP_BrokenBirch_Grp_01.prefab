@@ -1,0 +1,158 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &3518575713676040031
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7464945458719407783}
+  m_Layer: 0
+  m_Name: MEP_BrokenBirch_Grp_01
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7464945458719407783
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3518575713676040031}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children:
+  - {fileID: 9208283136301795134}
+  - {fileID: 3962366209452552540}
+  m_Father: {fileID: 0}
+  m_RootOrder: 0
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1001 &773973601033745015
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    m_TransformParent: {fileID: 7464945458719407783}
+    m_Modifications:
+    - target: {fileID: 8464463110191215945, guid: ecd65a0d43bd258419b07532cc7b6159, type: 3}
+      propertyPath: m_RootOrder
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8464463110191215945, guid: ecd65a0d43bd258419b07532cc7b6159, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -0.9118862
+      objectReference: {fileID: 0}
+    - target: {fileID: 8464463110191215945, guid: ecd65a0d43bd258419b07532cc7b6159, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8464463110191215945, guid: ecd65a0d43bd258419b07532cc7b6159, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -0.5824814
+      objectReference: {fileID: 0}
+    - target: {fileID: 8464463110191215945, guid: ecd65a0d43bd258419b07532cc7b6159, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.4245229
+      objectReference: {fileID: 0}
+    - target: {fileID: 8464463110191215945, guid: ecd65a0d43bd258419b07532cc7b6159, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8464463110191215945, guid: ecd65a0d43bd258419b07532cc7b6159, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0.9054172
+      objectReference: {fileID: 0}
+    - target: {fileID: 8464463110191215945, guid: ecd65a0d43bd258419b07532cc7b6159, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8464463110191215945, guid: ecd65a0d43bd258419b07532cc7b6159, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8464463110191215945, guid: ecd65a0d43bd258419b07532cc7b6159, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 129.759
+      objectReference: {fileID: 0}
+    - target: {fileID: 8464463110191215945, guid: ecd65a0d43bd258419b07532cc7b6159, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9096146407096070131, guid: ecd65a0d43bd258419b07532cc7b6159, type: 3}
+      propertyPath: m_Name
+      value: MEP_BrokenBirch_05_N
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: ecd65a0d43bd258419b07532cc7b6159, type: 3}
+--- !u!4 &9208283136301795134 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 8464463110191215945, guid: ecd65a0d43bd258419b07532cc7b6159, type: 3}
+  m_PrefabInstance: {fileID: 773973601033745015}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &8851455049036579154
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    m_TransformParent: {fileID: 7464945458719407783}
+    m_Modifications:
+    - target: {fileID: 5143208382923516596, guid: 79814275c5eb69d468563b92a22b5704, type: 3}
+      propertyPath: m_Name
+      value: MEP_BrokenBirch_03_N
+      objectReference: {fileID: 0}
+    - target: {fileID: 5488630562535501838, guid: 79814275c5eb69d468563b92a22b5704, type: 3}
+      propertyPath: m_RootOrder
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5488630562535501838, guid: 79814275c5eb69d468563b92a22b5704, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 1.0289993
+      objectReference: {fileID: 0}
+    - target: {fileID: 5488630562535501838, guid: 79814275c5eb69d468563b92a22b5704, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.16200256
+      objectReference: {fileID: 0}
+    - target: {fileID: 5488630562535501838, guid: 79814275c5eb69d468563b92a22b5704, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0.13300323
+      objectReference: {fileID: 0}
+    - target: {fileID: 5488630562535501838, guid: 79814275c5eb69d468563b92a22b5704, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.31083316
+      objectReference: {fileID: 0}
+    - target: {fileID: 5488630562535501838, guid: 79814275c5eb69d468563b92a22b5704, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0.38163427
+      objectReference: {fileID: 0}
+    - target: {fileID: 5488630562535501838, guid: 79814275c5eb69d468563b92a22b5704, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0.6975595
+      objectReference: {fileID: 0}
+    - target: {fileID: 5488630562535501838, guid: 79814275c5eb69d468563b92a22b5704, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0.5207196
+      objectReference: {fileID: 0}
+    - target: {fileID: 5488630562535501838, guid: 79814275c5eb69d468563b92a22b5704, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: -29.289
+      objectReference: {fileID: 0}
+    - target: {fileID: 5488630562535501838, guid: 79814275c5eb69d468563b92a22b5704, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: -107.652
+      objectReference: {fileID: 0}
+    - target: {fileID: 5488630562535501838, guid: 79814275c5eb69d468563b92a22b5704, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: -79
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 79814275c5eb69d468563b92a22b5704, type: 3}
+--- !u!4 &3962366209452552540 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 5488630562535501838, guid: 79814275c5eb69d468563b92a22b5704, type: 3}
+  m_PrefabInstance: {fileID: 8851455049036579154}
+  m_PrefabAsset: {fileID: 0}
