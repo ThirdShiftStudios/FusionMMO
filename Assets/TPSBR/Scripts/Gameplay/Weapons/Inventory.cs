@@ -700,7 +700,7 @@ namespace TPSBR
             if (HasInputAuthority == false)
                 return false;
 
-            NetworkString<_96> characterId = default;
+            NetworkString<_32> characterId = default;
             if (string.IsNullOrEmpty(data.CharacterId) == false)
             {
                 characterId = data.CharacterId;
@@ -2245,7 +2245,7 @@ namespace TPSBR
 
 
         [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
-        private void RPC_RequestBeginInventoryRestore(NetworkString<_96> characterId)
+        private void RPC_RequestBeginInventoryRestore(NetworkString<_32> characterId)
         {
             if (HasStateAuthority == false)
                 return;
