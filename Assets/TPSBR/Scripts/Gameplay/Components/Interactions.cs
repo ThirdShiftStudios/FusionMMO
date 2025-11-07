@@ -37,8 +37,6 @@
             InteractionTarget = resourceNode;
         }
 
-        [Networked, HideInInspector] public TickTimer DropItemTimer { get; private set; }
-
         public event Action<string> InteractionFailed;
 
         // PRIVATE MEMBERS
@@ -85,14 +83,12 @@
 
             if (hold == false)
             {
-                DropItemTimer = default;
                 return;
             }
 
 
             if (_inventory.CurrentWeapon != null && _inventory.CurrentWeapon.IsBusy() == true)
             {
-                DropItemTimer = default;
                 return;
             }
 
@@ -103,17 +99,6 @@
 
             if (InteractionTarget == null)
             {
-                if (DropItemTimer.IsRunning == false && _inventory.CurrentWeaponSlot > 0 && interact == true)
-                {
-                    DropItemTimer = TickTimer.CreateFromSeconds(Runner, _itemDropTime);
-                }
-
-                if (DropItemTimer.Expired(Runner) == true)
-                {
-                    DropItemTimer = default;
-                    _inventory.DropCurrentWeapon();
-                }
-
                 return;
             }
 
