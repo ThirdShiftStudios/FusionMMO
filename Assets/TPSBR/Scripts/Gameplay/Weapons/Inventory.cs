@@ -2132,6 +2132,7 @@ namespace TPSBR
             AddItemInternal(definition, quantity, configurationHash);
         }
 
+        [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
         private void RPC_RequestMoveItem(byte fromIndex, byte toIndex)
         {
             MoveItem(fromIndex, toIndex);
