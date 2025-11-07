@@ -1,5 +1,6 @@
 using UnityEngine;
 using TMPro;
+using System;
 
 namespace TPSBR.UI
 {
@@ -10,11 +11,7 @@ namespace TPSBR.UI
 		[SerializeField]
 		private UIButton _playButton;
 		[SerializeField]
-		private UIButton _charactersButton;
-		[SerializeField]
 		private UIButton _settingsButton;
-		[SerializeField]
-		private UIButton _creditsButton;
 		[SerializeField]
 		private UIButton _changeNicknameButton;
 		[SerializeField]
@@ -27,10 +24,12 @@ namespace TPSBR.UI
 		private TextMeshProUGUI _agentName;
 		[SerializeField]
 		private TextMeshProUGUI _applicationVersion;
+		[SerializeField]
+		private UISelectCharacterView _uiSelectCharacterView;
 
-		// PUBLIC METHODS
+        // PUBLIC METHODS
 
-		public void OnPlayerButtonPointerEnter()
+        public void OnPlayerButtonPointerEnter()
 		{
 			Context.PlayerPreview.ShowOutline(true);
 		}
@@ -48,11 +47,9 @@ namespace TPSBR.UI
 
 			_settingsButton.onClick.AddListener(OnSettingsButton);
 			_playButton.onClick.AddListener(OnPlayButton);
-			_creditsButton.onClick.AddListener(OnCreditsButton);
 			_changeNicknameButton.onClick.AddListener(OnChangeNicknameButton);
 			_quitButton.onClick.AddListener(OnQuitButton);
 			_playerButton.onClick.AddListener(OnPlayerButton);
-			_charactersButton.onClick.AddListener(OnCharactersButton);
 			_applicationVersion.text = $"Version {Application.version}";
 		}
 
@@ -60,11 +57,9 @@ namespace TPSBR.UI
 		{
 			_settingsButton.onClick.RemoveListener(OnSettingsButton);
 			_playButton.onClick.RemoveListener(OnPlayButton);
-			_creditsButton.onClick.RemoveListener(OnCreditsButton);
 			_changeNicknameButton.onClick.RemoveListener(OnChangeNicknameButton);
 			_quitButton.onClick.RemoveListener(OnQuitButton);
 			_playerButton.onClick.RemoveListener(OnPlayerButton);
-			_charactersButton.onClick.RemoveListener(OnCharactersButton);
 			base.OnDeinitialize();
 		}
 
@@ -73,14 +68,19 @@ namespace TPSBR.UI
 			base.OnOpen();
 
 			UpdatePlayer();
-
+            ShowCharacterSelectionUI();
 			Global.PlayerService.PlayerDataChanged += OnPlayerDataChanged;
 			Context.PlayerPreview.ShowAgent(Context.PlayerData.AgentID);
 
 			Context.PlayerPreview.ShowOutline(false);
 		}
 
-		protected override void OnClose()
+        private void ShowCharacterSelectionUI()
+        {
+			_uiSelectCharacterView.Open();
+        }
+
+        protected override void OnClose()
 		{
 			Global.PlayerService.PlayerDataChanged -= OnPlayerDataChanged;
 

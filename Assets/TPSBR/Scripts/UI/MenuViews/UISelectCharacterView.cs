@@ -13,8 +13,6 @@ namespace TPSBR.UI
         [SerializeField]
         private UIButton _selectCharacterButton;
         [SerializeField]
-        private TextMeshProUGUI _activeCharacterLabel;
-        [SerializeField]
         private TextMeshProUGUI _emptyStateLabel;
         [SerializeField]
         private UIBehaviour _emptyStateGroup;
@@ -100,8 +98,6 @@ namespace TPSBR.UI
             {
                 UpdateSelectButtonState();
             }
-
-            UpdateActiveCharacterLabel();
         }
 
         private void OnSelectionChanged(int index)
@@ -124,8 +120,6 @@ namespace TPSBR.UI
             {
                 TryApplySelectedCharacter(cloud);
             }
-
-            UpdateActiveCharacterLabel();
         }
 
         private void OnUpdateCharacterContent(int index, MonoBehaviour content)
@@ -149,12 +143,13 @@ namespace TPSBR.UI
         private void OnCreateCharacterButton()
         {
             var createView = SceneUI.Get<UICreateCharacterView>();
-            if (createView == null)
+            var mainMenuView = SceneUI.Get<UIMainMenuView>();
+            if (createView == null || mainMenuView == null)
                 return;
 
-            createView.BackView = this;
+            createView.BackView = mainMenuView;
             createView.Open();
-            Close();
+            mainMenuView.Close();
         }
 
         private void OnSelectCharacterButton()
@@ -217,7 +212,6 @@ namespace TPSBR.UI
 
             UpdateEmptyState(count == 0);
             UpdateSelectButtonState();
-            UpdateActiveCharacterLabel();
         }
 
         private void UpdateSelectButtonState()
@@ -228,23 +222,7 @@ namespace TPSBR.UI
             }
         }
 
-        private void UpdateActiveCharacterLabel()
-        {
-            if (_activeCharacterLabel == null)
-                return;
-
-            var cloud = Global.PlayerCloudSaveService;
-            if (cloud == null)
-            {
-                _activeCharacterLabel.text = string.Empty;
-                return;
-            }
-
-            var selectedCharacter = _selectedCharacterId.HasValue() ? cloud.GetCharacter(_selectedCharacterId) : null;
-            var activeCharacter = selectedCharacter != null ? selectedCharacter : cloud.GetCharacter(cloud.ActiveCharacterId);
-
-            _activeCharacterLabel.text = activeCharacter != null ? activeCharacter.CharacterName : string.Empty;
-        }
+       
 
         private bool TryApplySelectedCharacter(PlayerCloudSaveService cloud)
         {
