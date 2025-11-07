@@ -208,6 +208,18 @@ namespace TPSBR
         private HashSet<int> _suppressedItemFeedSlots;
         private int _localGold;
         private ChangeDetector _changeDetector;
+        private PlayerCharacterInventorySaveData _pendingRestoreData;
+
+        private enum SpecialRestoreSlot
+        {
+            Pickaxe,
+            WoodAxe,
+            FishingPole,
+            Head,
+            UpperBody,
+            LowerBody,
+            Pipe,
+        }
         private FishingLifecycleState _fishingLifecycleState = FishingLifecycleState.Inactive;
         private bool _isHookSetSuccessZoneActive;
         private int _generalInventorySize = BASE_GENERAL_INVENTORY_SLOTS;
@@ -672,6 +684,121 @@ namespace TPSBR
             ArmCurrentWeapon();
 
             SetGold(data.Gold);
+        }
+
+        internal bool RequestRestoreFromSave(PlayerCharacterInventorySaveData data)
+        {
+            if (data == null)
+                return false;
+
+            if (HasStateAuthority == true)
+            {
+                ApplySaveData(data);
+                return true;
+            }
+
+            if (HasInputAuthority == false)
+                return false;
+
+            NetworkString<_128> characterId = default;
+            if (string.IsNullOrEmpty(data.CharacterId) == false)
+            {
+                characterId = data.CharacterId;
+            }
+
+            RPC_RequestBeginInventoryRestore(characterId);
+
+            var inventorySlots = data.InventorySlots;
+            if (inventorySlots != null)
+            {
+                int count = Mathf.Min(inventorySlots.Length, _items.Length);
+                for (int i = 0; i < count; i++)
+                {
+                    var slotData = inventorySlots[i];
+                    if (slotData.ItemDefinitionId == 0 || slotData.Quantity == 0)
+                        continue;
+
+                    NetworkString<_32> configurationHash = default;
+                    if (string.IsNullOrEmpty(slotData.ConfigurationHash) == false)
+                    {
+                        configurationHash = slotData.ConfigurationHash;
+                    }
+
+                    RPC_RequestSetInventorySlot((byte)i, slotData.ItemDefinitionId, slotData.Quantity, configurationHash);
+                }
+            }
+
+            var bagSlots = data.BagSlots;
+            if (bagSlots != null)
+            {
+                int count = Mathf.Min(bagSlots.Length, BAG_SLOT_COUNT);
+                for (int i = 0; i < count; i++)
+                {
+                    var slotData = bagSlots[i];
+                    if (slotData.ItemDefinitionId == 0 || slotData.Quantity == 0)
+                        continue;
+
+                    NetworkString<_32> configurationHash = default;
+                    if (string.IsNullOrEmpty(slotData.ConfigurationHash) == false)
+                    {
+                        configurationHash = slotData.ConfigurationHash;
+                    }
+
+                    RPC_RequestSetBagSlot((byte)i, slotData.ItemDefinitionId, slotData.Quantity, configurationHash);
+                }
+            }
+
+            SendSpecialSlot(SpecialRestoreSlot.Pickaxe, data.PickaxeSlot);
+            SendSpecialSlot(SpecialRestoreSlot.WoodAxe, data.WoodAxeSlot);
+            SendSpecialSlot(SpecialRestoreSlot.FishingPole, data.FishingPoleSlot);
+            SendSpecialSlot(SpecialRestoreSlot.Head, data.HeadSlot);
+            SendSpecialSlot(SpecialRestoreSlot.UpperBody, data.UpperBodySlot);
+            SendSpecialSlot(SpecialRestoreSlot.LowerBody, data.LowerBodySlot);
+            SendSpecialSlot(SpecialRestoreSlot.Pipe, data.PipeSlot);
+
+            var hotbarSlots = data.HotbarSlots;
+            if (hotbarSlots != null)
+            {
+                int count = Mathf.Min(hotbarSlots.Length, _hotbar.Length);
+                for (int i = 0; i < count; i++)
+                {
+                    var slotData = hotbarSlots[i];
+                    if (slotData.WeaponDefinitionId == 0)
+                        continue;
+
+                    NetworkString<_32> configurationHash = default;
+                    if (string.IsNullOrEmpty(slotData.ConfigurationHash) == false)
+                    {
+                        configurationHash = slotData.ConfigurationHash;
+                    }
+
+                    RPC_RequestSetHotbarSlot((byte)i, slotData.WeaponDefinitionId, slotData.Quantity, configurationHash);
+                }
+            }
+
+            byte desiredWeaponSlot = data.CurrentWeaponSlot;
+            if (desiredWeaponSlot >= _hotbar.Length)
+            {
+                desiredWeaponSlot = 0;
+            }
+
+            RPC_RequestFinalizeInventoryRestore(desiredWeaponSlot, data.Gold);
+
+            return true;
+
+            void SendSpecialSlot(SpecialRestoreSlot slot, PlayerInventoryItemData slotData)
+            {
+                if (slotData.ItemDefinitionId == 0 || slotData.Quantity == 0)
+                    return;
+
+                NetworkString<_32> configurationHash = default;
+                if (string.IsNullOrEmpty(slotData.ConfigurationHash) == false)
+                {
+                    configurationHash = slotData.ConfigurationHash;
+                }
+
+                RPC_RequestSetSpecialSlot(slot, slotData.ItemDefinitionId, slotData.Quantity, configurationHash);
+            }
         }
 
         public InventorySlot GetItemSlot(int index)
@@ -1548,6 +1675,7 @@ namespace TPSBR
         public void OnDespawned()
         {
             Global.PlayerCloudSaveService?.UnregisterInventory(this);
+            _pendingRestoreData = null;
 
             ResetHotbarStatBonuses();
 
@@ -2109,6 +2237,153 @@ namespace TPSBR
             };
         }
 
+        private static string ResolveConfigurationString(NetworkString<_32> configurationHash)
+        {
+            string value = configurationHash.ToString();
+            return string.IsNullOrEmpty(value) == false ? value : null;
+        }
+
+
+        [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
+        private void RPC_RequestBeginInventoryRestore(NetworkString<_128> characterId)
+        {
+            if (HasStateAuthority == false)
+                return;
+
+            string resolvedCharacterId = characterId.ToString();
+            if (string.IsNullOrEmpty(resolvedCharacterId) == true)
+            {
+                resolvedCharacterId = null;
+            }
+
+            _pendingRestoreData = new PlayerCharacterInventorySaveData
+            {
+                CharacterId = resolvedCharacterId,
+                InventorySlots = new PlayerInventoryItemData[_items.Length],
+                BagSlots = new PlayerInventoryItemData[BAG_SLOT_COUNT],
+                HotbarSlots = new PlayerHotbarSlotData[_hotbar.Length],
+                PickaxeSlot = default,
+                WoodAxeSlot = default,
+                FishingPoleSlot = default,
+                HeadSlot = default,
+                UpperBodySlot = default,
+                LowerBodySlot = default,
+                PipeSlot = default,
+                Gold = 0,
+                CurrentWeaponSlot = 0,
+            };
+        }
+
+        [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
+        private void RPC_RequestSetInventorySlot(byte index, int itemDefinitionId, byte quantity, NetworkString<_32> configurationHash)
+        {
+            if (HasStateAuthority == false || _pendingRestoreData == null)
+                return;
+
+            if (index >= _pendingRestoreData.InventorySlots.Length)
+                return;
+
+            _pendingRestoreData.InventorySlots[index] = new PlayerInventoryItemData
+            {
+                ItemDefinitionId = itemDefinitionId,
+                Quantity = quantity,
+                ConfigurationHash = ResolveConfigurationString(configurationHash),
+            };
+        }
+
+        [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
+        private void RPC_RequestSetBagSlot(byte index, int itemDefinitionId, byte quantity, NetworkString<_32> configurationHash)
+        {
+            if (HasStateAuthority == false || _pendingRestoreData == null)
+                return;
+
+            if (index >= _pendingRestoreData.BagSlots.Length)
+                return;
+
+            _pendingRestoreData.BagSlots[index] = new PlayerInventoryItemData
+            {
+                ItemDefinitionId = itemDefinitionId,
+                Quantity = quantity,
+                ConfigurationHash = ResolveConfigurationString(configurationHash),
+            };
+        }
+
+        [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
+        private void RPC_RequestSetHotbarSlot(byte index, int weaponDefinitionId, byte quantity, NetworkString<_32> configurationHash)
+        {
+            if (HasStateAuthority == false || _pendingRestoreData == null)
+                return;
+
+            if (index >= _pendingRestoreData.HotbarSlots.Length)
+                return;
+
+            _pendingRestoreData.HotbarSlots[index] = new PlayerHotbarSlotData
+            {
+                WeaponDefinitionId = weaponDefinitionId,
+                Quantity = quantity,
+                ConfigurationHash = ResolveConfigurationString(configurationHash),
+            };
+        }
+
+        [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
+        private void RPC_RequestSetSpecialSlot(SpecialRestoreSlot slot, int itemDefinitionId, byte quantity, NetworkString<_32> configurationHash)
+        {
+            if (HasStateAuthority == false || _pendingRestoreData == null)
+                return;
+
+            var slotData = new PlayerInventoryItemData
+            {
+                ItemDefinitionId = itemDefinitionId,
+                Quantity = quantity,
+                ConfigurationHash = ResolveConfigurationString(configurationHash),
+            };
+
+            switch (slot)
+            {
+                case SpecialRestoreSlot.Pickaxe:
+                    _pendingRestoreData.PickaxeSlot = slotData;
+                    break;
+                case SpecialRestoreSlot.WoodAxe:
+                    _pendingRestoreData.WoodAxeSlot = slotData;
+                    break;
+                case SpecialRestoreSlot.FishingPole:
+                    _pendingRestoreData.FishingPoleSlot = slotData;
+                    break;
+                case SpecialRestoreSlot.Head:
+                    _pendingRestoreData.HeadSlot = slotData;
+                    break;
+                case SpecialRestoreSlot.UpperBody:
+                    _pendingRestoreData.UpperBodySlot = slotData;
+                    break;
+                case SpecialRestoreSlot.LowerBody:
+                    _pendingRestoreData.LowerBodySlot = slotData;
+                    break;
+                case SpecialRestoreSlot.Pipe:
+                    _pendingRestoreData.PipeSlot = slotData;
+                    break;
+            }
+        }
+
+        [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
+        private void RPC_RequestFinalizeInventoryRestore(byte currentWeaponSlot, int gold)
+        {
+            if (HasStateAuthority == false || _pendingRestoreData == null)
+                return;
+
+            byte resolvedSlot = currentWeaponSlot;
+            if (resolvedSlot >= _hotbar.Length)
+            {
+                resolvedSlot = 0;
+            }
+
+            _pendingRestoreData.CurrentWeaponSlot = resolvedSlot;
+            _pendingRestoreData.Gold = gold;
+
+            var restoreData = _pendingRestoreData;
+            _pendingRestoreData = null;
+
+            ApplySaveData(restoreData);
+        }
 
         [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
         private void RPC_RequestAddGold(int amount)

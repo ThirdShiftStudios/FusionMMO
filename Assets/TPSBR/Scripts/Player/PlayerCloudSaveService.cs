@@ -530,9 +530,16 @@ namespace TPSBR
 
             if (hasInventoryData == true)
             {
-                _suppressTracking = true;
-                inventory.ApplySaveData(inventoryData);
-                _suppressTracking = false;
+                if (inventory.HasStateAuthority == true)
+                {
+                    _suppressTracking = true;
+                    inventory.ApplySaveData(inventoryData);
+                    _suppressTracking = false;
+                }
+                else if (inventory.HasInputAuthority == true)
+                {
+                    inventory.RequestRestoreFromSave(inventoryData);
+                }
             }
 
             if (ReferenceEquals(_pendingRestoreInventory, inventory) == true)
