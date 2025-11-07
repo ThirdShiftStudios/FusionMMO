@@ -510,7 +510,11 @@ namespace TPSBR
 
         public bool TryRestoreInventory(Inventory inventory)
         {
-            if (inventory == null || inventory.HasStateAuthority == false)
+            if (inventory == null)
+                return false;
+
+            bool hasRestoreAuthority = inventory.HasStateAuthority == true || inventory.HasInputAuthority == true;
+            if (hasRestoreAuthority == false)
                 return false;
 
             string characterId = _activeCharacterId;
