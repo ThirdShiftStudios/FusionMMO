@@ -510,7 +510,11 @@ namespace TPSBR
 
         public bool TryRestoreInventory(Inventory inventory)
         {
-            if (inventory == null || inventory.HasStateAuthority == false)
+            if (inventory == null)
+                return false;
+
+            bool hasRestoreAuthority = inventory.HasStateAuthority == true || inventory.HasInputAuthority == true;
+            if (hasRestoreAuthority == false)
                 return false;
 
             string characterId = _activeCharacterId;
@@ -530,9 +534,16 @@ namespace TPSBR
 
             if (hasInventoryData == true)
             {
-                _suppressTracking = true;
-                inventory.ApplySaveData(inventoryData);
-                _suppressTracking = false;
+                if (inventory.HasStateAuthority == true)
+                {
+                    _suppressTracking = true;
+                    inventory.ApplySaveData(inventoryData);
+                    _suppressTracking = false;
+                }
+                else if (inventory.HasInputAuthority == true)
+                {
+                    inventory.RequestRestoreFromSave(inventoryData);
+                }
             }
 
             if (ReferenceEquals(_pendingRestoreInventory, inventory) == true)
@@ -632,6 +643,17 @@ namespace TPSBR
                 return false;
 
             return runner.LocalPlayer == inventory.Object.InputAuthority;
+        }
+
+        private static bool HasInventoryPersistenceAuthority(Inventory inventory)
+        {
+            if (inventory == null)
+                return false;
+
+            if (inventory.Object == null)
+                return false;
+
+            return inventory.HasStateAuthority == true || inventory.HasInputAuthority == true;
         }
 
         private bool IsProfessionsEligible(Professions professions)
@@ -1257,7 +1279,7 @@ namespace TPSBR
             if (_suppressTracking == true)
                 return;
 
-            if (_trackedInventory == null || _trackedInventory.HasStateAuthority == false)
+            if (HasInventoryPersistenceAuthority(_trackedInventory) == false)
                 return;
 
             if (ReferenceEquals(_pendingRestoreInventory, _trackedInventory) == true)
@@ -1271,7 +1293,7 @@ namespace TPSBR
             if (_suppressTracking == true)
                 return;
 
-            if (_trackedInventory == null || _trackedInventory.HasStateAuthority == false)
+            if (HasInventoryPersistenceAuthority(_trackedInventory) == false)
                 return;
 
             if (ReferenceEquals(_pendingRestoreInventory, _trackedInventory) == true)
@@ -1285,7 +1307,7 @@ namespace TPSBR
             if (_suppressTracking == true)
                 return;
 
-            if (_trackedInventory == null || _trackedInventory.HasStateAuthority == false)
+            if (HasInventoryPersistenceAuthority(_trackedInventory) == false)
                 return;
 
             if (ReferenceEquals(_pendingRestoreInventory, _trackedInventory) == true)
@@ -1339,7 +1361,7 @@ namespace TPSBR
                 return;
 
             PlayerCharacterInventorySaveData inventorySnapshot = null;
-            if (_trackedInventory != null && _trackedInventory.HasStateAuthority == true)
+            if (HasInventoryPersistenceAuthority(_trackedInventory) == true)
             {
                 _suppressTracking = true;
                 inventorySnapshot = _trackedInventory.CreateSaveData();
