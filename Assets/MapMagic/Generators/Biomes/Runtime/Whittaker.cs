@@ -56,9 +56,11 @@ namespace MapMagic.Nodes.Biomes
 
 	[Serializable]
 	[GeneratorMenu (menu="Biomes", name ="Whittaker", iconName="GeneratorIcons/Whittaker", priority = 1, colorType = typeof(IBiome))]
-	public class Whittaker200 : Generator, IPrepare, IMultiInlet, ICustomComplexity, IMultiLayer, ICustomClear
-	{
-		public static MatrixAsset[] diagramAssets;
+        public class Whittaker200 : Generator, IPrepare, IMultiInlet, ICustomComplexity, IMultiLayer, ICustomClear
+        {
+                public static MatrixAsset[] diagramAssets;
+                private static Matrix fallbackDiagram;
+                private static HashSet<int> missingDiagramIndices;
 
 		[Val("Heat", "Inlet")] public readonly Inlet<MatrixWorld> temperatureIn = new Inlet<MatrixWorld>();
 		[Val("Moisture ", "Inlet")]	public readonly Inlet<MatrixWorld> moistureIn = new Inlet<MatrixWorld>(); 
@@ -145,30 +147,23 @@ namespace MapMagic.Nodes.Biomes
 				layer.graph.Prepare(subData, terrain);
 			}
 
-			if (diagramAssets == null)
-			{
-				diagramAssets = new MatrixAsset[10];
-				int i=0;
-				foreach (WhittakerLayer layer in layers)
-				{
-					diagramAssets[i] =  Resources.Load<MatrixAsset>("MapMagic/Whittaker/" + layer.diagramName);
-					i++;
-				}
-			}
-		}
+                        EnsureDiagramAssets();
+                }
 
 
-		public override void Generate (TileData data, StopToken stop) 
-		{
-			//reading inputs
-			if (stop!=null && stop.stop) return;
-			MatrixWorld temperatureMatrix = data.ReadInletProduct(temperatureIn);
-			MatrixWorld moistureMatrix = data.ReadInletProduct(moistureIn);
-			if (temperatureMatrix == null || moistureMatrix == null || !enabled) return; 
+                public override void Generate (TileData data, StopToken stop)
+                {
+                        EnsureDiagramAssets();
+                        //reading inputs
+                        if (stop!=null && stop.stop) return;
+                        MatrixWorld temperatureMatrix = data.ReadInletProduct(temperatureIn);
+                        MatrixWorld moistureMatrix = data.ReadInletProduct(moistureIn);
+                        if (temperatureMatrix == null || moistureMatrix == null || !enabled) return;
 
-			if (diagramAssets == null)
-				throw new Exception("Could not find Whittaker diagrams. Possibly generator is not initialized");
-			Coord diagramSize = diagramAssets[0].matrix.rect.size;
+                        Matrix firstDiagram = GetDiagramMatrix(0);
+                        if (firstDiagram == null)
+                                return;
+                        Coord diagramSize = firstDiagram.rect.size;
 
 			//creating biome masks
 			if (stop!=null && stop.stop) return;
@@ -188,12 +183,14 @@ namespace MapMagic.Nodes.Biomes
 					if (temperature < 0) temperature = 0; if (temperature > diagramSize.x) temperature = diagramSize.x;
 					if (moisture < 0) moisture = 0; if (moisture > diagramSize.z) moisture = diagramSize.z;
 
-					for (int m=0; m<masks.Length; m++)
-					{
-						float val = diagramAssets[m].matrix.GetInterpolated(temperature, moisture);
-						val -= sharpness/2;
-						if (val < 0) val = 0;
-						masks[m].arr[pos] = val;
+                                        for (int m=0; m<masks.Length; m++)
+                                        {
+                                                Matrix diagramMatrix = GetDiagramMatrix(m);
+                                                if (diagramMatrix == null) continue;
+                                                float val = diagramMatrix.GetInterpolated(temperature, moisture);
+                                                val -= sharpness/2;
+                                                if (val < 0) val = 0;
+                                                masks[m].arr[pos] = val;
 					}
 				}
 
@@ -238,10 +235,71 @@ namespace MapMagic.Nodes.Biomes
 
 				if (mask.MaxValue() > 0.0001f)
 					layer.graph.Generate(subData, stop:stop, ovd:layer.graph.defaults);
-			}
-		}
+                        }
+                }
 
-		public void OnClearing (Graph graph, TileData data, ref bool isReady, bool totalRebuild=false) 
+                private void EnsureDiagramAssets()
+                {
+                        if (diagramAssets != null && diagramAssets.Length == layers.Length)
+                                return;
+
+                        diagramAssets = new MatrixAsset[layers.Length];
+                        for (int i=0; i<layers.Length; i++)
+                        {
+                                WhittakerLayer layer = layers[i];
+                                if (layer == null) continue;
+
+                                if (!string.IsNullOrEmpty(layer.diagramName))
+                                        diagramAssets[i] = Resources.Load<MatrixAsset>("MapMagic/Whittaker/" + layer.diagramName);
+                                else
+                                        diagramAssets[i] = null;
+                        }
+                }
+
+                private Matrix GetDiagramMatrix (int index)
+                {
+                        if (diagramAssets == null || index < 0 || index >= diagramAssets.Length)
+                                return GetFallbackDiagram(index);
+
+                        MatrixAsset asset = diagramAssets[index];
+                        Matrix matrix = asset?.matrix;
+                        if (matrix != null && matrix.arr != null && matrix.arr.Length != 0)
+                                return matrix;
+
+                        return GetFallbackDiagram(index);
+                }
+
+                private Matrix GetFallbackDiagram (int index)
+                {
+                        if (missingDiagramIndices == null)
+                                missingDiagramIndices = new HashSet<int>();
+
+                        if (missingDiagramIndices.Add(index))
+                        {
+                                string diagramName = null;
+                                if (layers != null && index >= 0 && index < layers.Length)
+                                {
+                                        WhittakerLayer layer = layers[index];
+                                        if (layer != null)
+                                                diagramName = !string.IsNullOrEmpty(layer.diagramName) ? layer.diagramName : layer.name;
+                                }
+
+                                if (string.IsNullOrEmpty(diagramName))
+                                        diagramName = index.ToString();
+
+                                Debug.LogError($"MapMagic Whittaker biome diagram '{diagramName}' is missing or empty. Ensure the MapMagic Whittaker resources are imported so biome masks can be generated.");
+                        }
+
+                        if (fallbackDiagram == null)
+                        {
+                                fallbackDiagram = new Matrix(new CoordRect(0,0,2,2));
+                                fallbackDiagram.Fill(0);
+                        }
+
+                        return fallbackDiagram;
+                }
+
+                public void OnClearing (Graph graph, TileData data, ref bool isReady, bool totalRebuild=false)
 		{
 			// What should be cleared and when:
 			// - On this graph modification (inlet change):			this node (done by default), all subgraph outputs (for biomes)
