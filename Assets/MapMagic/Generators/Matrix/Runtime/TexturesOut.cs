@@ -663,16 +663,17 @@ namespace MapMagic.Nodes.MatrixGenerators {
 		}
 
 
-		public class ApplyData : IApplyData
-		{
-			public Color[][] textureColors;
-			public string[] textureNames;
-			public TextureFormat textureFormat;
+                public class ApplyData : IApplyData
+                {
+                        public Color[][] textureColors;
+                        public string[] textureNames;
+                        public TextureFormat textureFormat;
+                        public float textureBaseMapDistance;
 
-			public virtual void Apply (Terrain terrain)
-			{
-				if (textureColors==null  ||  textureColors.Length==0  ||  textureColors.AllNull()) return;
-				int resolution = (int)Mathf.Sqrt(textureColors.Any().Length);
+                        public virtual void Apply (Terrain terrain)
+                        {
+                                if (textureColors==null  ||  textureColors.Length==0  ||  textureColors.AllNull()) return;
+                                int resolution = (int)Mathf.Sqrt(textureColors.Any().Length);
 
 				DirectTexturesHolder holder = terrain.GetComponent<DirectTexturesHolder>();
 				if (holder == null)
@@ -699,14 +700,16 @@ namespace MapMagic.Nodes.MatrixGenerators {
 					newDict[texName] = tex; //it could be created from null
 				}
 
-				holder.textures = newDict;
-				holder.position = (Vector2D)terrain.transform.position;
-				holder.size = (Vector2D)terrain.terrainData.size;
-			}
+                                holder.textures = newDict;
+                                holder.position = (Vector2D)terrain.transform.position;
+                                holder.size = (Vector2D)terrain.terrainData.size;
+
+                                terrain.basemapDistance = textureBaseMapDistance;
+                        }
 
 
-			public static void CheckTexture (ref Texture2D tex, int resolution, TextureFormat format)
-			///Checks if texture has this resolution and format, and if not removes it and creates a new one
+                        public static void CheckTexture (ref Texture2D tex, int resolution, TextureFormat format)
+                        ///Checks if texture has this resolution and format, and if not removes it and creates a new one
 			{
 				if (tex==null)
 				{
@@ -726,12 +729,13 @@ namespace MapMagic.Nodes.MatrixGenerators {
 			}
 
 
-			public static ApplyData Empty
-			{get{
-				return new ApplyData() { 
-					textureColors = new Color[0][],
-					textureNames = new string[0]  };
-			}}
+                        public static ApplyData Empty
+                        {get{
+                                return new ApplyData() {
+                                        textureColors = new Color[0][],
+                                        textureNames = new string[0],
+                                        textureBaseMapDistance = 1000f  };
+                        }}
 
 			public int Resolution
 			{get{
