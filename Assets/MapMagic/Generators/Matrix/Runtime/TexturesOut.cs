@@ -650,10 +650,13 @@ namespace MapMagic.Nodes.MatrixGenerators {
 			
 			//pushing to apply
 			if (stop!=null && stop.stop) return;
-			var controlTexturesData = new ApplyData() {
-				textureColors = colors,
-				textureNames = colorNames,
-				textureFormat = TextureFormat.RGBA32 };
+                        var controlTexturesData = new ApplyData() {
+                                textureColors = colors,
+                                textureNames = colorNames,
+                                textureFormat = TextureFormat.RGBA32,
+                                // Terrain base maps are not compatible with custom control textures in URP.
+                                // Leave them effectively disabled to avoid black tiles appearing on generated terrains.
+                                textureBaseMapDistance = 10000000 }; // no base map
 
 			Graph.OnOutputFinalized?.Invoke(typeof(DirectTexturesOutput200), data, controlTexturesData, stop);
 			data.MarkApply(controlTexturesData);
