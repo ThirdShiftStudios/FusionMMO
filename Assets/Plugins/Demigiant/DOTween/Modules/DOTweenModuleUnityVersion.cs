@@ -90,7 +90,7 @@ namespace DG.Tweening
         public static CustomYieldInstruction WaitForCompletion(this Tween t, bool returnCustomYieldInstruction)
         {
             if (!t.active) {
-                if (Debugger.logPriority > 0) Debugger.LogInvalidTween(t);
+                if (Core.Debugger.logPriority > 0) Core.Debugger.LogInvalidTween(t);
                 return null;
             }
             return new DOTweenCYInstruction.WaitForCompletion(t);
@@ -104,7 +104,7 @@ namespace DG.Tweening
         public static CustomYieldInstruction WaitForRewind(this Tween t, bool returnCustomYieldInstruction)
         {
             if (!t.active) {
-                if (Debugger.logPriority > 0) Debugger.LogInvalidTween(t);
+                if (Core.Debugger.logPriority > 0) Core.Debugger.LogInvalidTween(t);
                 return null;
             }
             return new DOTweenCYInstruction.WaitForRewind(t);
@@ -118,7 +118,7 @@ namespace DG.Tweening
         public static CustomYieldInstruction WaitForKill(this Tween t, bool returnCustomYieldInstruction)
         {
             if (!t.active) {
-                if (Debugger.logPriority > 0) Debugger.LogInvalidTween(t);
+                if (Core.Debugger.logPriority > 0) Core.Debugger.LogInvalidTween(t);
                 return null;
             }
             return new DOTweenCYInstruction.WaitForKill(t);
@@ -133,7 +133,7 @@ namespace DG.Tweening
         public static CustomYieldInstruction WaitForElapsedLoops(this Tween t, int elapsedLoops, bool returnCustomYieldInstruction)
         {
             if (!t.active) {
-                if (Debugger.logPriority > 0) Debugger.LogInvalidTween(t);
+                if (Core.Debugger.logPriority > 0) Core.Debugger.LogInvalidTween(t);
                 return null;
             }
             return new DOTweenCYInstruction.WaitForElapsedLoops(t, elapsedLoops);
@@ -149,7 +149,7 @@ namespace DG.Tweening
         public static CustomYieldInstruction WaitForPosition(this Tween t, float position, bool returnCustomYieldInstruction)
         {
             if (!t.active) {
-                if (Debugger.logPriority > 0) Debugger.LogInvalidTween(t);
+                if (Core.Debugger.logPriority > 0) Core.Debugger.LogInvalidTween(t);
                 return null;
             }
             return new DOTweenCYInstruction.WaitForPosition(t, position);
@@ -164,7 +164,7 @@ namespace DG.Tweening
         public static CustomYieldInstruction WaitForStart(this Tween t, bool returnCustomYieldInstruction)
         {
             if (!t.active) {
-                if (Debugger.logPriority > 0) Debugger.LogInvalidTween(t);
+                if (Core.Debugger.logPriority > 0) Core.Debugger.LogInvalidTween(t);
                 return null;
             }
             return new DOTweenCYInstruction.WaitForStart(t);
@@ -188,7 +188,7 @@ namespace DG.Tweening
         public static TweenerCore<Vector2, Vector2, VectorOptions> DOOffset(this Material target, Vector2 endValue, int propertyID, float duration)
         {
             if (!target.HasProperty(propertyID)) {
-                if (Debugger.logPriority > 0) Debugger.LogMissingMaterialProperty(propertyID);
+                if (Core.Debugger.logPriority > 0) Core.Debugger.LogMissingMaterialProperty(propertyID);
                 return null;
             }
             TweenerCore<Vector2, Vector2, VectorOptions> t = DOTween.To(() => target.GetTextureOffset(propertyID), x => target.SetTextureOffset(propertyID, x), endValue, duration);
@@ -204,7 +204,7 @@ namespace DG.Tweening
         public static TweenerCore<Vector2, Vector2, VectorOptions> DOTiling(this Material target, Vector2 endValue, int propertyID, float duration)
         {
             if (!target.HasProperty(propertyID)) {
-                if (Debugger.logPriority > 0) Debugger.LogMissingMaterialProperty(propertyID);
+                if (Core.Debugger.logPriority > 0) Core.Debugger.LogMissingMaterialProperty(propertyID);
                 return null;
             }
             TweenerCore<Vector2, Vector2, VectorOptions> t = DOTween.To(() => target.GetTextureScale(propertyID), x => target.SetTextureScale(propertyID, x), endValue, duration);
@@ -228,7 +228,7 @@ namespace DG.Tweening
         public static async Task AsyncWaitForCompletion(this Tween t)
         {
             if (!t.active) {
-                if (Debugger.logPriority > 0) Debugger.LogInvalidTween(t);
+                if (Core.Debugger.logPriority > 0) Core.Debugger.LogInvalidTween(t);
                 return;
             }
             while (t.active && !t.IsComplete()) await Task.Yield();
@@ -242,7 +242,7 @@ namespace DG.Tweening
         public static async Task AsyncWaitForRewind(this Tween t)
         {
             if (!t.active) {
-                if (Debugger.logPriority > 0) Debugger.LogInvalidTween(t);
+                if (Core.Debugger.logPriority > 0) Core.Debugger.LogInvalidTween(t);
                 return;
             }
             while (t.active && (!t.playedOnce || t.position * (t.CompletedLoops() + 1) > 0)) await Task.Yield();
@@ -256,7 +256,7 @@ namespace DG.Tweening
         public static async Task AsyncWaitForKill(this Tween t)
         {
             if (!t.active) {
-                if (Debugger.logPriority > 0) Debugger.LogInvalidTween(t);
+                if (Core.Debugger.logPriority > 0) Core.Debugger.LogInvalidTween(t);
                 return;
             }
             while (t.active) await Task.Yield();
@@ -271,7 +271,7 @@ namespace DG.Tweening
         public static async Task AsyncWaitForElapsedLoops(this Tween t, int elapsedLoops)
         {
             if (!t.active) {
-                if (Debugger.logPriority > 0) Debugger.LogInvalidTween(t);
+                if (Core.Debugger.logPriority > 0) Core.Debugger.LogInvalidTween(t);
                 return;
             }
             while (t.active && t.CompletedLoops() < elapsedLoops) await Task.Yield();
@@ -287,7 +287,7 @@ namespace DG.Tweening
         public static async Task AsyncWaitForPosition(this Tween t, float position)
         {
             if (!t.active) {
-                if (Debugger.logPriority > 0) Debugger.LogInvalidTween(t);
+                if (Core.Debugger.logPriority > 0) Core.Debugger.LogInvalidTween(t);
                 return;
             }
             while (t.active && t.position * (t.CompletedLoops() + 1) < position) await Task.Yield();
@@ -301,7 +301,7 @@ namespace DG.Tweening
         public static async Task AsyncWaitForStart(this Tween t)
         {
             if (!t.active) {
-                if (Debugger.logPriority > 0) Debugger.LogInvalidTween(t);
+                if (Core.Debugger.logPriority > 0) Core.Debugger.LogInvalidTween(t);
                 return;
             }
             while (t.active && !t.playedOnce) await Task.Yield();

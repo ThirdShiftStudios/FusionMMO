@@ -1,0 +1,71 @@
+#taskbar
+{
+	position: absolute;
+	left: 0px;
+	top: 0px;
+	right: 0px;
+	bottom: auto;
+	height: 64px;
+	overflow: visible;
+	padding: 16px;
+	flex-direction: row;
+}
+
+#map-view
+{
+	position: absolute;
+	left: 0px;
+	top: 0px;
+	right: 0px;
+	bottom: 0px;
+}
+
+#search-area
+{
+	position: relative;
+	min-width: 200px;
+	width: 25%;
+	height: auto;
+}
+
+#debug-imgui
+{
+	position: absolute;
+	left: 0px;
+	bottom: 20px;
+	width: 800px;
+	height: auto;
+	color: rgb(0,0,0);
+	background-color: rgba(1,1,1,1);
+}
+
+#select-region-button
+{
+	margin-left: 4px;
+	margin-right: 4px;
+	width: 110px;
+}
+
+#help-button
+{
+	margin-left: 4px;
+	margin-right: 4px;
+	width: 32px;
+	height: 32px;
+}
+
+#bookmark-button
+{
+	margin-left: 4px;
+	margin-right: 4px;
+	width: 32px;
+	height: 32px;
+}
+
+#mouse-location-label
+{
+	position:absolute;
+	left: 8px;
+	bottom: 8px;
+	color: rgb(255,255,255);
+}

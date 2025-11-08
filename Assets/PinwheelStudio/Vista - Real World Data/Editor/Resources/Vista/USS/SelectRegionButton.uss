@@ -1,0 +1,27 @@
+SelectRegionButton
+{
+	margin: 0px;
+	border-left-width: 1px;
+	border-top-width: 0px;
+	border-bottom-width: 1px;
+	border-right-width: 1px;
+	border-top-left-radius: 8px;
+	border-top-right-radius: 8px;
+	border-bottom-left-radius: 8px;
+	border-bottom-right-radius: 8px;
+	border-color: rgb(16,85,153);
+	
+	background-color: rgb(20,110,200);
+	overflow: hidden;
+	-unity-font-style: bold;
+}
+
+SelectRegionButton:hover
+{
+	background-color: rgb(30,120,210);
+}
+
+SelectRegionButton:active
+{
+	background-color: rgb(16,85,153);
+}

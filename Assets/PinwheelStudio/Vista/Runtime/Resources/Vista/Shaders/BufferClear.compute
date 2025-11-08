@@ -1,0 +1,10 @@
+#pragma kernel Main
+
+RWStructuredBuffer<float> _Buffer;
+int _BaseIndex;
+
+[numthreads(8, 1, 1)]
+void Main(uint3 id: SV_DISPATCHTHREADID)
+{
+	_Buffer[_BaseIndex + id.x] = 0;
+}

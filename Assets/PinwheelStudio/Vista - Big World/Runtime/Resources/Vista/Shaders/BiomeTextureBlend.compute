@@ -1,0 +1,87 @@
+#pragma kernel BlendLinear
+#pragma kernel BlendAdditive
+#pragma kernel BlendSubtractive
+#pragma kernel BlendMax
+#pragma kernel BlendMin
+
+#pragma multi_compile_local _ SRC_IS_NULL
+#include "./Includes/ShaderIncludes.hlsl"
+#include SAMPLING_HLSL
+
+Texture2D _SrcTexture;
+RWTexture2D<float4> _DestTexture;
+Texture2D _BiomeMaskTexture;
+
+float2 _DestResolution;
+
+void GetValues(uint3 id, inout float4 destValue, inout float4 srcValue, inout float maskValue)
+{
+	float2 uv = float2(id.x / (_DestResolution.x - 1), id.y / (_DestResolution.y - 1));
+	destValue = _DestTexture[id.xy];
+	#if SRC_IS_NULL
+		srcValue = destValue;
+	#else
+		srcValue = _SrcTexture.SampleLevel(_SamplerPointClamp, uv, 0);
+	#endif
+	maskValue = _BiomeMaskTexture.SampleLevel(_SamplerPointClamp, uv, 0).r;
+}
+
+[numthreads(8, 8, 1)]
+void BlendLinear(uint3 id: SV_DISPATCHTHREADID)
+{
+	float4 destValue;
+	float4 srcValue;
+	float maskValue;
+	GetValues(id, destValue, srcValue, maskValue);
+
+	float4 blendValue = lerp(destValue, srcValue, maskValue);
+	_DestTexture[id.xy] = blendValue;
+}
+
+[numthreads(8, 8, 1)]
+void BlendAdditive(uint3 id: SV_DISPATCHTHREADID)
+{
+	float4 destValue;
+	float4 srcValue;
+	float maskValue;
+	GetValues(id, destValue, srcValue, maskValue);
+
+	float4 blendValue = lerp(destValue, destValue + srcValue, maskValue);
+	_DestTexture[id.xy] = blendValue;
+}
+
+[numthreads(8, 8, 1)]
+void BlendSubtractive(uint3 id: SV_DISPATCHTHREADID)
+{
+	float4 destValue;
+	float4 srcValue;
+	float maskValue;
+	GetValues(id, destValue, srcValue, maskValue);
+	
+	float4 blendValue = lerp(destValue, destValue - srcValue, maskValue);
+	_DestTexture[id.xy] = blendValue;
+}
+
+[numthreads(8, 8, 1)]
+void BlendMax(uint3 id: SV_DISPATCHTHREADID)
+{
+	float4 destValue;
+	float4 srcValue;
+	float maskValue;
+	GetValues(id, destValue, srcValue, maskValue);
+
+	float4 blendValue = lerp(destValue, max(destValue, srcValue), maskValue);
+	_DestTexture[id.xy] = blendValue;
+}
+
+[numthreads(8, 8, 1)]
+void BlendMin(uint3 id: SV_DISPATCHTHREADID)
+{
+	float4 destValue;
+	float4 srcValue;
+	float maskValue;
+	GetValues(id, destValue, srcValue, maskValue);
+
+	float4 blendValue = lerp(destValue, min(destValue, srcValue), maskValue);
+	_DestTexture[id.xy] = blendValue;
+}

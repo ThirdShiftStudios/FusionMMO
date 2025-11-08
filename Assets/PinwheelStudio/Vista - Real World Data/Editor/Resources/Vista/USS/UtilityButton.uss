@@ -1,0 +1,32 @@
+UtilityButton
+{
+	margin: 0px;
+	border-left-width: 1px;
+	border-top-width: 0px;
+	border-bottom-width: 1px;
+	border-right-width: 1px;
+	border-top-left-radius: 8px;
+	border-top-right-radius: 8px;
+	border-bottom-left-radius: 8px;
+	border-bottom-right-radius: 8px;
+	border-color: rgb(200,200,200);
+	
+	background-color: rgb(211,211,211);
+	overflow: hidden;
+	-unity-font-style: bold;
+}
+
+UtilityButton.unity-text-element
+{
+	color: rgb(45,45,45);
+}
+
+UtilityButton:hover
+{
+	background-color: rgb(221,221,221);
+}
+
+UtilityButton:active
+{
+	background-color: rgb(190,190,190);
+}
