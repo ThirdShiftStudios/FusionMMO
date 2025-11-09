@@ -1,6 +1,7 @@
 using DungeonArchitect;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityScene = UnityEngine.SceneManagement.Scene;
 
 namespace TPSBR
 {
@@ -16,7 +17,7 @@ namespace TPSBR
             OnSceneFinishedLoading -= HandleSceneFinishedLoading;
         }
 
-        private void HandleSceneFinishedLoading(Scene loadedScene)
+        private void HandleSceneFinishedLoading(UnityScene loadedScene)
         {
             if (loadedScene.IsValid() == false || loadedScene.isLoaded == false)
             {
@@ -39,7 +40,7 @@ namespace TPSBR
             dungeonManager.GenerateDungeonIfReady();
         }
 
-        private static NetworkedDungeonManager FindDungeonManager(Scene scene)
+        private static NetworkedDungeonManager FindDungeonManager(UnityScene scene)
         {
             foreach (var rootObject in scene.GetRootGameObjects())
             {

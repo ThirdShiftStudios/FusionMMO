@@ -2,6 +2,7 @@ using System;
 using Fusion;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityScene = UnityEngine.SceneManagement.Scene;
 
 namespace TPSBR
 {
@@ -28,7 +29,7 @@ namespace TPSBR
         private Agent _registeredAgent;
         private SceneRef _pendingSceneRef;
 
-        protected event Action<Scene> OnSceneFinishedLoading;
+        protected event Action<UnityScene> OnSceneFinishedLoading;
 
         public SceneContext Context
         {
