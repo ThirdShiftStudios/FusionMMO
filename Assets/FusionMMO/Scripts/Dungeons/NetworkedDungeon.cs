@@ -3,6 +3,7 @@ using DungeonArchitect;
 using Fusion;
 using TPSBR;
 using UnityEngine;
+using Pathfinding;
 
 namespace FusionMMO.Dungeons
 {
@@ -41,12 +42,15 @@ namespace FusionMMO.Dungeons
         private Dungeon _dungeon;
         private bool _dungeonGenerated;
         private DungeonSpawnPoint _spawnPoint;
+        [SerializeField]
+        private AstarPath _astarPath;
         private readonly List<PlayerRef> _pendingTeleportPlayers = new List<PlayerRef>(REQUEST_CAPACITY);
 
         private void Awake()
         {
             CacheDungeon();
             CacheSpawnPoint();
+            CacheAstarPath();
         }
 
         public override void Spawned()
@@ -54,6 +58,7 @@ namespace FusionMMO.Dungeons
             base.Spawned();
             CacheDungeon();
             CacheSpawnPoint();
+            CacheAstarPath();
             TryGenerateDungeon();
         }
 
@@ -152,6 +157,62 @@ namespace FusionMMO.Dungeons
             return _spawnPoint != null;
         }
 
+        private bool CacheAstarPath()
+        {
+            if (_astarPath != null)
+            {
+                return true;
+            }
+
+            _astarPath = GetComponentInChildren<AstarPath>(true);
+            return _astarPath != null;
+        }
+
+        private void UpdateAstarPath()
+        {
+            if (CacheAstarPath() == false)
+            {
+                return;
+            }
+
+            if (_dungeon == null)
+            {
+                return;
+            }
+
+            var dungeonBounds = DungeonUtils.GetDungeonBounds(_dungeon);
+            if (dungeonBounds.size == Vector3.zero)
+            {
+                return;
+            }
+
+            var data = _astarPath.data;
+            if (data == null || data.graphs == null)
+            {
+                return;
+            }
+
+            bool boundsUpdated = false;
+
+            foreach (var graph in data.graphs)
+            {
+                if (graph is NavmeshBase navmeshGraph)
+                {
+                    Vector3 size = dungeonBounds.size;
+                    size.y = Mathf.Max(size.y, 1f);
+
+                    navmeshGraph.forcedBoundsCenter = dungeonBounds.center;
+                    navmeshGraph.forcedBoundsSize = size;
+                    boundsUpdated = true;
+                }
+            }
+
+            if (boundsUpdated)
+            {
+                _astarPath.Scan();
+            }
+        }
+
         private void TryGenerateDungeon()
         {
             if (_dungeonReadyToGenerate == false)
@@ -171,6 +232,7 @@ namespace FusionMMO.Dungeons
 
             _dungeon.SetSeed(_seed);
             _dungeon.Build();
+            UpdateAstarPath();
 
             _lastSeedGenerated = _seed;
             _dungeonGenerated = true;
