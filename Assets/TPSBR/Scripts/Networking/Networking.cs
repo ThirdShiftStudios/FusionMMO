@@ -148,6 +148,8 @@ namespace TPSBR
                         if (isActiveAndEnabled == false)
                                 return;
 
+                        Log($"SetDungeonLoadingScreen(show={show}, additionalTime={additionalTime:F2})");
+
                         if (_dungeonLoadingCoroutine != null)
                         {
                                 StopCoroutine(_dungeonLoadingCoroutine);

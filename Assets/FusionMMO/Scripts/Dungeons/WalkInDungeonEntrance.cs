@@ -155,6 +155,7 @@ namespace FusionMMO.Dungeons
                 _isGeneratingDungeon = true;
                 QueueTeleportPlayer(playerRef);
                 ShowLoadingScreen(playerRef, 0f);
+                Debug.Log($"[WalkInDungeonEntrance] Starting dungeon generation for player {playerRef}.");
                 SpawnDungeon();
                 return;
             }
@@ -208,6 +209,8 @@ namespace FusionMMO.Dungeons
             UpdateCachedSpawnPoint();
 
             _isGeneratingDungeon = false;
+
+            Debug.Log("[WalkInDungeonEntrance] Dungeon generation completed.");
 
             TeleportPendingPlayers();
         }
@@ -287,6 +290,8 @@ namespace FusionMMO.Dungeons
             kcc.SetLookRotation(targetRotation, false, false);
             kcc.SetDynamicVelocity(Vector3.zero);
             kcc.SetKinematicVelocity(Vector3.zero);
+
+            Debug.Log($"[WalkInDungeonEntrance] Teleporting player {playerRef} to dungeon spawn.");
 
             ScheduleLoadingScreenHide(playerRef, loadingHideDelay);
             return true;
@@ -370,6 +375,8 @@ namespace FusionMMO.Dungeons
             CancelLoadingScreenHide(playerRef);
 
             _loadingScreenPlayers.Add(playerRef);
+
+            Debug.Log($"[WalkInDungeonEntrance] Showing loading screen for player {playerRef} (extra {additionalTime:F2}s).");
             RPC_SetDungeonLoadingScreen(playerRef, true, additionalTime);
         }
 
@@ -379,6 +386,7 @@ namespace FusionMMO.Dungeons
 
             if (_loadingScreenPlayers.Remove(playerRef) == true)
             {
+                Debug.Log($"[WalkInDungeonEntrance] Hiding loading screen for player {playerRef} (extra {additionalTime:F2}s).");
                 RPC_SetDungeonLoadingScreen(playerRef, false, additionalTime);
             }
         }
