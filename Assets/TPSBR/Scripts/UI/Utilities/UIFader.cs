@@ -33,6 +33,11 @@ namespace TPSBR.UI
 			if (_isFinished == false)
 			{
 				_resetValue = CanvasGroup.alpha;
+
+				if (Mathf.Approximately(_resetValue, FadeOutValue) == true && Mathf.Approximately(FadeOutValue, 0f) == true)
+				{
+					_resetValue = 1f;
+				}
 				_startValue = Direction == EFadeDirection.FadeIn ? FadeOutValue : _resetValue;
 				_targetValue = Direction == EFadeDirection.FadeIn ? _resetValue : FadeOutValue;
 				_time = -StartDelay;
