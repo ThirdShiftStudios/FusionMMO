@@ -21,6 +21,11 @@ namespace TPSBR
 			_isBusy = true;
 			_gameplayScene = scene.GetComponent<Scene>(true);
 
+			if(_gameplayScene == false)
+			{
+				Debug.LogError($"No Scene Component in {scene.name}");
+                yield break;
+			}
 			float contextTimeout = 20.0f;
 			while (_gameplayScene.ContextReady == false && contextTimeout > 0.0f)
 			{
