@@ -28,6 +28,8 @@ namespace TPSBR
         private Agent _registeredAgent;
         private SceneRef _pendingSceneRef;
 
+        protected event Action OnSceneFinishedLoading;
+
         public SceneContext Context
         {
             get => _context;
@@ -159,10 +161,13 @@ namespace TPSBR
 
             if (operation.IsValid == true)
             {
+                SceneSwitchMode completedMode = desiredMode;
+                SceneRef completedSceneRef = sceneRef;
                 operation.AddOnCompleted(_ =>
                 {
                     _switchRequested = false;
                     _pendingSceneRef = SceneRef.None;
+                    HandleSceneSwitchCompleted(completedSceneRef, completedMode, true, string.Empty);
                 });
             }
             else
@@ -198,10 +203,23 @@ namespace TPSBR
             _switchRequested = false;
             _pendingSceneRef = SceneRef.None;
 
+            HandleSceneSwitchCompleted(sceneRef, mode, success, message);
+        }
+
+        private void HandleSceneSwitchCompleted(SceneRef sceneRef, SceneSwitchMode mode, bool success, string message)
+        {
             if (success == false)
             {
                 Debug.LogWarning($"{nameof(SceneSwitcher)} on {name} failed to switch scene '{sceneRef}': {message}", this);
+                return;
             }
+
+            if (mode == SceneSwitchMode.Unload)
+            {
+                return;
+            }
+
+            OnSceneFinishedLoading?.Invoke();
         }
 
         private void OnDisable()

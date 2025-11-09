@@ -116,6 +116,11 @@ namespace DungeonArchitect
             _lastSeedGenerated = _seed;
         }
 
+        public void GenerateDungeonIfReady()
+        {
+            TryGenerateDungeon();
+        }
+
         private void CacheDungeonComponent()
         {
             if (_dungeon == null)
