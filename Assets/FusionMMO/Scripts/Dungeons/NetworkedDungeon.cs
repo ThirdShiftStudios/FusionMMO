@@ -99,29 +99,34 @@ namespace FusionMMO.Dungeons
             TryGenerateDungeon();
         }
 
-        public void SetPendingTeleportPlayer(PlayerRef playerRef)
+        public bool SetPendingTeleportPlayer(PlayerRef playerRef)
         {
             if (HasStateAuthority == false)
             {
-                return;
+                return false;
             }
 
             if (playerRef == PlayerRef.None)
             {
-                return;
+                return false;
             }
 
             if (IsTeleportAlreadyScheduled(playerRef))
             {
-                return;
+                return false;
             }
 
-            if (_pendingTeleportPlayers.Contains(playerRef) == false)
+            if (_pendingTeleportPlayers.Contains(playerRef))
             {
-                _pendingTeleportPlayers.Add(playerRef);
+                TryScheduleTeleport();
+                return false;
             }
+
+            _pendingTeleportPlayers.Add(playerRef);
 
             TryScheduleTeleport();
+
+            return true;
         }
 
         private bool CacheDungeon()

@@ -23,17 +23,13 @@ namespace FusionMMO.Dungeons
                 return;
             }
 
-            if (_spawnedDungeon != null)
-            {
-                return;
-            }
-
             if (_entrance == null || _dungeonPrefab == null || Runner == null)
             {
                 return;
             }
 
             float sqrActivationDistance = _activationDistance * _activationDistance;
+            bool queuedPlayer = false;
 
             foreach (var player in Runner.ActivePlayers)
             {
@@ -43,11 +39,16 @@ namespace FusionMMO.Dungeons
                 }
 
                 var playerComponent = playerObject.GetComponent<TPSBR.Player>();
-                if (playerComponent == false) { continue; }
-                var agent = playerComponent.ActiveAgent;
-                if (agent == false) { continue; }
+                if (playerComponent == null)
+                {
+                    continue;
+                }
 
-            
+                var agent = playerComponent.ActiveAgent;
+                if (agent == null)
+                {
+                    continue;
+                }
 
                 Vector3 toEntrance = agent.transform.position - _entrance.position;
                 if (toEntrance.sqrMagnitude > sqrActivationDistance)
@@ -55,16 +56,33 @@ namespace FusionMMO.Dungeons
                     continue;
                 }
 
-                SpawnDungeon(player);
-                break;
+                if (TryQueueDungeonEntry(player))
+                {
+                    queuedPlayer = true;
+                }
+            }
+
+            if (queuedPlayer)
+            {
+                RPC_ShowLoadingScene();
             }
         }
 
-        private void SpawnDungeon(PlayerRef playerRef)
+        private bool TryQueueDungeonEntry(PlayerRef playerRef)
+        {
+            if (_spawnedDungeon == null || _spawnedDungeon.Object == null)
+            {
+                return SpawnDungeon(playerRef);
+            }
+
+            return _spawnedDungeon.SetPendingTeleportPlayer(playerRef);
+        }
+
+        private bool SpawnDungeon(PlayerRef playerRef)
         {
             if (Runner == null || _dungeonPrefab == null)
             {
-                return;
+                return false;
             }
 
             Vector3 spawnPosition = new Vector3(1000f, 1000f, 1000f);
@@ -75,10 +93,10 @@ namespace FusionMMO.Dungeons
             if (_spawnedDungeon != null)
             {
                 _spawnedDungeon.RandomizeSeed();
-                _spawnedDungeon.SetPendingTeleportPlayer(playerRef);
+                return _spawnedDungeon.SetPendingTeleportPlayer(playerRef);
             }
 
-            RPC_ShowLoadingScene();
+            return false;
         }
 
         [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
