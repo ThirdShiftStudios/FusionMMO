@@ -42,13 +42,14 @@ namespace FusionMMO.Dungeons
                     continue;
                 }
 
-                Transform playerTransform = playerObject.transform;
-                if (playerTransform == null)
-                {
-                    continue;
-                }
+                var playerComponent = playerObject.GetComponent<TPSBR.Player>();
+                if (playerComponent == false) { continue; }
+                var agent = playerComponent.ActiveAgent;
+                if (agent == false) { continue; }
 
-                Vector3 toEntrance = playerTransform.position - _entrance.position;
+            
+
+                Vector3 toEntrance = agent.transform.position - _entrance.position;
                 if (toEntrance.sqrMagnitude > sqrActivationDistance)
                 {
                     continue;
