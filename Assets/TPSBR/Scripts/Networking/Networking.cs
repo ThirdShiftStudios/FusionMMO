@@ -748,7 +748,66 @@ namespace TPSBR
 
                 private IEnumerator DungeonLoadingRoutine(bool show, float additionalTime)
                 {
-                        yield return ShowLoadingSceneCoroutine(show, additionalTime);
+                        var loadingScene = SceneManager.GetSceneByName(_loadingScene);
+
+                        if (show == true && loadingScene.IsValid() == false)
+                        {
+                                yield return SceneManager.LoadSceneAsync(_loadingScene, LoadSceneMode.Additive);
+                                loadingScene = SceneManager.GetSceneByName(_loadingScene);
+                        }
+                        else if (show == false && loadingScene.IsValid() == false)
+                        {
+                                _dungeonLoadingCoroutine = null;
+                                yield break;
+                        }
+
+                        if (loadingScene.IsValid() == false)
+                        {
+                                _dungeonLoadingCoroutine = null;
+                                yield break;
+                        }
+
+                        yield return null;
+
+                        var loadingSceneObject = loadingScene.GetComponent<LoadingScene>();
+                        if (loadingSceneObject == null)
+                        {
+                                if (show == false)
+                                {
+                                        yield return SceneManager.UnloadSceneAsync(loadingScene);
+                                }
+
+                                _dungeonLoadingCoroutine = null;
+                                yield break;
+                        }
+
+                        if (show == false && additionalTime > 0f)
+                        {
+                                yield return new WaitForSeconds(additionalTime);
+                        }
+
+                        if (show == true)
+                        {
+                                loadingSceneObject.FadeOut();
+                        }
+                        else
+                        {
+                                loadingSceneObject.FadeIn();
+                        }
+
+                        while (loadingSceneObject.IsFading == true)
+                                yield return null;
+
+                        if (show == true && additionalTime > 0f)
+                        {
+                                yield return new WaitForSeconds(additionalTime);
+                        }
+
+                        if (show == false)
+                        {
+                                yield return SceneManager.UnloadSceneAsync(loadingScene);
+                        }
+
                         _dungeonLoadingCoroutine = null;
                 }
 
