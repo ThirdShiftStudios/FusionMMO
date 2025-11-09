@@ -58,11 +58,17 @@ namespace TPSBR
 
 		// PRIVATE MEMBERS
 
-		private Session    _pendingSession;
-		private Session    _currentSession;
-		private bool       _stopGameOnDisconnect;
-		private string     _loadingScene;
-		private Coroutine  _coroutine;
+                private Session    _pendingSession;
+                private Session    _currentSession;
+                private bool       _stopGameOnDisconnect;
+                private string     _loadingScene;
+                private Coroutine  _coroutine;
+                private Coroutine  _dungeonLoadingShowCoroutine;
+                private Coroutine  _dungeonLoadingHideCoroutine;
+                private string     _dungeonLoadingPreviousStatus;
+                private float      _dungeonLoadingHideDelay;
+                private int        _dungeonLoadingRequestId;
+                private bool       _isDungeonLoadingActive;
 
 		// PUBLIC METHODS
 
@@ -137,10 +143,70 @@ namespace TPSBR
 			_stopGameOnDisconnect = true;
 		}
 
-		public void ClearErrorStatus()
-		{
-			ErrorStatus = null;
-		}
+                public void ClearErrorStatus()
+                {
+                        ErrorStatus = null;
+                }
+
+                public void BeginDungeonGenerationLoading(float hideDelay, int requestId)
+                {
+                        if (gameObject.activeInHierarchy == false)
+                                return;
+
+                        _dungeonLoadingRequestId = requestId;
+                        _dungeonLoadingHideDelay = Mathf.Max(0f, hideDelay);
+
+                        if (_isDungeonLoadingActive == false)
+                        {
+                                _dungeonLoadingPreviousStatus = StatusDescription;
+                        }
+
+                        _isDungeonLoadingActive = true;
+                        StatusDescription = "Generating dungeon";
+
+                        if (_dungeonLoadingHideCoroutine != null)
+                        {
+                                StopCoroutine(_dungeonLoadingHideCoroutine);
+                                _dungeonLoadingHideCoroutine = null;
+                        }
+
+                        if (_dungeonLoadingShowCoroutine != null)
+                        {
+                                StopCoroutine(_dungeonLoadingShowCoroutine);
+                                _dungeonLoadingShowCoroutine = null;
+                        }
+
+                        _dungeonLoadingShowCoroutine = StartCoroutine(DungeonLoadingShowRoutine());
+                }
+
+                public void CompleteDungeonGenerationLoading(int requestId)
+                {
+                        if (_isDungeonLoadingActive == false)
+                                return;
+
+                        if (_dungeonLoadingRequestId != requestId)
+                                return;
+
+                        if (gameObject.activeInHierarchy == false)
+                        {
+                                _isDungeonLoadingActive = false;
+                                return;
+                        }
+
+                        if (_dungeonLoadingShowCoroutine != null)
+                        {
+                                StopCoroutine(_dungeonLoadingShowCoroutine);
+                                _dungeonLoadingShowCoroutine = null;
+                        }
+
+                        if (_dungeonLoadingHideCoroutine != null)
+                        {
+                                StopCoroutine(_dungeonLoadingHideCoroutine);
+                                _dungeonLoadingHideCoroutine = null;
+                        }
+
+                        _dungeonLoadingHideCoroutine = StartCoroutine(DungeonLoadingHideRoutine());
+                }
 
 		// MONOBEHAVIOUR
 
@@ -683,12 +749,28 @@ namespace TPSBR
 			Log($"DisconnectPeerCoroutine() finished");
 		}
 
-		private IEnumerator ShowLoadingSceneCoroutine(bool show, float additionalTime = 1f)
-		{
-			var loadingScene = SceneManager.GetSceneByName(_loadingScene);
+                private IEnumerator DungeonLoadingShowRoutine()
+                {
+                        yield return ShowLoadingSceneCoroutine(true, 0f);
+                        _dungeonLoadingShowCoroutine = null;
+                }
 
-			if (loadingScene.IsValid() == false)
-			{
+                private IEnumerator DungeonLoadingHideRoutine()
+                {
+                        yield return ShowLoadingSceneCoroutine(false, _dungeonLoadingHideDelay);
+
+                        StatusDescription = _dungeonLoadingPreviousStatus;
+                        _dungeonLoadingPreviousStatus = null;
+                        _isDungeonLoadingActive = false;
+                        _dungeonLoadingHideCoroutine = null;
+                }
+
+                private IEnumerator ShowLoadingSceneCoroutine(bool show, float additionalTime = 1f)
+                {
+                        var loadingScene = SceneManager.GetSceneByName(_loadingScene);
+
+                        if (loadingScene.IsValid() == false)
+                        {
 				yield return SceneManager.LoadSceneAsync(_loadingScene, LoadSceneMode.Additive);
 				loadingScene = SceneManager.GetSceneByName(_loadingScene);
 			}

@@ -132,6 +132,22 @@ namespace TPSBR
                         }
                 }
 
+                public void RequestDungeonLoadingScreen(float hideDelay, int requestId)
+                {
+                        if (HasStateAuthority == false)
+                                return;
+
+                        RPC_RequestDungeonLoadingScreen(hideDelay, requestId);
+                }
+
+                public void NotifyDungeonGenerationComplete(int requestId)
+                {
+                        if (HasStateAuthority == false)
+                                return;
+
+                        RPC_NotifyDungeonGenerationComplete(requestId);
+                }
+
                 public void OnReconnect(Player newPlayer)
                 {
                         UserID            = newPlayer.UserID;
@@ -341,6 +357,24 @@ namespace TPSBR
 
                         IExperienceGiver experienceGiver = hasExperiencePosition == true ? new StaticExperienceGiver(experiencePosition) : null;
                         Context.PlayerData.AddExperience(amount, experienceGiver);
+                }
+
+                [Rpc(RpcSources.StateAuthority, RpcTargets.InputAuthority, Channel = RpcChannel.Reliable)]
+                private void RPC_RequestDungeonLoadingScreen(float hideDelay, int requestId)
+                {
+                        if (Global.Networking == null)
+                                return;
+
+                        Global.Networking.BeginDungeonGenerationLoading(hideDelay, requestId);
+                }
+
+                [Rpc(RpcSources.StateAuthority, RpcTargets.InputAuthority, Channel = RpcChannel.Reliable)]
+                private void RPC_NotifyDungeonGenerationComplete(int requestId)
+                {
+                        if (Global.Networking == null)
+                                return;
+
+                        Global.Networking.CompleteDungeonGenerationLoading(requestId);
                 }
 
                 // DEBUG

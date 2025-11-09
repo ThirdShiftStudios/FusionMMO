@@ -1,3 +1,4 @@
+using System;
 using DungeonArchitect;
 using Fusion;
 using UnityEngine;
@@ -15,6 +16,10 @@ namespace FusionMMO.Dungeons
 
         private int _lastSeedGenerated = -1;
         private Dungeon _dungeon;
+
+        public event Action<NetworkedDungeon> DungeonGenerated;
+
+        public bool IsGenerated => _dungeonReadyToGenerate && _lastSeedGenerated == _seed;
 
         private void Awake()
         {
@@ -91,6 +96,13 @@ namespace FusionMMO.Dungeons
             _dungeon.Build();
 
             _lastSeedGenerated = _seed;
+
+            NotifyDungeonGenerated();
+        }
+
+        private void NotifyDungeonGenerated()
+        {
+            DungeonGenerated?.Invoke(this);
         }
     }
 }
