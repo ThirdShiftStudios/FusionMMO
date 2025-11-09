@@ -64,6 +64,7 @@ namespace TPSBR
 		private string     _loadingScene;
                 private Coroutine  _coroutine;
                 private Coroutine  _loadingSceneCoroutine;
+                private Sprite     _pendingLoadingSprite;
 
 		// PUBLIC METHODS
 
@@ -140,6 +141,11 @@ namespace TPSBR
                         }
 
                         _loadingSceneCoroutine = StartCoroutine(ShowLoadingSceneCoroutine(show, additionalTime));
+                }
+
+                public void SetLoadingSceneSprite(Sprite sprite)
+                {
+                        _pendingLoadingSprite = sprite;
                 }
 
 		public void StopGameOnDisconnect()
@@ -713,13 +719,15 @@ namespace TPSBR
 
 			yield return null;
 
-			var loadingSceneObject = loadingScene.GetComponent<LoadingScene>();
-			if (loadingSceneObject != null)
-			{
-				if (show == true)
-				{
-					loadingSceneObject.FadeIn();
-				}
+                        var loadingSceneObject = loadingScene.GetComponent<LoadingScene>();
+                        if (loadingSceneObject != null)
+                        {
+                                loadingSceneObject.SetLoadingSprite(_pendingLoadingSprite);
+
+                                if (show == true)
+                                {
+                                        loadingSceneObject.FadeIn();
+                                }
 				else
 				{
 					loadingSceneObject.FadeOut();

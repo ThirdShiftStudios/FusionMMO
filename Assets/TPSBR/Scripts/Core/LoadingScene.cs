@@ -1,6 +1,7 @@
 using TPSBR.UI;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.UI;
 using TMPro;
 
 namespace TPSBR
@@ -22,29 +23,41 @@ namespace TPSBR
 		[SerializeField]
 		private TextMeshProUGUI _statusDescription;
 		[SerializeField]
-		private UIYesNoDialogView _dialog;
+                private UIYesNoDialogView _dialog;
+
+                [SerializeField]
+                private Image _loadingImage;
 
 		private UIFader _activeFader;
 
 		// PUBLIC METHODS
 
-		public void FadeIn()
-		{
-			_fadeInObject.SetActive(true);
-			_fadeOutObject.SetActive(false);
+                public void FadeIn()
+                {
+                        _fadeInObject.SetActive(true);
+                        _fadeOutObject.SetActive(false);
 
-			_activeFader = _fadeInObject;
-		}
+                        _activeFader = _fadeInObject;
+                }
 
-		public void FadeOut()
+                public void FadeOut()
 		{
 			_dialog.Close_Internal();
 
 			_fadeInObject.SetActive(false);
 			_fadeOutObject.SetActive(true);
 
-			_activeFader = _fadeOutObject;
-		}
+                        _activeFader = _fadeOutObject;
+                }
+
+                public void SetLoadingSprite(Sprite sprite)
+                {
+                        if (_loadingImage == null)
+                                return;
+
+                        _loadingImage.sprite  = sprite;
+                        _loadingImage.enabled = sprite != null;
+                }
 
 		// MONOBEHAVIOUR
 

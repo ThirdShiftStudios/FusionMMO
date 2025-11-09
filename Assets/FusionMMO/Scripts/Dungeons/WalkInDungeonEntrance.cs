@@ -1,4 +1,5 @@
 using Fusion;
+using FusionMMO.Loading;
 using UnityEngine;
 
 namespace FusionMMO.Dungeons
@@ -13,6 +14,9 @@ namespace FusionMMO.Dungeons
 
         [SerializeField]
         private float _activationDistance = 5f;
+
+        [SerializeField]
+        private LoadingScreenDefinition _loadingScreenDefinition;
 
         private NetworkedDungeon _spawnedDungeon;
 
@@ -103,6 +107,15 @@ namespace FusionMMO.Dungeons
             var networking = TPSBR.Global.Networking;
             if (networking != null)
             {
+                if (_loadingScreenDefinition != null)
+                {
+                    var loadingSprite = _loadingScreenDefinition.GetRandomLoadingScreen();
+                    if (loadingSprite != null)
+                    {
+                        networking.SetLoadingSceneSprite(loadingSprite);
+                    }
+                }
+
                 networking.RequestLoadingScene(true);
             }
         }
