@@ -26,6 +26,8 @@ namespace FusionMMO.Dungeons
         private Vector3 _activationOrigin;
         private bool _activationOriginInitialized;
         private bool _isGeneratingDungeon;
+        private bool _localImmediateLoadingActive;
+        private bool _authoritativeLoadingActive;
 
         public override void Spawned()
         {
@@ -35,12 +37,17 @@ namespace FusionMMO.Dungeons
 
         public override void FixedUpdateNetwork()
         {
+            CacheActivationOrigin();
+
+            if (Runner != null)
+            {
+                UpdateLocalPlayerLoadingPreview();
+            }
+
             if (HasStateAuthority == false)
             {
                 return;
             }
-
-            CacheActivationOrigin();
 
             if (_entrance == null || _dungeonPrefab == null || Runner == null)
             {
@@ -92,6 +99,11 @@ namespace FusionMMO.Dungeons
             {
                 _spawnedDungeon.DungeonGenerated -= OnDungeonGenerated;
             }
+
+            if (_localImmediateLoadingActive == true || _authoritativeLoadingActive == true)
+            {
+                ForceHideLocalLoadingScreen();
+            }
         }
 
         private void CacheActivationOrigin()
@@ -133,7 +145,9 @@ namespace FusionMMO.Dungeons
                 return;
             }
 
-            if (TryTeleportPlayer(playerRef, playerComponent, 0f) == false)
+            ShowLoadingScreen(playerRef, 0f);
+
+            if (TryTeleportPlayer(playerRef, playerComponent, LoadingScreenHideDelay) == false)
             {
                 QueueTeleportPlayer(playerRef);
             }
@@ -368,6 +382,122 @@ namespace FusionMMO.Dungeons
             }
 
             networking.SetDungeonLoadingScreen(show, additionalTime);
+
+            if (show == true)
+            {
+                _authoritativeLoadingActive = true;
+                _localImmediateLoadingActive = false;
+            }
+            else
+            {
+                _authoritativeLoadingActive = false;
+                _localImmediateLoadingActive = false;
+            }
+        }
+
+        private void UpdateLocalPlayerLoadingPreview()
+        {
+            if (_entrance == null)
+            {
+                return;
+            }
+
+            PlayerRef localPlayer = Runner.LocalPlayer;
+            if (localPlayer == PlayerRef.None)
+            {
+                return;
+            }
+
+            if (Runner.TryGetPlayerObject(localPlayer, out var playerObject) == false || playerObject == null)
+            {
+                return;
+            }
+
+            var playerComponent = playerObject.GetComponent<Player>();
+            var agent = playerComponent != null ? playerComponent.ActiveAgent : null;
+            if (agent == null)
+            {
+                return;
+            }
+
+            float sqrActivationDistance = _activationDistance * _activationDistance;
+            Vector3 toEntrance = agent.transform.position - _activationOrigin;
+            bool isInside = toEntrance.sqrMagnitude <= sqrActivationDistance;
+
+            if (isInside == true)
+            {
+                if (_authoritativeLoadingActive == false && _localImmediateLoadingActive == false)
+                {
+                    ShowLocalImmediateLoadingScreen();
+                }
+            }
+            else
+            {
+                if (_authoritativeLoadingActive == false && _localImmediateLoadingActive == true)
+                {
+                    HideLocalImmediateLoadingScreen();
+                }
+            }
+        }
+
+        private void ShowLocalImmediateLoadingScreen()
+        {
+            if (_localImmediateLoadingActive == true)
+            {
+                return;
+            }
+
+            var networking = Global.Networking;
+            if (networking == null)
+            {
+                return;
+            }
+
+            networking.SetDungeonLoadingScreen(true, 0f);
+            _localImmediateLoadingActive = true;
+        }
+
+        private void HideLocalImmediateLoadingScreen()
+        {
+            if (_localImmediateLoadingActive == false)
+            {
+                return;
+            }
+
+            var networking = Global.Networking;
+            if (networking != null)
+            {
+                networking.SetDungeonLoadingScreen(false, 0f);
+            }
+
+            _localImmediateLoadingActive = false;
+        }
+
+        private void ForceHideLocalLoadingScreen()
+        {
+            if (Runner == null)
+            {
+                _localImmediateLoadingActive = false;
+                _authoritativeLoadingActive = false;
+                return;
+            }
+
+            PlayerRef localPlayer = Runner.LocalPlayer;
+            if (localPlayer == PlayerRef.None)
+            {
+                _localImmediateLoadingActive = false;
+                _authoritativeLoadingActive = false;
+                return;
+            }
+
+            var networking = Global.Networking;
+            if (networking != null)
+            {
+                networking.SetDungeonLoadingScreen(false, 0f);
+            }
+
+            _localImmediateLoadingActive = false;
+            _authoritativeLoadingActive = false;
         }
     }
 }
