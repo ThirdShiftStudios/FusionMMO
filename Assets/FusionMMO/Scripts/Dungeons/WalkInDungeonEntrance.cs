@@ -8,6 +8,7 @@ namespace FusionMMO.Dungeons
     public class WalkInDungeonEntrance : NetworkBehaviour
     {
         private const float LoadingScreenHideDelay = 3f;
+        private const float LocalPreviewHideGrace = 0.5f;
 
         [SerializeField]
         private Transform _entrance;
@@ -30,6 +31,7 @@ namespace FusionMMO.Dungeons
         private bool _isGeneratingDungeon;
         private bool _localImmediateLoadingActive;
         private bool _authoritativeLoadingActive;
+        private float _localImmediateHideTimer;
 
         public override void Spawned()
         {
@@ -367,10 +369,8 @@ namespace FusionMMO.Dungeons
         {
             CancelLoadingScreenHide(playerRef);
 
-            if (_loadingScreenPlayers.Add(playerRef) == true)
-            {
-                RPC_SetDungeonLoadingScreen(playerRef, true, additionalTime);
-            }
+            _loadingScreenPlayers.Add(playerRef);
+            RPC_SetDungeonLoadingScreen(playerRef, true, additionalTime);
         }
 
         private void HideLoadingScreen(PlayerRef playerRef, float additionalTime)
@@ -468,11 +468,13 @@ namespace FusionMMO.Dungeons
             {
                 _authoritativeLoadingActive = true;
                 _localImmediateLoadingActive = false;
+                _localImmediateHideTimer = 0f;
             }
             else
             {
                 _authoritativeLoadingActive = false;
                 _localImmediateLoadingActive = false;
+                _localImmediateHideTimer = 0f;
             }
         }
 
@@ -507,17 +509,26 @@ namespace FusionMMO.Dungeons
 
             if (isInside == true)
             {
+                _localImmediateHideTimer = 0f;
+
                 if (_authoritativeLoadingActive == false && _localImmediateLoadingActive == false)
                 {
                     ShowLocalImmediateLoadingScreen();
                 }
             }
-            else
+            else if (_authoritativeLoadingActive == false && _localImmediateLoadingActive == true)
             {
-                if (_authoritativeLoadingActive == false && _localImmediateLoadingActive == true)
+                _localImmediateHideTimer += Runner.DeltaTime;
+
+                if (_localImmediateHideTimer >= LocalPreviewHideGrace)
                 {
                     HideLocalImmediateLoadingScreen();
+                    _localImmediateHideTimer = 0f;
                 }
+            }
+            else
+            {
+                _localImmediateHideTimer = 0f;
             }
         }
 
@@ -536,6 +547,7 @@ namespace FusionMMO.Dungeons
 
             networking.SetDungeonLoadingScreen(true, 0f);
             _localImmediateLoadingActive = true;
+            _localImmediateHideTimer = 0f;
         }
 
         private void HideLocalImmediateLoadingScreen()
@@ -552,6 +564,7 @@ namespace FusionMMO.Dungeons
             }
 
             _localImmediateLoadingActive = false;
+            _localImmediateHideTimer = 0f;
         }
 
         private void ForceHideLocalLoadingScreen()
@@ -560,6 +573,7 @@ namespace FusionMMO.Dungeons
             {
                 _localImmediateLoadingActive = false;
                 _authoritativeLoadingActive = false;
+                _localImmediateHideTimer = 0f;
                 return;
             }
 
@@ -568,6 +582,7 @@ namespace FusionMMO.Dungeons
             {
                 _localImmediateLoadingActive = false;
                 _authoritativeLoadingActive = false;
+                _localImmediateHideTimer = 0f;
                 return;
             }
 
@@ -579,6 +594,7 @@ namespace FusionMMO.Dungeons
 
             _localImmediateLoadingActive = false;
             _authoritativeLoadingActive = false;
+            _localImmediateHideTimer = 0f;
         }
     }
 }
