@@ -76,6 +76,18 @@ namespace FusionMMO.Dungeons
             {
                 _spawnedDungeon.RandomizeSeed();
             }
+
+            RPC_ShowLoadingScene();
+        }
+
+        [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+        private void RPC_ShowLoadingScene()
+        {
+            var networking = TPSBR.Global.Networking;
+            if (networking != null)
+            {
+                networking.RequestLoadingScene(true);
+            }
         }
     }
 }

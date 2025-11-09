@@ -62,7 +62,8 @@ namespace TPSBR
 		private Session    _currentSession;
 		private bool       _stopGameOnDisconnect;
 		private string     _loadingScene;
-		private Coroutine  _coroutine;
+                private Coroutine  _coroutine;
+                private Coroutine  _loadingSceneCoroutine;
 
 		// PUBLIC METHODS
 
@@ -115,20 +116,31 @@ namespace TPSBR
 			Log($"StartGame() UserID:{request.UserID} GameMode:{request.GameMode} DisplayName:{request.DisplayName} SessionName:{request.SessionName} ScenePath:{request.ScenePath} GameplayType:{request.GameplayType} MaxPlayers:{request.MaxPlayers} ExtraPeers:{request.ExtraPeers} CustomLobby:{request.CustomLobby}");
 		}
 
-		public void StopGame(string errorStatus = null)
-		{
-			Log($"StopGame()");
+                public void StopGame(string errorStatus = null)
+                {
+                        Log($"StopGame()");
 
-			_pendingSession       = null;
-			_stopGameOnDisconnect = false;
+                        _pendingSession       = null;
+                        _stopGameOnDisconnect = false;
 
 			if (_currentSession != null)
 			{
 				_currentSession.ConnectionRequested = false;
 			}
 
-			ErrorStatus = errorStatus;
-		}
+                        ErrorStatus = errorStatus;
+                }
+
+                public void RequestLoadingScene(bool show, float additionalTime = 1f)
+                {
+                        if (_loadingSceneCoroutine != null)
+                        {
+                                StopCoroutine(_loadingSceneCoroutine);
+                                _loadingSceneCoroutine = null;
+                        }
+
+                        _loadingSceneCoroutine = StartCoroutine(ShowLoadingSceneCoroutine(show, additionalTime));
+                }
 
 		public void StopGameOnDisconnect()
 		{
