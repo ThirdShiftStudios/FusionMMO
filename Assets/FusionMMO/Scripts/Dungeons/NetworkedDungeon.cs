@@ -1,4 +1,3 @@
-using System.Collections;
 using DungeonArchitect;
 using Fusion;
 using TPSBR;
@@ -6,6 +5,13 @@ using UnityEngine;
 
 namespace FusionMMO.Dungeons
 {
+    public struct TeleportRequest : INetworkStruct
+    {
+        public PlayerRef Player;
+        public int TeleportTick;
+        public NetworkBool IsActive;
+    }
+
     [RequireComponent(typeof(Dungeon))]
     public class NetworkedDungeon : NetworkBehaviour
     {
@@ -15,22 +21,33 @@ namespace FusionMMO.Dungeons
         [Networked]
         private NetworkBool _dungeonReadyToGenerate { get; set; }
 
+        [Networked]
+        private TeleportRequest _teleportRequest { get; set; }
+
         private int _lastSeedGenerated = -1;
         private Dungeon _dungeon;
         private PlayerRef _pendingTeleportPlayer = PlayerRef.None;
         private bool _dungeonGenerated;
-        private Coroutine _teleportCoroutine;
+        private DungeonSpawnPoint _spawnPoint;
 
         private void Awake()
         {
             CacheDungeon();
+            CacheSpawnPoint();
         }
 
         public override void Spawned()
         {
             base.Spawned();
             CacheDungeon();
+            CacheSpawnPoint();
             TryGenerateDungeon();
+        }
+
+        public override void FixedUpdateNetwork()
+        {
+            base.FixedUpdateNetwork();
+            ProcessTeleportRequest();
         }
 
         public override void Render()
@@ -62,6 +79,7 @@ namespace FusionMMO.Dungeons
 
             _dungeonGenerated = false;
             _dungeonReadyToGenerate = true;
+            _teleportRequest = default;
             TryGenerateDungeon();
         }
 
@@ -90,6 +108,17 @@ namespace FusionMMO.Dungeons
 
             _dungeon = GetComponent<Dungeon>();
             return _dungeon != null;
+        }
+
+        private bool CacheSpawnPoint()
+        {
+            if (_spawnPoint != null)
+            {
+                return true;
+            }
+
+            _spawnPoint = GetComponentInChildren<DungeonSpawnPoint>();
+            return _spawnPoint != null;
         }
 
         private void TryGenerateDungeon()
@@ -134,75 +163,95 @@ namespace FusionMMO.Dungeons
                 return;
             }
 
-            if (_teleportCoroutine != null)
-            {
-                return;
-            }
-
-            DungeonSpawnPoint spawnPoint = GetComponentInChildren<DungeonSpawnPoint>();
-            if (spawnPoint == null)
+            if (CacheSpawnPoint() == false)
             {
                 Debug.LogWarning($"{nameof(DungeonSpawnPoint)} not found under {nameof(NetworkedDungeon)}.", this);
                 return;
             }
 
-            _teleportCoroutine = StartCoroutine(TeleportPlayerAfterDelay(_pendingTeleportPlayer, spawnPoint));
+            TeleportRequest request = _teleportRequest;
+            if (request.IsActive)
+            {
+                return;
+            }
+
+            if (Runner == null)
+            {
+                return;
+            }
+
+            int tickRate = TickRate.Resolve(Runner.Config.Simulation.TickRateSelection).Server;
+            int teleportTick = Runner.Tick + tickRate * 3;
+
+            request.Player = _pendingTeleportPlayer;
+            request.TeleportTick = teleportTick;
+            request.IsActive = true;
+
+            _teleportRequest = request;
         }
 
-        private IEnumerator TeleportPlayerAfterDelay(PlayerRef playerRef, DungeonSpawnPoint spawnPoint)
+        private void ProcessTeleportRequest()
         {
-            yield return new WaitForSeconds(3f);
-
-            if (Runner == null || HasStateAuthority == false)
+            if (HasStateAuthority == false || Runner == null)
             {
-                _teleportCoroutine = null;
-                yield break;
+                return;
             }
 
-            if (spawnPoint == null)
+            TeleportRequest request = _teleportRequest;
+            if (request.IsActive == false)
             {
-                _teleportCoroutine = null;
-                yield break;
+                return;
             }
 
-            if (Runner.TryGetPlayerObject(playerRef, out var playerObject) == false || playerObject == null)
+            if (Runner.Tick < request.TeleportTick)
             {
-                _teleportCoroutine = null;
-                yield break;
+                return;
+            }
+
+            if (CacheSpawnPoint() == false)
+            {
+                Debug.LogWarning($"{nameof(DungeonSpawnPoint)} not found under {nameof(NetworkedDungeon)}.", this);
+                _teleportRequest = default;
+                _pendingTeleportPlayer = PlayerRef.None;
+                return;
+            }
+
+            if (Runner.TryGetPlayerObject(request.Player, out var playerObject) == false || playerObject == null)
+            {
+                return;
             }
 
             var player = playerObject.GetComponent<TPSBR.Player>();
             if (player == null)
             {
-                _teleportCoroutine = null;
-                yield break;
+                _teleportRequest = default;
+                _pendingTeleportPlayer = PlayerRef.None;
+                return;
             }
 
             var agent = player.ActiveAgent;
             if (agent == null)
             {
-                _teleportCoroutine = null;
-                yield break;
+                return;
             }
 
             var character = agent.Character;
             if (character == null)
             {
-                _teleportCoroutine = null;
-                yield break;
+                return;
             }
 
             var controller = character.CharacterController;
             if (controller != null)
             {
-                controller.SetPosition(spawnPoint.transform.position);
-                controller.SetLookRotation(spawnPoint.transform.rotation);
+                controller.SetPosition(_spawnPoint.transform.position);
+                controller.SetLookRotation(_spawnPoint.transform.rotation);
             }
 
-            agent.transform.SetPositionAndRotation(spawnPoint.transform.position, spawnPoint.transform.rotation);
+            agent.transform.SetPositionAndRotation(_spawnPoint.transform.position, _spawnPoint.transform.rotation);
 
+            _teleportRequest = default;
             _pendingTeleportPlayer = PlayerRef.None;
-            _teleportCoroutine = null;
         }
     }
 }
