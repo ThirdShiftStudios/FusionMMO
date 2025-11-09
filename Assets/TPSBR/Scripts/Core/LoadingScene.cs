@@ -48,13 +48,25 @@ namespace TPSBR
 
 		// MONOBEHAVIOUR
 
-		protected void Awake()
-		{
-			_fadeInObject.SetActive(false);
-			_fadeOutObject.SetActive(false);
+        protected void Awake()
+        {
+                _dialog.Initialize(null, null);
+        }
 
-			_dialog.Initialize(null, null);
-		}
+        protected void Start()
+        {
+                if (_fadeInObject != null)
+                {
+                        _fadeInObject.SetActive(false);
+                }
+
+                if (_fadeOutObject != null)
+                {
+                        _fadeOutObject.SetActive(false);
+                }
+
+                _activeFader = null;
+        }
 
 		protected void Update()
 		{
