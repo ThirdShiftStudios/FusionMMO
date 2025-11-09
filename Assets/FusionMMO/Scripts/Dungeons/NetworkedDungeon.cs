@@ -12,6 +12,12 @@ namespace FusionMMO.Dungeons
         public NetworkBool IsActive;
     }
 
+    public struct LoadingSceneRequest : INetworkStruct
+    {
+        public int HideTick;
+        public NetworkBool IsActive;
+    }
+
     [RequireComponent(typeof(Dungeon))]
     public class NetworkedDungeon : NetworkBehaviour
     {
@@ -23,6 +29,9 @@ namespace FusionMMO.Dungeons
 
         [Networked]
         private TeleportRequest _teleportRequest { get; set; }
+
+        [Networked]
+        private LoadingSceneRequest _loadingSceneRequest { get; set; }
 
         private int _lastSeedGenerated = -1;
         private Dungeon _dungeon;
@@ -48,6 +57,7 @@ namespace FusionMMO.Dungeons
         {
             base.FixedUpdateNetwork();
             ProcessTeleportRequest();
+            ProcessLoadingSceneRequest();
         }
 
         public override void Render()
@@ -80,6 +90,7 @@ namespace FusionMMO.Dungeons
             _dungeonGenerated = false;
             _dungeonReadyToGenerate = true;
             _teleportRequest = default;
+            _loadingSceneRequest = default;
             TryGenerateDungeon();
         }
 
@@ -250,8 +261,59 @@ namespace FusionMMO.Dungeons
 
             agent.transform.SetPositionAndRotation(_spawnPoint.transform.position, _spawnPoint.transform.rotation);
 
+            ScheduleLoadingSceneHide();
+
             _teleportRequest = default;
             _pendingTeleportPlayer = PlayerRef.None;
+        }
+
+        private void ScheduleLoadingSceneHide()
+        {
+            if (Runner == null)
+            {
+                return;
+            }
+
+            int tickRate = TickRate.Resolve(Runner.Config.Simulation.TickRateSelection).Server;
+
+            LoadingSceneRequest request = _loadingSceneRequest;
+            request.HideTick = Runner.Tick + tickRate * 3;
+            request.IsActive = true;
+
+            _loadingSceneRequest = request;
+        }
+
+        private void ProcessLoadingSceneRequest()
+        {
+            if (HasStateAuthority == false || Runner == null)
+            {
+                return;
+            }
+
+            LoadingSceneRequest request = _loadingSceneRequest;
+            if (request.IsActive == false)
+            {
+                return;
+            }
+
+            if (Runner.Tick < request.HideTick)
+            {
+                return;
+            }
+
+            _loadingSceneRequest = default;
+
+            RPC_HideLoadingScene();
+        }
+
+        [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+        private void RPC_HideLoadingScene()
+        {
+            var networking = TPSBR.Global.Networking;
+            if (networking != null)
+            {
+                networking.RequestLoadingScene(false);
+            }
         }
     }
 }
