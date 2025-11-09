@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using DungeonArchitect;
 using Fusion;
 using TPSBR;
@@ -21,23 +22,25 @@ namespace FusionMMO.Dungeons
     [RequireComponent(typeof(Dungeon))]
     public class NetworkedDungeon : NetworkBehaviour
     {
+        private const int REQUEST_CAPACITY = 16;
+
         [Networked]
         private int _seed { get; set; }
 
         [Networked]
         private NetworkBool _dungeonReadyToGenerate { get; set; }
 
-        [Networked]
-        private TeleportRequest _teleportRequest { get; set; }
+        [Networked, Capacity(REQUEST_CAPACITY)]
+        private NetworkArray<TeleportRequest> _teleportRequests { get; }
 
-        [Networked]
-        private LoadingSceneRequest _loadingSceneRequest { get; set; }
+        [Networked, Capacity(REQUEST_CAPACITY)]
+        private NetworkArray<LoadingSceneRequest> _loadingSceneRequests { get; }
 
         private int _lastSeedGenerated = -1;
         private Dungeon _dungeon;
-        private PlayerRef _pendingTeleportPlayer = PlayerRef.None;
         private bool _dungeonGenerated;
         private DungeonSpawnPoint _spawnPoint;
+        private readonly List<PlayerRef> _pendingTeleportPlayers = new List<PlayerRef>(REQUEST_CAPACITY);
 
         private void Awake()
         {
@@ -56,6 +59,7 @@ namespace FusionMMO.Dungeons
         public override void FixedUpdateNetwork()
         {
             base.FixedUpdateNetwork();
+            TryScheduleTeleport();
             ProcessTeleportRequest();
             ProcessLoadingSceneRequest();
         }
@@ -89,8 +93,9 @@ namespace FusionMMO.Dungeons
 
             _dungeonGenerated = false;
             _dungeonReadyToGenerate = true;
-            _teleportRequest = default;
-            _loadingSceneRequest = default;
+            ClearTeleportRequests();
+            ClearLoadingSceneRequests();
+            _pendingTeleportPlayers.Clear();
             TryGenerateDungeon();
         }
 
@@ -106,7 +111,16 @@ namespace FusionMMO.Dungeons
                 return;
             }
 
-            _pendingTeleportPlayer = playerRef;
+            if (IsTeleportAlreadyScheduled(playerRef))
+            {
+                return;
+            }
+
+            if (_pendingTeleportPlayers.Contains(playerRef) == false)
+            {
+                _pendingTeleportPlayers.Add(playerRef);
+            }
+
             TryScheduleTeleport();
         }
 
@@ -159,12 +173,7 @@ namespace FusionMMO.Dungeons
 
         private void TryScheduleTeleport()
         {
-            if (HasStateAuthority == false)
-            {
-                return;
-            }
-
-            if (_pendingTeleportPlayer == PlayerRef.None)
+            if (HasStateAuthority == false || Runner == null)
             {
                 return;
             }
@@ -174,31 +183,49 @@ namespace FusionMMO.Dungeons
                 return;
             }
 
+            if (_pendingTeleportPlayers.Count == 0)
+            {
+                return;
+            }
+
             if (CacheSpawnPoint() == false)
             {
                 Debug.LogWarning($"{nameof(DungeonSpawnPoint)} not found under {nameof(NetworkedDungeon)}.", this);
                 return;
             }
 
-            TeleportRequest request = _teleportRequest;
-            if (request.IsActive)
-            {
-                return;
-            }
-
-            if (Runner == null)
-            {
-                return;
-            }
-
             int tickRate = TickRate.Resolve(Runner.Config.Simulation.TickRateSelection).Server;
-            int teleportTick = Runner.Tick + tickRate * 3;
 
-            request.Player = _pendingTeleportPlayer;
-            request.TeleportTick = teleportTick;
-            request.IsActive = true;
+            for (int i = _pendingTeleportPlayers.Count - 1; i >= 0; --i)
+            {
+                PlayerRef player = _pendingTeleportPlayers[i];
 
-            _teleportRequest = request;
+                if (player == PlayerRef.None)
+                {
+                    _pendingTeleportPlayers.RemoveAt(i);
+                    continue;
+                }
+
+                if (IsTeleportAlreadyScheduled(player))
+                {
+                    _pendingTeleportPlayers.RemoveAt(i);
+                    continue;
+                }
+
+                int requestIndex = FindAvailableTeleportSlot();
+                if (requestIndex < 0)
+                {
+                    break;
+                }
+
+                TeleportRequest request = default;
+                request.Player = player;
+                request.TeleportTick = Runner.Tick + tickRate * 3;
+                request.IsActive = true;
+
+                _teleportRequests.Set(requestIndex, request);
+                _pendingTeleportPlayers.RemoveAt(i);
+            }
         }
 
         private void ProcessTeleportRequest()
@@ -208,63 +235,68 @@ namespace FusionMMO.Dungeons
                 return;
             }
 
-            TeleportRequest request = _teleportRequest;
-            if (request.IsActive == false)
+            for (int i = 0, count = _teleportRequests.Length; i < count; ++i)
             {
-                return;
+                TeleportRequest request = _teleportRequests.Get(i);
+                if (request.IsActive == false)
+                {
+                    continue;
+                }
+
+                if (Runner.Tick < request.TeleportTick)
+                {
+                    continue;
+                }
+
+                if (CacheSpawnPoint() == false)
+                {
+                    Debug.LogWarning($"{nameof(DungeonSpawnPoint)} not found under {nameof(NetworkedDungeon)}.", this);
+                    _teleportRequests.Set(i, default);
+                    continue;
+                }
+
+                if (Runner.TryGetPlayerObject(request.Player, out var playerObject) == false || playerObject == null)
+                {
+                    continue;
+                }
+
+                var player = playerObject.GetComponent<TPSBR.Player>();
+                if (player == null)
+                {
+                    _teleportRequests.Set(i, default);
+                    continue;
+                }
+
+                var agent = player.ActiveAgent;
+                if (agent == null)
+                {
+                    continue;
+                }
+
+                var character = agent.Character;
+                if (character == null)
+                {
+                    continue;
+                }
+
+                var controller = character.CharacterController;
+                if (controller != null)
+                {
+                    controller.SetPosition(_spawnPoint.transform.position);
+                    controller.SetLookRotation(_spawnPoint.transform.rotation);
+                }
+
+                agent.transform.SetPositionAndRotation(_spawnPoint.transform.position, _spawnPoint.transform.rotation);
+
+                ScheduleLoadingSceneHide();
+
+                _teleportRequests.Set(i, default);
             }
 
-            if (Runner.Tick < request.TeleportTick)
+            if (_pendingTeleportPlayers.Count > 0)
             {
-                return;
+                TryScheduleTeleport();
             }
-
-            if (CacheSpawnPoint() == false)
-            {
-                Debug.LogWarning($"{nameof(DungeonSpawnPoint)} not found under {nameof(NetworkedDungeon)}.", this);
-                _teleportRequest = default;
-                _pendingTeleportPlayer = PlayerRef.None;
-                return;
-            }
-
-            if (Runner.TryGetPlayerObject(request.Player, out var playerObject) == false || playerObject == null)
-            {
-                return;
-            }
-
-            var player = playerObject.GetComponent<TPSBR.Player>();
-            if (player == null)
-            {
-                _teleportRequest = default;
-                _pendingTeleportPlayer = PlayerRef.None;
-                return;
-            }
-
-            var agent = player.ActiveAgent;
-            if (agent == null)
-            {
-                return;
-            }
-
-            var character = agent.Character;
-            if (character == null)
-            {
-                return;
-            }
-
-            var controller = character.CharacterController;
-            if (controller != null)
-            {
-                controller.SetPosition(_spawnPoint.transform.position);
-                controller.SetLookRotation(_spawnPoint.transform.rotation);
-            }
-
-            agent.transform.SetPositionAndRotation(_spawnPoint.transform.position, _spawnPoint.transform.rotation);
-
-            ScheduleLoadingSceneHide();
-
-            _teleportRequest = default;
-            _pendingTeleportPlayer = PlayerRef.None;
         }
 
         private void ScheduleLoadingSceneHide()
@@ -275,12 +307,17 @@ namespace FusionMMO.Dungeons
             }
 
             int tickRate = TickRate.Resolve(Runner.Config.Simulation.TickRateSelection).Server;
+            int requestIndex = FindAvailableLoadingSceneSlot();
+            if (requestIndex < 0)
+            {
+                return;
+            }
 
-            LoadingSceneRequest request = _loadingSceneRequest;
+            LoadingSceneRequest request = default;
             request.HideTick = Runner.Tick + tickRate * 3;
             request.IsActive = true;
 
-            _loadingSceneRequest = request;
+            _loadingSceneRequests.Set(requestIndex, request);
         }
 
         private void ProcessLoadingSceneRequest()
@@ -290,20 +327,79 @@ namespace FusionMMO.Dungeons
                 return;
             }
 
-            LoadingSceneRequest request = _loadingSceneRequest;
-            if (request.IsActive == false)
+            for (int i = 0, count = _loadingSceneRequests.Length; i < count; ++i)
             {
-                return;
+                LoadingSceneRequest request = _loadingSceneRequests.Get(i);
+                if (request.IsActive == false)
+                {
+                    continue;
+                }
+
+                if (Runner.Tick < request.HideTick)
+                {
+                    continue;
+                }
+
+                _loadingSceneRequests.Set(i, default);
+
+                RPC_HideLoadingScene();
+            }
+        }
+
+        private void ClearTeleportRequests()
+        {
+            for (int i = 0, count = _teleportRequests.Length; i < count; ++i)
+            {
+                _teleportRequests.Set(i, default);
+            }
+        }
+
+        private void ClearLoadingSceneRequests()
+        {
+            for (int i = 0, count = _loadingSceneRequests.Length; i < count; ++i)
+            {
+                _loadingSceneRequests.Set(i, default);
+            }
+        }
+
+        private bool IsTeleportAlreadyScheduled(PlayerRef player)
+        {
+            for (int i = 0, count = _teleportRequests.Length; i < count; ++i)
+            {
+                TeleportRequest request = _teleportRequests.Get(i);
+                if (request.IsActive && request.Player == player)
+                {
+                    return true;
+                }
             }
 
-            if (Runner.Tick < request.HideTick)
+            return false;
+        }
+
+        private int FindAvailableTeleportSlot()
+        {
+            for (int i = 0, count = _teleportRequests.Length; i < count; ++i)
             {
-                return;
+                if (_teleportRequests.Get(i).IsActive == false)
+                {
+                    return i;
+                }
             }
 
-            _loadingSceneRequest = default;
+            return -1;
+        }
 
-            RPC_HideLoadingScene();
+        private int FindAvailableLoadingSceneSlot()
+        {
+            for (int i = 0, count = _loadingSceneRequests.Length; i < count; ++i)
+            {
+                if (_loadingSceneRequests.Get(i).IsActive == false)
+                {
+                    return i;
+                }
+            }
+
+            return -1;
         }
 
         [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
