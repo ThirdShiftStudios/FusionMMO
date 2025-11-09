@@ -62,7 +62,8 @@ namespace TPSBR
 		private Session    _currentSession;
 		private bool       _stopGameOnDisconnect;
 		private string     _loadingScene;
-		private Coroutine  _coroutine;
+                private Coroutine  _coroutine;
+                private Coroutine  _dungeonLoadingCoroutine;
 
 		// PUBLIC METHODS
 
@@ -137,10 +138,24 @@ namespace TPSBR
 			_stopGameOnDisconnect = true;
 		}
 
-		public void ClearErrorStatus()
-		{
-			ErrorStatus = null;
-		}
+                public void ClearErrorStatus()
+                {
+                        ErrorStatus = null;
+                }
+
+                public void SetDungeonLoadingScreen(bool show, float additionalTime)
+                {
+                        if (isActiveAndEnabled == false)
+                                return;
+
+                        if (_dungeonLoadingCoroutine != null)
+                        {
+                                StopCoroutine(_dungeonLoadingCoroutine);
+                                _dungeonLoadingCoroutine = null;
+                        }
+
+                        _dungeonLoadingCoroutine = StartCoroutine(DungeonLoadingRoutine(show, additionalTime));
+                }
 
 		// MONOBEHAVIOUR
 
@@ -683,9 +698,9 @@ namespace TPSBR
 			Log($"DisconnectPeerCoroutine() finished");
 		}
 
-		private IEnumerator ShowLoadingSceneCoroutine(bool show, float additionalTime = 1f)
-		{
-			var loadingScene = SceneManager.GetSceneByName(_loadingScene);
+                private IEnumerator ShowLoadingSceneCoroutine(bool show, float additionalTime = 1f)
+                {
+                        var loadingScene = SceneManager.GetSceneByName(_loadingScene);
 
 			if (loadingScene.IsValid() == false)
 			{
@@ -725,9 +740,15 @@ namespace TPSBR
 
 			if (show == false)
 			{
-				yield return SceneManager.UnloadSceneAsync(loadingScene);
-			}
-		}
+                                yield return SceneManager.UnloadSceneAsync(loadingScene);
+                        }
+                }
+
+                private IEnumerator DungeonLoadingRoutine(bool show, float additionalTime)
+                {
+                        yield return ShowLoadingSceneCoroutine(show, additionalTime);
+                        _dungeonLoadingCoroutine = null;
+                }
 
 		private IEnumerator LoadMenuCoroutine()
 		{

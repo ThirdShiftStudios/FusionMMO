@@ -1,3 +1,4 @@
+using System;
 using DungeonArchitect;
 using Fusion;
 using UnityEngine;
@@ -7,6 +8,8 @@ namespace FusionMMO.Dungeons
     [RequireComponent(typeof(Dungeon))]
     public class NetworkedDungeon : NetworkBehaviour
     {
+        public event Action<NetworkedDungeon> DungeonGenerated;
+
         [Networked]
         private int _seed { get; set; }
 
@@ -91,6 +94,7 @@ namespace FusionMMO.Dungeons
             _dungeon.Build();
 
             _lastSeedGenerated = _seed;
+            DungeonGenerated?.Invoke(this);
         }
     }
 }
