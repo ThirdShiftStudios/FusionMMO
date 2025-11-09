@@ -20,6 +20,8 @@ namespace FusionMMO.Dungeons
 
         private readonly List<PlayerRef> _queuedTeleportPlayers = new List<PlayerRef>();
         private readonly HashSet<PlayerRef> _loadingScreenPlayers = new HashSet<PlayerRef>();
+        private readonly Dictionary<PlayerRef, float> _loadingScreenHideTimers = new Dictionary<PlayerRef, float>();
+        private readonly List<PlayerRef> _loadingScreenHideScratch = new List<PlayerRef>();
 
         private NetworkedDungeon _spawnedDungeon;
         private Transform _cachedDungeonSpawnPoint;
@@ -91,6 +93,11 @@ namespace FusionMMO.Dungeons
             {
                 TeleportPendingPlayers();
             }
+
+            if (_loadingScreenHideTimers.Count > 0)
+            {
+                UpdateLoadingScreenHideTimers();
+            }
         }
 
         private void OnDisable()
@@ -103,6 +110,11 @@ namespace FusionMMO.Dungeons
             if (_localImmediateLoadingActive == true || _authoritativeLoadingActive == true)
             {
                 ForceHideLocalLoadingScreen();
+            }
+
+            if (_loadingScreenHideTimers.Count > 0)
+            {
+                _loadingScreenHideTimers.Clear();
             }
         }
 
@@ -274,7 +286,7 @@ namespace FusionMMO.Dungeons
             kcc.SetDynamicVelocity(Vector3.zero);
             kcc.SetKinematicVelocity(Vector3.zero);
 
-            HideLoadingScreen(playerRef, loadingHideDelay);
+            ScheduleLoadingScreenHide(playerRef, loadingHideDelay);
             return true;
         }
 
@@ -334,6 +346,11 @@ namespace FusionMMO.Dungeons
         {
             _isGeneratingDungeon = false;
 
+            if (_loadingScreenHideTimers.Count > 0)
+            {
+                _loadingScreenHideTimers.Clear();
+            }
+
             if (_loadingScreenPlayers.Count > 0)
             {
                 var players = new List<PlayerRef>(_loadingScreenPlayers);
@@ -348,6 +365,8 @@ namespace FusionMMO.Dungeons
 
         private void ShowLoadingScreen(PlayerRef playerRef, float additionalTime)
         {
+            CancelLoadingScreenHide(playerRef);
+
             if (_loadingScreenPlayers.Add(playerRef) == true)
             {
                 RPC_SetDungeonLoadingScreen(playerRef, true, additionalTime);
@@ -356,9 +375,71 @@ namespace FusionMMO.Dungeons
 
         private void HideLoadingScreen(PlayerRef playerRef, float additionalTime)
         {
+            CancelLoadingScreenHide(playerRef);
+
             if (_loadingScreenPlayers.Remove(playerRef) == true)
             {
                 RPC_SetDungeonLoadingScreen(playerRef, false, additionalTime);
+            }
+        }
+
+        private void ScheduleLoadingScreenHide(PlayerRef playerRef, float delay)
+        {
+            if (delay <= 0f)
+            {
+                HideLoadingScreen(playerRef, 0f);
+                return;
+            }
+
+            _loadingScreenHideTimers[playerRef] = delay;
+        }
+
+        private void CancelLoadingScreenHide(PlayerRef playerRef)
+        {
+            _loadingScreenHideTimers.Remove(playerRef);
+        }
+
+        private void UpdateLoadingScreenHideTimers()
+        {
+            if (Runner == null)
+            {
+                _loadingScreenHideTimers.Clear();
+                return;
+            }
+
+            float deltaTime = Runner.DeltaTime;
+            if (deltaTime <= 0f)
+            {
+                return;
+            }
+
+            _loadingScreenHideScratch.Clear();
+
+            foreach (var pair in _loadingScreenHideTimers)
+            {
+                _loadingScreenHideScratch.Add(pair.Key);
+            }
+
+            for (int i = 0; i < _loadingScreenHideScratch.Count; ++i)
+            {
+                var playerRef = _loadingScreenHideScratch[i];
+
+                if (_loadingScreenHideTimers.TryGetValue(playerRef, out float remainingTime) == false)
+                {
+                    continue;
+                }
+
+                remainingTime -= deltaTime;
+
+                if (remainingTime <= 0f)
+                {
+                    _loadingScreenHideTimers.Remove(playerRef);
+                    HideLoadingScreen(playerRef, 0f);
+                }
+                else
+                {
+                    _loadingScreenHideTimers[playerRef] = remainingTime;
+                }
             }
         }
 
