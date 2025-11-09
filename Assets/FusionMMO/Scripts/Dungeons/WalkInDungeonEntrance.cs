@@ -29,8 +29,6 @@ namespace FusionMMO.Dungeons
             }
 
             float sqrActivationDistance = _activationDistance * _activationDistance;
-            bool queuedPlayer = false;
-
             foreach (var player in Runner.ActivePlayers)
             {
                 if (Runner.TryGetPlayerObject(player, out var playerObject) == false || playerObject == null)
@@ -58,13 +56,8 @@ namespace FusionMMO.Dungeons
 
                 if (TryQueueDungeonEntry(player))
                 {
-                    queuedPlayer = true;
+                    RPC_ShowLoadingScene(player);
                 }
-            }
-
-            if (queuedPlayer)
-            {
-                RPC_ShowLoadingScene();
             }
         }
 
@@ -100,8 +93,13 @@ namespace FusionMMO.Dungeons
         }
 
         [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
-        private void RPC_ShowLoadingScene()
+        private void RPC_ShowLoadingScene(PlayerRef targetPlayer)
         {
+            if (Runner == null || Runner.LocalPlayer != targetPlayer)
+            {
+                return;
+            }
+
             var networking = TPSBR.Global.Networking;
             if (networking != null)
             {

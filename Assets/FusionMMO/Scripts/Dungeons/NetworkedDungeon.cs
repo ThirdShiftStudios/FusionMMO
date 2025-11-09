@@ -15,6 +15,7 @@ namespace FusionMMO.Dungeons
 
     public struct LoadingSceneRequest : INetworkStruct
     {
+        public PlayerRef Player;
         public int HideTick;
         public NetworkBool IsActive;
     }
@@ -293,7 +294,7 @@ namespace FusionMMO.Dungeons
 
                 agent.transform.SetPositionAndRotation(_spawnPoint.transform.position, _spawnPoint.transform.rotation);
 
-                ScheduleLoadingSceneHide();
+                ScheduleLoadingSceneHide(request.Player);
 
                 _teleportRequests.Set(i, default);
             }
@@ -304,9 +305,9 @@ namespace FusionMMO.Dungeons
             }
         }
 
-        private void ScheduleLoadingSceneHide()
+        private void ScheduleLoadingSceneHide(PlayerRef player)
         {
-            if (Runner == null)
+            if (Runner == null || player == PlayerRef.None)
             {
                 return;
             }
@@ -319,6 +320,7 @@ namespace FusionMMO.Dungeons
             }
 
             LoadingSceneRequest request = default;
+            request.Player = player;
             request.HideTick = Runner.Tick + tickRate * 3;
             request.IsActive = true;
 
@@ -347,7 +349,7 @@ namespace FusionMMO.Dungeons
 
                 _loadingSceneRequests.Set(i, default);
 
-                RPC_HideLoadingScene();
+                RPC_HideLoadingScene(request.Player);
             }
         }
 
@@ -408,8 +410,13 @@ namespace FusionMMO.Dungeons
         }
 
         [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
-        private void RPC_HideLoadingScene()
+        private void RPC_HideLoadingScene(PlayerRef targetPlayer)
         {
+            if (Runner == null || Runner.LocalPlayer != targetPlayer)
+            {
+                return;
+            }
+
             var networking = TPSBR.Global.Networking;
             if (networking != null)
             {
