@@ -788,11 +788,11 @@ namespace TPSBR
 
                         if (show == true)
                         {
-                                loadingSceneObject.FadeOut();
+                                loadingSceneObject.FadeIn();
                         }
                         else
                         {
-                                loadingSceneObject.FadeIn();
+                                loadingSceneObject.FadeOut();
                         }
 
                         while (loadingSceneObject.IsFading == true)
