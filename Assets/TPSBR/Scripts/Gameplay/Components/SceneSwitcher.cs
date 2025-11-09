@@ -45,7 +45,7 @@ namespace TPSBR
             _triggerDistance = Mathf.Max(0f, _triggerDistance);
             _triggerDistanceSqr = _triggerDistance * _triggerDistance;
 #if UNITY_EDITOR
-            _scenePath = NormalizeScenePath(_scenePath);
+            _scenePath = EnsureAssetScenePathFormat(_scenePath);
 #endif
         }
 
@@ -231,6 +231,29 @@ namespace TPSBR
 
             return scenePath;
         }
+
+#if UNITY_EDITOR
+        private static string EnsureAssetScenePathFormat(string scenePath)
+        {
+            if (scenePath.HasValue() == false)
+                return scenePath;
+
+            const string prefix = "Assets/";
+            const string suffix = ".unity";
+
+            if (scenePath.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) == false)
+            {
+                scenePath = string.Concat(prefix, scenePath);
+            }
+
+            if (scenePath.EndsWith(suffix, StringComparison.OrdinalIgnoreCase) == false)
+            {
+                scenePath = string.Concat(scenePath, suffix);
+            }
+
+            return scenePath;
+        }
+#endif
 
     }
 }
