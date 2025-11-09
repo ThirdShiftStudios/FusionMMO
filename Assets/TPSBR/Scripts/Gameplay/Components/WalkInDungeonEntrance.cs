@@ -1,12 +1,11 @@
 using DungeonArchitect;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace TPSBR
 {
     public class WalkInDungeonEntrance : SceneSwitcher
     {
-        private NetworkedDungeonManager _dungeonManager;
-
         private void OnEnable()
         {
             OnSceneFinishedLoading += HandleSceneFinishedLoading;
@@ -17,25 +16,41 @@ namespace TPSBR
             OnSceneFinishedLoading -= HandleSceneFinishedLoading;
         }
 
-        private void HandleSceneFinishedLoading()
+        private void HandleSceneFinishedLoading(Scene loadedScene)
         {
-            if (_dungeonManager == null)
+            if (loadedScene.IsValid() == false || loadedScene.isLoaded == false)
             {
-                _dungeonManager = GetComponent<NetworkedDungeonManager>();
-            }
-
-            if (_dungeonManager == null)
-            {
-                Debug.LogWarning($"{nameof(WalkInDungeonEntrance)} on {name} requires a {nameof(NetworkedDungeonManager)} component on the same GameObject.", this);
+                Debug.LogWarning($"{nameof(WalkInDungeonEntrance)} received an invalid scene notification.", this);
                 return;
             }
 
-            if (_dungeonManager.HasStateAuthority == true)
+            var dungeonManager = FindDungeonManager(loadedScene);
+            if (dungeonManager == null)
             {
-                _dungeonManager.RandomizeDungeonSeed();
+                Debug.LogWarning($"{nameof(WalkInDungeonEntrance)} could not locate a {nameof(NetworkedDungeonManager)} in scene '{loadedScene.name}'.", this);
+                return;
             }
 
-            _dungeonManager.GenerateDungeonIfReady();
+            if (dungeonManager.HasStateAuthority == true)
+            {
+                dungeonManager.RandomizeDungeonSeed();
+            }
+
+            dungeonManager.GenerateDungeonIfReady();
+        }
+
+        private static NetworkedDungeonManager FindDungeonManager(Scene scene)
+        {
+            foreach (var rootObject in scene.GetRootGameObjects())
+            {
+                var manager = rootObject.GetComponentInChildren<NetworkedDungeonManager>(true);
+                if (manager != null)
+                {
+                    return manager;
+                }
+            }
+
+            return null;
         }
     }
 }

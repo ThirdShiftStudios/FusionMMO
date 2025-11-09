@@ -28,7 +28,7 @@ namespace TPSBR
         private Agent _registeredAgent;
         private SceneRef _pendingSceneRef;
 
-        protected event Action OnSceneFinishedLoading;
+        protected event Action<Scene> OnSceneFinishedLoading;
 
         public SceneContext Context
         {
@@ -219,7 +219,21 @@ namespace TPSBR
                 return;
             }
 
-            OnSceneFinishedLoading?.Invoke();
+            string assetScenePath = EnsureAssetScenePathFormat(_scenePath);
+            if (assetScenePath.HasValue() == false)
+            {
+                Debug.LogWarning($"{nameof(SceneSwitcher)} on {name} completed loading a scene but the scene path is invalid.", this);
+                return;
+            }
+
+            var loadedScene = SceneManager.GetSceneByPath(assetScenePath);
+            if (loadedScene.IsValid() == false)
+            {
+                Debug.LogWarning($"{nameof(SceneSwitcher)} on {name} could not resolve the loaded scene '{assetScenePath}'.", this);
+                return;
+            }
+
+            OnSceneFinishedLoading?.Invoke(loadedScene);
         }
 
         private void OnDisable()
@@ -250,7 +264,6 @@ namespace TPSBR
             return scenePath;
         }
 
-#if UNITY_EDITOR
         private static string EnsureAssetScenePathFormat(string scenePath)
         {
             if (scenePath.HasValue() == false)
@@ -271,7 +284,6 @@ namespace TPSBR
 
             return scenePath;
         }
-#endif
 
     }
 }
