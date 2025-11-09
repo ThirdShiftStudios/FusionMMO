@@ -55,12 +55,12 @@ namespace FusionMMO.Dungeons
                     continue;
                 }
 
-                SpawnDungeon();
+                SpawnDungeon(player);
                 break;
             }
         }
 
-        private void SpawnDungeon()
+        private void SpawnDungeon(PlayerRef playerRef)
         {
             if (Runner == null || _dungeonPrefab == null)
             {
@@ -75,6 +75,7 @@ namespace FusionMMO.Dungeons
             if (_spawnedDungeon != null)
             {
                 _spawnedDungeon.RandomizeSeed();
+                _spawnedDungeon.SetPendingTeleportPlayer(playerRef);
             }
 
             RPC_ShowLoadingScene();
