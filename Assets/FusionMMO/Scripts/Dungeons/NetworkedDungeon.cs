@@ -312,7 +312,7 @@ namespace FusionMMO.Dungeons
             var networking = TPSBR.Global.Networking;
             if (networking != null)
             {
-                networking.RequestLoadingScene(false);
+                networking.RequestLoadingScene(false, 0f);
             }
         }
     }
