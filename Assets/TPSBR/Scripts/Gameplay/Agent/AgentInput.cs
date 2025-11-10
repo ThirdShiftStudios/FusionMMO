@@ -6,7 +6,8 @@ namespace TPSBR
 {
 	using System;
 	using UnityEngine;
-	using UnityEngine.InputSystem;
+using UnityEngine.InputSystem;
+using UnityEngine.SceneManagement;
 	using TPSBR.UI;
 
 	[DefaultExecutionOrder(-10)]
@@ -97,7 +98,10 @@ namespace TPSBR
 		private int               _missingInputsTotal;
 		private int               _logMissingInputFromTick;
 		private float             _grenadesCyclingStartTime;
-		private UIMobileInputView _mobileInputView;
+                private UIMobileInputView _mobileInputView;
+                private bool              _isLoadingSceneInputBlocked;
+                private bool              _contextHasInputBeforeLoadingScene;
+                private bool              _restoreContextInputAfterLoadingScene;
 
 		// PUBLIC METHODS
 
@@ -304,14 +308,57 @@ namespace TPSBR
 
 		void IBeforeTick.BeforeTick()
 		{
-			if (Object == null)
-				return;
+                        if (Object == null)
+                                return;
 
-			if (Context == null || Context.GameplayMode == null || Context.GameplayMode.State != GameplayMode.EState.Active)
-			{
-				_fixedInput          = default;
-				_renderInput         = default;
-				_accumulatedInput    = default;
+                        bool shouldBlockInput = HasInputAuthority == true && IsLoadingSceneActive();
+
+                        if (shouldBlockInput == true)
+                        {
+                                if (_isLoadingSceneInputBlocked == false)
+                                {
+                                        _isLoadingSceneInputBlocked = true;
+
+                                        if (Context != null)
+                                        {
+                                                _contextHasInputBeforeLoadingScene      = Context.HasInput;
+                                                _restoreContextInputAfterLoadingScene = true;
+                                        }
+                                        else
+                                        {
+                                                _restoreContextInputAfterLoadingScene = false;
+                                        }
+                                }
+
+                                if (Context != null)
+                                {
+                                        Context.HasInput = false;
+                                }
+
+                                _fixedInput          = default;
+                                _renderInput         = default;
+                                _accumulatedInput    = default;
+                                _previousFixedInput  = default;
+                                _previousRenderInput = default;
+                                return;
+                        }
+
+                        if (_isLoadingSceneInputBlocked == true)
+                        {
+                                _isLoadingSceneInputBlocked = false;
+                        }
+
+                        if (_restoreContextInputAfterLoadingScene == true && Context != null)
+                        {
+                                Context.HasInput = _contextHasInputBeforeLoadingScene;
+                                _restoreContextInputAfterLoadingScene = false;
+                        }
+
+                        if (Context == null || Context.GameplayMode == null || Context.GameplayMode.State != GameplayMode.EState.Active)
+                        {
+                                _fixedInput          = default;
+                                _renderInput         = default;
+                                _accumulatedInput    = default;
 				_previousFixedInput  = default;
 				_previousRenderInput = default;
 				return;
@@ -492,14 +539,35 @@ namespace TPSBR
 			}
 
 			networkInput.Set(pollInput);
-		}
+                }
 
-		private bool IsFrameInputProcessed() => _processInputFrame == Time.frameCount;
+                private bool IsFrameInputProcessed() => _processInputFrame == Time.frameCount;
 
-		private void ProcessFrameInput(bool isInputPoll)
-		{
-			// Collect input from devices.
-			// Can be executed multiple times between FixedUpdateNetwork() calls because of faster rendering speed.
+                private bool IsLoadingSceneActive()
+                {
+                        string loadingSceneName = default;
+
+                        if (Context != null && Context.Settings != null && string.IsNullOrEmpty(Context.Settings.LoadingScene) == false)
+                        {
+                                loadingSceneName = Context.Settings.LoadingScene;
+                        }
+                        else if (Global.Settings != null && string.IsNullOrEmpty(Global.Settings.LoadingScene) == false)
+                        {
+                                loadingSceneName = Global.Settings.LoadingScene;
+                        }
+
+                        if (string.IsNullOrEmpty(loadingSceneName) == true)
+                                return false;
+
+                        Scene loadingScene = SceneManager.GetSceneByName(loadingSceneName);
+
+                        return loadingScene.IsValid() == true && loadingScene.isLoaded == true;
+                }
+
+                private void ProcessFrameInput(bool isInputPoll)
+                {
+                        // Collect input from devices.
+                        // Can be executed multiple times between FixedUpdateNetwork() calls because of faster rendering speed.
 			// However the input is processed only once per frame.
 
 			int currentFrame = Time.frameCount;
