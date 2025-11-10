@@ -196,14 +196,41 @@ namespace FusionMMO.Dungeons
 
             foreach (var graph in data.graphs)
             {
-                if (graph is NavmeshBase navmeshGraph)
+                switch (graph)
                 {
-                    Vector3 size = dungeonBounds.size;
-                    size.y = Mathf.Max(size.y, 1f);
+                    case RecastGraph recastGraph:
+                    {
+                        Vector3 size = dungeonBounds.size;
+                        size.y = Mathf.Max(size.y, 1f);
 
-                    navmeshGraph.forcedBoundsCenter = dungeonBounds.center;
-                    navmeshGraph.forcedBoundsSize = size;
-                    boundsUpdated = true;
+                        recastGraph.forcedBoundsCenter = dungeonBounds.center;
+                        recastGraph.forcedBoundsSize = size;
+                        boundsUpdated = true;
+                        break;
+                    }
+                    case GridGraph gridGraph:
+                    {
+                        float nodeSize = gridGraph.nodeSize;
+                        if (nodeSize <= 0f)
+                        {
+                            break;
+                        }
+
+                        int width = Mathf.Max(1, Mathf.CeilToInt(dungeonBounds.size.x / nodeSize));
+                        int depth = Mathf.Max(1, Mathf.CeilToInt(dungeonBounds.size.z / nodeSize));
+                        Vector3 center = dungeonBounds.center;
+                        bool centerChanged = (gridGraph.center - center).sqrMagnitude > 0.0001f;
+
+                        bool requiresUpdate = gridGraph.width != width || gridGraph.depth != depth || centerChanged;
+                        if (requiresUpdate)
+                        {
+                            gridGraph.center = center;
+                            gridGraph.SetDimensions(width, depth, nodeSize);
+                            boundsUpdated = true;
+                        }
+
+                        break;
+                    }
                 }
             }
 
