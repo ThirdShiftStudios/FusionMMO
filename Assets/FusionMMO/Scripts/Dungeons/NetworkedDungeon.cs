@@ -217,43 +217,16 @@ namespace FusionMMO.Dungeons
                             break;
                         }
 
-                        int minimumWidth = Mathf.Max(1, Mathf.CeilToInt(dungeonBounds.size.x / nodeSize));
-                        int minimumDepth = Mathf.Max(1, Mathf.CeilToInt(dungeonBounds.size.z / nodeSize));
+                        int width = Mathf.Max(1, Mathf.CeilToInt(dungeonBounds.size.x / nodeSize));
+                        int depth = Mathf.Max(1, Mathf.CeilToInt(dungeonBounds.size.z / nodeSize));
+                        Vector3 center = dungeonBounds.center;
+                        bool centerChanged = (gridGraph.center - center).sqrMagnitude > 0.0001f;
 
-                        if (gridGraph.width <= 0 || gridGraph.depth <= 0)
+                        bool requiresUpdate = gridGraph.width != width || gridGraph.depth != depth || centerChanged;
+                        if (requiresUpdate)
                         {
-                            gridGraph.center = dungeonBounds.center;
-                            gridGraph.SetDimensions(minimumWidth, minimumDepth, nodeSize);
-                            boundsUpdated = true;
-                            break;
-                        }
-
-                        Vector3 center = gridGraph.center;
-                        float halfWidthWorld = gridGraph.width * nodeSize * 0.5f;
-                        float halfDepthWorld = gridGraph.depth * nodeSize * 0.5f;
-
-                        float currentMinX = center.x - halfWidthWorld;
-                        float currentMaxX = center.x + halfWidthWorld;
-                        float currentMinZ = center.z - halfDepthWorld;
-                        float currentMaxZ = center.z + halfDepthWorld;
-
-                        float targetMinX = Mathf.Min(currentMinX, dungeonBounds.min.x);
-                        float targetMaxX = Mathf.Max(currentMaxX, dungeonBounds.max.x);
-                        float targetMinZ = Mathf.Min(currentMinZ, dungeonBounds.min.z);
-                        float targetMaxZ = Mathf.Max(currentMaxZ, dungeonBounds.max.z);
-
-                        float requiredHalfWidth = Mathf.Max(targetMaxX - center.x, center.x - targetMinX);
-                        float requiredHalfDepth = Mathf.Max(targetMaxZ - center.z, center.z - targetMinZ);
-
-                        int expandedWidth = Mathf.Max(gridGraph.width, Mathf.CeilToInt((requiredHalfWidth * 2f) / nodeSize));
-                        int expandedDepth = Mathf.Max(gridGraph.depth, Mathf.CeilToInt((requiredHalfDepth * 2f) / nodeSize));
-
-                        expandedWidth = Mathf.Max(expandedWidth, minimumWidth);
-                        expandedDepth = Mathf.Max(expandedDepth, minimumDepth);
-
-                        if (expandedWidth != gridGraph.width || expandedDepth != gridGraph.depth)
-                        {
-                            gridGraph.SetDimensions(expandedWidth, expandedDepth, nodeSize);
+                            gridGraph.center = center;
+                            gridGraph.SetDimensions(width, depth, nodeSize);
                             boundsUpdated = true;
                         }
 
