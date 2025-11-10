@@ -1,9 +1,11 @@
+using System;
 using System.Collections.Generic;
 using DungeonArchitect;
 using Fusion;
 using TPSBR;
 using UnityEngine;
 using Pathfinding;
+using Pathfinding.Util;
 
 namespace FusionMMO.Dungeons
 {
@@ -43,7 +45,12 @@ namespace FusionMMO.Dungeons
         private bool _dungeonGenerated;
         private DungeonSpawnPoint _spawnPoint;
         private AstarPath _astarPath;
+        private GridGraph _dungeonGridGraph;
+        private Bounds? _dungeonGridBounds;
+        private float _dungeonGridNodeSize = 1f;
         private readonly List<PlayerRef> _pendingTeleportPlayers = new List<PlayerRef>(REQUEST_CAPACITY);
+
+        private const string RuntimeGridGraphName = "RuntimeDungeonGrid";
 
         private void Awake()
         {
@@ -166,6 +173,7 @@ namespace FusionMMO.Dungeons
             }
 
             _astarPath = activeAstar;
+            EnsureDungeonGridGraph();
             return true;
         }
 
@@ -193,79 +201,177 @@ namespace FusionMMO.Dungeons
                 return;
             }
 
-            bool boundsUpdated = false;
+            List<NavGraph> graphsToScan = ListPool<NavGraph>.Claim();
 
             foreach (var graph in data.graphs)
             {
-                switch (graph)
+                if (graph is RecastGraph recastGraph)
                 {
-                    case RecastGraph recastGraph:
-                    {
-                        Vector3 size = dungeonBounds.size;
-                        size.y = Mathf.Max(size.y, 1f);
+                    Vector3 size = dungeonBounds.size;
+                    size.y = Mathf.Max(size.y, 1f);
 
-                        recastGraph.forcedBoundsCenter = dungeonBounds.center;
-                        recastGraph.forcedBoundsSize = size;
-                        boundsUpdated = true;
-                        break;
-                    }
-                    case GridGraph gridGraph:
-                    {
-                        float nodeSize = gridGraph.nodeSize;
-                        if (nodeSize <= 0f)
-                        {
-                            break;
-                        }
-
-                        int minimumWidth = Mathf.Max(1, Mathf.CeilToInt(dungeonBounds.size.x / nodeSize));
-                        int minimumDepth = Mathf.Max(1, Mathf.CeilToInt(dungeonBounds.size.z / nodeSize));
-
-                        if (gridGraph.width <= 0 || gridGraph.depth <= 0)
-                        {
-                            gridGraph.center = dungeonBounds.center;
-                            gridGraph.SetDimensions(minimumWidth, minimumDepth, nodeSize);
-                            boundsUpdated = true;
-                            break;
-                        }
-
-                        Vector3 center = gridGraph.center;
-                        float halfWidthWorld = gridGraph.width * nodeSize * 0.5f;
-                        float halfDepthWorld = gridGraph.depth * nodeSize * 0.5f;
-
-                        float currentMinX = center.x - halfWidthWorld;
-                        float currentMaxX = center.x + halfWidthWorld;
-                        float currentMinZ = center.z - halfDepthWorld;
-                        float currentMaxZ = center.z + halfDepthWorld;
-
-                        float targetMinX = Mathf.Min(currentMinX, dungeonBounds.min.x);
-                        float targetMaxX = Mathf.Max(currentMaxX, dungeonBounds.max.x);
-                        float targetMinZ = Mathf.Min(currentMinZ, dungeonBounds.min.z);
-                        float targetMaxZ = Mathf.Max(currentMaxZ, dungeonBounds.max.z);
-
-                        float requiredHalfWidth = Mathf.Max(targetMaxX - center.x, center.x - targetMinX);
-                        float requiredHalfDepth = Mathf.Max(targetMaxZ - center.z, center.z - targetMinZ);
-
-                        int expandedWidth = Mathf.Max(gridGraph.width, Mathf.CeilToInt((requiredHalfWidth * 2f) / nodeSize));
-                        int expandedDepth = Mathf.Max(gridGraph.depth, Mathf.CeilToInt((requiredHalfDepth * 2f) / nodeSize));
-
-                        expandedWidth = Mathf.Max(expandedWidth, minimumWidth);
-                        expandedDepth = Mathf.Max(expandedDepth, minimumDepth);
-
-                        if (expandedWidth != gridGraph.width || expandedDepth != gridGraph.depth)
-                        {
-                            gridGraph.SetDimensions(expandedWidth, expandedDepth, nodeSize);
-                            boundsUpdated = true;
-                        }
-
-                        break;
-                    }
+                    recastGraph.forcedBoundsCenter = dungeonBounds.center;
+                    recastGraph.forcedBoundsSize = size;
+                    graphsToScan.Add(recastGraph);
                 }
             }
 
-            if (boundsUpdated)
+            bool dungeonGridUpdated = UpdateDungeonGridGraph(dungeonBounds);
+
+            if (dungeonGridUpdated && _dungeonGridGraph != null && graphsToScan.Contains(_dungeonGridGraph) == false)
             {
-                _astarPath.Scan();
+                graphsToScan.Add(_dungeonGridGraph);
             }
+
+            if (graphsToScan.Count > 0)
+            {
+                _astarPath.Scan(graphsToScan.ToArray());
+            }
+
+            ListPool<NavGraph>.Release(ref graphsToScan);
+        }
+
+        private bool UpdateDungeonGridGraph(Bounds dungeonBounds)
+        {
+            if (dungeonBounds.size == Vector3.zero)
+            {
+                return false;
+            }
+
+            if (EnsureDungeonGridGraph() == false || _dungeonGridGraph == null)
+            {
+                return false;
+            }
+
+            float nodeSize = Mathf.Max(_dungeonGridNodeSize, 0.1f);
+
+            Bounds expandedBounds = dungeonBounds;
+            expandedBounds.Expand(new Vector3(nodeSize, 0f, nodeSize));
+
+            bool boundsChanged = false;
+            if (_dungeonGridBounds.HasValue)
+            {
+                Bounds combined = _dungeonGridBounds.Value;
+                if (EncapsulateIfNeeded(ref combined, expandedBounds))
+                {
+                    _dungeonGridBounds = combined;
+                    boundsChanged = true;
+                }
+            }
+            else
+            {
+                _dungeonGridBounds = expandedBounds;
+                boundsChanged = true;
+            }
+
+            if (_dungeonGridBounds.HasValue == false)
+            {
+                return false;
+            }
+
+            Bounds targetBounds = _dungeonGridBounds.Value;
+            targetBounds.size = new Vector3(
+                Mathf.Max(targetBounds.size.x, nodeSize),
+                Mathf.Max(targetBounds.size.y, 1f),
+                Mathf.Max(targetBounds.size.z, nodeSize));
+            _dungeonGridBounds = targetBounds;
+
+            int width = Mathf.Max(1, Mathf.CeilToInt(targetBounds.size.x / nodeSize));
+            int depth = Mathf.Max(1, Mathf.CeilToInt(targetBounds.size.z / nodeSize));
+
+            bool centerChanged = (_dungeonGridGraph.center - targetBounds.center).sqrMagnitude > 0.001f;
+            bool sizeChanged = _dungeonGridGraph.width != width || _dungeonGridGraph.depth != depth;
+
+            if (centerChanged)
+            {
+                _dungeonGridGraph.center = targetBounds.center;
+            }
+
+            if (sizeChanged)
+            {
+                _dungeonGridGraph.SetDimensions(width, depth, nodeSize);
+            }
+
+            return true;
+        }
+
+        private static bool EncapsulateIfNeeded(ref Bounds current, Bounds addition)
+        {
+            Vector3 originalMin = current.min;
+            Vector3 originalMax = current.max;
+            current.Encapsulate(addition);
+            return originalMin != current.min || originalMax != current.max;
+        }
+
+        private bool EnsureDungeonGridGraph()
+        {
+            if (_astarPath == null)
+            {
+                return false;
+            }
+
+            if (_dungeonGridGraph != null)
+            {
+                return true;
+            }
+
+            var data = _astarPath.data;
+            if (data == null)
+            {
+                return false;
+            }
+
+            foreach (var graph in data.graphs)
+            {
+                if (graph is GridGraph existing && string.Equals(existing.name, RuntimeGridGraphName, StringComparison.Ordinal))
+                {
+                    _dungeonGridGraph = existing;
+                    _dungeonGridNodeSize = Mathf.Max(existing.nodeSize, 0.1f);
+                    return true;
+                }
+            }
+
+            GridGraph template = null;
+            foreach (var graph in data.graphs)
+            {
+                if (graph is GridGraph candidate && string.Equals(candidate.name, RuntimeGridGraphName, StringComparison.Ordinal) == false)
+                {
+                    template = candidate;
+                    break;
+                }
+            }
+
+            var newGraph = data.AddGraph(typeof(GridGraph)) as GridGraph;
+            if (newGraph == null)
+            {
+                return false;
+            }
+
+            var originalIndex = newGraph.graphIndex;
+            var originalActive = newGraph.active;
+
+            if (template != null)
+            {
+                string serialized = JsonUtility.ToJson(template);
+                JsonUtility.FromJsonOverwrite(serialized, newGraph);
+                newGraph.graphIndex = originalIndex;
+                newGraph.active = originalActive;
+                newGraph.nodes = null;
+            }
+
+            newGraph.name = RuntimeGridGraphName;
+            newGraph.guid = Guid.NewGuid();
+            _dungeonGridNodeSize = Mathf.Max(newGraph.nodeSize, 0.1f);
+
+            if (newGraph.width <= 0 || newGraph.depth <= 0)
+            {
+                newGraph.center = Vector3.zero;
+                newGraph.SetDimensions(1, 1, _dungeonGridNodeSize);
+            }
+
+            _dungeonGridGraph = newGraph;
+            _dungeonGridBounds = null;
+            return true;
         }
 
         private void TryGenerateDungeon()
