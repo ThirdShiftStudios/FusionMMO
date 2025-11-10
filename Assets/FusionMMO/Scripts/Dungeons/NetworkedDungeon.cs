@@ -5,7 +5,8 @@ using Fusion;
 using TPSBR;
 using UnityEngine;
 using Pathfinding;
-using Pathfinding.Util;
+using PathfindingGuid = Pathfinding.Util.Guid;
+using NavGraphListPool = Pathfinding.Pooling.ListPool<Pathfinding.NavGraph>;
 
 namespace FusionMMO.Dungeons
 {
@@ -201,7 +202,7 @@ namespace FusionMMO.Dungeons
                 return;
             }
 
-            List<NavGraph> graphsToScan = ListPool<NavGraph>.Claim();
+            List<NavGraph> graphsToScan = NavGraphListPool.Claim();
 
             foreach (var graph in data.graphs)
             {
@@ -228,7 +229,7 @@ namespace FusionMMO.Dungeons
                 _astarPath.Scan(graphsToScan.ToArray());
             }
 
-            ListPool<NavGraph>.Release(ref graphsToScan);
+            NavGraphListPool.Release(ref graphsToScan);
         }
 
         private bool UpdateDungeonGridGraph(Bounds dungeonBounds)
@@ -360,7 +361,7 @@ namespace FusionMMO.Dungeons
             }
 
             newGraph.name = RuntimeGridGraphName;
-            newGraph.guid = Guid.NewGuid();
+            newGraph.guid = PathfindingGuid.NewGuid();
             _dungeonGridNodeSize = Mathf.Max(newGraph.nodeSize, 0.1f);
 
             if (newGraph.width <= 0 || newGraph.depth <= 0)
