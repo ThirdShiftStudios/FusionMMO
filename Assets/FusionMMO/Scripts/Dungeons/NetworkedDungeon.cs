@@ -328,16 +328,6 @@ namespace FusionMMO.Dungeons
                 {
                     _dungeonGridGraph = existing;
                     _dungeonGridNodeSize = Mathf.Max(existing.nodeSize, 0.1f);
-
-                    if (_dungeonGridBounds.HasValue == false)
-                    {
-                        var existingBounds = existing.bounds;
-                        if (existingBounds.size != Vector3.zero)
-                        {
-                            _dungeonGridBounds = existingBounds;
-                        }
-                    }
-
                     return true;
                 }
             }
