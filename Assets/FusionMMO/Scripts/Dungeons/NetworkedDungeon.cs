@@ -42,7 +42,6 @@ namespace FusionMMO.Dungeons
         private Dungeon _dungeon;
         private bool _dungeonGenerated;
         private DungeonSpawnPoint _spawnPoint;
-        [SerializeField]
         private AstarPath _astarPath;
         private readonly List<PlayerRef> _pendingTeleportPlayers = new List<PlayerRef>(REQUEST_CAPACITY);
 
@@ -159,13 +158,15 @@ namespace FusionMMO.Dungeons
 
         private bool CacheAstarPath()
         {
-            if (_astarPath != null)
+            var activeAstar = AstarPath.active;
+            if (activeAstar == null)
             {
-                return true;
+                _astarPath = null;
+                return false;
             }
 
-            _astarPath = GetComponentInChildren<AstarPath>(true);
-            return _astarPath != null;
+            _astarPath = activeAstar;
+            return true;
         }
 
         private void UpdateAstarPath()
