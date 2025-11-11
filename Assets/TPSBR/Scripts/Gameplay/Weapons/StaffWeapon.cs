@@ -198,16 +198,31 @@ namespace TPSBR
                     return true;
 
                 case WeaponUseAnimation.LightAttack:
-                    staffAttack.PlayLightAttack(this);
-                    return true;
+                    if (staffAttack.PlayLightAttack(this) == true)
+                    {
+                        return true;
+                    }
+
+                    _pendingLightAttack = false;
+                    _lightAttackActive = false;
+                    return false;
 
                 case WeaponUseAnimation.HeavyAttack:
-                    staffAttack.PlayHeavyAttack(this);
-                    return true;
+                    if (staffAttack.PlayHeavyAttack(this) == true)
+                    {
+                        return true;
+                    }
+
+                    _heavyAttackActivated = false;
+                    return false;
 
                 case WeaponUseAnimation.Ability:
-                    staffAttack.PlayAbilityAttack(this);
-                    return true;
+                    if (staffAttack.PlayAbilityAttack(this) == true)
+                    {
+                        return true;
+                    }
+
+                    return false;
             }
 
             return true;
@@ -697,6 +712,55 @@ namespace TPSBR
             Debug.Log($"{LogPrefix} Executing light staff attack.");
         }
 
+        public bool IsAbilityUnlocked(AbilityDefinition ability)
+        {
+            if (ability == null)
+            {
+                return false;
+            }
+
+            if (_configuredAbilityIndexes == null || _configuredAbilityIndexes.Length == 0)
+            {
+                return false;
+            }
+
+            if (Definition == null)
+            {
+                return false;
+            }
+
+            IReadOnlyList<AbilityDefinition> availableAbilities = Definition.AvailableAbilities;
+            if (availableAbilities == null || availableAbilities.Count == 0)
+            {
+                return false;
+            }
+
+            int abilityIndex = -1;
+            for (int i = 0; i < availableAbilities.Count; ++i)
+            {
+                if (availableAbilities[i] == ability)
+                {
+                    abilityIndex = i;
+                    break;
+                }
+            }
+
+            if (abilityIndex < 0)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < _configuredAbilityIndexes.Length; ++i)
+            {
+                if (_configuredAbilityIndexes[i] == abilityIndex)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         public void ExecuteAbility(AbilityDefinition ability)
         {
             if (ability == null)
@@ -708,6 +772,12 @@ namespace TPSBR
             if (Definition != null && Definition.HasAbility(ability) == false)
             {
                 Debug.LogWarning($"{LogPrefix} Ability '{ability.Name}' is not available on weapon definition '{Definition.name}'.");
+                return;
+            }
+
+            if (IsAbilityUnlocked(ability) == false)
+            {
+                Debug.LogWarning($"{LogPrefix} Ability '{ability.Name}' has not been unlocked for this weapon configuration.");
                 return;
             }
 
@@ -753,28 +823,6 @@ namespace TPSBR
             if (_configuredAbilities.Count > 0)
             {
                 return _configuredAbilities[0];
-            }
-
-            var definition = Definition;
-
-            if (definition == null)
-            {
-                return null;
-            }
-
-            IReadOnlyList<AbilityDefinition> abilities = definition.AvailableAbilities;
-
-            if (abilities == null)
-            {
-                return null;
-            }
-
-            for (int i = 0; i < abilities.Count; i++)
-            {
-                if (abilities[i] is StaffAbilityDefinition staffAbility)
-                {
-                    return staffAbility;
-                }
             }
 
             return null;

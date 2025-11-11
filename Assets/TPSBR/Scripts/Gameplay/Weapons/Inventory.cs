@@ -991,6 +991,29 @@ namespace TPSBR
                 return false;
 
             weapon.SetConfigurationHash(configurationHash);
+
+            var slot = _hotbarItems[index];
+
+            if (slot.IsEmpty == false)
+            {
+                var updatedSlot = new InventorySlot(slot.ItemDefinitionId, slot.Quantity, configurationHash);
+
+                if (updatedSlot.Equals(slot) == false)
+                {
+                    _hotbarItems.Set(index, updatedSlot);
+                    NotifyHotbarSlotStackChanged(index);
+                }
+            }
+            else
+            {
+                int definitionId = weapon.Definition != null ? weapon.Definition.ID : 0;
+                byte quantity = 1;
+
+                var updatedSlot = new InventorySlot(definitionId, quantity, configurationHash);
+                _hotbarItems.Set(index, updatedSlot);
+                NotifyHotbarSlotStackChanged(index);
+            }
+
             return true;
         }
 
