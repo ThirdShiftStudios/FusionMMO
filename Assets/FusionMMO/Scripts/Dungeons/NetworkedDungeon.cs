@@ -184,61 +184,24 @@ namespace FusionMMO.Dungeons
             var dungeonBounds = DungeonUtils.GetDungeonBounds(_dungeon);
             if (dungeonBounds.size == Vector3.zero)
             {
-                return;
+                //return;
             }
 
             var data = _astarPath.data;
             if (data == null || data.graphs == null)
             {
-                return;
+                //return;
             }
 
             bool boundsUpdated = false;
+            Debug.Log($"BOUNDS: {dungeonBounds}");
+            var guo = new GraphUpdateObject(dungeonBounds);
 
-            foreach (var graph in data.graphs)
-            {
-                switch (graph)
-                {
-                    case RecastGraph recastGraph:
-                    {
-                        Vector3 size = dungeonBounds.size;
-                        size.y = Mathf.Max(size.y, 1f);
+            // Set some settings
+            guo.updatePhysics = true;
+            AstarPath.active.UpdateGraphs(guo);
 
-                        recastGraph.forcedBoundsCenter = dungeonBounds.center;
-                        recastGraph.forcedBoundsSize = size;
-                        boundsUpdated = true;
-                        break;
-                    }
-                    case GridGraph gridGraph:
-                    {
-                        float nodeSize = gridGraph.nodeSize;
-                        if (nodeSize <= 0f)
-                        {
-                            break;
-                        }
-
-                        int width = Mathf.Max(1, Mathf.CeilToInt(dungeonBounds.size.x / nodeSize));
-                        int depth = Mathf.Max(1, Mathf.CeilToInt(dungeonBounds.size.z / nodeSize));
-                        Vector3 center = dungeonBounds.center;
-                        bool centerChanged = (gridGraph.center - center).sqrMagnitude > 0.0001f;
-
-                        bool requiresUpdate = gridGraph.width != width || gridGraph.depth != depth || centerChanged;
-                        if (requiresUpdate)
-                        {
-                            gridGraph.center = center;
-                            gridGraph.SetDimensions(width, depth, nodeSize);
-                            boundsUpdated = true;
-                        }
-
-                        break;
-                    }
-                }
-            }
-
-            if (boundsUpdated)
-            {
-                _astarPath.Scan();
-            }
+            boundsUpdated = true;
         }
 
         private void TryGenerateDungeon()
