@@ -697,6 +697,21 @@ namespace TPSBR
             Debug.Log($"{LogPrefix} Executing light staff attack.");
         }
 
+        public bool IsAbilityUnlocked(AbilityDefinition ability)
+        {
+            if (ability == null)
+            {
+                return false;
+            }
+
+            if (_configuredAbilities == null || _configuredAbilities.Count == 0)
+            {
+                return false;
+            }
+
+            return _configuredAbilities.Contains(ability);
+        }
+
         public void ExecuteAbility(AbilityDefinition ability)
         {
             if (ability == null)
@@ -708,6 +723,12 @@ namespace TPSBR
             if (Definition != null && Definition.HasAbility(ability) == false)
             {
                 Debug.LogWarning($"{LogPrefix} Ability '{ability.Name}' is not available on weapon definition '{Definition.name}'.");
+                return;
+            }
+
+            if (IsAbilityUnlocked(ability) == false)
+            {
+                Debug.LogWarning($"{LogPrefix} Ability '{ability.Name}' has not been unlocked for this weapon configuration.");
                 return;
             }
 
@@ -753,28 +774,6 @@ namespace TPSBR
             if (_configuredAbilities.Count > 0)
             {
                 return _configuredAbilities[0];
-            }
-
-            var definition = Definition;
-
-            if (definition == null)
-            {
-                return null;
-            }
-
-            IReadOnlyList<AbilityDefinition> abilities = definition.AvailableAbilities;
-
-            if (abilities == null)
-            {
-                return null;
-            }
-
-            for (int i = 0; i < abilities.Count; i++)
-            {
-                if (abilities[i] is StaffAbilityDefinition staffAbility)
-                {
-                    return staffAbility;
-                }
             }
 
             return null;
