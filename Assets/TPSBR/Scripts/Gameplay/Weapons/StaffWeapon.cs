@@ -704,12 +704,46 @@ namespace TPSBR
                 return false;
             }
 
-            if (_configuredAbilities == null || _configuredAbilities.Count == 0)
+            if (_configuredAbilityIndexes == null || _configuredAbilityIndexes.Length == 0)
             {
                 return false;
             }
 
-            return _configuredAbilities.Contains(ability);
+            if (Definition == null)
+            {
+                return false;
+            }
+
+            IReadOnlyList<AbilityDefinition> availableAbilities = Definition.AvailableAbilities;
+            if (availableAbilities == null || availableAbilities.Count == 0)
+            {
+                return false;
+            }
+
+            int abilityIndex = -1;
+            for (int i = 0; i < availableAbilities.Count; ++i)
+            {
+                if (availableAbilities[i] == ability)
+                {
+                    abilityIndex = i;
+                    break;
+                }
+            }
+
+            if (abilityIndex < 0)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < _configuredAbilityIndexes.Length; ++i)
+            {
+                if (_configuredAbilityIndexes[i] == abilityIndex)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         public void ExecuteAbility(AbilityDefinition ability)
