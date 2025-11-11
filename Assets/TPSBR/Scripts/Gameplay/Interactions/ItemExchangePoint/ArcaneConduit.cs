@@ -15,6 +15,7 @@ namespace TPSBR
 
         private UIArcaneConduitView _arcaneView;
         private Agent _activeAgent;
+        private Inventory _trackedInventory;
         private readonly List<AbilityOption> _abilityOptions = new List<AbilityOption>();
 
         public readonly struct AbilityOption
@@ -88,6 +89,7 @@ namespace TPSBR
             base.OnExchangeViewOpened(view, agent);
 
             _activeAgent = agent;
+            SubscribeToInventory(_activeAgent != null ? _activeAgent.Inventory : null);
             RefreshAbilityOptions();
         }
 
@@ -95,6 +97,7 @@ namespace TPSBR
         {
             base.OnExchangeViewClosed(view);
 
+            UnsubscribeFromInventory();
             _activeAgent = null;
             _abilityOptions.Clear();
 
@@ -157,6 +160,69 @@ namespace TPSBR
                 return;
 
             RequestAbilityAssignment(_activeAgent, slot, abilityIndex);
+        }
+
+        private void SubscribeToInventory(Inventory inventory)
+        {
+            if (_trackedInventory == inventory)
+                return;
+
+            UnsubscribeFromInventory();
+
+            if (inventory == null)
+                return;
+
+            _trackedInventory = inventory;
+            _trackedInventory.ItemSlotChanged += HandleInventorySlotChanged;
+            _trackedInventory.HotbarSlotChanged += HandleHotbarSlotChanged;
+            _trackedInventory.GoldChanged += HandleGoldChanged;
+        }
+
+        private void UnsubscribeFromInventory()
+        {
+            if (_trackedInventory == null)
+                return;
+
+            _trackedInventory.ItemSlotChanged -= HandleInventorySlotChanged;
+            _trackedInventory.HotbarSlotChanged -= HandleHotbarSlotChanged;
+            _trackedInventory.GoldChanged -= HandleGoldChanged;
+            _trackedInventory = null;
+        }
+
+        private void HandleInventorySlotChanged(int index, InventorySlot slot)
+        {
+            _ = slot;
+
+            if (_currentSelectedSourceType != ItemSourceType.Inventory)
+                return;
+
+            if (index != _currentSelectedSourceIndex)
+                return;
+
+            RefreshAbilityOptions();
+        }
+
+        private void HandleHotbarSlotChanged(int index, Weapon weapon)
+        {
+            _ = weapon;
+
+            if (_currentSelectedSourceType != ItemSourceType.Hotbar)
+                return;
+
+            if (index != _currentSelectedSourceIndex)
+                return;
+            
+            RefreshAbilityOptions();
+        }
+
+        private void HandleGoldChanged(int gold)
+        {
+            _ = gold;
+
+            if (_activeAgent == null)
+                return;
+
+            RefreshAbilityOptions();
         }
 
         [Rpc(RpcSources.All, RpcTargets.StateAuthority, Channel = RpcChannel.Reliable)]

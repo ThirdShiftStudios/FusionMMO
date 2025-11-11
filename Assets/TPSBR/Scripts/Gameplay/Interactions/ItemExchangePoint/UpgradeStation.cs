@@ -369,6 +369,8 @@ namespace TPSBR
                 return;
             }
 
+            _currentSelectedSourceType = sourceType;
+            _currentSelectedSourceIndex = sourceIndex;
             RPC_RequestSetSelectedItem(definitionId, sourceType, sourceIndex);
         }
 
