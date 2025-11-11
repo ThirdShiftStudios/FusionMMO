@@ -4,6 +4,8 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
+using StaffWeapon = TPSBR.StaffWeapon;
+
 namespace TPSBR.UI
 {
     public class UIItemContextView : UIExclusiveCloseView, IUIListItemOwner
@@ -47,6 +49,8 @@ namespace TPSBR.UI
         private string _unlockAbilityFormat = "Unlock ({0})";
         [SerializeField]
         private string _unlockAbilityUnavailableText = "Unlock";
+        [SerializeField]
+        private UIAbilityControlSlot[] _abilityControlSlots;
 
         private readonly List<UIListItem> _spawnedSlots = new List<UIListItem>();
         private readonly List<UpgradeStation.ItemData> _currentItems = new List<UpgradeStation.ItemData>();
@@ -56,13 +60,17 @@ namespace TPSBR.UI
         private readonly List<ArcaneConduit.AbilityOption> _allAbilityOptions = new List<ArcaneConduit.AbilityOption>();
         private readonly List<ArcaneConduit.AbilityOption> _lockedAbilityOptions = new List<ArcaneConduit.AbilityOption>();
         private readonly List<ArcaneConduit.AbilityOption> _unlockedAbilityOptions = new List<ArcaneConduit.AbilityOption>();
+        private readonly Dictionary<int, ArcaneConduit.AbilityOption> _abilityOptionLookup = new Dictionary<int, ArcaneConduit.AbilityOption>();
+        private readonly Dictionary<UIListItem, UIAbilityControlSlot> _abilityControlSlotLookup = new Dictionary<UIListItem, UIAbilityControlSlot>();
         private Func<List<UpgradeStation.ItemData>, UpgradeStation.ItemStatus> _itemProvider;
         private UpgradeStation.ItemStatus _lastStatus = UpgradeStation.ItemStatus.NoAgent;
         private int _selectedIndex = -1;
         private int _selectedLockedAbilityIndex = -1;
+        private int[] _currentAssignedAbilityIndexes;
 
         public event Action<UpgradeStation.ItemData> ItemSelected;
         protected event Action<int> AbilityUnlockRequested;
+        protected event Action<StaffWeapon.AbilityControlSlot, int> AbilityAssignmentRequested;
 
         public void Configure(Agent agent, Func<List<UpgradeStation.ItemData>, UpgradeStation.ItemStatus> itemProvider)
         {
@@ -75,6 +83,8 @@ namespace TPSBR.UI
         protected override void OnInitialize()
         {
             base.OnInitialize();
+
+            InitializeAbilityControlSlots();
 
             if (_unlockAbilityButton != null)
             {
@@ -134,6 +144,7 @@ namespace TPSBR.UI
             _allAbilityOptions.Clear();
             _lockedAbilityOptions.Clear();
             _unlockedAbilityOptions.Clear();
+            _abilityOptionLookup.Clear();
 
             if (options != null)
             {
@@ -141,6 +152,7 @@ namespace TPSBR.UI
                 {
                     ArcaneConduit.AbilityOption option = options[i];
                     _allAbilityOptions.Add(option);
+                    _abilityOptionLookup[option.Index] = option;
 
                     if (option.IsUnlocked == true)
                     {
@@ -159,6 +171,7 @@ namespace TPSBR.UI
             }
 
             RefreshAbilityLists();
+            RefreshAbilityAssignmentsView();
         }
 
         public void ClearAbilityOptions()
@@ -167,13 +180,53 @@ namespace TPSBR.UI
             _lockedAbilityOptions.Clear();
             _unlockedAbilityOptions.Clear();
             _selectedLockedAbilityIndex = -1;
+            _abilityOptionLookup.Clear();
 
             RefreshAbilityLists();
+            ClearAbilityAssignments();
         }
 
         public IReadOnlyList<ArcaneConduit.AbilityOption> GetAbilityOptions()
         {
             return _allAbilityOptions;
+        }
+
+        public void SetAbilityAssignments(IReadOnlyList<int> assignments)
+        {
+            EnsureAssignmentArray();
+
+            if (_currentAssignedAbilityIndexes == null)
+                return;
+
+            if (assignments == null)
+            {
+                ClearAssignmentArray(_currentAssignedAbilityIndexes);
+            }
+            else
+            {
+                int count = _currentAssignedAbilityIndexes.Length;
+                int providedCount = assignments.Count;
+
+                for (int i = 0; i < count; ++i)
+                {
+                    int value = i < providedCount ? assignments[i] : -1;
+                    _currentAssignedAbilityIndexes[i] = value;
+                }
+            }
+
+            RefreshAbilityAssignmentsView();
+        }
+
+        public void ClearAbilityAssignments()
+        {
+            EnsureAssignmentArray();
+
+            if (_currentAssignedAbilityIndexes != null)
+            {
+                ClearAssignmentArray(_currentAssignedAbilityIndexes);
+            }
+
+            RefreshAbilityAssignmentsView();
         }
 
         public void RequestAbilityUnlockByOptionIndex(int optionIndex)
@@ -511,6 +564,167 @@ namespace TPSBR.UI
             _emptyStateLabel.gameObject.SetActive(string.IsNullOrWhiteSpace(message) == false);
         }
 
+        private void InitializeAbilityControlSlots()
+        {
+            _abilityControlSlotLookup.Clear();
+
+            if (_abilityControlSlots != null)
+            {
+                for (int i = 0; i < _abilityControlSlots.Length; ++i)
+                {
+                    UIAbilityControlSlot controlSlot = _abilityControlSlots[i];
+                    if (controlSlot == null)
+                        continue;
+
+                    UIListItem slot = controlSlot.Slot;
+                    if (slot == null)
+                        continue;
+
+                    slot.InitializeSlot(this, (int)controlSlot.SlotType);
+
+                    if (_abilityControlSlotLookup.ContainsKey(slot) == false)
+                    {
+                        _abilityControlSlotLookup.Add(slot, controlSlot);
+                    }
+                }
+            }
+
+            EnsureAssignmentArray();
+            RefreshAbilityAssignmentsView();
+        }
+
+        private void EnsureAssignmentArray()
+        {
+            int slotCount = StaffWeapon.GetAbilityControlSlotCount();
+            if (_currentAssignedAbilityIndexes == null || _currentAssignedAbilityIndexes.Length != slotCount)
+            {
+                _currentAssignedAbilityIndexes = new int[slotCount];
+                ClearAssignmentArray(_currentAssignedAbilityIndexes);
+            }
+        }
+
+        private static void ClearAssignmentArray(int[] assignments)
+        {
+            if (assignments == null)
+                return;
+
+            for (int i = 0; i < assignments.Length; ++i)
+            {
+                assignments[i] = -1;
+            }
+        }
+
+        private void RefreshAbilityAssignmentsView()
+        {
+            if (_abilityControlSlots == null)
+                return;
+
+            for (int i = 0; i < _abilityControlSlots.Length; ++i)
+            {
+                UIAbilityControlSlot controlSlot = _abilityControlSlots[i];
+                if (controlSlot == null)
+                    continue;
+
+                int assignedIndex = GetAssignedAbilityIndex(controlSlot.SlotType);
+                ArcaneConduit.AbilityOption? assignedOption = assignedIndex >= 0 ? FindAbilityOption(assignedIndex) : null;
+                controlSlot.SetAssignedAbility(assignedOption);
+            }
+        }
+
+        private void ApplyLocalAssignment(StaffWeapon.AbilityControlSlot slotType, int abilityIndex)
+        {
+            EnsureAssignmentArray();
+
+            int slotIndex = (int)slotType;
+            if (_currentAssignedAbilityIndexes == null || slotIndex < 0 || slotIndex >= _currentAssignedAbilityIndexes.Length)
+                return;
+
+            if (abilityIndex >= 0)
+            {
+                for (int i = 0; i < _currentAssignedAbilityIndexes.Length; ++i)
+                {
+                    if (_currentAssignedAbilityIndexes[i] == abilityIndex)
+                    {
+                        _currentAssignedAbilityIndexes[i] = -1;
+                    }
+                }
+            }
+
+            _currentAssignedAbilityIndexes[slotIndex] = abilityIndex;
+        }
+
+        private int GetAssignedAbilityIndex(StaffWeapon.AbilityControlSlot slotType)
+        {
+            EnsureAssignmentArray();
+
+            int slotIndex = (int)slotType;
+            if (_currentAssignedAbilityIndexes == null || slotIndex < 0 || slotIndex >= _currentAssignedAbilityIndexes.Length)
+                return -1;
+
+            return _currentAssignedAbilityIndexes[slotIndex];
+        }
+
+        private ArcaneConduit.AbilityOption? FindAbilityOption(int abilityIndex)
+        {
+            if (_abilityOptionLookup.TryGetValue(abilityIndex, out ArcaneConduit.AbilityOption cachedOption) == true)
+            {
+                return cachedOption;
+            }
+
+            for (int i = 0; i < _allAbilityOptions.Count; ++i)
+            {
+                ArcaneConduit.AbilityOption option = _allAbilityOptions[i];
+                if (option.Index == abilityIndex)
+                {
+                    _abilityOptionLookup[abilityIndex] = option;
+                    return option;
+                }
+            }
+
+            return null;
+        }
+
+        private bool TryGetControlSlot(UIListItem slot, out UIAbilityControlSlot controlSlot)
+        {
+            if (slot != null && _abilityControlSlotLookup.TryGetValue(slot, out controlSlot) == true)
+            {
+                return true;
+            }
+
+            controlSlot = null;
+            return false;
+        }
+
+        private bool TryResolveAbilityDragSource(UIListItem slot, out int abilityIndex, out StaffWeapon.AbilityControlSlot? controlSlot)
+        {
+            abilityIndex = -1;
+            controlSlot = null;
+
+            if (slot == null)
+                return false;
+
+            int unlockedSlotIndex = _unlockedAbilitySlots.IndexOf(slot);
+            if (unlockedSlotIndex >= 0)
+            {
+                if (unlockedSlotIndex < _unlockedAbilityOptions.Count)
+                {
+                    abilityIndex = _unlockedAbilityOptions[unlockedSlotIndex].Index;
+                    return abilityIndex >= 0;
+                }
+
+                return false;
+            }
+
+            if (TryGetControlSlot(slot, out UIAbilityControlSlot abilityControlSlot) == true)
+            {
+                controlSlot = abilityControlSlot.SlotType;
+                abilityIndex = GetAssignedAbilityIndex(controlSlot.Value);
+                return abilityIndex >= 0;
+            }
+
+            return false;
+        }
+
         private static bool AreItemListsEqual(List<UpgradeStation.ItemData> current, List<UpgradeStation.ItemData> previous)
         {
             if (current == null || previous == null)
@@ -580,12 +794,65 @@ namespace TPSBR.UI
 
         void IUIListItemOwner.HandleSlotDrop(UIListItem source, UIListItem target)
         {
-            // Drag & drop is not supported within the conduit view yet.
+            if (source == null || target == null)
+                return;
+
+            if (TryResolveAbilityDragSource(source, out int abilityIndex, out StaffWeapon.AbilityControlSlot? sourceControlSlot) == false)
+                return;
+
+            if (TryGetControlSlot(target, out UIAbilityControlSlot targetControlSlot) == false)
+                return;
+
+            StaffWeapon.AbilityControlSlot targetSlotType = targetControlSlot.SlotType;
+            int existingTargetAbility = GetAssignedAbilityIndex(targetSlotType);
+
+            if (sourceControlSlot.HasValue == true)
+            {
+                StaffWeapon.AbilityControlSlot sourceSlotType = sourceControlSlot.Value;
+
+                if (sourceSlotType == targetSlotType)
+                    return;
+
+                if (abilityIndex == existingTargetAbility && existingTargetAbility >= 0)
+                    return;
+
+                AbilityAssignmentRequested?.Invoke(targetSlotType, abilityIndex);
+
+                if (existingTargetAbility >= 0)
+                {
+                    AbilityAssignmentRequested?.Invoke(sourceSlotType, existingTargetAbility);
+                    ApplyLocalAssignment(sourceSlotType, existingTargetAbility);
+                }
+                else
+                {
+                    ApplyLocalAssignment(sourceSlotType, -1);
+                }
+
+                ApplyLocalAssignment(targetSlotType, abilityIndex);
+                RefreshAbilityAssignmentsView();
+                return;
+            }
+
+            if (abilityIndex == existingTargetAbility)
+                return;
+
+            AbilityAssignmentRequested?.Invoke(targetSlotType, abilityIndex);
+            ApplyLocalAssignment(targetSlotType, abilityIndex);
+            RefreshAbilityAssignmentsView();
         }
 
         void IUIListItemOwner.HandleSlotDropOutside(UIListItem slot, PointerEventData eventData)
         {
-            // Drag & drop is not supported within the conduit view yet.
+            if (TryResolveAbilityDragSource(slot, out int _, out StaffWeapon.AbilityControlSlot? sourceControlSlot) == false)
+                return;
+
+            if (sourceControlSlot.HasValue == false)
+                return;
+
+            StaffWeapon.AbilityControlSlot slotType = sourceControlSlot.Value;
+            AbilityAssignmentRequested?.Invoke(slotType, -1);
+            ApplyLocalAssignment(slotType, -1);
+            RefreshAbilityAssignmentsView();
         }
 
         void IUIListItemOwner.HandleSlotSelected(UIListItem slot)
@@ -644,6 +911,13 @@ namespace TPSBR.UI
                     ArcaneConduit.AbilityOption option = _unlockedAbilityOptions[unlockedSlotIndex];
                     UpdateSelectedAbilityDetails(option);
                 }
+                return;
+            }
+
+            if (TryGetControlSlot(slot, out UIAbilityControlSlot controlSlot) == true)
+            {
+                UpdateSelectedAbilityDetails(controlSlot.AssignedOption);
+                return;
             }
         }
     }

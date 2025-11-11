@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 
+using StaffWeapon = TPSBR.StaffWeapon;
+
 namespace TPSBR.UI
 {
     public sealed class UIArcaneConduitView : UIItemContextView
@@ -9,6 +11,12 @@ namespace TPSBR.UI
         {
             add => AbilityUnlockRequested += value;
             remove => AbilityUnlockRequested -= value;
+        }
+
+        public event Action<StaffWeapon.AbilityControlSlot, int> AbilityAssignmentRequested
+        {
+            add => base.AbilityAssignmentRequested += value;
+            remove => base.AbilityAssignmentRequested -= value;
         }
 
         internal void SetConduit(ArcaneConduit conduit)
@@ -21,9 +29,19 @@ namespace TPSBR.UI
             base.SetAbilityOptions(options);
         }
 
+        internal void SetAbilityAssignments(IReadOnlyList<int> assignments)
+        {
+            base.SetAbilityAssignments(assignments);
+        }
+
         internal void ClearAbilityOptions()
         {
             base.ClearAbilityOptions();
+        }
+
+        internal void ClearAbilityAssignments()
+        {
+            base.ClearAbilityAssignments();
         }
 
         public IReadOnlyList<ArcaneConduit.AbilityOption> AbilityOptions => base.GetAbilityOptions();

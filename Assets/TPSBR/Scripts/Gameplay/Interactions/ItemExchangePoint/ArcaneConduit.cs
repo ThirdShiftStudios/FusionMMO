@@ -67,6 +67,7 @@ namespace TPSBR
             {
                 arcaneView.ItemSelected += HandleItemContextSelection;
                 arcaneView.AbilityPurchaseRequested += HandleAbilityPurchaseRequested;
+                arcaneView.AbilityAssignmentRequested += HandleAbilityAssignmentRequested;
             }
         }
 
@@ -76,6 +77,7 @@ namespace TPSBR
             {
                 arcaneView.ItemSelected -= HandleItemContextSelection;
                 arcaneView.AbilityPurchaseRequested -= HandleAbilityPurchaseRequested;
+                arcaneView.AbilityAssignmentRequested -= HandleAbilityAssignmentRequested;
             }
 
             base.UnsubscribeFromViewEvents(view);
@@ -99,6 +101,7 @@ namespace TPSBR
             if (_arcaneView != null)
             {
                 _arcaneView.ClearAbilityOptions();
+                _arcaneView.ClearAbilityAssignments();
             }
         }
 
@@ -119,6 +122,21 @@ namespace TPSBR
             }
         }
 
+        public void RequestAbilityAssignment(Agent agent, StaffWeapon.AbilityControlSlot slot, int abilityIndex)
+        {
+            if (agent == null)
+                return;
+
+            if (HasStateAuthority == true)
+            {
+                ProcessAbilityAssignment(agent, slot, abilityIndex);
+            }
+            else
+            {
+                RPC_RequestAbilityAssignment(agent.Object.InputAuthority, agent.Object.Id, (byte)slot, abilityIndex);
+            }
+        }
+
         private void HandleItemContextSelection(UpgradeStation.ItemData data)
         {
             _ = data;
@@ -133,6 +151,14 @@ namespace TPSBR
             RequestPurchaseAbility(_activeAgent, abilityIndex);
         }
 
+        private void HandleAbilityAssignmentRequested(StaffWeapon.AbilityControlSlot slot, int abilityIndex)
+        {
+            if (_activeAgent == null)
+                return;
+
+            RequestAbilityAssignment(_activeAgent, slot, abilityIndex);
+        }
+
         [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority, Channel = RpcChannel.Reliable)]
         private void RPC_RequestPurchaseAbility(PlayerRef playerRef, NetworkId agentId, int abilityIndex)
         {
@@ -140,6 +166,17 @@ namespace TPSBR
                 return;
 
             ProcessAbilityPurchase(agent, abilityIndex);
+        }
+
+        [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority, Channel = RpcChannel.Reliable)]
+        private void RPC_RequestAbilityAssignment(PlayerRef playerRef, NetworkId agentId, byte slotValue, int abilityIndex)
+        {
+            if (TryResolveAgent(playerRef, agentId, out Agent agent) == false)
+                return;
+
+            int clampedSlot = Mathf.Clamp(slotValue, 0, StaffWeapon.GetAbilityControlSlotCount() - 1);
+            StaffWeapon.AbilityControlSlot slot = (StaffWeapon.AbilityControlSlot)clampedSlot;
+            ProcessAbilityAssignment(agent, slot, abilityIndex);
         }
 
         private void ProcessAbilityPurchase(Agent agent, int abilityIndex)
@@ -206,6 +243,94 @@ namespace TPSBR
             RefreshAbilityOptions();
         }
 
+        private void ProcessAbilityAssignment(Agent agent, StaffWeapon.AbilityControlSlot slot, int abilityIndex)
+        {
+            if (HasStateAuthority == false)
+                return;
+
+            if (agent == null)
+                return;
+
+            Inventory inventory = agent.Inventory;
+            if (inventory == null)
+                return;
+
+            UpgradeStation.ItemSourceType sourceType = SelectedItemSourceType;
+            int sourceIndex = SelectedItemSourceIndex;
+
+            if (sourceType == UpgradeStation.ItemSourceType.None || sourceIndex < 0)
+                return;
+
+            if (TryResolveSelection(agent, sourceType, sourceIndex, out WeaponDefinition definition, out NetworkString<_32> configurationHash, out Weapon weapon) == false)
+                return;
+
+            IReadOnlyList<AbilityDefinition> availableAbilities = definition.AvailableAbilities;
+
+            if (StaffWeapon.TryGetAbilityConfiguration(configurationHash, out StaffWeapon.AbilityConfiguration abilityConfiguration) == false)
+            {
+                abilityConfiguration = new StaffWeapon.AbilityConfiguration(Array.Empty<int>(), null);
+            }
+
+            IReadOnlyList<int> unlockedIndexes = abilityConfiguration.UnlockedIndexes;
+            int slotIndex = (int)slot;
+            int slotCount = StaffWeapon.GetAbilityControlSlotCount();
+
+            if (slotIndex < 0 || slotIndex >= slotCount)
+                return;
+
+            if (abilityIndex >= 0)
+            {
+                if (availableAbilities == null || abilityIndex >= availableAbilities.Count)
+                    return;
+
+                bool isUnlocked = false;
+
+                if (unlockedIndexes != null)
+                {
+                    for (int i = 0; i < unlockedIndexes.Count; ++i)
+                    {
+                        if (unlockedIndexes[i] == abilityIndex)
+                        {
+                            isUnlocked = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (isUnlocked == false)
+                    return;
+            }
+
+            int[] assignments = CopyAssignments(abilityConfiguration.SlotAssignments);
+
+            if (abilityIndex >= 0)
+            {
+                for (int i = 0; i < assignments.Length; ++i)
+                {
+                    if (assignments[i] == abilityIndex)
+                    {
+                        assignments[i] = -1;
+                    }
+                }
+
+                assignments[slotIndex] = abilityIndex;
+            }
+            else
+            {
+                assignments[slotIndex] = -1;
+            }
+
+            if (StaffWeapon.TryApplyAbilityAssignments(configurationHash, assignments, out NetworkString<_32> updatedHash) == false)
+                return;
+
+            bool applied = ApplyConfigurationToSelection(inventory, sourceType, sourceIndex, updatedHash, weapon);
+
+            if (applied == false)
+                return;
+
+            RefreshAbilityOptions();
+        }
+
         private bool ApplyConfigurationToSelection(Inventory inventory, UpgradeStation.ItemSourceType sourceType, int sourceIndex, NetworkString<_32> configurationHash, Weapon weapon)
         {
             switch (sourceType)
@@ -241,12 +366,14 @@ namespace TPSBR
             if (_activeAgent == null)
             {
                 _arcaneView.ClearAbilityOptions();
+                _arcaneView.ClearAbilityAssignments();
                 return;
             }
 
             if (TryResolveSelection(_activeAgent, _currentSelectedSourceType, _currentSelectedSourceIndex, out WeaponDefinition definition, out NetworkString<_32> configurationHash, out _) == false)
             {
                 _arcaneView.ClearAbilityOptions();
+                _arcaneView.ClearAbilityAssignments();
                 return;
             }
 
@@ -254,14 +381,21 @@ namespace TPSBR
             if (abilities == null || abilities.Count == 0)
             {
                 _arcaneView.ClearAbilityOptions();
+                _arcaneView.ClearAbilityAssignments();
                 return;
             }
 
-            StaffWeapon.TryGetAbilityIndexes(configurationHash, out int[] abilityIndexes);
+            if (StaffWeapon.TryGetAbilityConfiguration(configurationHash, out StaffWeapon.AbilityConfiguration abilityConfiguration) == false)
+            {
+                abilityConfiguration = new StaffWeapon.AbilityConfiguration(Array.Empty<int>(), null);
+            }
 
-            var unlockedIndexes = new HashSet<int>(abilityIndexes ?? Array.Empty<int>());
+            IReadOnlyList<int> unlockedIndexList = abilityConfiguration.UnlockedIndexes;
+            var unlockedIndexes = unlockedIndexList != null ? new HashSet<int>(unlockedIndexList) : new HashSet<int>();
+            int unlockedCount = unlockedIndexes.Count;
             int gold = _activeAgent.Inventory != null ? _activeAgent.Inventory.Gold : 0;
             bool canAfford = gold >= _abilityCost;
+            int maxConfigured = StaffWeapon.MaxConfiguredAbilities;
 
             for (int i = 0; i < abilities.Count; ++i)
             {
@@ -270,12 +404,26 @@ namespace TPSBR
                     continue;
 
                 bool isUnlocked = unlockedIndexes.Contains(i);
-                bool canPurchase = canAfford && isUnlocked == false && (abilityIndexes == null || abilityIndexes.Length < StaffWeapon.MaxConfiguredAbilities);
+                bool canPurchase = canAfford && isUnlocked == false && unlockedCount < maxConfigured;
 
                 _abilityOptions.Add(new AbilityOption(i, ability, isUnlocked, canPurchase, _abilityCost));
             }
 
             _arcaneView.SetAbilityOptions(_abilityOptions);
+            _arcaneView.SetAbilityAssignments(CopyAssignments(abilityConfiguration.SlotAssignments));
+        }
+
+        private static int[] CopyAssignments(IReadOnlyList<int> source)
+        {
+            int slotCount = StaffWeapon.GetAbilityControlSlotCount();
+            int[] assignments = new int[slotCount];
+
+            for (int i = 0; i < slotCount; ++i)
+            {
+                assignments[i] = source != null && i < source.Count ? source[i] : -1;
+            }
+
+            return assignments;
         }
 
         private bool TryResolveSelection(Agent agent, UpgradeStation.ItemSourceType sourceType, int sourceIndex, out WeaponDefinition definition, out NetworkString<_32> configurationHash, out Weapon weapon)

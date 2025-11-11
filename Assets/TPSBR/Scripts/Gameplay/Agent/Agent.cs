@@ -428,10 +428,33 @@ namespace TPSBR
             {
                 bool attackReleased = _agentInput.WasDeactivated(EGameplayInputAction.Attack);
                 bool heavyAttackActivated = _agentInput.WasActivated(EGameplayInputAction.HeavyAttack);
+                bool blockActivated = _agentInput.WasActivated(EGameplayInputAction.Block);
                 bool blockHeld = _agentInput.FixedInput.Block;
 
                 if (currentWeapon is StaffWeapon staffWeapon)
                 {
+                    bool abilityTriggered = false;
+
+                    if (attack == true && staffWeapon.TryExecuteAssignedAbility(StaffWeapon.AbilityControlSlot.Primary) == true)
+                    {
+                        abilityTriggered = true;
+                    }
+                    else if (blockActivated == true && staffWeapon.TryExecuteAssignedAbility(StaffWeapon.AbilityControlSlot.Secondary) == true)
+                    {
+                        abilityTriggered = true;
+                    }
+                    else if (heavyAttackActivated == true && staffWeapon.TryExecuteAssignedAbility(StaffWeapon.AbilityControlSlot.Ability) == true)
+                    {
+                        abilityTriggered = true;
+                    }
+
+                    if (abilityTriggered == true)
+                    {
+                        attack = false;
+                        heavyAttackActivated = false;
+                        blockHeld = false;
+                    }
+
                     staffWeapon.ApplyExtendedInput(heavyAttackActivated, blockHeld);
                 }
 
