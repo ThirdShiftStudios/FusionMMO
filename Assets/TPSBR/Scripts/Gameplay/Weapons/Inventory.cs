@@ -5894,23 +5894,137 @@ namespace TPSBR
             Vector3 spawnPosition = origin + forward * _itemDropForwardOffset + Vector3.up * _itemDropUpOffset + randomOffset;
             Quaternion rotation = Quaternion.LookRotation(forward, Vector3.up);
 
-            var provider = Runner.Spawn(_inventoryItemPickupPrefab, spawnPosition, rotation);
+            float travelDuration = 0f;
+            float arcHeight = 0f;
+            Vector3 impulseDirection = (forward + Vector3.up * 0.5f).normalized;
+            if (impulseDirection.sqrMagnitude < 0.0001f)
+            {
+                impulseDirection = Vector3.up;
+            }
+
+            float groundClearance = GetPickupGroundClearance();
+            Vector3 finalPosition = CalculateItemDropLandingPosition(spawnPosition, impulseDirection * _itemDropImpulse, groundClearance, out travelDuration, out arcHeight);
+            travelDuration = Mathf.Max(travelDuration, 0.2f);
+            arcHeight = Mathf.Max(0f, arcHeight);
+
+            var provider = Runner.Spawn(_inventoryItemPickupPrefab, finalPosition, rotation);
             if (provider == null)
                 return;
 
             provider.Initialize(definition, quantity, configurationHash);
+            provider.ConfigureSpawnAnimation(spawnPosition, travelDuration, arcHeight);
+        }
 
-            var rigidbody = provider.GetComponent<Rigidbody>();
-            if (rigidbody != null && _itemDropImpulse > 0f)
+        private Vector3 CalculateItemDropLandingPosition(Vector3 startPosition, Vector3 initialVelocity, float groundClearance, out float travelDuration, out float arcHeight)
+        {
+            PhysicsScene physicsScene = Runner != null && Runner.IsRunning == true ? Runner.GetPhysicsScene() : Physics.defaultPhysicsScene;
+            Vector3 gravity = Physics.gravity;
+            const float simulationStep = 0.05f;
+            const float maxSimulationTime = 3f;
+            Vector3 position = startPosition;
+            Vector3 velocity = initialVelocity;
+
+            travelDuration = 0f;
+            arcHeight = 0f;
+
+            float highestPoint = startPosition.y;
+            RaycastHit hitInfo;
+
+            ObjectLayer.EnsureInitialized();
+            int excludedLayers = 0;
+            if (ObjectLayer.Agent >= 0)
             {
-                Vector3 impulseDirection = (forward + Vector3.up * 0.5f).normalized;
-                if (impulseDirection.sqrMagnitude < 0.0001f)
+                excludedLayers |= 1 << ObjectLayer.Agent;
+            }
+            if (ObjectLayer.AgentKCC >= 0)
+            {
+                excludedLayers |= 1 << ObjectLayer.AgentKCC;
+            }
+            if (ObjectLayer.Target >= 0)
+            {
+                excludedLayers |= 1 << ObjectLayer.Target;
+            }
+            if (ObjectLayer.Projectile >= 0)
+            {
+                excludedLayers |= 1 << ObjectLayer.Projectile;
+            }
+            if (ObjectLayer.Interaction >= 0)
+            {
+                excludedLayers |= 1 << ObjectLayer.Interaction;
+            }
+            if (ObjectLayer.Pickup >= 0)
+            {
+                excludedLayers |= 1 << ObjectLayer.Pickup;
+            }
+
+            int raycastMask = ~excludedLayers;
+
+            if (velocity.sqrMagnitude <= 0f)
+            {
+                velocity = Vector3.zero;
+            }
+
+            if (physicsScene.Raycast(startPosition + Vector3.up * 0.1f, Vector3.down, out hitInfo, 5f, raycastMask, QueryTriggerInteraction.Ignore) == true)
+            {
+                if ((hitInfo.point - startPosition).sqrMagnitude <= 0.01f)
                 {
-                    impulseDirection = Vector3.up;
+                    arcHeight = 0f;
+                    return hitInfo.point + Vector3.up * (groundClearance + 0.01f);
+                }
+            }
+
+            for (float elapsed = 0f; elapsed < maxSimulationTime; elapsed += simulationStep)
+            {
+                Vector3 displacement = velocity * simulationStep + 0.5f * gravity * (simulationStep * simulationStep);
+                Vector3 nextPosition = position + displacement;
+                Vector3 direction = nextPosition - position;
+                float distance = direction.magnitude;
+
+                if (distance > 0f && physicsScene.Raycast(position, direction.normalized, out hitInfo, distance, raycastMask, QueryTriggerInteraction.Ignore) == true)
+                {
+                    float distanceFraction = distance > 0f ? hitInfo.distance / distance : 1f;
+                    travelDuration += simulationStep * Mathf.Clamp01(distanceFraction);
+                    arcHeight = Mathf.Max(0f, highestPoint - hitInfo.point.y);
+                    return hitInfo.point + Vector3.up * (groundClearance + 0.01f);
                 }
 
-                rigidbody.AddForce(impulseDirection * _itemDropImpulse, ForceMode.VelocityChange);
+                position = nextPosition;
+                velocity += gravity * simulationStep;
+                travelDuration += simulationStep;
+                highestPoint = Mathf.Max(highestPoint, position.y);
+
+                if (physicsScene.Raycast(position + Vector3.up * 0.1f, Vector3.down, out hitInfo, 5f, raycastMask, QueryTriggerInteraction.Ignore) == true)
+                {
+                    arcHeight = Mathf.Max(0f, highestPoint - hitInfo.point.y);
+                    return hitInfo.point + Vector3.up * (groundClearance + 0.01f);
+                }
             }
+
+            if (physicsScene.Raycast(position + Vector3.up * 0.1f, Vector3.down, out hitInfo, 50f, raycastMask, QueryTriggerInteraction.Ignore) == true)
+            {
+                arcHeight = Mathf.Max(0f, highestPoint - hitInfo.point.y);
+                return hitInfo.point + Vector3.up * (groundClearance + 0.01f);
+            }
+
+            arcHeight = Mathf.Max(0f, highestPoint - position.y);
+            return position + Vector3.up * (groundClearance + 0.01f);
+        }
+
+        private float GetPickupGroundClearance()
+        {
+            if (_inventoryItemPickupPrefab != null)
+            {
+                Collider collider = _inventoryItemPickupPrefab.Collider;
+                if (collider != null)
+                {
+                    Bounds bounds = collider.bounds;
+                    float centerOffset = bounds.center.y - collider.transform.position.y;
+                    float clearance = bounds.extents.y - centerOffset;
+                    return Mathf.Max(0f, clearance);
+                }
+            }
+
+            return 0.5f;
         }
 
     private void AddWeapon(Weapon weapon, int? slotOverride = null)

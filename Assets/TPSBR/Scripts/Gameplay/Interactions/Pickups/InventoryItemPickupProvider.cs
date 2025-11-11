@@ -1,12 +1,9 @@
 using Fusion;
-using Fusion.Addons.Physics;
 using UnityEngine;
 using TSS.Data;
 
 namespace TPSBR
 {
-        [RequireComponent(typeof(NetworkRigidbody3D))]
-        [RequireComponent(typeof(Rigidbody))]
         public sealed class InventoryItemPickupProvider : NetworkBehaviour, IDynamicPickupProvider
         {
                 [SerializeField]
@@ -20,9 +17,9 @@ namespace TPSBR
                 [SerializeField]
                 private ItemDefinitionIconDisplay _iconDisplay;
                 [SerializeField]
-                private NetworkRigidbody3D _networkRigidbody;
+                private float _defaultSpawnAnimationDuration = 0.5f;
                 [SerializeField]
-                private Rigidbody _rigidbody;
+                private float _spawnAnimationArcMultiplier = 0.35f;
 
                 [Networked]
                 public int ItemDefinitionId { get; private set; }
@@ -32,6 +29,16 @@ namespace TPSBR
                 public NetworkString<_32> ConfigurationHash { get; private set; }
                 [Networked]
                 private TickTimer _despawnTimer { get; set; }
+                [Networked]
+                private Vector3 _spawnAnimationStartPosition { get; set; }
+                [Networked]
+                private float _spawnAnimationDuration { get; set; }
+                [Networked]
+                private float _spawnAnimationArcHeight { get; set; }
+                [Networked]
+                private TickTimer _spawnAnimationTimer { get; set; }
+                [Networked]
+                private NetworkBool _spawnAnimationActive { get; set; }
 
                 public ItemDefinition Definition => _definition;
 
@@ -54,6 +61,7 @@ namespace TPSBR
                 private ItemDefinition _definition;
                 private GameObject _visualInstance;
                 private bool _visualInitialized;
+                private bool _visualAnchorInitialized;
 
                 public void Initialize(ItemDefinition definition, byte quantity, NetworkString<_32> configurationHash = default)
                 {
@@ -68,6 +76,10 @@ namespace TPSBR
                         ConfigurationHash = configurationHash;
                         _definition = definition;
                         _visualInitialized = false;
+                        _spawnAnimationActive = false;
+                        _spawnAnimationTimer = default;
+                        _spawnAnimationDuration = 0f;
+                        _spawnAnimationArcHeight = 0f;
 
                         if (_despawnTime > 0f)
                         {
@@ -98,10 +110,7 @@ namespace TPSBR
                                 _iconDisplay = GetComponent<ItemDefinitionIconDisplay>();
                         }
 
-                        if (_interpolationTarget == null)
-                        {
-                                _interpolationTarget = transform;
-                        }
+                        EnsureInterpolationTarget();
 
                         if (_collider == null)
                         {
@@ -120,28 +129,6 @@ namespace TPSBR
                                 _collider.enabled = true;
                                 _collider.isTrigger = false;
                                 _collider.gameObject.layer = ObjectLayer.Interaction;
-                        }
-
-                        if (_networkRigidbody == null)
-                        {
-                                _networkRigidbody = GetComponent<NetworkRigidbody3D>();
-                        }
-
-                        if (_rigidbody == null)
-                        {
-                                _rigidbody = GetComponent<Rigidbody>();
-                        }
-
-                        if (_rigidbody != null)
-                        {
-                                _rigidbody.useGravity = true;
-                                _rigidbody.isKinematic = false;
-                                _rigidbody.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
-                        }
-
-                        if (_networkRigidbody != null)
-                        {
-                                _networkRigidbody.InterpolationTarget = InterpolationTarget;
                         }
 
                         if (HasStateAuthority == true && _despawnTime > 0f)
@@ -163,6 +150,12 @@ namespace TPSBR
                                 return;
                         }
 
+                        if (HasStateAuthority == true && _spawnAnimationActive == true && _spawnAnimationTimer.IsRunning == true && _spawnAnimationTimer.Expired(Runner) == true)
+                        {
+                                _spawnAnimationActive = false;
+                                _spawnAnimationTimer = default;
+                        }
+
                         if (_definition == null)
                         {
                                 EnsureDefinition();
@@ -172,6 +165,8 @@ namespace TPSBR
 
                 public override void Render()
                 {
+                        UpdateSpawnAnimation();
+
                         if (_definition == null)
                         {
                                 EnsureDefinition();
@@ -201,6 +196,8 @@ namespace TPSBR
 
                 private void RefreshVisual()
                 {
+                        EnsureInterpolationTarget();
+
                         if (_visualInitialized == true)
                                 return;
 
@@ -254,6 +251,109 @@ namespace TPSBR
                         }
 
                         _visualInitialized = false;
+                        ResetVisualAnchor();
+                }
+
+                public void ConfigureSpawnAnimation(Vector3 worldStartPosition, float travelDuration, float arcHeight)
+                {
+                        if (HasStateAuthority == false)
+                                return;
+
+                        EnsureInterpolationTarget();
+
+                        float duration = travelDuration > 0f ? travelDuration : _defaultSpawnAnimationDuration;
+                        float computedArc = arcHeight >= 0f ? arcHeight : 0f;
+
+                        _spawnAnimationStartPosition = worldStartPosition;
+                        _spawnAnimationDuration = duration;
+                        _spawnAnimationArcHeight = computedArc;
+
+                        if (duration > 0f)
+                        {
+                                _spawnAnimationTimer = TickTimer.CreateFromSeconds(Runner, duration);
+                                _spawnAnimationActive = true;
+                                if (_interpolationTarget != null)
+                                {
+                                        _interpolationTarget.position = worldStartPosition;
+                                }
+                        }
+                        else
+                        {
+                                _spawnAnimationTimer = default;
+                                _spawnAnimationActive = false;
+                                ResetVisualAnchor();
+                        }
+                }
+
+                private void EnsureInterpolationTarget()
+                {
+                        if (_interpolationTarget != null)
+                        {
+                                if (_visualAnchorInitialized == false)
+                                {
+                                        ResetVisualAnchor();
+                                        _visualAnchorInitialized = true;
+                                }
+                                return;
+                        }
+
+                        var visualRoot = new GameObject("VisualRoot");
+                        visualRoot.transform.SetParent(transform, false);
+                        _interpolationTarget = visualRoot.transform;
+                        _visualAnchorInitialized = true;
+                        ResetVisualAnchor();
+                }
+
+                private void UpdateSpawnAnimation()
+                {
+                        if (_interpolationTarget == null)
+                                return;
+
+                        if (_spawnAnimationActive == false)
+                        {
+                                ResetVisualAnchor();
+                                return;
+                        }
+
+                        float duration = _spawnAnimationDuration > 0f ? _spawnAnimationDuration : _defaultSpawnAnimationDuration;
+                        if (duration <= 0f)
+                        {
+                                ResetVisualAnchor();
+                                return;
+                        }
+
+                        float remaining = _spawnAnimationTimer.IsRunning == true ? (_spawnAnimationTimer.RemainingTime(Runner) ?? 0f) : 0f;
+                        float elapsed = Mathf.Clamp(duration - remaining, 0f, duration);
+                        float t = duration > 0f ? Mathf.Clamp01(elapsed / duration) : 1f;
+
+                        Vector3 worldPosition = Vector3.Lerp(_spawnAnimationStartPosition, transform.position, t);
+
+                        float arcHeight = _spawnAnimationArcHeight;
+                        if (arcHeight <= 0f)
+                        {
+                                arcHeight = Vector3.Distance(_spawnAnimationStartPosition, transform.position) * _spawnAnimationArcMultiplier;
+                        }
+
+                        if (arcHeight > 0f)
+                        {
+                                worldPosition.y += Mathf.Sin(t * Mathf.PI) * arcHeight;
+                        }
+
+                        _interpolationTarget.position = worldPosition;
+
+                        if (_spawnAnimationActive == false || (_spawnAnimationTimer.IsRunning == false && t >= 0.999f))
+                        {
+                                ResetVisualAnchor();
+                        }
+                }
+
+                private void ResetVisualAnchor()
+                {
+                        if (_interpolationTarget == null || _interpolationTarget == transform)
+                                return;
+
+                        _interpolationTarget.localPosition = Vector3.zero;
+                        _interpolationTarget.localRotation = Quaternion.identity;
                 }
 
         // IInteraction INTERFACE
