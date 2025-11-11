@@ -1,11 +1,11 @@
 using Fusion;
 using TPSBR;
+using TPSBR.Abilities;
 using UnityEngine;
 using UnityEngine.Serialization;
-
 namespace TPSBR.Abilities
 {
-    [CreateAssetMenu(fileName = "FireballAbilityDefinition", menuName = "TSS/Abilities/Fireball Ability")]
+    [CreateAssetMenu(fileName = "IceShardAbilityDefinition", menuName = "TSS/Abilities/Fireball Ability")]
     public class FireballAbilityDefinition : StaffAbilityDefinition
     {
         public const string AbilityCode = "FIREBALL";

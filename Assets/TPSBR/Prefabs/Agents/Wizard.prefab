@@ -737,7 +737,7 @@ GameObject:
   - component: {fileID: 312359650988125200}
   - component: {fileID: 3191152985599960717}
   m_Layer: 8
-  m_Name: Heavy
+  m_Name: Ability_FireNova
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -787,7 +787,7 @@ GameObject:
   - component: {fileID: 1639356501486125303}
   - component: {fileID: 7017657832660007047}
   m_Layer: 8
-  m_Name: FloorBlast
+  m_Name: Ability_IceShard
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -824,7 +824,7 @@ MonoBehaviour:
     Clip: {fileID: 8993902097722301239, guid: b626f827dc97e204cbcc12862f3d7d0e, type: 3}
     Speed: 1
     IsLooping: 0
-  _ability: {fileID: 0}
+  _ability: {fileID: 11400000, guid: cc074c1f0bb8aee48920aa5edf1e510b, type: 2}
   _abilityTriggerNormalizedTime: 0.5
 --- !u!1 &2773727068030882801
 GameObject:
@@ -1245,7 +1245,7 @@ GameObject:
   - component: {fileID: 4605147604364869545}
   - component: {fileID: 4351186955281125842}
   m_Layer: 8
-  m_Name: LightAttack
+  m_Name: Ability_Fireball
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -3639,9 +3639,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _chargeState: {fileID: 8286909057997534430}
-  _lightAttackState: {fileID: 4351186955281125842}
+  _fireballAbility: {fileID: 4351186955281125842}
   _heavyAttackState: {fileID: 3191152985599960717}
-  _abilityAttackState: {fileID: 3191152985599960717}
+  _abilityAttackState: {fileID: 7017657832660007047}
   _blendInDuration: 0.1
   _blendOutDuration: 0.15
 --- !u!114 &2878041293676285638 stripped

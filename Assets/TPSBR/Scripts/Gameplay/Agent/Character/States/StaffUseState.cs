@@ -10,7 +10,7 @@ namespace TPSBR
 
                 [Header("States")]
                 [SerializeField] private ClipState _chargeState;
-                [SerializeField] private AbilityClipState _lightAttackState;
+                [SerializeField] private AbilityClipState _fireballAbility;
                 [SerializeField] private AbilityClipState _heavyAttackState;
                 [SerializeField] private AbilityClipState _abilityAttackState;
 
@@ -57,17 +57,17 @@ namespace TPSBR
 
                 public bool PlayLightAttack(StaffWeapon weapon)
                 {
-                        if (EnsureActiveWeapon(weapon) == false || _lightAttackState == null)
+                        if (EnsureActiveWeapon(weapon) == false || _fireballAbility == null)
                                 return false;
 
-                        if (IsAbilityStateUnlocked(weapon, _lightAttackState, "light attack") == false)
+                        if (IsAbilityStateUnlocked(weapon, _fireballAbility, "light attack") == false)
                                 return false;
 
                         _isCharging = false;
                         _lightAttackAbilityTriggered = false;
 
-                        _lightAttackState.SetAnimationTime(0.0f);
-                        _lightAttackState.Activate(_blendInDuration);
+                        _fireballAbility.SetAnimationTime(0.0f);
+                        _fireballAbility.Activate(_blendInDuration);
                         weapon?.NotifyLightAttackAnimationStarted();
                         Activate(_blendInDuration);
 
@@ -145,11 +145,11 @@ namespace TPSBR
                         if (activeState == null)
                                 return;
 
-                        if (activeState == _lightAttackState)
+                        if (activeState == _fireballAbility)
                         {
-                                TryTriggerAbility(_lightAttackState, ref _lightAttackAbilityTriggered);
+                                TryTriggerAbility(_fireballAbility, ref _lightAttackAbilityTriggered);
 
-                                if (_lightAttackState.IsFinished(0.95f) == true)
+                                if (_fireballAbility.IsFinished(0.95f) == true)
                                 {
                                         _activeWeapon?.NotifyLightAttackAnimationFinished();
                                         Finish();
@@ -237,7 +237,7 @@ namespace TPSBR
                         }
 
                         // Legacy fallback for configurations that have not yet been migrated to ability definitions.
-                        if (state == _lightAttackState)
+                        if (state == _fireballAbility)
                         {
                                 _activeWeapon.TriggerLightAttackProjectile();
                         }
@@ -273,7 +273,7 @@ namespace TPSBR
                         if (ability == null)
                                 return WeaponUseAnimation.None;
 
-                        if (_lightAttackState != null && _lightAttackState.Ability == ability)
+                        if (_fireballAbility != null && _fireballAbility.Ability == ability)
                                 return WeaponUseAnimation.LightAttack;
 
                         if (_heavyAttackState != null && _heavyAttackState.Ability == ability)
