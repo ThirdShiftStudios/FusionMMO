@@ -19,7 +19,9 @@ namespace TPSBR
                 private StaffWeapon _activeWeapon;
                 private bool _isCharging;
                 private AbilityClipState _activeAbilityState;
-                private WeaponUseAnimation _activeAbilityAnimation = WeaponUseAnimation.None;
+                private AbilityDefinition _activeAbilityDefinition;
+                private StaffWeapon.AbilityControlSlot _activeAbilitySlot = StaffWeapon.AbilityControlSlot.Primary;
+                private bool _shouldNotifyLightAttack;
                 private bool _abilityTriggered;
 
                 // PUBLIC METHODS
@@ -59,7 +61,7 @@ namespace TPSBR
                                 return false;
 
                         AbilityDefinition assignedAbility = weapon != null ? weapon.GetAssignedAbility(StaffWeapon.AbilityControlSlot.Primary) : null;
-                        AbilityClipState state = ResolveAbilityState(assignedAbility, WeaponUseAnimation.LightAttack);
+                        AbilityClipState state = ResolveAbilityState(assignedAbility);
 
                         if (state == null)
                         {
@@ -71,7 +73,7 @@ namespace TPSBR
                         if (IsAbilityStateUnlocked(weapon, state, assignedAbility, "light attack") == false)
                                 return false;
 
-                        if (PlayAbilityState(weapon, state, WeaponUseAnimation.LightAttack, true) == false)
+                        if (PlayAbilityState(weapon, state, StaffWeapon.AbilityControlSlot.Primary, true, assignedAbility) == false)
                                 return false;
 
                         return true;
@@ -83,7 +85,7 @@ namespace TPSBR
                                 return false;
 
                         AbilityDefinition assignedAbility = weapon != null ? weapon.GetAssignedAbility(StaffWeapon.AbilityControlSlot.Secondary) : null;
-                        AbilityClipState state = ResolveAbilityState(assignedAbility, WeaponUseAnimation.HeavyAttack);
+                        AbilityClipState state = ResolveAbilityState(assignedAbility);
 
                         if (state == null)
                         {
@@ -95,7 +97,7 @@ namespace TPSBR
                         if (IsAbilityStateUnlocked(weapon, state, assignedAbility, "heavy attack") == false)
                                 return false;
 
-                        if (PlayAbilityState(weapon, state, WeaponUseAnimation.HeavyAttack, false) == false)
+                        if (PlayAbilityState(weapon, state, StaffWeapon.AbilityControlSlot.Secondary, false, assignedAbility) == false)
                                 return false;
 
                         return true;
@@ -107,7 +109,7 @@ namespace TPSBR
                                 return false;
 
                         AbilityDefinition assignedAbility = weapon != null ? weapon.GetAssignedAbility(StaffWeapon.AbilityControlSlot.Ability) : null;
-                        AbilityClipState state = ResolveAbilityState(assignedAbility, WeaponUseAnimation.Ability);
+                        AbilityClipState state = ResolveAbilityState(assignedAbility);
 
                         if (state == null)
                         {
@@ -119,7 +121,7 @@ namespace TPSBR
                         if (IsAbilityStateUnlocked(weapon, state, assignedAbility, "ability attack") == false)
                                 return false;
 
-                        if (PlayAbilityState(weapon, state, WeaponUseAnimation.Ability, false) == false)
+                        if (PlayAbilityState(weapon, state, StaffWeapon.AbilityControlSlot.Ability, false, assignedAbility) == false)
                                 return false;
 
                         return true;
@@ -168,7 +170,12 @@ namespace TPSBR
                         if (_activeAbilityState != abilityState)
                         {
                                 _activeAbilityState = abilityState;
-                                _activeAbilityAnimation = abilityState.AnimationType;
+                                if (_activeAbilityDefinition == null)
+                                {
+                                        _activeAbilityDefinition = abilityState.Ability;
+                                }
+                                _activeAbilitySlot = StaffWeapon.AbilityControlSlot.Primary;
+                                _shouldNotifyLightAttack = false;
                                 _abilityTriggered = false;
                         }
 
@@ -176,7 +183,7 @@ namespace TPSBR
 
                         if (abilityState.IsFinished(0.95f) == true)
                         {
-                                if (_activeAbilityAnimation == WeaponUseAnimation.LightAttack)
+                                if (_shouldNotifyLightAttack == true)
                                 {
                                         _activeWeapon?.NotifyLightAttackAnimationFinished();
                                 }
@@ -214,7 +221,9 @@ namespace TPSBR
                 {
                         _activeWeapon = null;
                         _activeAbilityState = null;
-                        _activeAbilityAnimation = WeaponUseAnimation.None;
+                        _activeAbilityDefinition = null;
+                        _activeAbilitySlot = StaffWeapon.AbilityControlSlot.Primary;
+                        _shouldNotifyLightAttack = false;
                         _abilityTriggered = false;
 
                         if (IsActive(true) == true)
@@ -223,14 +232,16 @@ namespace TPSBR
                         }
                 }
 
-                private bool PlayAbilityState(StaffWeapon weapon, AbilityClipState state, WeaponUseAnimation animationType, bool notifyLightAttack)
+                private bool PlayAbilityState(StaffWeapon weapon, AbilityClipState state, StaffWeapon.AbilityControlSlot slot, bool notifyLightAttack, AbilityDefinition assignedAbility)
                 {
                         if (state == null)
                                 return false;
 
                         _isCharging = false;
                         _activeAbilityState = state;
-                        _activeAbilityAnimation = animationType;
+                        _activeAbilityDefinition = state.Ability ?? assignedAbility;
+                        _activeAbilitySlot = slot;
+                        _shouldNotifyLightAttack = notifyLightAttack;
                         _abilityTriggered = false;
 
                         state.SetAnimationTime(0.0f);
@@ -246,7 +257,7 @@ namespace TPSBR
                         return true;
                 }
 
-                private AbilityClipState ResolveAbilityState(AbilityDefinition assignedAbility, WeaponUseAnimation animationType)
+                private AbilityClipState ResolveAbilityState(AbilityDefinition assignedAbility)
                 {
                         if (_abilityStates == null || _abilityStates.Length == 0)
                                 return null;
@@ -258,9 +269,6 @@ namespace TPSBR
                                 AbilityClipState candidate = _abilityStates[i];
 
                                 if (candidate == null)
-                                        continue;
-
-                                if (candidate.AnimationType != animationType)
                                         continue;
 
                                 if (assignedAbility != null && candidate.Ability == assignedAbility)
@@ -288,7 +296,7 @@ namespace TPSBR
                         if (_activeWeapon == null)
                                 return;
 
-                        AbilityDefinition ability = _activeAbilityState.Ability;
+                        AbilityDefinition ability = _activeAbilityDefinition ?? _activeAbilityState.Ability;
 
                         if (ability != null)
                         {
@@ -296,7 +304,7 @@ namespace TPSBR
                                 return;
                         }
 
-                        if (_activeAbilityAnimation == WeaponUseAnimation.LightAttack)
+                        if (_activeAbilitySlot == StaffWeapon.AbilityControlSlot.Primary)
                         {
                                 _activeWeapon.TriggerLightAttackProjectile();
                         }
@@ -327,23 +335,5 @@ namespace TPSBR
                         return false;
                 }
 
-                public WeaponUseAnimation GetAnimationForAbility(AbilityDefinition ability)
-                {
-                        if (ability == null || _abilityStates == null)
-                                return WeaponUseAnimation.None;
-
-                        for (int i = 0; i < _abilityStates.Length; ++i)
-                        {
-                                AbilityClipState state = _abilityStates[i];
-
-                                if (state == null)
-                                        continue;
-
-                                if (state.Ability == ability)
-                                        return state.AnimationType;
-                        }
-
-                        return WeaponUseAnimation.None;
-                }
         }
 }

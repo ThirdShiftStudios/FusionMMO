@@ -968,21 +968,6 @@ namespace TPSBR
 
         private WeaponUseAnimation ResolveAnimationForAbility(AbilityControlSlot slot, StaffAbilityDefinition ability)
         {
-            if (ability != null)
-            {
-                StaffUseState staffAttack = GetAttackLayer()?.StaffAttack;
-
-                if (staffAttack != null)
-                {
-                    WeaponUseAnimation resolved = staffAttack.GetAnimationForAbility(ability);
-
-                    if (resolved != WeaponUseAnimation.None)
-                    {
-                        return resolved;
-                    }
-                }
-            }
-
             switch (slot)
             {
                 case AbilityControlSlot.Primary:

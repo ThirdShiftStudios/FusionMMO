@@ -9,15 +9,11 @@ namespace TPSBR
         [SerializeField]
         private AbilityDefinition _ability;
 
-        [SerializeField]
-        private WeaponUseAnimation _animationType = WeaponUseAnimation.LightAttack;
-
         [SerializeField, Range(0f, 1f)]
         [Tooltip("Normalized time within the clip when the ability should trigger.")]
         private float _abilityTriggerNormalizedTime = 0.5f;
 
         public AbilityDefinition Ability => _ability;
-        public WeaponUseAnimation AnimationType => _animationType;
         public float AbilityTriggerNormalizedTime => Mathf.Clamp01(_abilityTriggerNormalizedTime);
 
     }
