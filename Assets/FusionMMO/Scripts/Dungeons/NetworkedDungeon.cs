@@ -184,13 +184,13 @@ namespace FusionMMO.Dungeons
             var dungeonBounds = DungeonUtils.GetDungeonBounds(_dungeon);
             if (dungeonBounds.size == Vector3.zero)
             {
-                //return;
+                return;
             }
 
             var data = _astarPath.data;
             if (data == null || data.graphs == null)
             {
-                //return;
+                return;
             }
 
             bool boundsUpdated = false;
