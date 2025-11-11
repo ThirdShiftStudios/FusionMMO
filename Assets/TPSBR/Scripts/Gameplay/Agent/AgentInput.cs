@@ -705,15 +705,6 @@ namespace TPSBR
                 return WeaponDeselectValue;
             }
 
-            if (keyboard.qKey.wasPressedThisFrame == true)
-            {
-                int previousSlot = _agent.Inventory.PreviousWeaponSlot;
-                if (previousSlot > 0)
-                {
-                    return (byte)previousSlot; // Fast switch
-                }
-            }
-
             if (keyboard.f2Key.wasPressedThisFrame == true)
             {
                 int fishingSlot = Inventory.HOTBAR_FISHING_POLE_SLOT;
