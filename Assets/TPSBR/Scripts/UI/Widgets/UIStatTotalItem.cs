@@ -14,7 +14,7 @@ namespace TPSBR
         private int _currentValue;
         private bool _hasValidStat;
         private Stats.StatIndex _currentStatIndex;
-        private UIGameplayInventory _inventoryView;
+        private UIGameplayInventoryView _inventoryView;
 
         public void SetData(string statCode, int statValue)
         {
@@ -88,7 +88,7 @@ namespace TPSBR
             HideTooltip();
         }
 
-        private UIGameplayInventory GetInventoryView()
+        private UIGameplayInventoryView GetInventoryView()
         {
             if (_inventoryView == null)
             {
@@ -100,7 +100,7 @@ namespace TPSBR
 
         private void CacheInventoryView()
         {
-            _inventoryView = SceneUI != null ? SceneUI.Get<UIGameplayInventory>() : null;
+            _inventoryView = SceneUI != null ? SceneUI.Get<UIGameplayInventoryView>() : null;
         }
 
         private void HideTooltip()

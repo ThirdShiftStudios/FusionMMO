@@ -13,7 +13,7 @@ namespace TPSBR.UI
 
 		
 		private UIDeathView _deathView;
-		private UIGameplayInventory _inventoryView;
+		private UIGameplayInventoryView _inventoryView;
 		
 		private bool _gameOverShown;
 		private Coroutine _gameOverCoroutine;
@@ -54,7 +54,7 @@ namespace TPSBR.UI
                         EnsureSlotMachineView();
 
                         _deathView = Get<UIDeathView>();
-                        _inventoryView = Get<UIGameplayInventory>();
+                        _inventoryView = Get<UIGameplayInventoryView>();
                         Get<UIFishingView>();
             _adminConsoleView = Get<UIAdminConsoleView>();
         }
@@ -171,7 +171,7 @@ namespace TPSBR.UI
 			Close<UIScoreboardView>();
 			Close<UIGameplayMenu>();
 			Close<UIAnnouncementsView>();
-			Close<UIGameplayInventory>();
+			Close<UIGameplayInventoryView>();
 			
 			Open<UIGameOverView>();
 

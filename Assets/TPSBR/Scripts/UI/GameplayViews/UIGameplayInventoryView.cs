@@ -10,7 +10,7 @@ using TSS.Data;
 
 namespace TPSBR.UI
 {
-    public class UIGameplayInventory : UICloseView
+    public class UIGameplayInventoryView : UICloseView
     {
         // PUBLIC MEMBERS
 
@@ -388,7 +388,7 @@ namespace TPSBR.UI
 
         private sealed class InventoryListPresenter : IUIListItemOwner
         {
-            private readonly UIGameplayInventory _view;
+            private readonly UIGameplayInventoryView _view;
             private UIList _list;
             private RectTransform _dragLayer;
             private UIListItem[] _slots;
@@ -418,7 +418,7 @@ namespace TPSBR.UI
             private int _hoveredSlotIndex = -1;
             private Vector2 _lastPointerPosition;
 
-            internal InventoryListPresenter(UIGameplayInventory view)
+            internal InventoryListPresenter(UIGameplayInventoryView view)
             {
                 _view = view;
             }

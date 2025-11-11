@@ -20,7 +20,7 @@ namespace TPSBR.UI
         private Professions.ProfessionSnapshot _snapshot;
         private bool _hasProfession;
         private Professions.ProfessionIndex _professionIndex;
-        private UIGameplayInventory _inventoryView;
+        private UIGameplayInventoryView _inventoryView;
 
         public void SetData(string professionCode, Professions.ProfessionSnapshot snapshot)
         {
@@ -158,7 +158,7 @@ namespace TPSBR.UI
             HideTooltip();
         }
 
-        private UIGameplayInventory GetInventoryView()
+        private UIGameplayInventoryView GetInventoryView()
         {
             if (_inventoryView == null)
             {
@@ -170,7 +170,7 @@ namespace TPSBR.UI
 
         private void CacheInventoryView()
         {
-            _inventoryView = SceneUI != null ? SceneUI.Get<UIGameplayInventory>() : null;
+            _inventoryView = SceneUI != null ? SceneUI.Get<UIGameplayInventoryView>() : null;
         }
 
         private void HideTooltip()
