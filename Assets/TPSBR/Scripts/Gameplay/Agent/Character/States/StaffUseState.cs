@@ -55,10 +55,13 @@ namespace TPSBR
                         _chargeState.SetAnimationTime(1.0f);
                 }
 
-                public void PlayLightAttack(StaffWeapon weapon)
+                public bool PlayLightAttack(StaffWeapon weapon)
                 {
                         if (EnsureActiveWeapon(weapon) == false || _lightAttackState == null)
-                                return;
+                                return false;
+
+                        if (IsAbilityStateUnlocked(weapon, _lightAttackState, "light attack") == false)
+                                return false;
 
                         _isCharging = false;
                         _lightAttackAbilityTriggered = false;
@@ -67,12 +70,17 @@ namespace TPSBR
                         _lightAttackState.Activate(_blendInDuration);
                         weapon?.NotifyLightAttackAnimationStarted();
                         Activate(_blendInDuration);
+
+                        return true;
                 }
 
-                public void PlayHeavyAttack(StaffWeapon weapon)
+                public bool PlayHeavyAttack(StaffWeapon weapon)
                 {
                         if (EnsureActiveWeapon(weapon) == false || _heavyAttackState == null)
-                                return;
+                                return false;
+
+                        if (IsAbilityStateUnlocked(weapon, _heavyAttackState, "heavy attack") == false)
+                                return false;
 
                         _isCharging = false;
                         _heavyAttackAbilityTriggered = false;
@@ -81,18 +89,25 @@ namespace TPSBR
                         _heavyAttackState.SetAnimationTime(0.0f);
                         _heavyAttackState.Activate(_blendInDuration);
                         Activate(_blendInDuration);
+
+                        return true;
                 }
 
-                public void PlayAbilityAttack(StaffWeapon weapon)
+                public bool PlayAbilityAttack(StaffWeapon weapon)
                 {
                         if (EnsureActiveWeapon(weapon) == false || _abilityAttackState == null)
-                                return;
+                                return false;
+
+                        if (IsAbilityStateUnlocked(weapon, _abilityAttackState, "ability attack") == false)
+                                return false;
 
                         _isCharging = false;
 
                         _abilityAttackState.SetAnimationTime(0.0f);
                         _abilityAttackState.Activate(_blendInDuration);
                         Activate(_blendInDuration);
+
+                        return true;
                 }
 
                 public void CancelCharge(StaffWeapon weapon)
@@ -226,6 +241,31 @@ namespace TPSBR
                         {
                                 _activeWeapon.TriggerLightAttackProjectile();
                         }
+                }
+
+                private bool IsAbilityStateUnlocked(StaffWeapon weapon, AbilityClipState state, string animationName)
+                {
+                        if (weapon == null || state == null)
+                                return false;
+
+                        AbilityDefinition ability = state.Ability;
+
+                        if (ability == null)
+                        {
+                                var configuredAbilities = weapon.ConfiguredAbilities;
+
+                                if (configuredAbilities != null && configuredAbilities.Count > 0)
+                                        return true;
+
+                                Debug.LogWarning($"StaffUseState prevented {animationName} animation because the staff has no unlocked abilities configured.");
+                                return false;
+                        }
+
+                        if (weapon.IsAbilityUnlocked(ability) == true)
+                                return true;
+
+                        Debug.LogWarning($"StaffUseState prevented {animationName} animation because ability '{ability.Name}' is not unlocked for this staff weapon.");
+                        return false;
                 }
         }
 }

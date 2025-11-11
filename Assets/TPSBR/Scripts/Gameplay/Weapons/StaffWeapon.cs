@@ -198,16 +198,31 @@ namespace TPSBR
                     return true;
 
                 case WeaponUseAnimation.LightAttack:
-                    staffAttack.PlayLightAttack(this);
-                    return true;
+                    if (staffAttack.PlayLightAttack(this) == true)
+                    {
+                        return true;
+                    }
+
+                    _pendingLightAttack = false;
+                    _lightAttackActive = false;
+                    return false;
 
                 case WeaponUseAnimation.HeavyAttack:
-                    staffAttack.PlayHeavyAttack(this);
-                    return true;
+                    if (staffAttack.PlayHeavyAttack(this) == true)
+                    {
+                        return true;
+                    }
+
+                    _heavyAttackActivated = false;
+                    return false;
 
                 case WeaponUseAnimation.Ability:
-                    staffAttack.PlayAbilityAttack(this);
-                    return true;
+                    if (staffAttack.PlayAbilityAttack(this) == true)
+                    {
+                        return true;
+                    }
+
+                    return false;
             }
 
             return true;
