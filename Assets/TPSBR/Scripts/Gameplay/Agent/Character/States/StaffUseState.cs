@@ -110,6 +110,13 @@ namespace TPSBR
                         return true;
                 }
 
+                public void ConfigureAssignedAbilities(StaffAbilityDefinition primaryAbility, StaffAbilityDefinition secondaryAbility, StaffAbilityDefinition abilityAbility)
+                {
+                        SetAbility(_lightAttackState, primaryAbility);
+                        SetAbility(_heavyAttackState, secondaryAbility);
+                        SetAbility(_abilityAttackState, abilityAbility);
+                }
+
                 public void CancelCharge(StaffWeapon weapon)
                 {
                         if (IsValidWeapon(weapon) == false)
@@ -251,21 +258,21 @@ namespace TPSBR
                         AbilityDefinition ability = state.Ability;
 
                         if (ability == null)
-                        {
-                                var configuredAbilities = weapon.ConfiguredAbilities;
-
-                                if (configuredAbilities != null && configuredAbilities.Count > 0)
-                                        return true;
-
-                                Debug.LogWarning($"StaffUseState prevented {animationName} animation because the staff has no unlocked abilities configured.");
                                 return false;
-                        }
 
                         if (weapon.IsAbilityUnlocked(ability) == true)
                                 return true;
 
                         Debug.LogWarning($"StaffUseState prevented {animationName} animation because ability '{ability.Name}' is not unlocked for this staff weapon.");
                         return false;
+                }
+
+                private static void SetAbility(AbilityClipState state, AbilityDefinition ability)
+                {
+                        if (state == null)
+                                return;
+
+                        state.SetAbility(ability);
                 }
         }
 }

@@ -433,25 +433,39 @@ namespace TPSBR
 
                 if (currentWeapon is StaffWeapon staffWeapon)
                 {
-                    bool abilityTriggered = false;
+                    bool abilityInputConsumed = false;
 
-                    if (attack == true && staffWeapon.TryExecuteAssignedAbility(StaffWeapon.AbilityControlSlot.Primary) == true)
+                    if (attack == true && staffWeapon.HasAssignedAbility(StaffWeapon.AbilityControlSlot.Primary) == true)
                     {
-                        abilityTriggered = true;
+                        abilityInputConsumed = true;
+                        staffWeapon.TryExecuteAssignedAbility(StaffWeapon.AbilityControlSlot.Primary);
                     }
-                    else if (blockActivated == true && staffWeapon.TryExecuteAssignedAbility(StaffWeapon.AbilityControlSlot.Secondary) == true)
+                    else if (blockActivated == true && staffWeapon.HasAssignedAbility(StaffWeapon.AbilityControlSlot.Secondary) == true)
                     {
-                        abilityTriggered = true;
+                        abilityInputConsumed = true;
+                        staffWeapon.TryExecuteAssignedAbility(StaffWeapon.AbilityControlSlot.Secondary);
                     }
-                    else if (heavyAttackActivated == true && staffWeapon.TryExecuteAssignedAbility(StaffWeapon.AbilityControlSlot.Ability) == true)
+                    else if (heavyAttackActivated == true && staffWeapon.HasAssignedAbility(StaffWeapon.AbilityControlSlot.Ability) == true)
                     {
-                        abilityTriggered = true;
+                        abilityInputConsumed = true;
+                        staffWeapon.TryExecuteAssignedAbility(StaffWeapon.AbilityControlSlot.Ability);
                     }
 
-                    if (abilityTriggered == true)
+                    if (abilityInputConsumed == true)
                     {
                         attack = false;
+                        hold = false;
                         heavyAttackActivated = false;
+                        blockHeld = false;
+                    }
+
+                    if (staffWeapon.HasAssignedAbility(StaffWeapon.AbilityControlSlot.Primary) == true)
+                    {
+                        hold = false;
+                    }
+
+                    if (staffWeapon.HasAssignedAbility(StaffWeapon.AbilityControlSlot.Secondary) == true)
+                    {
                         blockHeld = false;
                     }
 

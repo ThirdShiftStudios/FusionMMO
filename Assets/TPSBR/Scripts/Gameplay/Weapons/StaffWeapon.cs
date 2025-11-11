@@ -72,6 +72,7 @@ namespace TPSBR
         private int[] _configuredAbilityIndexes = Array.Empty<int>();
         private readonly int[] _assignedAbilityIndexes = CreateDefaultSlotAssignments();
         private readonly StaffAbilityDefinition[] _assignedAbilities = new StaffAbilityDefinition[AbilityControlSlotCount];
+        private bool _animationAbilitiesDirty = true;
 
         public float BaseDamage => _baseDamage;
         public float HealthRegen => _healthRegen;
@@ -94,6 +95,11 @@ namespace TPSBR
             return _assignedAbilities[index];
         }
 
+        public bool HasAssignedAbility(AbilityControlSlot slot)
+        {
+            return GetAssignedAbility(slot) != null;
+        }
+
         public bool TryExecuteAssignedAbility(AbilityControlSlot slot)
         {
             StaffAbilityDefinition ability = GetAssignedAbility(slot);
@@ -102,7 +108,50 @@ namespace TPSBR
                 return false;
             }
 
-            ExecuteAbility(ability);
+            WeaponUseAnimation animation = ResolveAnimationForSlot(slot);
+            if (animation == WeaponUseAnimation.None)
+            {
+                return false;
+            }
+
+            RefreshAnimationAbilities();
+
+            var animationController = Character != null ? Character.AnimationController : null;
+            if (animationController == null)
+            {
+                return false;
+            }
+
+            CancelActiveLightAttack();
+            _pendingLightAttack = false;
+
+            switch (slot)
+            {
+                case AbilityControlSlot.Primary:
+                    break;
+
+                case AbilityControlSlot.Secondary:
+                case AbilityControlSlot.Ability:
+                    _heavyAttackActivated = false;
+                    break;
+            }
+
+            CancelBlock(true);
+            _blockHeld = false;
+
+            WeaponUseRequest request = WeaponUseRequest.CreateAnimation(animation);
+
+            if (animationController.StartUseItem(this, request) == false)
+            {
+                return false;
+            }
+
+            if (slot == AbilityControlSlot.Primary)
+            {
+                _lightAttackActive = true;
+            }
+
+            OnUseStarted(request);
             return true;
         }
 
@@ -137,6 +186,8 @@ namespace TPSBR
         {
             base.FixedUpdateNetwork();
 
+            RefreshAnimationAbilities();
+
             if (Character == null || Character.Agent == null)
             {
                 ResetAttackState(true, false);
@@ -170,6 +221,11 @@ namespace TPSBR
 
             if (_blockHeld == true)
             {
+                if (HasAssignedAbility(AbilityControlSlot.Secondary) == true)
+                {
+                    return WeaponUseRequest.None;
+                }
+
                 if (_isBlocking == false)
                 {
                     BeginBlock();
@@ -190,16 +246,28 @@ namespace TPSBR
 
             if (attackActivated == true)
             {
-                _pendingLightAttack = true;
+                _pendingLightAttack = HasAssignedAbility(AbilityControlSlot.Primary);
             }
 
             if (_heavyAttackActivated == true)
             {
+                if (HasAssignedAbility(AbilityControlSlot.Ability) == false)
+                {
+                    _heavyAttackActivated = false;
+                    return WeaponUseRequest.None;
+                }
+
                 return WeaponUseRequest.CreateAnimation(WeaponUseAnimation.HeavyAttack);
             }
 
             if (_pendingLightAttack == true && _lightAttackActive == false)
             {
+                if (HasAssignedAbility(AbilityControlSlot.Primary) == false)
+                {
+                    _pendingLightAttack = false;
+                    return WeaponUseRequest.None;
+                }
+
                 _pendingLightAttack = false;
                 _lightAttackActive = true;
                 return WeaponUseRequest.CreateAnimation(WeaponUseAnimation.LightAttack);
@@ -294,12 +362,26 @@ namespace TPSBR
 
         public void ApplyExtendedInput(bool heavyAttackActivated, bool blockHeld)
         {
-            if (heavyAttackActivated == true)
+            if (HasAssignedAbility(AbilityControlSlot.Ability) == true)
             {
-                _heavyAttackActivated = true;
+                if (heavyAttackActivated == true)
+                {
+                    _heavyAttackActivated = true;
+                }
+            }
+            else
+            {
+                _heavyAttackActivated = false;
             }
 
-            _blockHeld = blockHeld;
+            if (HasAssignedAbility(AbilityControlSlot.Secondary) == true)
+            {
+                _blockHeld = false;
+            }
+            else
+            {
+                _blockHeld = blockHeld;
+            }
         }
 
         public override string GenerateRandomStats()
@@ -892,6 +974,47 @@ namespace TPSBR
             return null;
         }
 
+        private static WeaponUseAnimation ResolveAnimationForSlot(AbilityControlSlot slot)
+        {
+            switch (slot)
+            {
+                case AbilityControlSlot.Primary:
+                    return WeaponUseAnimation.LightAttack;
+
+                case AbilityControlSlot.Secondary:
+                    return WeaponUseAnimation.HeavyAttack;
+
+                case AbilityControlSlot.Ability:
+                    return WeaponUseAnimation.Ability;
+
+                default:
+                    return WeaponUseAnimation.None;
+            }
+        }
+
+        private void RefreshAnimationAbilities()
+        {
+            if (_animationAbilitiesDirty == false)
+            {
+                return;
+            }
+
+            UseLayer attackLayer = GetAttackLayer();
+            StaffUseState staffAttack = attackLayer != null ? attackLayer.StaffAttack : null;
+
+            if (staffAttack == null)
+            {
+                return;
+            }
+
+            staffAttack.ConfigureAssignedAbilities(
+                GetAssignedAbility(AbilityControlSlot.Primary),
+                GetAssignedAbility(AbilityControlSlot.Secondary),
+                GetAssignedAbility(AbilityControlSlot.Ability));
+
+            _animationAbilitiesDirty = false;
+        }
+
         private void ResetAttackState(bool notifyAnimation, bool clearHeavy)
         {
             _pendingLightAttack = false;
@@ -1060,7 +1183,10 @@ namespace TPSBR
             ClearAssignedAbilities();
 
             if (slotAssignments == null)
+            {
+                RefreshAnimationAbilities();
                 return;
+            }
 
             int slotCount = Mathf.Min(AbilityControlSlotCount, slotAssignments.Count);
 
@@ -1082,6 +1208,9 @@ namespace TPSBR
                     _assignedAbilities[i] = staffAbility;
                 }
             }
+
+            _animationAbilitiesDirty = true;
+            RefreshAnimationAbilities();
         }
 
         private static bool IsIndexUnlocked(int value, IReadOnlyList<int> unlockedIndexes)
@@ -1105,6 +1234,8 @@ namespace TPSBR
                 _assignedAbilityIndexes[i] = -1;
                 _assignedAbilities[i] = null;
             }
+
+            _animationAbilitiesDirty = true;
         }
 
         private static bool TryDecodeAbilityIndexes(string encoded, out int[] abilityIndexes)
