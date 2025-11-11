@@ -48,11 +48,22 @@ namespace TPSBR.UI
         [SerializeField]
         private string _unlockAbilityUnavailableText = "Unlock";
 
+        [Header("Ability Controls")]
+        [SerializeField]
+        private RectTransform _abilityControlContainer;
+        [SerializeField]
+        private RectTransform[] _abilityControlSlotRoots;
+        [SerializeField]
+        private string _controlSlotEmptyName = "No ability assigned.";
+        [SerializeField]
+        private string _controlSlotEmptyDetail = "Drag an unlocked ability here.";
+
         private readonly List<UIListItem> _spawnedSlots = new List<UIListItem>();
         private readonly List<UpgradeStation.ItemData> _currentItems = new List<UpgradeStation.ItemData>();
         private readonly List<UpgradeStation.ItemData> _lastItems = new List<UpgradeStation.ItemData>();
         private readonly List<UIListItem> _unlockedAbilitySlots = new List<UIListItem>();
         private readonly List<UIListItem> _lockedAbilitySlots = new List<UIListItem>();
+        private readonly List<UIListItem> _controlAbilitySlots = new List<UIListItem>();
         private readonly List<ArcaneConduit.AbilityOption> _allAbilityOptions = new List<ArcaneConduit.AbilityOption>();
         private readonly List<ArcaneConduit.AbilityOption> _lockedAbilityOptions = new List<ArcaneConduit.AbilityOption>();
         private readonly List<ArcaneConduit.AbilityOption> _unlockedAbilityOptions = new List<ArcaneConduit.AbilityOption>();
@@ -60,9 +71,15 @@ namespace TPSBR.UI
         private UpgradeStation.ItemStatus _lastStatus = UpgradeStation.ItemStatus.NoAgent;
         private int _selectedIndex = -1;
         private int _selectedLockedAbilityIndex = -1;
+        private int[] _controlAbilityIndexes = Array.Empty<int>();
+        private bool _controlSlotsInitialized;
+        private UIListItem _dragSourceSlot;
+        private int _dragSourceControlIndex = -1;
+        private int _draggedAbilityIndex = -1;
 
         public event Action<UpgradeStation.ItemData> ItemSelected;
         protected event Action<int> AbilityUnlockRequested;
+        protected event Action<IReadOnlyList<int>> AbilityControlBindingsChanged;
 
         public void Configure(Agent agent, Func<List<UpgradeStation.ItemData>, UpgradeStation.ItemStatus> itemProvider)
         {
@@ -82,6 +99,7 @@ namespace TPSBR.UI
                 _unlockAbilityButton.interactable = false;
             }
 
+            InitializeControlSlots();
             UpdateSelectedAbilityDetails(null);
             UpdateUnlockButtonLabel(null);
         }
@@ -131,6 +149,7 @@ namespace TPSBR.UI
 
         public void SetAbilityOptions(IReadOnlyList<ArcaneConduit.AbilityOption> options)
         {
+            InitializeControlSlots();
             _allAbilityOptions.Clear();
             _lockedAbilityOptions.Clear();
             _unlockedAbilityOptions.Clear();
@@ -159,6 +178,8 @@ namespace TPSBR.UI
             }
 
             RefreshAbilityLists();
+            UpdateAbilityControlContainerVisibility();
+            SanitizeControlBindings();
         }
 
         public void ClearAbilityOptions()
@@ -169,6 +190,8 @@ namespace TPSBR.UI
             _selectedLockedAbilityIndex = -1;
 
             RefreshAbilityLists();
+            UpdateAbilityControlContainerVisibility();
+            ClearAbilityControlBindings();
         }
 
         public IReadOnlyList<ArcaneConduit.AbilityOption> GetAbilityOptions()
@@ -323,6 +346,7 @@ namespace TPSBR.UI
 
                 slot.InitializeSlot(this, i);
                 slot.gameObject.SetActive(true);
+                slot.SetItem(option.Definition != null ? option.Definition.Icon : null, 1);
                 slot.SetSelectionHighlight(false, _selectedSlotColor);
 
                 UIAbilityOptionSlot abilityContent = slot.Content as UIAbilityOptionSlot;
@@ -374,6 +398,264 @@ namespace TPSBR.UI
                 newSlot.gameObject.SetActive(false);
                 slots.Add(newSlot);
             }
+        }
+
+        private void InitializeControlSlots()
+        {
+            if (_controlSlotsInitialized == true)
+                return;
+
+            _controlSlotsInitialized = true;
+            _controlAbilitySlots.Clear();
+
+            if (_abilityControlSlotRoots == null || _abilityControlSlotRoots.Length == 0 || _abilitySlotPrefab == null)
+            {
+                _controlAbilityIndexes = Array.Empty<int>();
+                return;
+            }
+
+            _controlAbilityIndexes = new int[_abilityControlSlotRoots.Length];
+
+            for (int i = 0; i < _abilityControlSlotRoots.Length; ++i)
+            {
+                RectTransform parent = _abilityControlSlotRoots[i];
+                if (parent == null)
+                {
+                    _controlAbilityIndexes[i] = -1;
+                    continue;
+                }
+
+                UIListItem slot = Instantiate(_abilitySlotPrefab, parent);
+                slot.InitializeSlot(this, i);
+                slot.gameObject.SetActive(true);
+                slot.Clear();
+                slot.SetSelectionHighlight(false, _selectedSlotColor);
+                _controlAbilitySlots.Add(slot);
+                _controlAbilityIndexes[i] = -1;
+            }
+
+            UpdateAbilityControlContainerVisibility();
+            UpdateControlSlotVisuals();
+        }
+
+        private void UpdateAbilityControlContainerVisibility()
+        {
+            if (_abilityControlContainer == null)
+                return;
+
+            bool hasAbilities = _allAbilityOptions.Count > 0;
+            _abilityControlContainer.gameObject.SetActive(hasAbilities);
+        }
+
+        public void SetAbilityControlBindings(IReadOnlyList<int> controlIndexes)
+        {
+            InitializeControlSlots();
+
+            if (_controlAbilityIndexes == null || _controlAbilityIndexes.Length != _controlAbilitySlots.Count)
+            {
+                _controlAbilityIndexes = new int[_controlAbilitySlots.Count];
+                for (int i = 0; i < _controlAbilityIndexes.Length; ++i)
+                {
+                    _controlAbilityIndexes[i] = -1;
+                }
+            }
+
+            for (int i = 0; i < _controlAbilityIndexes.Length; ++i)
+            {
+                int value = controlIndexes != null && i < controlIndexes.Count ? controlIndexes[i] : -1;
+
+                if (value < 0 || TryGetAbilityOptionByAbilityIndex(value, out ArcaneConduit.AbilityOption option) == false || option.IsUnlocked == false)
+                {
+                    value = -1;
+                }
+
+                _controlAbilityIndexes[i] = value;
+            }
+
+            UpdateAbilityControlContainerVisibility();
+            UpdateControlSlotVisuals();
+        }
+
+        public void ClearAbilityControlBindings()
+        {
+            if (_controlAbilityIndexes == null || _controlAbilityIndexes.Length == 0)
+                return;
+
+            for (int i = 0; i < _controlAbilityIndexes.Length; ++i)
+            {
+                _controlAbilityIndexes[i] = -1;
+            }
+
+            UpdateControlSlotVisuals();
+        }
+
+        private void SanitizeControlBindings()
+        {
+            if (_controlAbilityIndexes == null || _controlAbilityIndexes.Length == 0)
+                return;
+
+            bool changed = false;
+
+            for (int i = 0; i < _controlAbilityIndexes.Length; ++i)
+            {
+                int value = _controlAbilityIndexes[i];
+                if (value < 0)
+                    continue;
+
+                if (TryGetAbilityOptionByAbilityIndex(value, out ArcaneConduit.AbilityOption option) == false || option.IsUnlocked == false)
+                {
+                    _controlAbilityIndexes[i] = -1;
+                    changed = true;
+                }
+            }
+
+            if (changed == true)
+            {
+                UpdateControlSlotVisuals();
+            }
+        }
+
+        private void UpdateControlSlotVisuals()
+        {
+            if (_controlAbilitySlots.Count == 0)
+                return;
+
+            for (int i = 0; i < _controlAbilitySlots.Count; ++i)
+            {
+                UpdateControlSlot(i);
+            }
+        }
+
+        private void UpdateControlSlot(int index)
+        {
+            if (index < 0 || index >= _controlAbilitySlots.Count)
+                return;
+
+            UIListItem slot = _controlAbilitySlots[index];
+            if (slot == null)
+                return;
+
+            int abilityIndex = _controlAbilityIndexes != null && index < _controlAbilityIndexes.Length ? _controlAbilityIndexes[index] : -1;
+            UIAbilityOptionSlot abilityContent = slot.Content as UIAbilityOptionSlot ?? slot.GetComponentInChildren<UIAbilityOptionSlot>(true);
+
+            if (abilityIndex >= 0 && TryGetAbilityOptionByAbilityIndex(abilityIndex, out ArcaneConduit.AbilityOption option) == true && option.IsUnlocked == true)
+            {
+                Sprite icon = option.Definition != null ? option.Definition.Icon : null;
+                slot.SetItem(icon, 1);
+                string abilityName = option.Definition != null ? option.Definition.Name : string.Empty;
+                abilityContent?.SetCustomText(abilityName, string.Empty);
+            }
+            else
+            {
+                slot.Clear();
+                abilityContent?.SetCustomText(_controlSlotEmptyName, _controlSlotEmptyDetail);
+            }
+
+            slot.SetSelectionHighlight(false, _selectedSlotColor);
+        }
+
+        private void AssignControlBinding(int controlIndex, int abilityIndex)
+        {
+            InitializeControlSlots();
+
+            if (_controlAbilityIndexes == null || controlIndex < 0 || controlIndex >= _controlAbilityIndexes.Length)
+                return;
+
+            if (TryGetAbilityOptionByAbilityIndex(abilityIndex, out ArcaneConduit.AbilityOption option) == false || option.IsUnlocked == false)
+                return;
+
+            if (_controlAbilityIndexes[controlIndex] == abilityIndex)
+                return;
+
+            _controlAbilityIndexes[controlIndex] = abilityIndex;
+            UpdateControlSlot(controlIndex);
+            NotifyAbilityControlBindingsChanged();
+        }
+
+        private void SwapControlBindings(int firstIndex, int secondIndex)
+        {
+            InitializeControlSlots();
+
+            if (_controlAbilityIndexes == null)
+                return;
+
+            if (firstIndex < 0 || secondIndex < 0 || firstIndex >= _controlAbilityIndexes.Length || secondIndex >= _controlAbilityIndexes.Length)
+                return;
+
+            if (firstIndex == secondIndex)
+                return;
+
+            int first = _controlAbilityIndexes[firstIndex];
+            int second = _controlAbilityIndexes[secondIndex];
+
+            if (first == second)
+                return;
+
+            _controlAbilityIndexes[firstIndex] = second;
+            _controlAbilityIndexes[secondIndex] = first;
+
+            UpdateControlSlot(firstIndex);
+            UpdateControlSlot(secondIndex);
+            NotifyAbilityControlBindingsChanged();
+        }
+
+        private void ClearControlBinding(int controlIndex)
+        {
+            InitializeControlSlots();
+
+            if (_controlAbilityIndexes == null || controlIndex < 0 || controlIndex >= _controlAbilityIndexes.Length)
+                return;
+
+            if (_controlAbilityIndexes[controlIndex] < 0)
+                return;
+
+            _controlAbilityIndexes[controlIndex] = -1;
+            UpdateControlSlot(controlIndex);
+            NotifyAbilityControlBindingsChanged();
+        }
+
+        private void NotifyAbilityControlBindingsChanged()
+        {
+            if (AbilityControlBindingsChanged == null || _controlAbilityIndexes == null)
+                return;
+
+            int[] payload = new int[_controlAbilityIndexes.Length];
+            Array.Copy(_controlAbilityIndexes, payload, payload.Length);
+
+            AbilityControlBindingsChanged.Invoke(payload);
+        }
+
+        private bool TryGetAbilityOptionByAbilityIndex(int abilityIndex, out ArcaneConduit.AbilityOption option)
+        {
+            for (int i = 0; i < _allAbilityOptions.Count; ++i)
+            {
+                ArcaneConduit.AbilityOption candidate = _allAbilityOptions[i];
+                if (candidate.Index == abilityIndex)
+                {
+                    option = candidate;
+                    return true;
+                }
+            }
+
+            option = default;
+            return false;
+        }
+
+        private ArcaneConduit.AbilityOption? GetControlSlotAbilityOption(int controlIndex)
+        {
+            if (_controlAbilityIndexes == null || controlIndex < 0 || controlIndex >= _controlAbilityIndexes.Length)
+                return null;
+
+            int abilityIndex = _controlAbilityIndexes[controlIndex];
+            if (abilityIndex < 0)
+                return null;
+
+            if (TryGetAbilityOptionByAbilityIndex(abilityIndex, out ArcaneConduit.AbilityOption option) == true)
+            {
+                return option;
+            }
+
+            return null;
         }
 
         private void UpdateLockedAbilitySelectionVisuals()
@@ -565,27 +847,103 @@ namespace TPSBR.UI
 
         void IUIListItemOwner.BeginSlotDrag(UIListItem slot, PointerEventData eventData)
         {
-            // Drag & drop is not supported within the conduit view yet.
+            _dragSourceSlot = null;
+            _dragSourceControlIndex = -1;
+            _draggedAbilityIndex = -1;
+
+            if (slot == null)
+                return;
+
+            int controlIndex = _controlAbilitySlots.IndexOf(slot);
+            if (controlIndex >= 0)
+            {
+                if (_controlAbilityIndexes == null || controlIndex >= _controlAbilityIndexes.Length)
+                    return;
+
+                int abilityIndex = _controlAbilityIndexes[controlIndex];
+                if (abilityIndex < 0)
+                    return;
+
+                _dragSourceSlot = slot;
+                _dragSourceControlIndex = controlIndex;
+                _draggedAbilityIndex = abilityIndex;
+                return;
+            }
+
+            int unlockedIndex = _unlockedAbilitySlots.IndexOf(slot);
+            if (unlockedIndex >= 0 && unlockedIndex < _unlockedAbilityOptions.Count)
+            {
+                ArcaneConduit.AbilityOption option = _unlockedAbilityOptions[unlockedIndex];
+                _dragSourceSlot = slot;
+                _dragSourceControlIndex = -1;
+                _draggedAbilityIndex = option.Index;
+            }
         }
 
         void IUIListItemOwner.UpdateSlotDrag(PointerEventData eventData)
         {
-            // Drag & drop is not supported within the conduit view yet.
         }
 
         void IUIListItemOwner.EndSlotDrag(UIListItem slot, PointerEventData eventData)
         {
-            // Drag & drop is not supported within the conduit view yet.
+            if (_dragSourceSlot == slot)
+            {
+                _dragSourceSlot = null;
+                _dragSourceControlIndex = -1;
+                _draggedAbilityIndex = -1;
+            }
         }
 
         void IUIListItemOwner.HandleSlotDrop(UIListItem source, UIListItem target)
         {
-            // Drag & drop is not supported within the conduit view yet.
+            if (source == null || target == null)
+                return;
+
+            int sourceControlIndex = _controlAbilitySlots.IndexOf(source);
+            int targetControlIndex = _controlAbilitySlots.IndexOf(target);
+
+            if (sourceControlIndex >= 0)
+            {
+                if (targetControlIndex >= 0)
+                {
+                    SwapControlBindings(sourceControlIndex, targetControlIndex);
+                }
+                else
+                {
+                    int unlockedIndex = _unlockedAbilitySlots.IndexOf(target);
+                    if (unlockedIndex >= 0)
+                    {
+                        ClearControlBinding(sourceControlIndex);
+                    }
+                }
+
+                return;
+            }
+
+            int sourceUnlockedIndex = _unlockedAbilitySlots.IndexOf(source);
+            if (sourceUnlockedIndex >= 0)
+            {
+                if (targetControlIndex >= 0 && sourceUnlockedIndex < _unlockedAbilityOptions.Count)
+                {
+                    ArcaneConduit.AbilityOption option = _unlockedAbilityOptions[sourceUnlockedIndex];
+                    AssignControlBinding(targetControlIndex, option.Index);
+                }
+
+                return;
+            }
         }
 
         void IUIListItemOwner.HandleSlotDropOutside(UIListItem slot, PointerEventData eventData)
         {
-            // Drag & drop is not supported within the conduit view yet.
+            if (slot == null)
+                return;
+
+            int controlIndex = _controlAbilitySlots.IndexOf(slot);
+
+            if (controlIndex >= 0)
+            {
+                ClearControlBinding(controlIndex);
+            }
         }
 
         void IUIListItemOwner.HandleSlotSelected(UIListItem slot)
@@ -644,6 +1002,15 @@ namespace TPSBR.UI
                     ArcaneConduit.AbilityOption option = _unlockedAbilityOptions[unlockedSlotIndex];
                     UpdateSelectedAbilityDetails(option);
                 }
+
+                return;
+            }
+
+            int controlSlotIndex = _controlAbilitySlots.IndexOf(slot);
+            if (controlSlotIndex >= 0)
+            {
+                ArcaneConduit.AbilityOption? option = GetControlSlotAbilityOption(controlSlotIndex);
+                UpdateSelectedAbilityDetails(option);
             }
         }
     }

@@ -67,6 +67,7 @@ namespace TPSBR
             {
                 arcaneView.ItemSelected += HandleItemContextSelection;
                 arcaneView.AbilityPurchaseRequested += HandleAbilityPurchaseRequested;
+                arcaneView.AbilityControlBindingsChanged += HandleAbilityControlBindingsChanged;
             }
         }
 
@@ -76,6 +77,7 @@ namespace TPSBR
             {
                 arcaneView.ItemSelected -= HandleItemContextSelection;
                 arcaneView.AbilityPurchaseRequested -= HandleAbilityPurchaseRequested;
+                arcaneView.AbilityControlBindingsChanged -= HandleAbilityControlBindingsChanged;
             }
 
             base.UnsubscribeFromViewEvents(view);
@@ -99,6 +101,7 @@ namespace TPSBR
             if (_arcaneView != null)
             {
                 _arcaneView.ClearAbilityOptions();
+                _arcaneView.ClearAbilityControlBindings();
             }
         }
 
@@ -119,6 +122,25 @@ namespace TPSBR
             }
         }
 
+        public void RequestApplyAbilityControls(Agent agent, IReadOnlyList<int> controlIndexes)
+        {
+            if (agent == null || controlIndexes == null)
+                return;
+
+            int left = controlIndexes.Count > 0 ? controlIndexes[0] : -1;
+            int right = controlIndexes.Count > 1 ? controlIndexes[1] : -1;
+            int abilityKey = controlIndexes.Count > 2 ? controlIndexes[2] : -1;
+
+            if (HasStateAuthority == true)
+            {
+                ProcessAbilityControlBindings(agent, left, right, abilityKey);
+            }
+            else
+            {
+                RPC_RequestApplyAbilityControls(agent.Object.InputAuthority, agent.Object.Id, left, right, abilityKey);
+            }
+        }
+
         private void HandleItemContextSelection(UpgradeStation.ItemData data)
         {
             _ = data;
@@ -133,6 +155,14 @@ namespace TPSBR
             RequestPurchaseAbility(_activeAgent, abilityIndex);
         }
 
+        private void HandleAbilityControlBindingsChanged(IReadOnlyList<int> controlIndexes)
+        {
+            if (_activeAgent == null)
+                return;
+
+            RequestApplyAbilityControls(_activeAgent, controlIndexes);
+        }
+
         [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority, Channel = RpcChannel.Reliable)]
         private void RPC_RequestPurchaseAbility(PlayerRef playerRef, NetworkId agentId, int abilityIndex)
         {
@@ -140,6 +170,15 @@ namespace TPSBR
                 return;
 
             ProcessAbilityPurchase(agent, abilityIndex);
+        }
+
+        [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority, Channel = RpcChannel.Reliable)]
+        private void RPC_RequestApplyAbilityControls(PlayerRef playerRef, NetworkId agentId, int left, int right, int abilityKey)
+        {
+            if (TryResolveAgent(playerRef, agentId, out Agent agent) == false)
+                return;
+
+            ProcessAbilityControlBindings(agent, left, right, abilityKey);
         }
 
         private void ProcessAbilityPurchase(Agent agent, int abilityIndex)
@@ -206,6 +245,40 @@ namespace TPSBR
             RefreshAbilityOptions();
         }
 
+        private void ProcessAbilityControlBindings(Agent agent, int left, int right, int abilityKey)
+        {
+            if (HasStateAuthority == false)
+                return;
+
+            if (agent == null)
+                return;
+
+            Inventory inventory = agent.Inventory;
+            if (inventory == null)
+                return;
+
+            UpgradeStation.ItemSourceType sourceType = SelectedItemSourceType;
+            int sourceIndex = SelectedItemSourceIndex;
+
+            if (sourceType == UpgradeStation.ItemSourceType.None || sourceIndex < 0)
+                return;
+
+            if (TryResolveSelection(agent, sourceType, sourceIndex, out _, out NetworkString<_32> configurationHash, out Weapon weapon) == false)
+                return;
+
+            int[] requestedBindings = { left, right, abilityKey };
+
+            if (StaffWeapon.TryApplyAbilityControlIndexes(configurationHash, requestedBindings, out NetworkString<_32> updatedHash) == false)
+                return;
+
+            bool applied = ApplyConfigurationToSelection(inventory, sourceType, sourceIndex, updatedHash, weapon);
+
+            if (applied == false)
+                return;
+
+            RefreshAbilityOptions();
+        }
+
         private bool ApplyConfigurationToSelection(Inventory inventory, UpgradeStation.ItemSourceType sourceType, int sourceIndex, NetworkString<_32> configurationHash, Weapon weapon)
         {
             switch (sourceType)
@@ -258,6 +331,7 @@ namespace TPSBR
             }
 
             StaffWeapon.TryGetAbilityIndexes(configurationHash, out int[] abilityIndexes);
+            StaffWeapon.TryGetAbilityControlIndexes(configurationHash, out int[] abilityControlIndexes);
 
             var unlockedIndexes = new HashSet<int>(abilityIndexes ?? Array.Empty<int>());
             int gold = _activeAgent.Inventory != null ? _activeAgent.Inventory.Gold : 0;
@@ -276,6 +350,7 @@ namespace TPSBR
             }
 
             _arcaneView.SetAbilityOptions(_abilityOptions);
+            _arcaneView.SetAbilityControlBindings(abilityControlIndexes);
         }
 
         private bool TryResolveSelection(Agent agent, UpgradeStation.ItemSourceType sourceType, int sourceIndex, out WeaponDefinition definition, out NetworkString<_32> configurationHash, out Weapon weapon)

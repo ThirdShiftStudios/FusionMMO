@@ -11,6 +11,12 @@ namespace TPSBR.UI
             remove => AbilityUnlockRequested -= value;
         }
 
+        public event Action<IReadOnlyList<int>> AbilityControlBindingsChanged
+        {
+            add => base.AbilityControlBindingsChanged += value;
+            remove => base.AbilityControlBindingsChanged -= value;
+        }
+
         internal void SetConduit(ArcaneConduit conduit)
         {
             _ = conduit;
@@ -24,6 +30,16 @@ namespace TPSBR.UI
         internal void ClearAbilityOptions()
         {
             base.ClearAbilityOptions();
+        }
+
+        internal void SetAbilityControlBindings(IReadOnlyList<int> bindings)
+        {
+            base.SetAbilityControlBindings(bindings);
+        }
+
+        internal void ClearAbilityControlBindings()
+        {
+            base.ClearAbilityControlBindings();
         }
 
         public IReadOnlyList<ArcaneConduit.AbilityOption> AbilityOptions => base.GetAbilityOptions();

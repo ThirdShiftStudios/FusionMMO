@@ -40,5 +40,16 @@ namespace TPSBR.UI
             UIExtensions.SetTextSafe(_detailLabel, detailText);
             _detailLabel.gameObject.SetActive(string.IsNullOrEmpty(detailText) == false);
         }
+
+        public void SetCustomText(string name, string detail)
+        {
+            UIExtensions.SetTextSafe(_nameLabel, name ?? string.Empty);
+
+            if (_detailLabel == null)
+                return;
+
+            UIExtensions.SetTextSafe(_detailLabel, detail ?? string.Empty);
+            _detailLabel.gameObject.SetActive(string.IsNullOrEmpty(detail) == false);
+        }
     }
 }

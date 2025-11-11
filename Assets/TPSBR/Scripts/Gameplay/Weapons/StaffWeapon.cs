@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text;
 using Fusion;
 using TPSBR.Abilities;
 using UnityEngine;
@@ -11,6 +12,8 @@ namespace TPSBR
     {
         private const string HASH_PREFIX = "STF";
         public const int MaxConfiguredAbilities = 4;
+        public const int AbilityControlSlotCount = 3;
+        private const byte EmptyControlSlotValue = byte.MaxValue;
         private const string LogPrefix = "[<color=#FFA500>StaffWeapon</color>]";
 
         [SerializeField]
@@ -34,6 +37,8 @@ namespace TPSBR
         private readonly int[] _statBonuses = new int[Stats.Count];
         private readonly List<StaffAbilityDefinition> _configuredAbilities = new List<StaffAbilityDefinition>();
         private int[] _configuredAbilityIndexes = Array.Empty<int>();
+        private readonly StaffAbilityDefinition[] _controlSlotAbilities = new StaffAbilityDefinition[AbilityControlSlotCount];
+        private readonly int[] _configuredAbilityControlIndexes = { -1, -1, -1 };
 
         public float BaseDamage => _baseDamage;
         public float HealthRegen => _healthRegen;
@@ -41,6 +46,26 @@ namespace TPSBR
         public string ConfiguredItemName => _configuredItemName;
         public IReadOnlyList<int> StatBonuses => _statBonuses;
         public IReadOnlyList<StaffAbilityDefinition> ConfiguredAbilities => _configuredAbilities;
+        public IReadOnlyList<int> ConfiguredAbilityControlIndexes => _configuredAbilityControlIndexes;
+
+        public enum AbilityControlSlot
+        {
+            LeftMouse = 0,
+            RightMouse = 1,
+            AbilityKey = 2,
+        }
+
+        public StaffAbilityDefinition GetAbilityForControlSlot(AbilityControlSlot slot)
+        {
+            int index = (int)slot;
+
+            if (index < 0 || index >= _controlSlotAbilities.Length)
+            {
+                return null;
+            }
+
+            return _controlSlotAbilities[index];
+        }
 
         public bool TryGetStatBonuses(NetworkString<_32> configurationHash, out IReadOnlyList<int> statBonuses)
         {
@@ -274,14 +299,14 @@ namespace TPSBR
         {
             base.OnConfigurationHashApplied(configurationHash);
 
-            if (TryParseConfiguration(configurationHash, out int seed, out _, out int[] abilityIndexes) == false)
+            if (TryParseConfiguration(configurationHash, out int seed, out _, out int[] abilityIndexes, out int[] abilityControlIndexes) == false)
             {
                 ResetConfiguration();
                 NotifyInventoryAboutStatChange();
                 return;
             }
 
-            if (TryGetStatsFromConfiguration(configurationHash, out float baseDamage, out float healthRegen, out float manaRegen, out string configuredItemName, out int[] statBonuses) == false)
+            if (TryGetStatsFromConfiguration(configurationHash, out float baseDamage, out float healthRegen, out float manaRegen, out string configuredItemName, out int[] statBonuses, out int[] controlBindings) == false)
             {
                 ResetConfiguration();
                 NotifyInventoryAboutStatChange();
@@ -304,15 +329,16 @@ namespace TPSBR
             }
 
             _lastConfigurationHash = configurationHash;
-            ApplyConfiguration(baseDamage, healthRegen, manaRegen, statBonuses, configuredItemName, abilityIndexes);
+            ApplyConfiguration(baseDamage, healthRegen, manaRegen, statBonuses, configuredItemName, abilityIndexes, controlBindings.Length > 0 ? controlBindings : abilityControlIndexes);
             NotifyInventoryAboutStatChange();
         }
 
-        private bool TryParseConfiguration(string configurationHash, out int seed, out int[] statBonuses, out int[] abilityIndexes)
+        private bool TryParseConfiguration(string configurationHash, out int seed, out int[] statBonuses, out int[] abilityIndexes, out int[] abilityControlIndexes)
         {
             seed = default;
             statBonuses = null;
             abilityIndexes = null;
+            abilityControlIndexes = Array.Empty<int>();
 
             if (string.IsNullOrWhiteSpace(configurationHash) == true)
             {
@@ -352,6 +378,14 @@ namespace TPSBR
                 }
             }
 
+            if (parts.Length > 4 && string.IsNullOrWhiteSpace(parts[4]) == false)
+            {
+                if (TryDecodeAbilityControlIndexes(parts[4], out int[] decodedControls) == true)
+                {
+                    abilityControlIndexes = decodedControls;
+                }
+            }
+
             return true;
         }
 
@@ -376,7 +410,7 @@ namespace TPSBR
             }
         }
 
-        private void ApplyConfiguration(float baseDamage, float healthRegen, float manaRegen, IReadOnlyList<int> statBonuses, string configuredItemName, int[] abilityIndexes)
+        private void ApplyConfiguration(float baseDamage, float healthRegen, float manaRegen, IReadOnlyList<int> statBonuses, string configuredItemName, int[] abilityIndexes, int[] abilityControlIndexes)
         {
             _baseDamage = baseDamage;
             _healthRegen = healthRegen;
@@ -399,17 +433,19 @@ namespace TPSBR
             SetDisplayName(_configuredItemName);
             SetNameShortcut(CreateShortcut(_configuredItemName));
             ApplyConfiguredAbilities(abilityIndexes);
+            ApplyAbilityControlBindings(abilityIndexes, abilityControlIndexes);
         }
 
-        private bool TryGetStatsFromConfiguration(string configurationHash, out float baseDamage, out float healthRegen, out float manaRegen, out string configuredItemName, out int[] statBonuses)
+        private bool TryGetStatsFromConfiguration(string configurationHash, out float baseDamage, out float healthRegen, out float manaRegen, out string configuredItemName, out int[] statBonuses, out int[] abilityControlIndexes)
         {
             baseDamage = default;
             healthRegen = default;
             manaRegen = default;
             configuredItemName = string.Empty;
             statBonuses = null;
+            abilityControlIndexes = Array.Empty<int>();
 
-            if (TryParseConfiguration(configurationHash, out int seed, out int[] explicitBonuses, out _) == false)
+            if (TryParseConfiguration(configurationHash, out int seed, out int[] explicitBonuses, out _, out abilityControlIndexes) == false)
             {
                 return false;
             }
@@ -831,7 +867,7 @@ namespace TPSBR
 
         public override string GetDescription()
         {
-            if (TryGetStatsFromConfiguration(_lastConfigurationHash, out float baseDamage, out float healthRegen, out float manaRegen, out _, out _))
+            if (TryGetStatsFromConfiguration(_lastConfigurationHash, out float baseDamage, out float healthRegen, out float manaRegen, out _, out _, out _))
             {
                 return BuildDescription(baseDamage, healthRegen, manaRegen);
             }
@@ -843,7 +879,7 @@ namespace TPSBR
         {
             string hash = configurationHash.ToString();
 
-            if (TryGetStatsFromConfiguration(hash, out float baseDamage, out float healthRegen, out float manaRegen, out _, out _))
+            if (TryGetStatsFromConfiguration(hash, out float baseDamage, out float healthRegen, out float manaRegen, out _, out _, out _))
             {
                 return BuildDescription(baseDamage, healthRegen, manaRegen);
             }
@@ -855,7 +891,7 @@ namespace TPSBR
         {
             string hash = configurationHash.ToString();
 
-            if (TryGetStatsFromConfiguration(hash, out _, out _, out _, out string configuredItemName, out _) == true && string.IsNullOrWhiteSpace(configuredItemName) == false)
+            if (TryGetStatsFromConfiguration(hash, out _, out _, out _, out string configuredItemName, out _, out _) == true && string.IsNullOrWhiteSpace(configuredItemName) == false)
             {
                 return configuredItemName;
             }
@@ -929,6 +965,65 @@ namespace TPSBR
         {
             _configuredAbilities.Clear();
             _configuredAbilityIndexes = Array.Empty<int>();
+            ResetAbilityControlBindings();
+        }
+
+        private void ApplyAbilityControlBindings(int[] abilityIndexes, int[] controlIndexes)
+        {
+            ResetAbilityControlBindings();
+
+            if (controlIndexes == null || controlIndexes.Length == 0)
+            {
+                return;
+            }
+
+            var definition = Definition as WeaponDefinition;
+            if (definition == null)
+            {
+                return;
+            }
+
+            IReadOnlyList<AbilityDefinition> availableAbilities = definition.AvailableAbilities;
+            if (availableAbilities == null || availableAbilities.Count == 0)
+            {
+                return;
+            }
+
+            for (int i = 0; i < _configuredAbilityControlIndexes.Length; ++i)
+            {
+                int configuredIndex = i < controlIndexes.Length ? controlIndexes[i] : -1;
+
+                if (configuredIndex < 0 || configuredIndex >= availableAbilities.Count)
+                {
+                    _configuredAbilityControlIndexes[i] = -1;
+                    continue;
+                }
+
+                if (abilityIndexes == null || Array.IndexOf(abilityIndexes, configuredIndex) < 0)
+                {
+                    _configuredAbilityControlIndexes[i] = -1;
+                    continue;
+                }
+
+                if (availableAbilities[configuredIndex] is StaffAbilityDefinition staffAbility)
+                {
+                    _configuredAbilityControlIndexes[i] = configuredIndex;
+                    _controlSlotAbilities[i] = staffAbility;
+                }
+                else
+                {
+                    _configuredAbilityControlIndexes[i] = -1;
+                }
+            }
+        }
+
+        private void ResetAbilityControlBindings()
+        {
+            for (int i = 0; i < _configuredAbilityControlIndexes.Length; ++i)
+            {
+                _configuredAbilityControlIndexes[i] = -1;
+                _controlSlotAbilities[i] = null;
+            }
         }
 
         private static bool TryDecodeAbilityIndexes(string encoded, out int[] abilityIndexes)
@@ -985,6 +1080,83 @@ namespace TPSBR
             return Convert.ToBase64String(payload);
         }
 
+        private static bool TryDecodeAbilityControlIndexes(string encoded, out int[] controlIndexes)
+        {
+            controlIndexes = null;
+
+            if (string.IsNullOrWhiteSpace(encoded) == true)
+            {
+                controlIndexes = Array.Empty<int>();
+                return true;
+            }
+
+            try
+            {
+                byte[] payload = Convert.FromBase64String(encoded);
+
+                if (payload == null || payload.Length == 0)
+                {
+                    controlIndexes = Array.Empty<int>();
+                    return true;
+                }
+
+                int[] decoded = new int[AbilityControlSlotCount];
+
+                for (int i = 0; i < decoded.Length; ++i)
+                {
+                    if (i < payload.Length)
+                    {
+                        byte value = payload[i];
+                        decoded[i] = value == EmptyControlSlotValue ? -1 : value;
+                    }
+                    else
+                    {
+                        decoded[i] = -1;
+                    }
+                }
+
+                controlIndexes = decoded;
+                return true;
+            }
+            catch (FormatException)
+            {
+                return false;
+            }
+        }
+
+        private static string EncodeAbilityControlIndexes(IReadOnlyList<int> controlIndexes)
+        {
+            if (controlIndexes == null || controlIndexes.Count == 0)
+            {
+                return string.Empty;
+            }
+
+            byte[] payload = new byte[AbilityControlSlotCount];
+            bool hasBinding = false;
+
+            for (int i = 0; i < payload.Length; ++i)
+            {
+                int value = i < controlIndexes.Count ? controlIndexes[i] : -1;
+
+                if (value >= 0)
+                {
+                    payload[i] = (byte)Mathf.Clamp(value, 0, EmptyControlSlotValue - 1);
+                    hasBinding = true;
+                }
+                else
+                {
+                    payload[i] = EmptyControlSlotValue;
+                }
+            }
+
+            if (hasBinding == false)
+            {
+                return string.Empty;
+            }
+
+            return Convert.ToBase64String(payload);
+        }
+
         public static bool TryGetAbilityIndexes(string configurationHash, out int[] abilityIndexes)
         {
             abilityIndexes = Array.Empty<int>();
@@ -1014,6 +1186,35 @@ namespace TPSBR
             return TryGetAbilityIndexes(configurationHash.ToString(), out abilityIndexes);
         }
 
+        public static bool TryGetAbilityControlIndexes(string configurationHash, out int[] abilityControlIndexes)
+        {
+            abilityControlIndexes = Array.Empty<int>();
+
+            if (string.IsNullOrWhiteSpace(configurationHash) == true)
+            {
+                return false;
+            }
+
+            if (configurationHash.StartsWith(HASH_PREFIX + ":", StringComparison.Ordinal) == false)
+            {
+                return false;
+            }
+
+            string[] parts = configurationHash.Split(':');
+            if (parts.Length <= 4)
+            {
+                abilityControlIndexes = Array.Empty<int>();
+                return true;
+            }
+
+            return TryDecodeAbilityControlIndexes(parts[4], out abilityControlIndexes);
+        }
+
+        public static bool TryGetAbilityControlIndexes(NetworkString<_32> configurationHash, out int[] abilityControlIndexes)
+        {
+            return TryGetAbilityControlIndexes(configurationHash.ToString(), out abilityControlIndexes);
+        }
+
         public static bool TryApplyAbilityIndexes(string configurationHash, IReadOnlyList<int> abilityIndexes, out string updatedHash)
         {
             updatedHash = configurationHash;
@@ -1035,32 +1236,51 @@ namespace TPSBR
             }
 
             string statsSegment = parts.Length >= 3 ? parts[2] : string.Empty;
+            string controlSegment = parts.Length >= 5 ? parts[4] : string.Empty;
+
+            if (string.IsNullOrEmpty(controlSegment) == false)
+            {
+                if (TryDecodeAbilityControlIndexes(controlSegment, out int[] decodedControls) == false)
+                {
+                    return false;
+                }
+
+                bool updatedControls = false;
+
+                if (decodedControls.Length > 0)
+                {
+                    for (int i = 0; i < decodedControls.Length; ++i)
+                    {
+                        int value = decodedControls[i];
+                        if (value < 0)
+                        {
+                            continue;
+                        }
+
+                        if (ContainsAbilityIndex(abilityIndexes, value) == false)
+                        {
+                            decodedControls[i] = -1;
+                            updatedControls = true;
+                        }
+                    }
+                }
+
+                if (updatedControls == true)
+                {
+                    controlSegment = EncodeAbilityControlIndexes(decodedControls);
+                }
+            }
+
             string abilitySegment = EncodeAbilityIndexes(abilityIndexes);
+            string composed = ComposeConfigurationHash(parts[0], parts[1], statsSegment, abilitySegment, controlSegment);
 
-            if (string.IsNullOrEmpty(abilitySegment) == true)
+            if (composed.Length > 32)
             {
-                if (string.IsNullOrWhiteSpace(statsSegment) == false)
-                {
-                    updatedHash = $"{parts[0]}:{parts[1]}:{statsSegment}";
-                }
-                else
-                {
-                    updatedHash = $"{parts[0]}:{parts[1]}";
-                }
-
-                return true;
+                return false;
             }
 
-            if (string.IsNullOrWhiteSpace(statsSegment) == false)
-            {
-                updatedHash = $"{parts[0]}:{parts[1]}:{statsSegment}:{abilitySegment}";
-            }
-            else
-            {
-                updatedHash = $"{parts[0]}:{parts[1]}::{abilitySegment}";
-            }
-
-            return updatedHash.Length <= 32;
+            updatedHash = composed;
+            return true;
         }
 
         public static bool TryApplyAbilityIndexes(NetworkString<_32> configurationHash, IReadOnlyList<int> abilityIndexes, out NetworkString<_32> updatedHash)
@@ -1072,13 +1292,117 @@ namespace TPSBR
                 return false;
             }
 
-            if (hashString.Length > 32)
+            updatedHash = hashString;
+            return true;
+        }
+
+        public static bool TryApplyAbilityControlIndexes(string configurationHash, IReadOnlyList<int> controlIndexes, out string updatedHash)
+        {
+            updatedHash = configurationHash;
+
+            if (string.IsNullOrWhiteSpace(configurationHash) == true)
+            {
+                return false;
+            }
+
+            string[] parts = configurationHash.Split(':');
+            if (parts.Length < 2)
+            {
+                return false;
+            }
+
+            string statsSegment = parts.Length >= 3 ? parts[2] : string.Empty;
+            string abilitySegment = parts.Length >= 4 ? parts[3] : string.Empty;
+
+            if (TryDecodeAbilityIndexes(abilitySegment, out int[] configuredAbilityIndexes) == false)
+            {
+                return false;
+            }
+
+            int[] sanitized = new int[AbilityControlSlotCount];
+
+            for (int i = 0; i < sanitized.Length; ++i)
+            {
+                int value = controlIndexes != null && i < controlIndexes.Count ? controlIndexes[i] : -1;
+
+                if (value < 0 || ContainsAbilityIndex(configuredAbilityIndexes, value) == false)
+                {
+                    sanitized[i] = -1;
+                }
+                else
+                {
+                    sanitized[i] = value;
+                }
+            }
+
+            string controlSegment = EncodeAbilityControlIndexes(sanitized);
+            string composed = ComposeConfigurationHash(parts[0], parts[1], statsSegment, abilitySegment, controlSegment);
+
+            if (composed.Length > 32)
+            {
+                return false;
+            }
+
+            updatedHash = composed;
+            return true;
+        }
+
+        public static bool TryApplyAbilityControlIndexes(NetworkString<_32> configurationHash, IReadOnlyList<int> controlIndexes, out NetworkString<_32> updatedHash)
+        {
+            updatedHash = configurationHash;
+
+            if (TryApplyAbilityControlIndexes(configurationHash.ToString(), controlIndexes, out string hashString) == false)
             {
                 return false;
             }
 
             updatedHash = hashString;
             return true;
+        }
+
+        private static bool ContainsAbilityIndex(IReadOnlyList<int> abilityIndexes, int value)
+        {
+            if (abilityIndexes == null)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < abilityIndexes.Count; ++i)
+            {
+                if (abilityIndexes[i] == value)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static string ComposeConfigurationHash(string prefix, string seedSegment, string statsSegment, string abilitySegment, string controlSegment)
+        {
+            var builder = new StringBuilder();
+            builder.Append(prefix).Append(':').Append(seedSegment);
+
+            bool hasStats = string.IsNullOrEmpty(statsSegment) == false;
+            bool hasAbility = string.IsNullOrEmpty(abilitySegment) == false;
+            bool hasControl = string.IsNullOrEmpty(controlSegment) == false;
+
+            if (hasStats || hasAbility || hasControl)
+            {
+                builder.Append(':').Append(statsSegment);
+            }
+
+            if (hasAbility || hasControl)
+            {
+                builder.Append(':').Append(abilitySegment);
+            }
+
+            if (hasControl)
+            {
+                builder.Append(':').Append(controlSegment);
+            }
+
+            return builder.ToString();
         }
 
         public IReadOnlyList<int> GetConfiguredAbilityIndexes()
