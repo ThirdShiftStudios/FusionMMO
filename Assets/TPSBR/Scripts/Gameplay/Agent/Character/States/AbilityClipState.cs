@@ -16,9 +16,5 @@ namespace TPSBR
         public AbilityDefinition Ability => _ability;
         public float AbilityTriggerNormalizedTime => Mathf.Clamp01(_abilityTriggerNormalizedTime);
 
-        public void SetAbility(AbilityDefinition ability)
-        {
-            _ability = ability;
-        }
     }
 }

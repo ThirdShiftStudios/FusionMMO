@@ -72,7 +72,6 @@ namespace TPSBR
         private int[] _configuredAbilityIndexes = Array.Empty<int>();
         private readonly int[] _assignedAbilityIndexes = CreateDefaultSlotAssignments();
         private readonly StaffAbilityDefinition[] _assignedAbilities = new StaffAbilityDefinition[AbilityControlSlotCount];
-        private bool _animationAbilitiesDirty = true;
 
         public float BaseDamage => _baseDamage;
         public float HealthRegen => _healthRegen;
@@ -108,13 +107,11 @@ namespace TPSBR
                 return false;
             }
 
-            WeaponUseAnimation animation = ResolveAnimationForSlot(slot);
+            WeaponUseAnimation animation = ResolveAnimationForAbility(slot, ability);
             if (animation == WeaponUseAnimation.None)
             {
                 return false;
             }
-
-            RefreshAnimationAbilities();
 
             var animationController = Character != null ? Character.AnimationController : null;
             if (animationController == null)
@@ -146,10 +143,7 @@ namespace TPSBR
                 return false;
             }
 
-            if (slot == AbilityControlSlot.Primary)
-            {
-                _lightAttackActive = true;
-            }
+            _lightAttackActive = animation == WeaponUseAnimation.LightAttack;
 
             OnUseStarted(request);
             return true;
@@ -185,8 +179,6 @@ namespace TPSBR
         public override void FixedUpdateNetwork()
         {
             base.FixedUpdateNetwork();
-
-            RefreshAnimationAbilities();
 
             if (Character == null || Character.Agent == null)
             {
@@ -974,8 +966,23 @@ namespace TPSBR
             return null;
         }
 
-        private static WeaponUseAnimation ResolveAnimationForSlot(AbilityControlSlot slot)
+        private WeaponUseAnimation ResolveAnimationForAbility(AbilityControlSlot slot, StaffAbilityDefinition ability)
         {
+            if (ability != null)
+            {
+                StaffUseState staffAttack = GetAttackLayer()?.StaffAttack;
+
+                if (staffAttack != null)
+                {
+                    WeaponUseAnimation resolved = staffAttack.GetAnimationForAbility(ability);
+
+                    if (resolved != WeaponUseAnimation.None)
+                    {
+                        return resolved;
+                    }
+                }
+            }
+
             switch (slot)
             {
                 case AbilityControlSlot.Primary:
@@ -990,29 +997,6 @@ namespace TPSBR
                 default:
                     return WeaponUseAnimation.None;
             }
-        }
-
-        private void RefreshAnimationAbilities()
-        {
-            if (_animationAbilitiesDirty == false)
-            {
-                return;
-            }
-
-            UseLayer attackLayer = GetAttackLayer();
-            StaffUseState staffAttack = attackLayer != null ? attackLayer.StaffAttack : null;
-
-            if (staffAttack == null)
-            {
-                return;
-            }
-
-            staffAttack.ConfigureAssignedAbilities(
-                GetAssignedAbility(AbilityControlSlot.Primary),
-                GetAssignedAbility(AbilityControlSlot.Secondary),
-                GetAssignedAbility(AbilityControlSlot.Ability));
-
-            _animationAbilitiesDirty = false;
         }
 
         private void ResetAttackState(bool notifyAnimation, bool clearHeavy)
@@ -1184,7 +1168,6 @@ namespace TPSBR
 
             if (slotAssignments == null)
             {
-                RefreshAnimationAbilities();
                 return;
             }
 
@@ -1209,8 +1192,6 @@ namespace TPSBR
                 }
             }
 
-            _animationAbilitiesDirty = true;
-            RefreshAnimationAbilities();
         }
 
         private static bool IsIndexUnlocked(int value, IReadOnlyList<int> unlockedIndexes)
@@ -1234,8 +1215,6 @@ namespace TPSBR
                 _assignedAbilityIndexes[i] = -1;
                 _assignedAbilities[i] = null;
             }
-
-            _animationAbilitiesDirty = true;
         }
 
         private static bool TryDecodeAbilityIndexes(string encoded, out int[] abilityIndexes)

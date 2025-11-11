@@ -110,13 +110,6 @@ namespace TPSBR
                         return true;
                 }
 
-                public void ConfigureAssignedAbilities(StaffAbilityDefinition primaryAbility, StaffAbilityDefinition secondaryAbility, StaffAbilityDefinition abilityAbility)
-                {
-                        SetAbility(_lightAttackState, primaryAbility);
-                        SetAbility(_heavyAttackState, secondaryAbility);
-                        SetAbility(_abilityAttackState, abilityAbility);
-                }
-
                 public void CancelCharge(StaffWeapon weapon)
                 {
                         if (IsValidWeapon(weapon) == false)
@@ -258,7 +251,15 @@ namespace TPSBR
                         AbilityDefinition ability = state.Ability;
 
                         if (ability == null)
+                        {
+                                var configuredAbilities = weapon.ConfiguredAbilities;
+
+                                if (configuredAbilities != null && configuredAbilities.Count > 0)
+                                        return true;
+
+                                Debug.LogWarning($"StaffUseState prevented {animationName} animation because the staff has no unlocked abilities configured.");
                                 return false;
+                        }
 
                         if (weapon.IsAbilityUnlocked(ability) == true)
                                 return true;
@@ -267,12 +268,21 @@ namespace TPSBR
                         return false;
                 }
 
-                private static void SetAbility(AbilityClipState state, AbilityDefinition ability)
+                public WeaponUseAnimation GetAnimationForAbility(AbilityDefinition ability)
                 {
-                        if (state == null)
-                                return;
+                        if (ability == null)
+                                return WeaponUseAnimation.None;
 
-                        state.SetAbility(ability);
+                        if (_lightAttackState != null && _lightAttackState.Ability == ability)
+                                return WeaponUseAnimation.LightAttack;
+
+                        if (_heavyAttackState != null && _heavyAttackState.Ability == ability)
+                                return WeaponUseAnimation.HeavyAttack;
+
+                        if (_abilityAttackState != null && _abilityAttackState.Ability == ability)
+                                return WeaponUseAnimation.Ability;
+
+                        return WeaponUseAnimation.None;
                 }
         }
 }
