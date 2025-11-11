@@ -159,7 +159,7 @@ namespace TPSBR
             RequestAbilityAssignment(_activeAgent, slot, abilityIndex);
         }
 
-        [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority, Channel = RpcChannel.Reliable)]
+        [Rpc(RpcSources.All, RpcTargets.StateAuthority, Channel = RpcChannel.Reliable)]
         private void RPC_RequestPurchaseAbility(PlayerRef playerRef, NetworkId agentId, int abilityIndex)
         {
             if (TryResolveAgent(playerRef, agentId, out Agent agent) == false)
@@ -168,7 +168,7 @@ namespace TPSBR
             ProcessAbilityPurchase(agent, abilityIndex);
         }
 
-        [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority, Channel = RpcChannel.Reliable)]
+        [Rpc(RpcSources.All, RpcTargets.StateAuthority, Channel = RpcChannel.Reliable)]
         private void RPC_RequestAbilityAssignment(PlayerRef playerRef, NetworkId agentId, byte slotValue, int abilityIndex)
         {
             if (TryResolveAgent(playerRef, agentId, out Agent agent) == false)
