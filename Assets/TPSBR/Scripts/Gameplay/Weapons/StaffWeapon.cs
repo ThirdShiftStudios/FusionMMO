@@ -71,7 +71,7 @@ namespace TPSBR
         {
             string hash = configurationHash.ToString();
 
-            if (TryGetStatsFromConfiguration(hash, out _, out _, out _, out _, out int[] configuredBonuses) == true)
+            if (TryGetStatsFromConfiguration(hash, out _, out _, out _, out _, out int[] configuredBonuses, out _) == true)
             {
                 statBonuses = configuredBonuses;
                 return true;
