@@ -10,9 +10,7 @@ namespace TPSBR
 
                 [Header("States")]
                 [SerializeField] private ClipState _chargeState;
-                [SerializeField] private AbilityClipState _fireballAbility;
-                [SerializeField] private AbilityClipState _heavyAttackState;
-                [SerializeField] private AbilityClipState _abilityAttackState;
+                [SerializeField] private AbilityClipState[] _abilityStates;
 
                 [Header("Timing")]
                 [SerializeField] private float _blendInDuration = 0.1f;
@@ -20,9 +18,9 @@ namespace TPSBR
 
                 private StaffWeapon _activeWeapon;
                 private bool _isCharging;
-                private bool _lightAttackAbilityTriggered;
-                private bool _heavyAttackAbilityTriggered;
-                private bool _abilityAttackTriggered;
+                private AbilityClipState _activeAbilityState;
+                private WeaponUseAnimation _activeAbilityAnimation = WeaponUseAnimation.None;
+                private bool _abilityTriggered;
 
                 // PUBLIC METHODS
 
@@ -57,55 +55,72 @@ namespace TPSBR
 
                 public bool PlayLightAttack(StaffWeapon weapon)
                 {
-                        if (EnsureActiveWeapon(weapon) == false || _fireballAbility == null)
+                        if (EnsureActiveWeapon(weapon) == false)
                                 return false;
 
-                        if (IsAbilityStateUnlocked(weapon, _fireballAbility, "light attack") == false)
+                        AbilityDefinition assignedAbility = weapon != null ? weapon.GetAssignedAbility(StaffWeapon.AbilityControlSlot.Primary) : null;
+                        AbilityClipState state = ResolveAbilityState(assignedAbility, WeaponUseAnimation.LightAttack);
+
+                        if (state == null)
+                        {
+                                string abilityLabel = assignedAbility != null ? $"ability '{assignedAbility.Name}'" : "the primary ability input";
+                                Debug.LogWarning($"StaffUseState prevented light attack animation because no clip state is configured for {abilityLabel}.");
+                                return false;
+                        }
+
+                        if (IsAbilityStateUnlocked(weapon, state, assignedAbility, "light attack") == false)
                                 return false;
 
-                        _isCharging = false;
-                        _lightAttackAbilityTriggered = false;
-
-                        _fireballAbility.SetAnimationTime(0.0f);
-                        _fireballAbility.Activate(_blendInDuration);
-                        weapon?.NotifyLightAttackAnimationStarted();
-                        Activate(_blendInDuration);
+                        if (PlayAbilityState(weapon, state, WeaponUseAnimation.LightAttack, true) == false)
+                                return false;
 
                         return true;
                 }
 
                 public bool PlayHeavyAttack(StaffWeapon weapon)
                 {
-                        if (EnsureActiveWeapon(weapon) == false || _heavyAttackState == null)
+                        if (EnsureActiveWeapon(weapon) == false)
                                 return false;
 
-                        if (IsAbilityStateUnlocked(weapon, _heavyAttackState, "heavy attack") == false)
+                        AbilityDefinition assignedAbility = weapon != null ? weapon.GetAssignedAbility(StaffWeapon.AbilityControlSlot.Secondary) : null;
+                        AbilityClipState state = ResolveAbilityState(assignedAbility, WeaponUseAnimation.HeavyAttack);
+
+                        if (state == null)
+                        {
+                                string abilityLabel = assignedAbility != null ? $"ability '{assignedAbility.Name}'" : "the secondary ability input";
+                                Debug.LogWarning($"StaffUseState prevented heavy attack animation because no clip state is configured for {abilityLabel}.");
+                                return false;
+                        }
+
+                        if (IsAbilityStateUnlocked(weapon, state, assignedAbility, "heavy attack") == false)
                                 return false;
 
-                        _isCharging = false;
-                        _heavyAttackAbilityTriggered = false;
-                        _abilityAttackTriggered = false;
-
-                        _heavyAttackState.SetAnimationTime(0.0f);
-                        _heavyAttackState.Activate(_blendInDuration);
-                        Activate(_blendInDuration);
+                        if (PlayAbilityState(weapon, state, WeaponUseAnimation.HeavyAttack, false) == false)
+                                return false;
 
                         return true;
                 }
 
                 public bool PlayAbilityAttack(StaffWeapon weapon)
                 {
-                        if (EnsureActiveWeapon(weapon) == false || _abilityAttackState == null)
+                        if (EnsureActiveWeapon(weapon) == false)
                                 return false;
 
-                        if (IsAbilityStateUnlocked(weapon, _abilityAttackState, "ability attack") == false)
+                        AbilityDefinition assignedAbility = weapon != null ? weapon.GetAssignedAbility(StaffWeapon.AbilityControlSlot.Ability) : null;
+                        AbilityClipState state = ResolveAbilityState(assignedAbility, WeaponUseAnimation.Ability);
+
+                        if (state == null)
+                        {
+                                string abilityLabel = assignedAbility != null ? $"ability '{assignedAbility.Name}'" : "the ability input";
+                                Debug.LogWarning($"StaffUseState prevented ability animation because no clip state is configured for {abilityLabel}.");
+                                return false;
+                        }
+
+                        if (IsAbilityStateUnlocked(weapon, state, assignedAbility, "ability attack") == false)
                                 return false;
 
-                        _isCharging = false;
-
-                        _abilityAttackState.SetAnimationTime(0.0f);
-                        _abilityAttackState.Activate(_blendInDuration);
-                        Activate(_blendInDuration);
+                        if (PlayAbilityState(weapon, state, WeaponUseAnimation.Ability, false) == false)
+                                return false;
 
                         return true;
                 }
@@ -145,33 +160,28 @@ namespace TPSBR
                         if (activeState == null)
                                 return;
 
-                        if (activeState == _fireballAbility)
-                        {
-                                TryTriggerAbility(_fireballAbility, ref _lightAttackAbilityTriggered);
+                        AbilityClipState abilityState = activeState as AbilityClipState;
 
-                                if (_fireballAbility.IsFinished(0.95f) == true)
+                        if (abilityState == null)
+                                return;
+
+                        if (_activeAbilityState != abilityState)
+                        {
+                                _activeAbilityState = abilityState;
+                                _activeAbilityAnimation = abilityState.AnimationType;
+                                _abilityTriggered = false;
+                        }
+
+                        TryTriggerActiveAbility();
+
+                        if (abilityState.IsFinished(0.95f) == true)
+                        {
+                                if (_activeAbilityAnimation == WeaponUseAnimation.LightAttack)
                                 {
                                         _activeWeapon?.NotifyLightAttackAnimationFinished();
-                                        Finish();
                                 }
-                        }
-                        else if (activeState == _heavyAttackState)
-                        {
-                                TryTriggerAbility(_heavyAttackState, ref _heavyAttackAbilityTriggered);
 
-                                if (_heavyAttackState.IsFinished(0.95f) == true)
-                                {
-                                        Finish();
-                                }
-                        }
-                        else if (activeState == _abilityAttackState)
-                        {
-                                TryTriggerAbility(_abilityAttackState, ref _abilityAttackTriggered);
-
-                                if (_abilityAttackState.IsFinished(0.95f) == true)
-                                {
-                                        Finish();
-                                }
+                                Finish();
                         }
                 }
 
@@ -203,9 +213,9 @@ namespace TPSBR
                 private void Finish()
                 {
                         _activeWeapon = null;
-                        _lightAttackAbilityTriggered = false;
-                        _heavyAttackAbilityTriggered = false;
-                        _abilityAttackTriggered = false;
+                        _activeAbilityState = null;
+                        _activeAbilityAnimation = WeaponUseAnimation.None;
+                        _abilityTriggered = false;
 
                         if (IsActive(true) == true)
                         {
@@ -213,22 +223,72 @@ namespace TPSBR
                         }
                 }
 
-                private void TryTriggerAbility(AbilityClipState state, ref bool hasTriggered)
+                private bool PlayAbilityState(StaffWeapon weapon, AbilityClipState state, WeaponUseAnimation animationType, bool notifyLightAttack)
                 {
-                        if (state == null || hasTriggered == true)
+                        if (state == null)
+                                return false;
+
+                        _isCharging = false;
+                        _activeAbilityState = state;
+                        _activeAbilityAnimation = animationType;
+                        _abilityTriggered = false;
+
+                        state.SetAnimationTime(0.0f);
+                        state.Activate(_blendInDuration);
+
+                        if (notifyLightAttack == true)
+                        {
+                                weapon?.NotifyLightAttackAnimationStarted();
+                        }
+
+                        Activate(_blendInDuration);
+
+                        return true;
+                }
+
+                private AbilityClipState ResolveAbilityState(AbilityDefinition assignedAbility, WeaponUseAnimation animationType)
+                {
+                        if (_abilityStates == null || _abilityStates.Length == 0)
+                                return null;
+
+                        AbilityClipState fallback = null;
+
+                        for (int i = 0; i < _abilityStates.Length; ++i)
+                        {
+                                AbilityClipState candidate = _abilityStates[i];
+
+                                if (candidate == null)
+                                        continue;
+
+                                if (candidate.AnimationType != animationType)
+                                        continue;
+
+                                if (assignedAbility != null && candidate.Ability == assignedAbility)
+                                        return candidate;
+
+                                if (fallback == null && candidate.Ability == null)
+                                        fallback = candidate;
+                        }
+
+                        return fallback;
+                }
+
+                private void TryTriggerActiveAbility()
+                {
+                        if (_activeAbilityState == null || _abilityTriggered == true)
                                 return;
 
-                        float triggerTime = Mathf.Clamp01(state.AbilityTriggerNormalizedTime);
+                        float triggerTime = Mathf.Clamp01(_activeAbilityState.AbilityTriggerNormalizedTime);
 
-                        if (state.IsFinished(triggerTime) == false)
+                        if (_activeAbilityState.IsFinished(triggerTime) == false)
                                 return;
 
-                        hasTriggered = true;
+                        _abilityTriggered = true;
 
                         if (_activeWeapon == null)
                                 return;
 
-                        AbilityDefinition ability = state.Ability;
+                        AbilityDefinition ability = _activeAbilityState.Ability;
 
                         if (ability != null)
                         {
@@ -236,19 +296,18 @@ namespace TPSBR
                                 return;
                         }
 
-                        // Legacy fallback for configurations that have not yet been migrated to ability definitions.
-                        if (state == _fireballAbility)
+                        if (_activeAbilityAnimation == WeaponUseAnimation.LightAttack)
                         {
                                 _activeWeapon.TriggerLightAttackProjectile();
                         }
                 }
 
-                private bool IsAbilityStateUnlocked(StaffWeapon weapon, AbilityClipState state, string animationName)
+                private bool IsAbilityStateUnlocked(StaffWeapon weapon, AbilityClipState state, AbilityDefinition assignedAbility, string animationName)
                 {
                         if (weapon == null || state == null)
                                 return false;
 
-                        AbilityDefinition ability = state.Ability;
+                        AbilityDefinition ability = state.Ability ?? assignedAbility;
 
                         if (ability == null)
                         {
@@ -270,17 +329,19 @@ namespace TPSBR
 
                 public WeaponUseAnimation GetAnimationForAbility(AbilityDefinition ability)
                 {
-                        if (ability == null)
+                        if (ability == null || _abilityStates == null)
                                 return WeaponUseAnimation.None;
 
-                        if (_fireballAbility != null && _fireballAbility.Ability == ability)
-                                return WeaponUseAnimation.LightAttack;
+                        for (int i = 0; i < _abilityStates.Length; ++i)
+                        {
+                                AbilityClipState state = _abilityStates[i];
 
-                        if (_heavyAttackState != null && _heavyAttackState.Ability == ability)
-                                return WeaponUseAnimation.HeavyAttack;
+                                if (state == null)
+                                        continue;
 
-                        if (_abilityAttackState != null && _abilityAttackState.Ability == ability)
-                                return WeaponUseAnimation.Ability;
+                                if (state.Ability == ability)
+                                        return state.AnimationType;
+                        }
 
                         return WeaponUseAnimation.None;
                 }

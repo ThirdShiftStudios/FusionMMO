@@ -775,6 +775,7 @@ MonoBehaviour:
     Speed: 1
     IsLooping: 0
   _ability: {fileID: 11400000, guid: 43c15da4045778649882b0a3683bd566, type: 2}
+  _animationType: 3
   _abilityTriggerNormalizedTime: 0.5
 --- !u!1 &2640745800688205192
 GameObject:
@@ -825,6 +826,7 @@ MonoBehaviour:
     Speed: 1
     IsLooping: 0
   _ability: {fileID: 11400000, guid: cc074c1f0bb8aee48920aa5edf1e510b, type: 2}
+  _animationType: 4
   _abilityTriggerNormalizedTime: 0.5
 --- !u!1 &2773727068030882801
 GameObject:
@@ -1283,6 +1285,7 @@ MonoBehaviour:
     Speed: 1
     IsLooping: 0
   _ability: {fileID: 11400000, guid: 5451e32ec25fdca42a85a55c7241ae7e, type: 2}
+  _animationType: 2
   _abilityTriggerNormalizedTime: 0.729
 --- !u!1 &6435352256549253745
 GameObject:
@@ -3191,19 +3194,23 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6393532497836863752, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
       propertyPath: _chargeState
-      value: 
+      value:
       objectReference: {fileID: 8286909057997534430}
     - target: {fileID: 6393532497836863752, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
-      propertyPath: _heavyAttackState
-      value: 
-      objectReference: {fileID: 3191152985599960717}
+      propertyPath: _abilityStates.Array.size
+      value: 3
+      objectReference: {fileID: 0}
     - target: {fileID: 6393532497836863752, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
-      propertyPath: _lightAttackState
-      value: 
+      propertyPath: _abilityStates.Array.data[0]
+      value:
       objectReference: {fileID: 4351186955281125842}
     - target: {fileID: 6393532497836863752, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
-      propertyPath: _abilityAttackState
-      value: 
+      propertyPath: _abilityStates.Array.data[1]
+      value:
+      objectReference: {fileID: 3191152985599960717}
+    - target: {fileID: 6393532497836863752, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
+      propertyPath: _abilityStates.Array.data[2]
+      value:
       objectReference: {fileID: 7017657832660007047}
     - target: {fileID: 6409083436244092659, guid: c17b47fcacdfc8d4b80809005a2b2555, type: 3}
       propertyPath: m_RootOrder
@@ -3639,9 +3646,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _chargeState: {fileID: 8286909057997534430}
-  _fireballAbility: {fileID: 4351186955281125842}
-  _heavyAttackState: {fileID: 3191152985599960717}
-  _abilityAttackState: {fileID: 7017657832660007047}
+  _abilityStates:
+  - {fileID: 4351186955281125842}
+  - {fileID: 3191152985599960717}
+  - {fileID: 7017657832660007047}
   _blendInDuration: 0.1
   _blendOutDuration: 0.15
 --- !u!114 &2878041293676285638 stripped
