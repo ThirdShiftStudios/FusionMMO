@@ -173,6 +173,8 @@ namespace TPSBR.UI
 
                                 slot.InitializeSlot(this, i);
                                 slot.SetItem(data.Icon, data.Quantity);
+                                var presenter = slot.GetComponent<UIVendorItemPresenter>();
+                                presenter?.Apply(data, ItemVendor.ITEM_COST);
                                 slot.gameObject.SetActive(true);
                                 _slotCategories[slot] = SlotCategory.Vendor;
                         }
@@ -181,6 +183,7 @@ namespace TPSBR.UI
                         {
                                 UIListItem slot = _vendorSlots[i];
                                 slot.Clear();
+                                slot.GetComponent<UIVendorItemPresenter>()?.Clear();
                                 slot.gameObject.SetActive(false);
                         }
 
@@ -303,6 +306,7 @@ namespace TPSBR.UI
                                         continue;
 
                                 slot.Clear();
+                                slot.GetComponent<UIVendorItemPresenter>()?.Clear();
                                 slot.gameObject.SetActive(false);
                         }
 
