@@ -4,6 +4,8 @@ using Fusion;
 using TPSBR;
 using UnityEngine;
 using Pathfinding;
+using Pathfinding.Graphs.Grid;
+using Pathfinding.Util;
 
 namespace FusionMMO.Dungeons
 {
@@ -43,6 +45,8 @@ namespace FusionMMO.Dungeons
         private bool _dungeonGenerated;
         private DungeonSpawnPoint _spawnPoint;
         private AstarPath _astarPath;
+        private const string DUNGEON_GRID_GRAPH_NAME = "NetworkedDungeonGrid";
+        private int _dungeonGridGraphIndex = -1;
         private readonly List<PlayerRef> _pendingTeleportPlayers = new List<PlayerRef>(REQUEST_CAPACITY);
 
         private void Awake()
@@ -193,15 +197,185 @@ namespace FusionMMO.Dungeons
                 return;
             }
 
-            bool boundsUpdated = false;
-            Debug.Log($"BOUNDS: {dungeonBounds}");
-            var guo = new GraphUpdateObject(dungeonBounds);
+            var templateGraph = GetTemplateGridGraph(data);
+            if (templateGraph == null)
+            {
+                Debug.LogWarning($"{nameof(NetworkedDungeon)} could not find a template grid graph to clone settings from. A dungeon navmesh grid will not be generated.", this);
+                return;
+            }
 
-            // Set some settings
-            guo.updatePhysics = true;
-            AstarPath.active.UpdateGraphs(guo);
+            var dungeonGrid = GetOrCreateDungeonGridGraph(data, templateGraph);
+            if (dungeonGrid == null)
+            {
+                return;
+            }
 
-            boundsUpdated = true;
+            ConfigureDungeonGridGraph(dungeonGrid, templateGraph, dungeonBounds);
+
+            _astarPath.Scan(dungeonGrid);
+        }
+
+        private GridGraph GetTemplateGridGraph(AstarData data)
+        {
+            if (data == null || data.graphs == null)
+            {
+                return null;
+            }
+
+            GridGraph fallback = null;
+
+            foreach (var graph in data.graphs)
+            {
+                if (graph is GridGraph gridGraph)
+                {
+                    if ((int)gridGraph.graphIndex == _dungeonGridGraphIndex || string.Equals(gridGraph.name, DUNGEON_GRID_GRAPH_NAME, System.StringComparison.Ordinal))
+                    {
+                        continue;
+                    }
+
+                    fallback = gridGraph;
+                    break;
+                }
+            }
+
+            return fallback;
+        }
+
+        private GridGraph GetOrCreateDungeonGridGraph(AstarData data, GridGraph template)
+        {
+            GridGraph dungeonGraph = null;
+
+            if (_dungeonGridGraphIndex >= 0 && _dungeonGridGraphIndex < data.graphs.Length)
+            {
+                dungeonGraph = data.graphs[_dungeonGridGraphIndex] as GridGraph;
+            }
+
+            if (dungeonGraph == null)
+            {
+                for (int i = 0; i < data.graphs.Length; ++i)
+                {
+                    if (data.graphs[i] is GridGraph gridGraph && string.Equals(gridGraph.name, DUNGEON_GRID_GRAPH_NAME, System.StringComparison.Ordinal))
+                    {
+                        dungeonGraph = gridGraph;
+                        _dungeonGridGraphIndex = (int)gridGraph.graphIndex;
+                        break;
+                    }
+                }
+            }
+
+            if (dungeonGraph == null)
+            {
+                dungeonGraph = data.AddGraph(typeof(GridGraph)) as GridGraph;
+                if (dungeonGraph == null)
+                {
+                    Debug.LogWarning($"{nameof(NetworkedDungeon)} failed to create a dungeon grid graph for navmesh baking.", this);
+                    return null;
+                }
+
+                dungeonGraph.name = DUNGEON_GRID_GRAPH_NAME;
+                dungeonGraph.guid = Guid.NewGuid();
+                _dungeonGridGraphIndex = (int)dungeonGraph.graphIndex;
+
+                if (template != null)
+                {
+                    ApplyGridGraphTemplate(template, dungeonGraph);
+                }
+            }
+            else if (template != null)
+            {
+                ApplyGridGraphTemplate(template, dungeonGraph);
+            }
+
+            return dungeonGraph;
+        }
+
+        private void ConfigureDungeonGridGraph(GridGraph dungeonGraph, GridGraph template, Bounds dungeonBounds)
+        {
+            if (dungeonGraph == null)
+            {
+                return;
+            }
+
+            float nodeSize = template != null ? template.nodeSize : dungeonGraph.nodeSize;
+            if (nodeSize <= 0f)
+            {
+                nodeSize = 1f;
+            }
+
+            Vector3 paddedSize = dungeonBounds.size;
+            paddedSize.x = Mathf.Max(paddedSize.x, nodeSize);
+            paddedSize.z = Mathf.Max(paddedSize.z, nodeSize);
+
+            float padding = nodeSize;
+            paddedSize.x += padding * 2f;
+            paddedSize.z += padding * 2f;
+
+            int width = Mathf.Max(1, Mathf.CeilToInt(paddedSize.x / nodeSize));
+            int depth = Mathf.Max(1, Mathf.CeilToInt(paddedSize.z / nodeSize));
+
+            dungeonGraph.center = dungeonBounds.center;
+
+            if (template != null)
+            {
+                dungeonGraph.rotation = template.rotation;
+                dungeonGraph.is2D = template.is2D;
+                dungeonGraph.isometricAngle = template.isometricAngle;
+                dungeonGraph.aspectRatio = template.aspectRatio;
+                dungeonGraph.uniformEdgeCosts = template.uniformEdgeCosts;
+            }
+
+            dungeonGraph.SetDimensions(width, depth, nodeSize);
+            dungeonGraph.UpdateTransform();
+        }
+
+        private static void ApplyGridGraphTemplate(GridGraph template, GridGraph destination)
+        {
+            if (template == null || destination == null)
+            {
+                return;
+            }
+
+            destination.inspectorGridMode = template.inspectorGridMode;
+            destination.inspectorHexagonSizeMode = template.inspectorHexagonSizeMode;
+            destination.neighbours = template.neighbours;
+            destination.cutCorners = template.cutCorners;
+            destination.maxStepHeight = template.maxStepHeight;
+            destination.maxStepUsesSlope = template.maxStepUsesSlope;
+            destination.maxSlope = template.maxSlope;
+            destination.erodeIterations = template.erodeIterations;
+            destination.erosionUseTags = template.erosionUseTags;
+            destination.erosionFirstTag = template.erosionFirstTag;
+            destination.erosionTagsPrecedenceMask = template.erosionTagsPrecedenceMask;
+            destination.initialPenalty = template.initialPenalty;
+            destination.penaltyPosition = template.penaltyPosition;
+            destination.penaltyPositionOffset = template.penaltyPositionOffset;
+            destination.penaltyPositionFactor = template.penaltyPositionFactor;
+            destination.penaltyAngle = template.penaltyAngle;
+            destination.penaltyAngleFactor = template.penaltyAngleFactor;
+            destination.penaltyAnglePower = template.penaltyAnglePower;
+            destination.showMeshOutline = template.showMeshOutline;
+            destination.showMeshSurface = template.showMeshSurface;
+            destination.showNodeConnections = template.showNodeConnections;
+            destination.collision = CloneCollision(template.collision) ?? new GraphCollision();
+            destination.rules = template.rules;
+        }
+
+        private static GraphCollision CloneCollision(GraphCollision collision)
+        {
+            if (collision == null)
+            {
+                return null;
+            }
+
+            try
+            {
+                var serialized = JsonUtility.ToJson(collision);
+                return string.IsNullOrEmpty(serialized) ? null : JsonUtility.FromJson<GraphCollision>(serialized);
+            }
+            catch (System.Exception)
+            {
+                return null;
+            }
         }
 
         private void TryGenerateDungeon()
