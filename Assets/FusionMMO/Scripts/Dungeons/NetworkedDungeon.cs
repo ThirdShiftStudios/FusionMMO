@@ -1,11 +1,12 @@
 using System.Collections.Generic;
-using Pathfinding.Graphs.Navmesh;
 using DungeonArchitect;
 using Fusion;
 using TPSBR;
 using UnityEngine;
 using Pathfinding;
 using Pathfinding.Util;
+using Pathfinding.Collections;
+using Pathfinding.Graphs.Navmesh;
 
 namespace FusionMMO.Dungeons
 {
@@ -262,11 +263,12 @@ namespace FusionMMO.Dungeons
                 recastGraph.forcedBoundsSize = updatedForcedBounds.size;
                 recastGraph.transform = RecastGraph.CalculateTransform(updatedForcedBounds, Quaternion.Euler(recastGraph.rotation));
 
-                if (recastGraph.tiles != null)
+                var tiles = recastGraph.GetTiles();
+                if (tiles != null)
                 {
-                    for (int tileIndex = 0; tileIndex < recastGraph.tiles.Length; ++tileIndex)
+                    for (int tileIndex = 0; tileIndex < tiles.Length; ++tileIndex)
                     {
-                        var tile = recastGraph.tiles[tileIndex];
+                        var tile = tiles[tileIndex];
                         if (tile == null || tile.verts.Length == 0)
                         {
                             continue;
