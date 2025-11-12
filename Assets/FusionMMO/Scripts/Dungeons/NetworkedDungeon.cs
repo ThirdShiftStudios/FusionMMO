@@ -195,11 +195,43 @@ namespace FusionMMO.Dungeons
 
             bool boundsUpdated = false;
             Debug.Log($"BOUNDS: {dungeonBounds}");
-            var guo = new GraphUpdateObject(dungeonBounds);
 
-            // Set some settings
-            guo.updatePhysics = true;
+            bool hasExistingNodes = false;
+            foreach (var graph in data.graphs)
+            {
+                if (graph == null)
+                {
+                    continue;
+                }
+
+                graph.GetNodes(node =>
+                {
+                    if (hasExistingNodes)
+                    {
+                        return;
+                    }
+
+                    hasExistingNodes = true;
+                });
+
+                if (hasExistingNodes)
+                {
+                    break;
+                }
+            }
+
+            if (hasExistingNodes == false)
+            {
+                _astarPath.Scan();
+            }
+
+            var guo = new GraphUpdateObject(dungeonBounds)
+            {
+                updatePhysics = true
+            };
+
             AstarPath.active.UpdateGraphs(guo);
+            AstarPath.active.FlushGraphUpdates();
 
             boundsUpdated = true;
         }
