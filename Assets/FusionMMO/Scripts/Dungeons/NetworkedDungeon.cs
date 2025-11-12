@@ -216,8 +216,7 @@ namespace FusionMMO.Dungeons
                 recastGraph.forcedBoundsCenter = combinedBounds.center;
                 recastGraph.forcedBoundsSize = combinedBounds.size;
 
-                guo.nnConstraint = NNConstraint.None;
-                guo.nnConstraint.graphMask = GraphMask.FromGraph(recastGraph);
+                guo.graphMask = GraphMask.FromGraph(recastGraph);
             }
 
             AstarPath.active.UpdateGraphs(guo);
