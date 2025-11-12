@@ -4,6 +4,7 @@ using Fusion;
 using TPSBR;
 using UnityEngine;
 using Pathfinding;
+using Pathfinding.Graphs.Navmesh;
 
 namespace FusionMMO.Dungeons
 {
@@ -202,26 +203,23 @@ namespace FusionMMO.Dungeons
             var recastGraph = data.recastGraph;
             if (recastGraph != null)
             {
-                var combinedBounds = new Bounds(recastGraph.forcedBoundsCenter, recastGraph.forcedBoundsSize);
-                if (combinedBounds.size == Vector3.zero)
-                {
-                    combinedBounds = dungeonBounds;
-                }
-                else
-                {
-                    combinedBounds.Encapsulate(dungeonBounds);
-                }
-
-                combinedBounds = NavmeshPrefab.SnapSizeToClosestTileMultiple(recastGraph, combinedBounds);
-                var snappedCenter = combinedBounds.center;
-                var snappedSize = combinedBounds.size;
-                var graphMask = GraphMask.FromGraph(recastGraph);
-
                 AstarPath.active.AddWorkItem(() =>
                 {
-                    recastGraph.forcedBoundsCenter = snappedCenter;
-                    recastGraph.forcedBoundsSize = snappedSize;
-                    guo.graphMask = graphMask;
+                    recastGraph.EnsureInitialized();
+
+                    var tileLayout = new TileLayout(recastGraph);
+                    var requiredTiles = tileLayout.GetTouchingTiles(dungeonBounds);
+                    var currentTiles = recastGraph.tileXCount > 0 && recastGraph.tileZCount > 0
+                        ? new IntRect(0, 0, recastGraph.tileXCount - 1, recastGraph.tileZCount - 1)
+                        : new IntRect(0, 0, -1, -1);
+                    var newTileBounds = currentTiles.IsValid() ? IntRect.Union(currentTiles, requiredTiles) : requiredTiles;
+
+                    if (newTileBounds.IsValid() && newTileBounds != currentTiles)
+                    {
+                        recastGraph.Resize(newTileBounds);
+                    }
+
+                    guo.graphMask = GraphMask.FromGraph(recastGraph);
 
                     AstarPath.active.UpdateGraphs(guo);
                 });
