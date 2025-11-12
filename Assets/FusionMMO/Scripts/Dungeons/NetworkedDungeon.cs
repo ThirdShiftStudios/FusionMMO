@@ -213,10 +213,20 @@ namespace FusionMMO.Dungeons
                 }
 
                 combinedBounds = NavmeshPrefab.SnapSizeToClosestTileMultiple(recastGraph, combinedBounds);
-                recastGraph.forcedBoundsCenter = combinedBounds.center;
-                recastGraph.forcedBoundsSize = combinedBounds.size;
+                var snappedCenter = combinedBounds.center;
+                var snappedSize = combinedBounds.size;
+                var graphMask = GraphMask.FromGraph(recastGraph);
 
-                guo.graphMask = GraphMask.FromGraph(recastGraph);
+                AstarPath.active.AddWorkItem(() =>
+                {
+                    recastGraph.forcedBoundsCenter = snappedCenter;
+                    recastGraph.forcedBoundsSize = snappedSize;
+                    guo.graphMask = graphMask;
+
+                    AstarPath.active.UpdateGraphs(guo);
+                });
+
+                return;
             }
 
             AstarPath.active.UpdateGraphs(guo);
