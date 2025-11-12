@@ -193,15 +193,34 @@ namespace FusionMMO.Dungeons
                 return;
             }
 
-            bool boundsUpdated = false;
             Debug.Log($"BOUNDS: {dungeonBounds}");
-            var guo = new GraphUpdateObject(dungeonBounds);
+            var guo = new GraphUpdateObject(dungeonBounds)
+            {
+                updatePhysics = true
+            };
 
-            // Set some settings
-            guo.updatePhysics = true;
+            var recastGraph = data.recastGraph;
+            if (recastGraph != null)
+            {
+                var combinedBounds = new Bounds(recastGraph.forcedBoundsCenter, recastGraph.forcedBoundsSize);
+                if (combinedBounds.size == Vector3.zero)
+                {
+                    combinedBounds = dungeonBounds;
+                }
+                else
+                {
+                    combinedBounds.Encapsulate(dungeonBounds);
+                }
+
+                combinedBounds = NavmeshPrefab.SnapSizeToClosestTileMultiple(recastGraph, combinedBounds);
+                recastGraph.forcedBoundsCenter = combinedBounds.center;
+                recastGraph.forcedBoundsSize = combinedBounds.size;
+
+                guo.nnConstraint = NNConstraint.None;
+                guo.nnConstraint.graphMask = GraphMask.FromGraph(recastGraph);
+            }
+
             AstarPath.active.UpdateGraphs(guo);
-
-            boundsUpdated = true;
         }
 
         private void TryGenerateDungeon()
