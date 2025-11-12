@@ -218,6 +218,17 @@ namespace FusionMMO.Dungeons
             {
                 recastGraph.EnsureInitialized();
 
+                var updatedForcedBounds = new Bounds(recastGraph.forcedBoundsCenter, recastGraph.forcedBoundsSize);
+                if (updatedForcedBounds.size == Vector3.zero)
+                {
+                    updatedForcedBounds = new Bounds(expandedBounds.center, expandedBounds.size);
+                }
+                else
+                {
+                    updatedForcedBounds.Encapsulate(expandedBounds.min);
+                    updatedForcedBounds.Encapsulate(expandedBounds.max);
+                }
+
                 var tileLayout = new TileLayout(recastGraph);
                 var dungeonTileRect = tileLayout.GetTouchingTiles(expandedBounds);
 
@@ -239,6 +250,39 @@ namespace FusionMMO.Dungeons
                 if (currentRectValid == false || combinedRect != currentRect)
                 {
                     recastGraph.Resize(combinedRect);
+                }
+
+                updatedForcedBounds.Encapsulate(new Bounds(recastGraph.forcedBoundsCenter, recastGraph.forcedBoundsSize));
+                updatedForcedBounds.size = new Vector3(
+                    Mathf.Max(updatedForcedBounds.size.x, 1f),
+                    Mathf.Max(updatedForcedBounds.size.y, 1f),
+                    Mathf.Max(updatedForcedBounds.size.z, 1f));
+
+                recastGraph.forcedBoundsCenter = updatedForcedBounds.center;
+                recastGraph.forcedBoundsSize = updatedForcedBounds.size;
+                recastGraph.transform = RecastGraph.CalculateTransform(updatedForcedBounds, Quaternion.Euler(recastGraph.rotation));
+
+                if (recastGraph.tiles != null)
+                {
+                    for (int tileIndex = 0; tileIndex < recastGraph.tiles.Length; ++tileIndex)
+                    {
+                        var tile = recastGraph.tiles[tileIndex];
+                        if (tile == null || tile.verts.Length == 0)
+                        {
+                            continue;
+                        }
+
+                        var verts = tile.verts;
+                        var vertsInGraphSpace = tile.vertsInGraphSpace;
+                        if (vertsInGraphSpace.Length != verts.Length)
+                        {
+                            continue;
+                        }
+
+                        recastGraph.transform.InverseTransform(verts);
+                        vertsInGraphSpace.CopyFrom(verts);
+                        recastGraph.transform.Transform(verts);
+                    }
                 }
             });
 
