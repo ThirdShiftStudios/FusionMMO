@@ -220,6 +220,11 @@ namespace FusionMMO.Dungeons
                 }
             }
 
+            if (data.recastGraph != null && data.recastGraph.useTiles)
+            {
+                EnsureRecastGraphCoversDungeon(data.recastGraph, dungeonBounds);
+            }
+
             if (hasExistingNodes == false)
             {
                 _astarPath.Scan();
@@ -234,6 +239,55 @@ namespace FusionMMO.Dungeons
             AstarPath.active.FlushGraphUpdates();
 
             boundsUpdated = true;
+        }
+
+        private static void EnsureRecastGraphCoversDungeon(RecastGraph recastGraph, Bounds dungeonBounds)
+        {
+            if (recastGraph == null)
+            {
+                return;
+            }
+
+            if (dungeonBounds.size == Vector3.zero)
+            {
+                return;
+            }
+
+            var graphSpaceBounds = recastGraph.transform.InverseTransform(dungeonBounds);
+
+            float tileSizeX = recastGraph.TileWorldSizeX;
+            float tileSizeZ = recastGraph.TileWorldSizeZ;
+
+            if (Mathf.Approximately(tileSizeX, 0f) || Mathf.Approximately(tileSizeZ, 0f))
+            {
+                return;
+            }
+
+            int minTileX = Mathf.FloorToInt(graphSpaceBounds.min.x / tileSizeX) - 1;
+            int maxTileX = Mathf.FloorToInt(graphSpaceBounds.max.x / tileSizeX) + 1;
+            int minTileZ = Mathf.FloorToInt(graphSpaceBounds.min.z / tileSizeZ) - 1;
+            int maxTileZ = Mathf.FloorToInt(graphSpaceBounds.max.z / tileSizeZ) + 1;
+
+            var requiredTiles = new IntRect(minTileX, minTileZ, maxTileX, maxTileZ);
+            if (requiredTiles.IsValid() == false)
+            {
+                return;
+            }
+
+            if (recastGraph.tileXCount <= 0 || recastGraph.tileZCount <= 0)
+            {
+                recastGraph.Resize(requiredTiles);
+                return;
+            }
+
+            var currentTiles = new IntRect(0, 0, recastGraph.tileXCount - 1, recastGraph.tileZCount - 1);
+            if (currentTiles.Contains(requiredTiles))
+            {
+                return;
+            }
+
+            var expandedTiles = IntRect.Union(currentTiles, requiredTiles);
+            recastGraph.Resize(expandedTiles);
         }
 
         private void TryGenerateDungeon()
