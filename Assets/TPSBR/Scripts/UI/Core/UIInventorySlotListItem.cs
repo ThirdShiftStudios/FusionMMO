@@ -308,6 +308,21 @@ namespace TPSBR.UI
                         if (_iconImage != null)
                                 return;
 
+                        var existing = transform.Find("Icon") as RectTransform;
+                        if (existing != null)
+                        {
+                                _iconImage = existing.GetComponent<Image>();
+
+                                if (_iconImage == null)
+                                {
+                                        _iconImage = existing.gameObject.AddComponent<Image>();
+                                }
+
+                                _iconImage.preserveAspect = true;
+                                _iconImage.raycastTarget = false;
+                                return;
+                        }
+
                         var iconObject = new GameObject("Icon", typeof(RectTransform));
                         iconObject.transform.SetParent(transform, false);
 
