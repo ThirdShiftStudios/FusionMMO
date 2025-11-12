@@ -4,6 +4,9 @@ using Fusion;
 using TPSBR;
 using UnityEngine;
 using Pathfinding;
+using Pathfinding.Graphs.Navmesh;
+using Pathfinding.Jobs;
+using Pathfinding.Sync;
 
 namespace FusionMMO.Dungeons
 {
@@ -193,15 +196,61 @@ namespace FusionMMO.Dungeons
                 return;
             }
 
-            bool boundsUpdated = false;
-            Debug.Log($"BOUNDS: {dungeonBounds}");
-            var guo = new GraphUpdateObject(dungeonBounds);
+            var recastGraph = data.recastGraph;
+            if (recastGraph == null)
+            {
+                var guo = new GraphUpdateObject(dungeonBounds)
+                {
+                    updatePhysics = true
+                };
 
-            // Set some settings
-            guo.updatePhysics = true;
-            AstarPath.active.UpdateGraphs(guo);
+                _astarPath.UpdateGraphs(guo);
+                _astarPath.FlushWorkItems();
+                return;
+            }
 
-            boundsUpdated = true;
+            var tileLayout = new TileLayout(recastGraph);
+            float tileMargin = Mathf.Max(recastGraph.characterRadius, 0.1f);
+            var tileRect = tileLayout.GetTouchingTiles(dungeonBounds, tileMargin);
+            if (tileRect.IsValid() == false || tileRect.Width <= 0 || tileRect.Height <= 0)
+            {
+                return;
+            }
+
+            var disposeArena = new DisposeArena();
+            TileBuilder.TileBuilderOutput builderOutput = default;
+            bool builderOutputValid = false;
+
+            try
+            {
+                var builder = RecastBuilder.BuildTileMeshes(recastGraph, tileLayout, tileRect);
+                Promise<TileBuilder.TileBuilderOutput> promise = builder.Schedule(disposeArena);
+                builderOutput = promise.Complete();
+                builderOutputValid = true;
+
+                var tileMeshes = builderOutput.tileMeshes.ToManaged();
+                tileMeshes.tileRect = tileRect;
+
+                _astarPath.AddWorkItem(() =>
+                {
+                    recastGraph.ReplaceTiles(tileMeshes);
+                });
+
+                _astarPath.FlushWorkItems();
+            }
+            catch (System.Exception exception)
+            {
+                Debug.LogError($"Failed to merge dungeon navmesh into A* graph: {exception}", this);
+            }
+            finally
+            {
+                if (builderOutputValid)
+                {
+                    builderOutput.Dispose();
+                }
+
+                disposeArena.DisposeAll();
+            }
         }
 
         private void TryGenerateDungeon()
