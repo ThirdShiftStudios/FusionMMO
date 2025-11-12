@@ -4,6 +4,9 @@ using Fusion;
 using TPSBR;
 using UnityEngine;
 using Pathfinding;
+using Pathfinding.Util;
+using Pathfinding.Collections;
+using Pathfinding.Graphs.Navmesh;
 
 namespace FusionMMO.Dungeons
 {
@@ -187,21 +190,154 @@ namespace FusionMMO.Dungeons
                 return;
             }
 
-            var data = _astarPath.data;
-            if (data == null || data.graphs == null)
+            var recastGraph = GetMainRecastGraph();
+            if (recastGraph == null)
             {
                 return;
             }
 
-            bool boundsUpdated = false;
-            Debug.Log($"BOUNDS: {dungeonBounds}");
-            var guo = new GraphUpdateObject(dungeonBounds);
+            if (recastGraph.useTiles == false)
+            {
+                Debug.LogWarning("Recast graph must use tiles to stream dungeon navigation mesh.");
+                return;
+            }
 
-            // Set some settings
-            guo.updatePhysics = true;
-            AstarPath.active.UpdateGraphs(guo);
+            var astarPath = _astarPath;
+            if (astarPath == null)
+            {
+                return;
+            }
 
-            boundsUpdated = true;
+            var expandedBounds = dungeonBounds;
+            float horizontalMargin = Mathf.Max(1.0f, recastGraph.characterRadius * 2.0f);
+            float verticalMargin = Mathf.Max(1.0f, recastGraph.walkableHeight);
+            expandedBounds.Expand(new Vector3(horizontalMargin, verticalMargin, horizontalMargin));
+
+            bool shouldUpdate = false;
+
+            astarPath.AddWorkItem(() =>
+            {
+                recastGraph.EnsureInitialized();
+
+                var updatedForcedBounds = new Bounds(recastGraph.forcedBoundsCenter, recastGraph.forcedBoundsSize);
+                if (updatedForcedBounds.size == Vector3.zero)
+                {
+                    updatedForcedBounds = new Bounds(expandedBounds.center, expandedBounds.size);
+                }
+                else
+                {
+                    updatedForcedBounds.Encapsulate(expandedBounds.min);
+                    updatedForcedBounds.Encapsulate(expandedBounds.max);
+                }
+
+                var tileLayout = new TileLayout(recastGraph);
+                var dungeonTileRect = tileLayout.GetTouchingTiles(expandedBounds);
+
+                if (dungeonTileRect.IsValid() == false)
+                {
+                    return;
+                }
+
+                shouldUpdate = true;
+
+                bool currentRectValid = recastGraph.tileXCount > 0 && recastGraph.tileZCount > 0;
+                IntRect currentRect = currentRectValid
+                    ? new IntRect(0, 0, recastGraph.tileXCount - 1, recastGraph.tileZCount - 1)
+                    : dungeonTileRect;
+                IntRect combinedRect = currentRectValid
+                    ? IntRect.Union(currentRect, dungeonTileRect)
+                    : dungeonTileRect;
+
+                if (currentRectValid == false || combinedRect != currentRect)
+                {
+                    recastGraph.Resize(combinedRect);
+                }
+
+                updatedForcedBounds.Encapsulate(new Bounds(recastGraph.forcedBoundsCenter, recastGraph.forcedBoundsSize));
+                updatedForcedBounds.size = new Vector3(
+                    Mathf.Max(updatedForcedBounds.size.x, 1f),
+                    Mathf.Max(updatedForcedBounds.size.y, 1f),
+                    Mathf.Max(updatedForcedBounds.size.z, 1f));
+
+                recastGraph.forcedBoundsCenter = updatedForcedBounds.center;
+                recastGraph.forcedBoundsSize = updatedForcedBounds.size;
+                recastGraph.transform = RecastGraph.CalculateTransform(updatedForcedBounds, Quaternion.Euler(recastGraph.rotation));
+
+                var tiles = recastGraph.GetTiles();
+                if (tiles != null)
+                {
+                    for (int tileIndex = 0; tileIndex < tiles.Length; ++tileIndex)
+                    {
+                        var tile = tiles[tileIndex];
+                        if (tile == null || tile.verts.Length == 0)
+                        {
+                            continue;
+                        }
+
+                        var verts = tile.verts;
+                        var vertsInGraphSpace = tile.vertsInGraphSpace;
+                        if (vertsInGraphSpace.Length != verts.Length)
+                        {
+                            continue;
+                        }
+
+                        recastGraph.transform.InverseTransform(verts);
+                        vertsInGraphSpace.CopyFrom(verts);
+                        recastGraph.transform.Transform(verts);
+                    }
+                }
+            });
+
+            astarPath.FlushWorkItems();
+
+            if (shouldUpdate == false)
+            {
+                return;
+            }
+
+            var updateObject = new GraphUpdateObject(expandedBounds)
+            {
+                updatePhysics = true,
+                resetPenaltyOnPhysics = false
+            };
+
+            astarPath.UpdateGraphs(updateObject);
+            astarPath.FlushGraphUpdates();
+        }
+
+        private RecastGraph GetMainRecastGraph()
+        {
+            if (CacheAstarPath() == false)
+            {
+                return null;
+            }
+
+            var data = _astarPath.data;
+            if (data == null)
+            {
+                return null;
+            }
+
+            var recastGraph = data.recastGraph;
+            if (recastGraph != null)
+            {
+                return recastGraph;
+            }
+
+            if (data.graphs == null)
+            {
+                return null;
+            }
+
+            for (int i = 0; i < data.graphs.Length; ++i)
+            {
+                if (data.graphs[i] is RecastGraph candidate)
+                {
+                    return candidate;
+                }
+            }
+
+            return null;
         }
 
         private void TryGenerateDungeon()
