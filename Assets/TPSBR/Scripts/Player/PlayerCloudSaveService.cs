@@ -58,6 +58,7 @@ namespace TPSBR
         public string CharacterName;
         public string CharacterDefinitionCode;
         public long CreatedAtUtc;
+        public int CharacterLevel;
     }
 
     [Serializable]
@@ -450,8 +451,10 @@ namespace TPSBR
                 CharacterName = trimmedName,
                 CharacterDefinitionCode = definition.StringCode,
                 CreatedAtUtc = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
+                CharacterLevel = 1,
             };
 
+            EnsureCharacterDefaults(record);
             _characters.Add(record);
             EnsureCharacterInventoryData(record.CharacterId);
             EnsureCharacterProfessionData(record.CharacterId);
@@ -1576,6 +1579,17 @@ namespace TPSBR
             }
         }
 
+        private static void EnsureCharacterDefaults(PlayerCharacterSaveData character)
+        {
+            if (character == null)
+                return;
+
+            if (character.CharacterLevel <= 0)
+            {
+                character.CharacterLevel = 1;
+            }
+        }
+
         private void SyncCharactersFromCachedData(bool notify)
         {
             _characters.Clear();
@@ -1597,6 +1611,7 @@ namespace TPSBR
                         if (string.IsNullOrEmpty(character.CharacterId) == true)
                             continue;
 
+                        EnsureCharacterDefaults(character);
                         _characters.Add(character);
                     }
                 }
