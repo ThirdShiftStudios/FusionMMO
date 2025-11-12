@@ -252,7 +252,6 @@ namespace FusionMMO.Dungeons
             var updateObject = new GraphUpdateObject(expandedBounds)
             {
                 updatePhysics = true,
-                requiresFloodFill = false,
                 resetPenaltyOnPhysics = false
             };
 
