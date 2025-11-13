@@ -208,10 +208,7 @@ namespace FusionMMO.Dungeons
                 return;
             }
 
-            var expandedBounds = dungeonBounds;
-            float horizontalMargin = Mathf.Max(1.0f, recastGraph.characterRadius * 2.0f);
-            float verticalMargin = Mathf.Max(1.0f, recastGraph.walkableHeight);
-            expandedBounds.Expand(new Vector3(horizontalMargin, verticalMargin, horizontalMargin));
+            var targetBounds = dungeonBounds;
 
             bool shouldUpdate = false;
 
@@ -219,19 +216,10 @@ namespace FusionMMO.Dungeons
             {
                 recastGraph.EnsureInitialized();
 
-                var updatedForcedBounds = new Bounds(recastGraph.forcedBoundsCenter, recastGraph.forcedBoundsSize);
-                if (updatedForcedBounds.size == Vector3.zero)
-                {
-                    updatedForcedBounds = new Bounds(expandedBounds.center, expandedBounds.size);
-                }
-                else
-                {
-                    updatedForcedBounds.Encapsulate(expandedBounds.min);
-                    updatedForcedBounds.Encapsulate(expandedBounds.max);
-                }
+                var updatedForcedBounds = new Bounds(targetBounds.center, targetBounds.size);
 
                 var tileLayout = new TileLayout(recastGraph);
-                var dungeonTileRect = tileLayout.GetTouchingTiles(expandedBounds);
+                var dungeonTileRect = tileLayout.GetTouchingTiles(targetBounds);
 
                 if (dungeonTileRect.IsValid() == false)
                 {
@@ -244,16 +232,12 @@ namespace FusionMMO.Dungeons
                 IntRect currentRect = currentRectValid
                     ? new IntRect(0, 0, recastGraph.tileXCount - 1, recastGraph.tileZCount - 1)
                     : dungeonTileRect;
-                IntRect combinedRect = currentRectValid
-                    ? IntRect.Union(currentRect, dungeonTileRect)
-                    : dungeonTileRect;
 
-                if (currentRectValid == false || combinedRect != currentRect)
+                if (currentRectValid == false || currentRect != dungeonTileRect)
                 {
-                    recastGraph.Resize(combinedRect);
+                    recastGraph.Resize(dungeonTileRect);
                 }
 
-                updatedForcedBounds.Encapsulate(new Bounds(recastGraph.forcedBoundsCenter, recastGraph.forcedBoundsSize));
                 updatedForcedBounds.size = new Vector3(
                     Mathf.Max(updatedForcedBounds.size.x, 1f),
                     Mathf.Max(updatedForcedBounds.size.y, 1f),
@@ -295,7 +279,7 @@ namespace FusionMMO.Dungeons
                 return;
             }
 
-            var updateObject = new GraphUpdateObject(expandedBounds)
+            var updateObject = new GraphUpdateObject(targetBounds)
             {
                 updatePhysics = true,
                 resetPenaltyOnPhysics = false
