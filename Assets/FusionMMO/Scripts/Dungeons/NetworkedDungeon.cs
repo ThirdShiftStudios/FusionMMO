@@ -217,6 +217,7 @@ namespace FusionMMO.Dungeons
                 recastGraph.EnsureInitialized();
 
                 var updatedForcedBounds = new Bounds(targetBounds.center, targetBounds.size);
+                var currentForcedBounds = new Bounds(recastGraph.forcedBoundsCenter, recastGraph.forcedBoundsSize);
 
                 var tileLayout = new TileLayout(recastGraph);
                 var dungeonTileRect = tileLayout.GetTouchingTiles(targetBounds);
@@ -233,9 +234,23 @@ namespace FusionMMO.Dungeons
                     ? new IntRect(0, 0, recastGraph.tileXCount - 1, recastGraph.tileZCount - 1)
                     : dungeonTileRect;
 
-                if (currentRectValid == false || currentRect != dungeonTileRect)
+                bool preserveExistingGraph = currentRectValid && ContainsRect(dungeonTileRect, currentRect) == false;
+                IntRect targetTileRect = preserveExistingGraph
+                    ? IntRect.Union(currentRect, dungeonTileRect)
+                    : dungeonTileRect;
+
+                if (preserveExistingGraph)
                 {
-                    recastGraph.Resize(dungeonTileRect);
+                    if (currentForcedBounds.size != Vector3.zero)
+                    {
+                        updatedForcedBounds.Encapsulate(currentForcedBounds.min);
+                        updatedForcedBounds.Encapsulate(currentForcedBounds.max);
+                    }
+                }
+
+                if (currentRectValid == false || currentRect != targetTileRect)
+                {
+                    recastGraph.Resize(targetTileRect);
                 }
 
                 updatedForcedBounds.size = new Vector3(
@@ -322,6 +337,14 @@ namespace FusionMMO.Dungeons
             }
 
             return null;
+        }
+
+        private static bool ContainsRect(IntRect outer, IntRect inner)
+        {
+            return outer.xmin <= inner.xmin
+                && outer.xmax >= inner.xmax
+                && outer.ymin <= inner.ymin
+                && outer.ymax >= inner.ymax;
         }
 
         private void TryGenerateDungeon()
