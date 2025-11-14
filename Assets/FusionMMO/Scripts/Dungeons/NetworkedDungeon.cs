@@ -7,6 +7,9 @@ using Pathfinding;
 using Pathfinding.Util;
 using Pathfinding.Collections;
 using Pathfinding.Graphs.Navmesh;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace FusionMMO.Dungeons
 {
@@ -22,6 +25,13 @@ namespace FusionMMO.Dungeons
         public PlayerRef Player;
         public int HideTick;
         public NetworkBool IsActive;
+    }
+
+    [System.Serializable]
+    public struct NetworkedObjectMap
+    {
+        public GameObject monoBehavior;
+        public NetworkObject networkBehavior;
     }
 
     [RequireComponent(typeof(NetworkTransform))]
@@ -46,10 +56,23 @@ namespace FusionMMO.Dungeons
         [SerializeField]
         private Dungeon _dungeon;
 
+        [SerializeField]
+        private NetworkedObjectMap[] _networkedObjectMap = System.Array.Empty<NetworkedObjectMap>();
+
         private bool _dungeonGenerated;
         private DungeonSpawnPoint _spawnPoint;
         private AstarPath _astarPath;
         private readonly List<PlayerRef> _pendingTeleportPlayers = new List<PlayerRef>(REQUEST_CAPACITY);
+        private readonly List<PendingNetworkSpawn> _pendingNetworkSpawns = new List<PendingNetworkSpawn>();
+        private readonly List<NetworkObject> _spawnedNetworkObjects = new List<NetworkObject>();
+
+        private struct PendingNetworkSpawn
+        {
+            public NetworkObject Prefab;
+            public Vector3 Position;
+            public Quaternion Rotation;
+            public Vector3 Scale;
+        }
 
         private void Awake()
         {
@@ -70,6 +93,7 @@ namespace FusionMMO.Dungeons
         public override void FixedUpdateNetwork()
         {
             base.FixedUpdateNetwork();
+            ProcessPendingNetworkSpawns();
             TryScheduleTeleport();
             ProcessTeleportRequest();
             ProcessLoadingSceneRequest();
@@ -107,6 +131,8 @@ namespace FusionMMO.Dungeons
             ClearTeleportRequests();
             ClearLoadingSceneRequests();
             _pendingTeleportPlayers.Clear();
+            ClearPendingNetworkSpawns();
+            DespawnSpawnedNetworkObjects();
             TryGenerateDungeon();
         }
 
@@ -360,9 +386,16 @@ namespace FusionMMO.Dungeons
                 return;
             }
 
+            if (HasStateAuthority)
+            {
+                DespawnSpawnedNetworkObjects();
+            }
+
             _dungeon.SetSeed(_seed);
             _dungeon.Build();
             UpdateAstarPath();
+
+            HideAndQueueNetworkedObjects();
 
             _lastSeedGenerated = _seed;
             _dungeonGenerated = true;
@@ -561,6 +594,11 @@ namespace FusionMMO.Dungeons
             }
         }
 
+        private void ClearPendingNetworkSpawns()
+        {
+            _pendingNetworkSpawns.Clear();
+        }
+
         private bool IsTeleportAlreadyScheduled(PlayerRef player)
         {
             for (int i = 0, count = _teleportRequests.Length; i < count; ++i)
@@ -614,6 +652,150 @@ namespace FusionMMO.Dungeons
             {
                 networking.RequestLoadingScene(false, 0f);
             }
+        }
+
+        private void HideAndQueueNetworkedObjects()
+        {
+            if (_dungeon == null)
+            {
+                return;
+            }
+
+            if (_networkedObjectMap == null || _networkedObjectMap.Length == 0)
+            {
+                return;
+            }
+
+            if (HasStateAuthority)
+            {
+                _pendingNetworkSpawns.Clear();
+            }
+
+            var transforms = _dungeon.GetComponentsInChildren<Transform>(true);
+            foreach (var child in transforms)
+            {
+                if (child == null)
+                {
+                    continue;
+                }
+
+                var childGameObject = child.gameObject;
+                for (int mapIndex = 0; mapIndex < _networkedObjectMap.Length; ++mapIndex)
+                {
+                    var map = _networkedObjectMap[mapIndex];
+                    if (map.monoBehavior == null)
+                    {
+                        continue;
+                    }
+
+                    if (IsMatchingPrefab(childGameObject, map.monoBehavior) == false)
+                    {
+                        continue;
+                    }
+
+                    childGameObject.SetActive(false);
+
+                    if (HasStateAuthority && map.networkBehavior != null)
+                    {
+                        PendingNetworkSpawn spawn = default;
+                        spawn.Prefab = map.networkBehavior;
+                        spawn.Position = child.position;
+                        spawn.Rotation = child.rotation;
+                        spawn.Scale = child.lossyScale;
+                        _pendingNetworkSpawns.Add(spawn);
+                    }
+
+                    break;
+                }
+            }
+        }
+
+        private void ProcessPendingNetworkSpawns()
+        {
+            if (HasStateAuthority == false || Runner == null)
+            {
+                _pendingNetworkSpawns.Clear();
+                return;
+            }
+
+            if (_pendingNetworkSpawns.Count == 0)
+            {
+                return;
+            }
+
+            for (int i = 0; i < _pendingNetworkSpawns.Count; ++i)
+            {
+                var spawn = _pendingNetworkSpawns[i];
+                if (spawn.Prefab == null)
+                {
+                    continue;
+                }
+
+                var spawnedObject = Runner.Spawn(spawn.Prefab, spawn.Position, spawn.Rotation, playerRef: null, onBeforeSpawned: (runner, obj) =>
+                {
+                    obj.transform.localScale = spawn.Scale;
+                });
+
+                if (spawnedObject != null)
+                {
+                    _spawnedNetworkObjects.Add(spawnedObject);
+                }
+            }
+
+            _pendingNetworkSpawns.Clear();
+        }
+
+        private void DespawnSpawnedNetworkObjects()
+        {
+            if (_spawnedNetworkObjects.Count == 0)
+            {
+                return;
+            }
+
+            for (int i = _spawnedNetworkObjects.Count - 1; i >= 0; --i)
+            {
+                var spawned = _spawnedNetworkObjects[i];
+                if (spawned == null)
+                {
+                    _spawnedNetworkObjects.RemoveAt(i);
+                    continue;
+                }
+
+                if (Runner != null)
+                {
+                    Runner.Despawn(spawned);
+                }
+
+                _spawnedNetworkObjects.RemoveAt(i);
+            }
+        }
+
+        private static bool IsMatchingPrefab(GameObject instance, GameObject prefab)
+        {
+            if (instance == null || prefab == null)
+            {
+                return false;
+            }
+
+#if UNITY_EDITOR
+            var sourcePrefab = PrefabUtility.GetCorrespondingObjectFromOriginalSource(instance);
+            if (sourcePrefab != null && sourcePrefab == prefab)
+            {
+                return true;
+            }
+#endif
+
+            if (instance.name == prefab.name)
+            {
+                return true;
+            }
+
+            if (instance.name.StartsWith(prefab.name + " ("))
+            {
+                return true;
+            }
+
+            return false;
         }
     }
 }
