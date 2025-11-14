@@ -24,7 +24,8 @@ namespace FusionMMO.Dungeons
         public NetworkBool IsActive;
     }
 
-    [RequireComponent(typeof(Dungeon))]
+    [RequireComponent(typeof(NetworkTransform))]
+    [RequireComponent(typeof(NetworkObject))]
     public class NetworkedDungeon : NetworkBehaviour
     {
         private const int REQUEST_CAPACITY = 16;
@@ -42,7 +43,9 @@ namespace FusionMMO.Dungeons
         private NetworkArray<LoadingSceneRequest> _loadingSceneRequests { get; }
 
         private int _lastSeedGenerated = -1;
+        [SerializeField]
         private Dungeon _dungeon;
+
         private bool _dungeonGenerated;
         private DungeonSpawnPoint _spawnPoint;
         private AstarPath _astarPath;
@@ -144,7 +147,7 @@ namespace FusionMMO.Dungeons
                 return true;
             }
 
-            _dungeon = GetComponent<Dungeon>();
+            _dungeon = GetComponentInChildren<Dungeon>();
             return _dungeon != null;
         }
 
