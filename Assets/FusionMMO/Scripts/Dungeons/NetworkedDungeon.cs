@@ -65,6 +65,7 @@ namespace FusionMMO.Dungeons
         private readonly List<PlayerRef> _pendingTeleportPlayers = new List<PlayerRef>(REQUEST_CAPACITY);
         private readonly List<PendingNetworkSpawn> _pendingNetworkSpawns = new List<PendingNetworkSpawn>();
         private readonly List<NetworkObject> _spawnedNetworkObjects = new List<NetworkObject>();
+        private readonly List<Transform> _dungeonTransformBuffer = new List<Transform>();
 
         private struct PendingNetworkSpawn
         {
@@ -671,42 +672,18 @@ namespace FusionMMO.Dungeons
                 _pendingNetworkSpawns.Clear();
             }
 
-            var transforms = _dungeon.GetComponentsInChildren<Transform>(true);
-            foreach (var child in transforms)
+            ProcessDungeonHierarchy(_dungeon.gameObject);
+
+            var dungeonObjects = DungeonUtils.GetDungeonObjects(_dungeon);
+            for (int i = 0; i < dungeonObjects.Count; ++i)
             {
-                if (child == null)
+                var dungeonObject = dungeonObjects[i];
+                if (dungeonObject == null || dungeonObject == _dungeon.gameObject)
                 {
                     continue;
                 }
 
-                var childGameObject = child.gameObject;
-                for (int mapIndex = 0; mapIndex < _networkedObjectMap.Length; ++mapIndex)
-                {
-                    var map = _networkedObjectMap[mapIndex];
-                    if (map.monoBehavior == null)
-                    {
-                        continue;
-                    }
-
-                    if (IsMatchingPrefab(childGameObject, map.monoBehavior) == false)
-                    {
-                        continue;
-                    }
-
-                    childGameObject.SetActive(false);
-
-                    if (HasStateAuthority && map.networkBehavior != null)
-                    {
-                        PendingNetworkSpawn spawn = default;
-                        spawn.Prefab = map.networkBehavior;
-                        spawn.Position = child.position;
-                        spawn.Rotation = child.rotation;
-                        spawn.Scale = child.lossyScale;
-                        _pendingNetworkSpawns.Add(spawn);
-                    }
-
-                    break;
-                }
+                ProcessDungeonHierarchy(dungeonObject);
             }
         }
 
@@ -796,6 +773,57 @@ namespace FusionMMO.Dungeons
             }
 
             return false;
+        }
+
+        private void ProcessDungeonHierarchy(GameObject root)
+        {
+            if (root == null)
+            {
+                return;
+            }
+
+            _dungeonTransformBuffer.Clear();
+            root.GetComponentsInChildren(true, _dungeonTransformBuffer);
+
+            for (int transformIndex = 0; transformIndex < _dungeonTransformBuffer.Count; ++transformIndex)
+            {
+                var child = _dungeonTransformBuffer[transformIndex];
+                if (child == null)
+                {
+                    continue;
+                }
+
+                var childGameObject = child.gameObject;
+                for (int mapIndex = 0; mapIndex < _networkedObjectMap.Length; ++mapIndex)
+                {
+                    var map = _networkedObjectMap[mapIndex];
+                    if (map.monoBehavior == null)
+                    {
+                        continue;
+                    }
+
+                    if (IsMatchingPrefab(childGameObject, map.monoBehavior) == false)
+                    {
+                        continue;
+                    }
+
+                    childGameObject.SetActive(false);
+
+                    if (HasStateAuthority && map.networkBehavior != null)
+                    {
+                        PendingNetworkSpawn spawn = default;
+                        spawn.Prefab = map.networkBehavior;
+                        spawn.Position = child.position;
+                        spawn.Rotation = child.rotation;
+                        spawn.Scale = child.lossyScale;
+                        _pendingNetworkSpawns.Add(spawn);
+                    }
+
+                    break;
+                }
+            }
+
+            _dungeonTransformBuffer.Clear();
         }
     }
 }
