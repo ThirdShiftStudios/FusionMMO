@@ -731,7 +731,7 @@ namespace FusionMMO.Dungeons
                     continue;
                 }
 
-                var spawnedObject = Runner.Spawn(spawn.Prefab, spawn.Position, spawn.Rotation, playerRef: null, onBeforeSpawned: (runner, obj) =>
+                var spawnedObject = Runner.Spawn(spawn.Prefab, spawn.Position, spawn.Rotation, default, (runner, obj) =>
                 {
                     obj.transform.localScale = spawn.Scale;
                 });
