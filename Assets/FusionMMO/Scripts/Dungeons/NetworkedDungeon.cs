@@ -59,6 +59,9 @@ namespace FusionMMO.Dungeons
         [SerializeField]
         private NetworkedObjectMap[] _networkedObjectMap = System.Array.Empty<NetworkedObjectMap>();
 
+        [SerializeField]
+        private Transform _networkObjectRoot;
+
         private bool _dungeonGenerated;
         private DungeonSpawnPoint _spawnPoint;
         private AstarPath _astarPath;
@@ -711,6 +714,11 @@ namespace FusionMMO.Dungeons
                 var spawnedObject = Runner.Spawn(spawn.Prefab, spawn.Position, spawn.Rotation, default, (runner, obj) =>
                 {
                     obj.transform.localScale = spawn.Scale;
+
+                    if (_networkObjectRoot != null)
+                    {
+                        obj.transform.SetParent(_networkObjectRoot, true);
+                    }
                 });
 
                 if (spawnedObject != null)
