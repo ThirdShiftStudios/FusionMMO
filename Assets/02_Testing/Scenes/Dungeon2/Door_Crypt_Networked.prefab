@@ -1,5 +1,58 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!1 &1309578341866626920
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4358605348521737497}
+  - component: {fileID: 5543716597054521397}
+  m_Layer: 12
+  m_Name: InteractionCollider
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4358605348521737497
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1309578341866626920}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -0.0000022649765, y: 1.2, z: 0.7812501}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 8192419657279329713}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!65 &5543716597054521397
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1309578341866626920}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1, y: 2.2, z: 1.4}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &8071144532658473420
 GameObject:
   m_ObjectHideFlags: 0
@@ -10,7 +63,8 @@ GameObject:
   m_Component:
   - component: {fileID: 5489229008428919409}
   - component: {fileID: -5717904615716700270}
-  - component: {fileID: 5931401607538915891}
+  - component: {fileID: 4016247413991872008}
+  - component: {fileID: 7319703203705185411}
   m_Layer: 0
   m_Name: Door_Crypt_Networked
   m_TagString: Untagged
@@ -53,9 +107,9 @@ MonoBehaviour:
   Flags: 262145
   NestedObjects: []
   NetworkedBehaviours:
-  - {fileID: 5931401607538915891}
+  - {fileID: 4016247413991872008}
   ForceRemoteRenderTimeframe: 0
---- !u!114 &5931401607538915891
+--- !u!114 &4016247413991872008
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -64,14 +118,37 @@ MonoBehaviour:
   m_GameObject: {fileID: 8071144532658473420}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 158639473, guid: e725a070cec140c4caffb81624c8c787, type: 3}
+  m_Script: {fileID: 11500000, guid: d0b2f6066b74a72409146b8095c34e86, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   _stateAuthorityChangeErrorCorrectionDelta: 0
-  SyncScale: 0
-  SyncParent: 1
-  _autoAOIOverride: 1
-  DisableSharedModeInterpolation: 0
+  _interactionName: Dungeon Door
+  _interactionDescription: Open or close the door.
+  _hudPivot: {fileID: 8192419657279329713}
+  _interactionCollider: {fileID: 5543716597054521397}
+  _animation: {fileID: 7319703203705185411}
+  _openAnimation: {fileID: 7400000, guid: 30f747f1a2b0de245a925f28e6dd23d6, type: 2}
+  _closeAnimation: {fileID: 7400000, guid: 7dc038f700de25148abc59720d53259c, type: 2}
+  _startState: 3
+  _interactionCooldown: 1
+  _DoorState: 0
+--- !u!111 &7319703203705185411
+Animation:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8071144532658473420}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Animation: {fileID: 7400000, guid: 7dc038f700de25148abc59720d53259c, type: 2}
+  m_Animations:
+  - {fileID: 7400000, guid: 7dc038f700de25148abc59720d53259c, type: 2}
+  - {fileID: 7400000, guid: 30f747f1a2b0de245a925f28e6dd23d6, type: 2}
+  m_WrapMode: 0
+  m_PlayAutomatically: 1
+  m_AnimatePhysics: 0
+  m_CullingType: 0
 --- !u!1001 &977307553757442042
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -302,7 +379,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
-    m_AddedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: 400000, guid: 633c2410da0cba549b65d3ffa938b50b, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 4358605348521737497}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 633c2410da0cba549b65d3ffa938b50b, type: 3}
 --- !u!4 &8192419657279329713 stripped
