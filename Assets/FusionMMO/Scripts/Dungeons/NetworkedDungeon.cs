@@ -794,6 +794,11 @@ namespace FusionMMO.Dungeons
                 }
 
                 var childGameObject = child.gameObject;
+                if (childGameObject.activeInHierarchy == false)
+                {
+                    continue;
+                }
+
                 for (int mapIndex = 0; mapIndex < _networkedObjectMap.Length; ++mapIndex)
                 {
                     var map = _networkedObjectMap[mapIndex];
