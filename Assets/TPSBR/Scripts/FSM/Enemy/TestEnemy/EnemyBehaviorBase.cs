@@ -11,6 +11,7 @@ namespace TPSBR.Enemies
         private AnimationClip _enterAnimation;
 
         private AnimancerComponent _animancer;
+        private AnimancerState _currentAnimationState;
 
         protected virtual AnimationClip EnterAnimation => _enterAnimation;
 
@@ -53,7 +54,13 @@ namespace TPSBR.Enemies
             if (animancer == null)
                 return null;
 
-            return animancer.Play(transition);
+            var state = animancer.Play(transition);
+            if (state != null)
+            {
+                _currentAnimationState = state;
+            }
+
+            return state;
         }
 
         protected AnimancerState PlayAnimation(AnimationClip clip)
@@ -65,7 +72,28 @@ namespace TPSBR.Enemies
             if (animancer == null)
                 return null;
 
-            return animancer.Play(clip);
+            var state = animancer.Play(clip);
+            if (state != null)
+            {
+                _currentAnimationState = state;
+            }
+
+            return state;
+        }
+
+        protected float AnimationNormalizedTime
+        {
+            get
+            {
+                if (_currentAnimationState == null)
+                    return 0f;
+
+                var normalizedTime = _currentAnimationState.NormalizedTime;
+                if (float.IsNaN(normalizedTime))
+                    return 0f;
+
+                return AnimancerUtilities.Wrap01(normalizedTime);
+            }
         }
 
         private AnimancerComponent ResolveAnimancer()
