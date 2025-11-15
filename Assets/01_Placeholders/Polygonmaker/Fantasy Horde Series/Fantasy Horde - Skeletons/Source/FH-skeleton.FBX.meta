@@ -1,0 +1,2600 @@
+fileFormatVersion: 2
+guid: 94340b94884b20746bfb6d9f925d99f4
+ModelImporter:
+  serializedVersion: 23
+  fileIDToRecycleName:
+    100000: skeleton_wizard
+    100002: skeleton_boot_02
+    100004: //RootNode
+    100006: skeleton_hood
+    100008: FH_skeleton
+    100010: bip_hordeTail1
+    100012: bip_hordecloth1
+    100014: skeleton_quiver
+    100016: bip_hordemouth
+    100018: bip_hordeHead
+    100020: bip_hordeNeck2
+    100022: bip_hordeNeck1
+    100024: skeleton_axe_03
+    100026: skeleton_axe_01
+    100028: skeleton_spear
+    100030: skeleton_axe_02
+    100032: bip_hordeRPalm
+    100034: skeleton_shield
+    100036: bip_hordeLPalm
+    100038: bip_hordeSpine3
+    100040: bip_hordeSpine2
+    100042: bip_hordeSpine1
+    100044: bip_hordeRFoot
+    100046: bip_hordeRCalf
+    100048: bip_hordeRThigh
+    100050: bip_hordeLFoot
+    100052: bip_hordeLCalf
+    100054: bip_hordeLThigh
+    100056: bip_hordePelvis
+    100058: skeleton_leg ring
+    100060: skeleton_boot_01
+    100062: skeleton_arm plate
+    100064: skeleton_pelvis_armor
+    100066: skeleton_shoulder pad_02
+    100068: skeleton_knee pad
+    100070: skeleton_shoulder pad_01
+    100072: skeleton_cloth_01
+    100074: skeleton_shoulder pad_03
+    100076: skeleton_arch_02
+    100078: skeleton_ arch_03
+    100080: skeleton_shoulder pad_07
+    100082: skeleton_shoulder pad_08
+    100084: skeleton_leg plate
+    100086: skeleton_belt_02
+    100088: skeleton_belt_01
+    100090: skeleton_body armor
+    100092: skeleton_helmet_06
+    100094: skeleton_helmet_05
+    100096: skeleton_helmet_04
+    100098: skeleton_helmet_01
+    100100: skeleton_helmet_03
+    100102: skeleton_shoulder pad_05_R
+    100104: skeleton_club_01
+    100106: skeleton_hammer_01
+    100108: skeleton_staff_02
+    100110: skeleton_staff_03
+    100112: skeleton_staff_04
+    100114: skeleton_sword_02
+    100116: skeleton_club_02
+    100118: skeleton_sword_03
+    100120: skeleton_sword_gladius
+    100122: skeleton_staff_05
+    100124: skeleton_staff_01
+    100126: skeleton_sword_01
+    100128: bip_hordeRDigit32
+    100130: bip_hordeRDigit31
+    100132: bip_hordeRDigit12
+    100134: bip_hordeRDigit11 1
+    100136: bip_hordeRForearm
+    100138: bip_hordeRUpperarm
+    100140: bip_hordeRCollarbone
+    100142: skeleton_shoulder pad_05_L
+    100144: skeleton_ arch_top
+    100146: skeleton_ arch_cord_01
+    100148: skeleton_ arch_botton
+    100150: skeleton_ arch_cord_02
+    100152: ctrl_goblin arch_arrow
+    100154: skeleton_ arch_main
+    100156: bip_hordeLDigit32
+    100158: bip_hordeLDigit31
+    100160: bip_hordeLDigit12
+    100162: bip_hordeLDigit11 1
+    100164: bip_hordeLForearm
+    100166: bip_hordeLUpperarm
+    100168: bip_hordeLCollarbone
+    100170: bip_hordeRibcage
+    100172: bip_hordeRDigit11
+    100174: bip_hordeLDigit11
+    100176: skeleton_arch_01
+    100178: FH_skeleton_strong
+    100180: skeleton_helmet_02
+    100182: axe_01_LOD0
+    100184: axe_01_LOD1
+    100186: axe_02_LOD0
+    100188: axe_02_LOD1
+    100190: barbarian_club_02_LOD0
+    100192: barbarian_club_02_LOD1
+    100194: club_01_LOD0
+    100196: club_01_LOD1
+    100198: falchion_01_LOD0
+    100200: falchion_01_LOD1
+    100202: gladius_01_LOD0
+    100204: gladius_01_LOD1
+    100206: mace_01_LOD0
+    100208: mace_01_LOD1
+    100210: maul_01_LOD0
+    100212: maul_01_LOD1
+    100214: scimitar_01_LOD0
+    100216: scimitar_01_LOD1
+    100218: skeleton_arm plate_LOD1
+    100220: skeleton_arm plate_LOD2
+    100222: skeleton_arm_plate_LOD0
+    100224: skeleton_belt_01_LOD0
+    100226: skeleton_belt_01_LOD1
+    100228: skeleton_belt_01_LOD2
+    100230: skeleton_belt_02_LOD0
+    100232: skeleton_belt_02_LOD1
+    100234: skeleton_belt_02_LOD2
+    100236: skeleton_body armor_LOD0
+    100238: skeleton_body armor_LOD1
+    100240: skeleton_body armor_LOD2
+    100242: skeleton_boot_01_LOD0
+    100244: skeleton_boot_01_LOD1
+    100246: skeleton_boot_01_LOD2
+    100248: skeleton_cloth_01_LOD0
+    100250: skeleton_cloth_01_LOD1
+    100252: skeleton_cloth_01_LOD2
+    100254: skeleton_helmet_01_LOD0
+    100256: skeleton_helmet_01_LOD1
+    100258: skeleton_helmet_01_LOD2
+    100260: skeleton_helmet_02_LOD0
+    100262: skeleton_helmet_02_LOD1
+    100264: skeleton_helmet_02_LOD2
+    100266: skeleton_helmet_03_LOD0
+    100268: skeleton_helmet_03_LOD1
+    100270: skeleton_helmet_03_LOD2
+    100272: skeleton_helmet_04_LOD0
+    100274: skeleton_helmet_04_LOD1
+    100276: skeleton_helmet_04_LOD2
+    100278: skeleton_helmet_05_LOD0
+    100280: skeleton_helmet_05_LOD1
+    100282: skeleton_helmet_05_LOD2
+    100284: skeleton_hood_LOD0
+    100286: skeleton_hood_LOD1
+    100288: skeleton_hood_LOD2
+    100290: skeleton_knee pad_LOD0
+    100292: skeleton_knee pad_LOD1
+    100294: skeleton_knee pad_LOD2
+    100296: skeleton_leg plate_LOD0
+    100298: skeleton_leg plate_LOD1
+    100300: skeleton_leg plate_LOD2
+    100302: skeleton_leg ring_LOD0
+    100304: skeleton_leg ring_LOD1
+    100306: skeleton_leg ring_LOD2
+    100308: skeleton_LOD0
+    100310: skeleton_LOD1
+    100312: skeleton_LOD2
+    100314: skeleton_pelvis_armor_LOD0
+    100316: skeleton_pelvis_armor_LOD1
+    100318: skeleton_pelvis_armor_LOD2
+    100320: skeleton_quiver_LOD0
+    100322: skeleton_quiver_LOD1
+    100324: skeleton_quiver_LOD2
+    100326: skeleton_shoulder pad_01_LOD0
+    100328: skeleton_shoulder pad_01_LOD1
+    100330: skeleton_shoulder pad_01_LOD2
+    100332: skeleton_shoulder pad_02_LOD0
+    100334: skeleton_shoulder pad_02_LOD1
+    100336: skeleton_shoulder pad_02_LOD2
+    100338: skeleton_shoulder pad_03_LOD0
+    100340: skeleton_shoulder pad_03_LOD1
+    100342: skeleton_shoulder pad_03_LOD2
+    100344: skeleton_shoulder pad_04_LOD0
+    100346: skeleton_shoulder pad_04_LOD1
+    100348: skeleton_shoulder pad_04_LOD2
+    100350: skeleton_shoulder pad_05_LOD0
+    100352: skeleton_shoulder pad_05_LOD1
+    100354: skeleton_shoulder pad_05_LOD2
+    100356: skeleton_shoulder pad_06_LOD0
+    100358: skeleton_shoulder pad_06_LOD1
+    100360: skeleton_shoulder pad_06_LOD2
+    100362: skeleton_strong_LOD2
+    100364: skeleton_wizard_LOD0
+    100366: skeleton_wizard_LOD1
+    100368: skeleton_wizard_LOD2
+    100370: spear_01_LOD0
+    100372: spear_01_LOD1
+    100374: sword_bastard_01_LOD0
+    100376: sword_bastard_01_LOD1
+    100378: sword_broad_01_LOD0
+    100380: sword_broad_01_LOD1
+    100382: sword_short_01_LOD0
+    100384: sword_short_01_LOD1
+    100386: Weapon_L
+    100388: Weapon_R
+    100390: axe_01_LOD2
+    100392: axe_02_LOD2
+    100394: barbarian_club_02_LOD2
+    100396: club_01_LOD2
+    100398: falchion_01_LOD2
+    100400: gladius_01_LOD2
+    100402: mace_01_LOD2
+    100404: maul_01_LOD2
+    100406: scimitar_01_LOD2
+    100408: spear_01_LOD2
+    100410: sword_bastard_01_LOD2
+    100412: sword_broad_01_LOD2
+    100414: sword_short_01_LOD2
+    100416: shield_01_LOD0
+    100418: shield_01_LOD1
+    100420: shield_01_LOD2
+    100422: shield_02_LOD0
+    100424: shield_02_LOD1
+    100426: shield_02_LOD2
+    100428: root
+    100430: Box001
+    400000: skeleton_wizard
+    400002: skeleton_boot_02
+    400004: //RootNode
+    400006: skeleton_hood
+    400008: FH_skeleton
+    400010: bip_hordeTail1
+    400012: bip_hordecloth1
+    400014: skeleton_quiver
+    400016: bip_hordemouth
+    400018: bip_hordeHead
+    400020: bip_hordeNeck2
+    400022: bip_hordeNeck1
+    400024: skeleton_axe_03
+    400026: skeleton_axe_01
+    400028: skeleton_spear
+    400030: skeleton_axe_02
+    400032: bip_hordeRPalm
+    400034: skeleton_shield
+    400036: bip_hordeLPalm
+    400038: bip_hordeSpine3
+    400040: bip_hordeSpine2
+    400042: bip_hordeSpine1
+    400044: bip_hordeRFoot
+    400046: bip_hordeRCalf
+    400048: bip_hordeRThigh
+    400050: bip_hordeLFoot
+    400052: bip_hordeLCalf
+    400054: bip_hordeLThigh
+    400056: bip_hordePelvis
+    400058: skeleton_leg ring
+    400060: skeleton_boot_01
+    400062: skeleton_arm plate
+    400064: skeleton_pelvis_armor
+    400066: skeleton_shoulder pad_02
+    400068: skeleton_knee pad
+    400070: skeleton_shoulder pad_01
+    400072: skeleton_cloth_01
+    400074: skeleton_shoulder pad_03
+    400076: skeleton_arch_02
+    400078: skeleton_ arch_03
+    400080: skeleton_shoulder pad_07
+    400082: skeleton_shoulder pad_08
+    400084: skeleton_leg plate
+    400086: skeleton_belt_02
+    400088: skeleton_belt_01
+    400090: skeleton_body armor
+    400092: skeleton_helmet_06
+    400094: skeleton_helmet_05
+    400096: skeleton_helmet_04
+    400098: skeleton_helmet_01
+    400100: skeleton_helmet_03
+    400102: skeleton_shoulder pad_05_R
+    400104: skeleton_club_01
+    400106: skeleton_hammer_01
+    400108: skeleton_staff_02
+    400110: skeleton_staff_03
+    400112: skeleton_staff_04
+    400114: skeleton_sword_02
+    400116: skeleton_club_02
+    400118: skeleton_sword_03
+    400120: skeleton_sword_gladius
+    400122: skeleton_staff_05
+    400124: skeleton_staff_01
+    400126: skeleton_sword_01
+    400128: bip_hordeRDigit32
+    400130: bip_hordeRDigit31
+    400132: bip_hordeRDigit12
+    400134: bip_hordeRDigit11 1
+    400136: bip_hordeRForearm
+    400138: bip_hordeRUpperarm
+    400140: bip_hordeRCollarbone
+    400142: skeleton_shoulder pad_05_L
+    400144: skeleton_ arch_top
+    400146: skeleton_ arch_cord_01
+    400148: skeleton_ arch_botton
+    400150: skeleton_ arch_cord_02
+    400152: ctrl_goblin arch_arrow
+    400154: skeleton_ arch_main
+    400156: bip_hordeLDigit32
+    400158: bip_hordeLDigit31
+    400160: bip_hordeLDigit12
+    400162: bip_hordeLDigit11 1
+    400164: bip_hordeLForearm
+    400166: bip_hordeLUpperarm
+    400168: bip_hordeLCollarbone
+    400170: bip_hordeRibcage
+    400172: bip_hordeRDigit11
+    400174: bip_hordeLDigit11
+    400176: skeleton_arch_01
+    400178: FH_skeleton_strong
+    400180: skeleton_helmet_02
+    400182: axe_01_LOD0
+    400184: axe_01_LOD1
+    400186: axe_02_LOD0
+    400188: axe_02_LOD1
+    400190: barbarian_club_02_LOD0
+    400192: barbarian_club_02_LOD1
+    400194: club_01_LOD0
+    400196: club_01_LOD1
+    400198: falchion_01_LOD0
+    400200: falchion_01_LOD1
+    400202: gladius_01_LOD0
+    400204: gladius_01_LOD1
+    400206: mace_01_LOD0
+    400208: mace_01_LOD1
+    400210: maul_01_LOD0
+    400212: maul_01_LOD1
+    400214: scimitar_01_LOD0
+    400216: scimitar_01_LOD1
+    400218: skeleton_arm plate_LOD1
+    400220: skeleton_arm plate_LOD2
+    400222: skeleton_arm_plate_LOD0
+    400224: skeleton_belt_01_LOD0
+    400226: skeleton_belt_01_LOD1
+    400228: skeleton_belt_01_LOD2
+    400230: skeleton_belt_02_LOD0
+    400232: skeleton_belt_02_LOD1
+    400234: skeleton_belt_02_LOD2
+    400236: skeleton_body armor_LOD0
+    400238: skeleton_body armor_LOD1
+    400240: skeleton_body armor_LOD2
+    400242: skeleton_boot_01_LOD0
+    400244: skeleton_boot_01_LOD1
+    400246: skeleton_boot_01_LOD2
+    400248: skeleton_cloth_01_LOD0
+    400250: skeleton_cloth_01_LOD1
+    400252: skeleton_cloth_01_LOD2
+    400254: skeleton_helmet_01_LOD0
+    400256: skeleton_helmet_01_LOD1
+    400258: skeleton_helmet_01_LOD2
+    400260: skeleton_helmet_02_LOD0
+    400262: skeleton_helmet_02_LOD1
+    400264: skeleton_helmet_02_LOD2
+    400266: skeleton_helmet_03_LOD0
+    400268: skeleton_helmet_03_LOD1
+    400270: skeleton_helmet_03_LOD2
+    400272: skeleton_helmet_04_LOD0
+    400274: skeleton_helmet_04_LOD1
+    400276: skeleton_helmet_04_LOD2
+    400278: skeleton_helmet_05_LOD0
+    400280: skeleton_helmet_05_LOD1
+    400282: skeleton_helmet_05_LOD2
+    400284: skeleton_hood_LOD0
+    400286: skeleton_hood_LOD1
+    400288: skeleton_hood_LOD2
+    400290: skeleton_knee pad_LOD0
+    400292: skeleton_knee pad_LOD1
+    400294: skeleton_knee pad_LOD2
+    400296: skeleton_leg plate_LOD0
+    400298: skeleton_leg plate_LOD1
+    400300: skeleton_leg plate_LOD2
+    400302: skeleton_leg ring_LOD0
+    400304: skeleton_leg ring_LOD1
+    400306: skeleton_leg ring_LOD2
+    400308: skeleton_LOD0
+    400310: skeleton_LOD1
+    400312: skeleton_LOD2
+    400314: skeleton_pelvis_armor_LOD0
+    400316: skeleton_pelvis_armor_LOD1
+    400318: skeleton_pelvis_armor_LOD2
+    400320: skeleton_quiver_LOD0
+    400322: skeleton_quiver_LOD1
+    400324: skeleton_quiver_LOD2
+    400326: skeleton_shoulder pad_01_LOD0
+    400328: skeleton_shoulder pad_01_LOD1
+    400330: skeleton_shoulder pad_01_LOD2
+    400332: skeleton_shoulder pad_02_LOD0
+    400334: skeleton_shoulder pad_02_LOD1
+    400336: skeleton_shoulder pad_02_LOD2
+    400338: skeleton_shoulder pad_03_LOD0
+    400340: skeleton_shoulder pad_03_LOD1
+    400342: skeleton_shoulder pad_03_LOD2
+    400344: skeleton_shoulder pad_04_LOD0
+    400346: skeleton_shoulder pad_04_LOD1
+    400348: skeleton_shoulder pad_04_LOD2
+    400350: skeleton_shoulder pad_05_LOD0
+    400352: skeleton_shoulder pad_05_LOD1
+    400354: skeleton_shoulder pad_05_LOD2
+    400356: skeleton_shoulder pad_06_LOD0
+    400358: skeleton_shoulder pad_06_LOD1
+    400360: skeleton_shoulder pad_06_LOD2
+    400362: skeleton_strong_LOD2
+    400364: skeleton_wizard_LOD0
+    400366: skeleton_wizard_LOD1
+    400368: skeleton_wizard_LOD2
+    400370: spear_01_LOD0
+    400372: spear_01_LOD1
+    400374: sword_bastard_01_LOD0
+    400376: sword_bastard_01_LOD1
+    400378: sword_broad_01_LOD0
+    400380: sword_broad_01_LOD1
+    400382: sword_short_01_LOD0
+    400384: sword_short_01_LOD1
+    400386: Weapon_L
+    400388: Weapon_R
+    400390: axe_01_LOD2
+    400392: axe_02_LOD2
+    400394: barbarian_club_02_LOD2
+    400396: club_01_LOD2
+    400398: falchion_01_LOD2
+    400400: gladius_01_LOD2
+    400402: mace_01_LOD2
+    400404: maul_01_LOD2
+    400406: scimitar_01_LOD2
+    400408: spear_01_LOD2
+    400410: sword_bastard_01_LOD2
+    400412: sword_broad_01_LOD2
+    400414: sword_short_01_LOD2
+    400416: shield_01_LOD0
+    400418: shield_01_LOD1
+    400420: shield_01_LOD2
+    400422: shield_02_LOD0
+    400424: shield_02_LOD1
+    400426: shield_02_LOD2
+    400428: root
+    400430: Box001
+    2300000: skeleton_quiver
+    2300002: skeleton_axe_03
+    2300004: skeleton_axe_01
+    2300006: skeleton_spear
+    2300008: skeleton_axe_02
+    2300010: skeleton_shield
+    2300012: skeleton_belt_02
+    2300014: skeleton_belt_01
+    2300016: skeleton_body armor
+    2300018: skeleton_helmet_06
+    2300020: skeleton_helmet_05
+    2300022: skeleton_helmet_04
+    2300024: skeleton_helmet_01
+    2300026: skeleton_helmet_03
+    2300028: skeleton_shoulder pad_05_R
+    2300030: skeleton_club_01
+    2300032: skeleton_hammer_01
+    2300034: skeleton_staff_02
+    2300036: skeleton_staff_03
+    2300038: skeleton_staff_04
+    2300040: skeleton_sword_02
+    2300042: skeleton_club_02
+    2300044: skeleton_sword_03
+    2300046: skeleton_sword_gladius
+    2300048: skeleton_staff_05
+    2300050: skeleton_staff_01
+    2300052: skeleton_sword_01
+    2300054: skeleton_shoulder pad_05_L
+    2300056: bip_hordeSpine1
+    2300058: bip_hordeRFoot
+    2300060: bip_hordeRCalf
+    2300062: bip_hordeRThigh
+    2300064: bip_hordeLFoot
+    2300066: bip_hordeLCalf
+    2300068: bip_hordeLThigh
+    2300070: bip_hordePelvis
+    2300072: bip_hordeTail1
+    2300074: bip_hordecloth1
+    2300076: bip_hordemouth
+    2300078: bip_hordeHead
+    2300080: bip_hordeNeck2
+    2300082: bip_hordeNeck1
+    2300084: bip_hordeRPalm
+    2300086: bip_hordeLPalm
+    2300088: bip_hordeSpine3
+    2300090: bip_hordeSpine2
+    2300092: bip_hordeRDigit11 1
+    2300094: bip_hordeRForearm
+    2300096: bip_hordeRUpperarm
+    2300098: bip_hordeRCollarbone
+    2300100: bip_hordeLDigit32
+    2300102: bip_hordeLDigit31
+    2300104: bip_hordeLDigit12
+    2300106: bip_hordeLDigit11 1
+    2300108: bip_hordeLForearm
+    2300110: bip_hordeLUpperarm
+    2300112: bip_hordeLCollarbone
+    2300114: bip_hordeRibcage
+    2300116: bip_hordeRDigit11
+    2300118: bip_hordeLDigit11
+    2300120: bip_hordeRDigit32
+    2300122: bip_hordeRDigit31
+    2300124: bip_hordeRDigit12
+    2300126: skeleton_helmet_02
+    2300128: axe_01_LOD0
+    2300130: axe_01_LOD1
+    2300132: axe_02_LOD0
+    2300134: axe_02_LOD1
+    2300136: barbarian_club_02_LOD0
+    2300138: barbarian_club_02_LOD1
+    2300140: club_01_LOD0
+    2300142: club_01_LOD1
+    2300144: falchion_01_LOD0
+    2300146: falchion_01_LOD1
+    2300148: gladius_01_LOD0
+    2300150: gladius_01_LOD1
+    2300152: mace_01_LOD0
+    2300154: mace_01_LOD1
+    2300156: maul_01_LOD0
+    2300158: maul_01_LOD1
+    2300160: scimitar_01_LOD0
+    2300162: scimitar_01_LOD1
+    2300164: skeleton_belt_01_LOD0
+    2300166: skeleton_belt_01_LOD1
+    2300168: skeleton_belt_01_LOD2
+    2300170: skeleton_belt_02_LOD0
+    2300172: skeleton_belt_02_LOD1
+    2300174: skeleton_belt_02_LOD2
+    2300176: skeleton_body armor_LOD0
+    2300178: skeleton_body armor_LOD1
+    2300180: skeleton_body armor_LOD2
+    2300182: skeleton_cloth_01_LOD0
+    2300184: skeleton_cloth_01_LOD1
+    2300186: skeleton_cloth_01_LOD2
+    2300188: skeleton_helmet_01_LOD0
+    2300190: skeleton_helmet_01_LOD1
+    2300192: skeleton_helmet_01_LOD2
+    2300194: skeleton_helmet_02_LOD0
+    2300196: skeleton_helmet_02_LOD1
+    2300198: skeleton_helmet_02_LOD2
+    2300200: skeleton_helmet_03_LOD0
+    2300202: skeleton_helmet_03_LOD1
+    2300204: skeleton_helmet_03_LOD2
+    2300206: skeleton_helmet_04_LOD0
+    2300208: skeleton_helmet_04_LOD1
+    2300210: skeleton_helmet_04_LOD2
+    2300212: skeleton_helmet_05_LOD0
+    2300214: skeleton_helmet_05_LOD1
+    2300216: skeleton_helmet_05_LOD2
+    2300218: skeleton_quiver_LOD0
+    2300220: skeleton_quiver_LOD1
+    2300222: skeleton_quiver_LOD2
+    2300224: spear_01_LOD0
+    2300226: spear_01_LOD1
+    2300228: sword_bastard_01_LOD0
+    2300230: sword_bastard_01_LOD1
+    2300232: sword_broad_01_LOD0
+    2300234: sword_broad_01_LOD1
+    2300236: sword_short_01_LOD0
+    2300238: sword_short_01_LOD1
+    2300240: axe_01_LOD2
+    2300242: axe_02_LOD2
+    2300244: barbarian_club_02_LOD2
+    2300246: club_01_LOD2
+    2300248: falchion_01_LOD2
+    2300250: gladius_01_LOD2
+    2300252: mace_01_LOD2
+    2300254: maul_01_LOD2
+    2300256: scimitar_01_LOD2
+    2300258: spear_01_LOD2
+    2300260: sword_bastard_01_LOD2
+    2300262: sword_broad_01_LOD2
+    2300264: sword_short_01_LOD2
+    2300266: shield_01_LOD0
+    2300268: shield_01_LOD1
+    2300270: shield_01_LOD2
+    2300272: shield_02_LOD0
+    2300274: shield_02_LOD1
+    2300276: shield_02_LOD2
+    3300000: skeleton_quiver
+    3300002: skeleton_axe_03
+    3300004: skeleton_axe_01
+    3300006: skeleton_spear
+    3300008: skeleton_axe_02
+    3300010: skeleton_shield
+    3300012: skeleton_belt_02
+    3300014: skeleton_belt_01
+    3300016: skeleton_body armor
+    3300018: skeleton_helmet_06
+    3300020: skeleton_helmet_05
+    3300022: skeleton_helmet_04
+    3300024: skeleton_helmet_01
+    3300026: skeleton_helmet_03
+    3300028: skeleton_shoulder pad_05_R
+    3300030: skeleton_club_01
+    3300032: skeleton_hammer_01
+    3300034: skeleton_staff_02
+    3300036: skeleton_staff_03
+    3300038: skeleton_staff_04
+    3300040: skeleton_sword_02
+    3300042: skeleton_club_02
+    3300044: skeleton_sword_03
+    3300046: skeleton_sword_gladius
+    3300048: skeleton_staff_05
+    3300050: skeleton_staff_01
+    3300052: skeleton_sword_01
+    3300054: skeleton_shoulder pad_05_L
+    3300056: bip_hordeSpine1
+    3300058: bip_hordeRFoot
+    3300060: bip_hordeRCalf
+    3300062: bip_hordeRThigh
+    3300064: bip_hordeLFoot
+    3300066: bip_hordeLCalf
+    3300068: bip_hordeLThigh
+    3300070: bip_hordePelvis
+    3300072: bip_hordeTail1
+    3300074: bip_hordecloth1
+    3300076: bip_hordemouth
+    3300078: bip_hordeHead
+    3300080: bip_hordeNeck2
+    3300082: bip_hordeNeck1
+    3300084: bip_hordeRPalm
+    3300086: bip_hordeLPalm
+    3300088: bip_hordeSpine3
+    3300090: bip_hordeSpine2
+    3300092: bip_hordeRDigit11 1
+    3300094: bip_hordeRForearm
+    3300096: bip_hordeRUpperarm
+    3300098: bip_hordeRCollarbone
+    3300100: bip_hordeLDigit32
+    3300102: bip_hordeLDigit31
+    3300104: bip_hordeLDigit12
+    3300106: bip_hordeLDigit11 1
+    3300108: bip_hordeLForearm
+    3300110: bip_hordeLUpperarm
+    3300112: bip_hordeLCollarbone
+    3300114: bip_hordeRibcage
+    3300116: bip_hordeRDigit11
+    3300118: bip_hordeLDigit11
+    3300120: bip_hordeRDigit32
+    3300122: bip_hordeRDigit31
+    3300124: bip_hordeRDigit12
+    3300126: skeleton_helmet_02
+    3300128: axe_01_LOD0
+    3300130: axe_01_LOD1
+    3300132: axe_02_LOD0
+    3300134: axe_02_LOD1
+    3300136: barbarian_club_02_LOD0
+    3300138: barbarian_club_02_LOD1
+    3300140: club_01_LOD0
+    3300142: club_01_LOD1
+    3300144: falchion_01_LOD0
+    3300146: falchion_01_LOD1
+    3300148: gladius_01_LOD0
+    3300150: gladius_01_LOD1
+    3300152: mace_01_LOD0
+    3300154: mace_01_LOD1
+    3300156: maul_01_LOD0
+    3300158: maul_01_LOD1
+    3300160: scimitar_01_LOD0
+    3300162: scimitar_01_LOD1
+    3300164: skeleton_belt_01_LOD0
+    3300166: skeleton_belt_01_LOD1
+    3300168: skeleton_belt_01_LOD2
+    3300170: skeleton_belt_02_LOD0
+    3300172: skeleton_belt_02_LOD1
+    3300174: skeleton_belt_02_LOD2
+    3300176: skeleton_body armor_LOD0
+    3300178: skeleton_body armor_LOD1
+    3300180: skeleton_body armor_LOD2
+    3300182: skeleton_cloth_01_LOD0
+    3300184: skeleton_cloth_01_LOD1
+    3300186: skeleton_cloth_01_LOD2
+    3300188: skeleton_helmet_01_LOD0
+    3300190: skeleton_helmet_01_LOD1
+    3300192: skeleton_helmet_01_LOD2
+    3300194: skeleton_helmet_02_LOD0
+    3300196: skeleton_helmet_02_LOD1
+    3300198: skeleton_helmet_02_LOD2
+    3300200: skeleton_helmet_03_LOD0
+    3300202: skeleton_helmet_03_LOD1
+    3300204: skeleton_helmet_03_LOD2
+    3300206: skeleton_helmet_04_LOD0
+    3300208: skeleton_helmet_04_LOD1
+    3300210: skeleton_helmet_04_LOD2
+    3300212: skeleton_helmet_05_LOD0
+    3300214: skeleton_helmet_05_LOD1
+    3300216: skeleton_helmet_05_LOD2
+    3300218: skeleton_quiver_LOD0
+    3300220: skeleton_quiver_LOD1
+    3300222: skeleton_quiver_LOD2
+    3300224: spear_01_LOD0
+    3300226: spear_01_LOD1
+    3300228: sword_bastard_01_LOD0
+    3300230: sword_bastard_01_LOD1
+    3300232: sword_broad_01_LOD0
+    3300234: sword_broad_01_LOD1
+    3300236: sword_short_01_LOD0
+    3300238: sword_short_01_LOD1
+    3300240: axe_01_LOD2
+    3300242: axe_02_LOD2
+    3300244: barbarian_club_02_LOD2
+    3300246: club_01_LOD2
+    3300248: falchion_01_LOD2
+    3300250: gladius_01_LOD2
+    3300252: mace_01_LOD2
+    3300254: maul_01_LOD2
+    3300256: scimitar_01_LOD2
+    3300258: spear_01_LOD2
+    3300260: sword_bastard_01_LOD2
+    3300262: sword_broad_01_LOD2
+    3300264: sword_short_01_LOD2
+    3300266: shield_01_LOD0
+    3300268: shield_01_LOD1
+    3300270: shield_01_LOD2
+    3300272: shield_02_LOD0
+    3300274: shield_02_LOD1
+    3300276: shield_02_LOD2
+    4300000: skeleton_arch_01
+    4300002: skeleton_shield
+    4300004: skeleton_shoulder pad_05_L
+    4300006: skeleton_axe_02
+    4300008: skeleton_sword_01
+    4300010: skeleton_staff_01
+    4300012: skeleton_staff_05
+    4300014: skeleton_sword_gladius
+    4300016: skeleton_spear
+    4300018: skeleton_axe_01
+    4300020: skeleton_sword_03
+    4300022: skeleton_club_02
+    4300024: skeleton_sword_02
+    4300026: skeleton_axe_03
+    4300028: skeleton_staff_04
+    4300030: skeleton_staff_03
+    4300032: skeleton_staff_02
+    4300034: barbarian_hammer_01
+    4300036: skeleton_club_01
+    4300038: skeleton_shoulder pad_05_R
+    4300040: skeleton_helmet_03
+    4300042: skeleton_helmelt_01
+    4300044: skeleton_helmet_04
+    4300046: skeleton_helmet_05
+    4300048: skeleton_helmet_06
+    4300050: skeleton_quiver
+    4300052: skeleton_body armor
+    4300054: skeleton_belt_01
+    4300056: skeleton_belt_02
+    4300058: FH_skeleton
+    4300060: skeleton_leg plate_R
+    4300062: skeleton_shoulder pad_08
+    4300064: skeleton_hood
+    4300066: skeleton_shoulder pad_07
+    4300068: skeleton_ arch_03
+    4300070: skeleton_arch_02
+    4300072: skeleton_shoulder pad_03
+    4300074: skeleton_cloth_01
+    4300076: skeleton_shoulder pad_01
+    4300078: skeleton_boot
+    4300080: skeleton_knee pad
+    4300082: skeleton_shoulder pad_02
+    4300084: skeleton_pelvis armor
+    4300086: skeleton_arm plate
+    4300088: skeleton_cloth_02
+    4300090: skeleton_wizard
+    4300092: skeleton_leg ring
+    4300094: skeleton_leg plate
+    4300096: skeleton_boot_01
+    4300098: skeleton_boot_02
+    4300100: bip_hordePelvis
+    4300102: bip_hordeLThigh
+    4300104: bip_hordeLCalf
+    4300106: bip_hordeLFoot
+    4300108: bip_hordeLDigit11
+    4300110: bip_hordeRThigh
+    4300112: bip_hordeRCalf
+    4300114: bip_hordeRFoot
+    4300116: bip_hordeRDigit11
+    4300118: bip_hordeSpine1
+    4300120: bip_hordeSpine2
+    4300122: bip_hordeSpine3
+    4300124: bip_hordeRibcage
+    4300126: bip_hordeLCollarbone
+    4300128: bip_hordeLUpperarm
+    4300130: bip_hordeLForearm
+    4300132: bip_hordeLPalm
+    4300134: bip_hordeLDigit11
+    4300136: bip_hordeLDigit12
+    4300138: bip_hordeLDigit31
+    4300140: bip_hordeLDigit32
+    4300142: bip_hordeRCollarbone
+    4300144: bip_hordeRUpperarm
+    4300146: bip_hordeRForearm
+    4300148: bip_hordeRPalm
+    4300150: bip_hordeRDigit11
+    4300152: bip_hordeRDigit12
+    4300154: bip_hordeRDigit31
+    4300156: bip_hordeRDigit32
+    4300158: bip_hordeNeck1
+    4300160: bip_hordeNeck2
+    4300162: bip_hordeHead
+    4300164: bip_hordemouth
+    4300166: bip_hordecloth1
+    4300168: bip_hordeTail1
+    4300170: FH_skeleton_strong
+    4300172: skeleton_pelvis_armor
+    4300174: skeleton_helmet_01
+    4300176: skeleton_hammer_01
+    4300178: skeleton_helmet_02
+    4300180: skeleton_LOD2
+    4300182: skeleton_leg plate_LOD2
+    4300184: skeleton_shoulder pad_06_LOD2
+    4300186: skeleton_hood_LOD2
+    4300188: skeleton_shoulder pad_05_LOD2
+    4300190: skeleton_shoulder pad_03_LOD2
+    4300192: skeleton_shoulder pad_01_LOD2
+    4300194: skeleton_boot_01_LOD2
+    4300196: skeleton_knee pad_LOD2
+    4300198: skeleton_shoulder pad_02_LOD2
+    4300200: skeleton_wizard_LOD2
+    4300202: skeleton_leg ring_LOD2
+    4300204: skeleton_strong_LOD2
+    4300206: skeleton_pelvis_armor_LOD2
+    4300208: skeleton_shoulder pad_06_LOD1
+    4300210: skeleton_arm plate_LOD1
+    4300212: skeleton_arm plate_LOD2
+    4300214: skeleton_boot_01_LOD1
+    4300216: skeleton_knee pad_LOD1
+    4300218: skeleton_leg plate_LOD1
+    4300220: skeleton_leg ring_LOD1
+    4300222: skeleton_hood_LOD1
+    4300224: skeleton_hood_LOD0
+    4300226: skeleton_pelvis_armor_LOD1
+    4300228: skeleton_shoulder pad_01_LOD1
+    4300230: skeleton_shoulder pad_02_LOD1
+    4300232: skeleton_shoulder pad_03_LOD1
+    4300234: skeleton_shoulder pad_05_LOD1
+    4300236: skeleton_wizard_LOD0
+    4300238: skeleton_wizard_LOD1
+    4300240: skeleton_knee pad_LOD0
+    4300242: skeleton_leg ring_LOD0
+    4300244: skeleton_shoulder pad_05_LOD0
+    4300246: skeleton_shoulder pad_06_LOD0
+    4300248: skeleton_arm_plate_LOD0
+    4300250: skeleton_boot_01_LOD0
+    4300252: skeleton_pelvis_armor_LOD0
+    4300254: skeleton_shoulder pad_01_LOD0
+    4300256: skeleton_shoulder pad_02_LOD0
+    4300258: skeleton_shoulder pad_03_LOD0
+    4300260: skeleton_leg plate_LOD0
+    4300262: skeleton_LOD1
+    4300264: skeleton_LOD0
+    4300266: skeleton_shoulder pad_04_LOD1
+    4300268: skeleton_shoulder pad_04_LOD0
+    4300270: skeleton_shoulder pad_04_LOD2
+    4300272: barbarian_club_02_LOD1
+    4300274: barbarian_club_02_LOD0
+    4300276: mace_01_LOD1
+    4300278: maul_01_LOD1
+    4300280: axe_01_LOD0
+    4300282: axe_01_LOD1
+    4300284: maul_01_LOD0
+    4300286: axe_02_LOD0
+    4300288: club_01_LOD0
+    4300290: mace_01_LOD0
+    4300292: falchion_01_LOD0
+    4300294: gladius_01_LOD0
+    4300296: sword_short_01_LOD0
+    4300298: sword_bastard_01_LOD0
+    4300300: sword_broad_01_LOD0
+    4300302: scimitar_01_LOD0
+    4300304: spear_01_LOD1
+    4300306: spear_01_LOD0
+    4300308: club_01_LOD1
+    4300310: sword_short_01_LOD1
+    4300312: falchion_01_LOD1
+    4300314: gladius_01_LOD1
+    4300316: sword_broad_01_LOD1
+    4300318: sword_bastard_01_LOD1
+    4300320: scimitar_01_LOD1
+    4300322: axe_02_LOD1
+    4300324: skeleton_helmet_02_LOD2
+    4300326: skeleton_helmet_05_LOD2
+    4300328: skeleton_helmet_04_LOD2
+    4300330: skeleton_helmet_01_LOD2
+    4300332: skeleton_helmet_03_LOD2
+    4300334: skeleton_helmet_01_LOD1
+    4300336: skeleton_helmet_02_LOD1
+    4300338: skeleton_helmet_03_LOD1
+    4300340: skeleton_helmet_04_LOD1
+    4300342: skeleton_helmet_05_LOD1
+    4300344: skeleton_helmet_02_LOD0
+    4300346: skeleton_helmet_04_LOD0
+    4300348: skeleton_helmet_05_LOD0
+    4300350: skeleton_helmet_01_LOD0
+    4300352: skeleton_helmet_03_LOD0
+    4300354: skeleton_quiver_LOD1
+    4300356: skeleton_quiver_LOD0
+    4300358: skeleton_quiver_LOD2
+    4300360: skeleton_body armor_LOD1
+    4300362: skeleton_body armor_LOD0
+    4300364: skeleton_body armor_LOD2
+    4300366: skeleton_belt_01_LOD2
+    4300368: skeleton_belt_01_LOD1
+    4300370: skeleton_belt_02_LOD1
+    4300372: skeleton_belt_01_LOD0
+    4300374: skeleton_belt_02_LOD0
+    4300376: skeleton_belt_02_LOD2
+    4300378: skeleton_cloth_01_LOD1
+    4300380: skeleton_cloth_01_LOD0
+    4300382: skeleton_cloth_01_LOD2
+    4300384: barbarian_club_02_LOD2
+    4300386: mace_01_LOD2
+    4300388: maul_01_LOD2
+    4300390: axe_01_LOD2
+    4300392: spear_01_LOD2
+    4300394: club_01_LOD2
+    4300396: sword_short_01_LOD2
+    4300398: falchion_01_LOD2
+    4300400: gladius_01_LOD2
+    4300402: sword_broad_01_LOD2
+    4300404: sword_bastard_01_LOD2
+    4300406: scimitar_01_LOD2
+    4300408: axe_02_LOD2
+    4300410: shield_02_LOD2
+    4300412: shield_02_LOD1
+    4300414: shield_01_LOD1
+    4300416: shield_01_LOD0
+    4300418: shield_02_LOD0
+    4300420: shield_01_LOD2
+    4300422: Box001
+    7400000: Take 001
+    7400002: idle
+    7400004: idle break01
+    7400006: idle break02
+    7400008: salute
+    7400010: crouch
+    7400012: hit
+    7400014: jump
+    7400016: die01
+    7400018: getup
+    7400020: die02
+    7400022: blocking
+    7400024: attack01
+    7400026: attack02
+    7400028: attack double
+    7400030: arch attack
+    7400032: prepare spear
+    7400034: spear attack
+    7400036: spear loop
+    7400038: casting
+    9500000: //RootNode
+    11100000: //RootNode
+    13700000: skeleton_wizard
+    13700002: skeleton_boot_02
+    13700004: skeleton_hood
+    13700006: FH_skeleton
+    13700008: skeleton_leg ring
+    13700010: skeleton_boot_01
+    13700012: skeleton_arm plate
+    13700014: skeleton_pelvis_armor
+    13700016: skeleton_shoulder pad_02
+    13700018: skeleton_knee pad
+    13700020: skeleton_shoulder pad_01
+    13700022: skeleton_cloth_01
+    13700024: skeleton_shoulder pad_03
+    13700026: skeleton_arch_02
+    13700028: skeleton_ arch_03
+    13700030: skeleton_shoulder pad_07
+    13700032: skeleton_shoulder pad_08
+    13700034: skeleton_leg plate
+    13700036: skeleton_arch_01
+    13700038: FH_skeleton_strong
+    13700040: skeleton_arm plate_LOD1
+    13700042: skeleton_arm plate_LOD2
+    13700044: skeleton_arm_plate_LOD0
+    13700046: skeleton_boot_01_LOD0
+    13700048: skeleton_boot_01_LOD1
+    13700050: skeleton_boot_01_LOD2
+    13700052: skeleton_hood_LOD0
+    13700054: skeleton_hood_LOD1
+    13700056: skeleton_hood_LOD2
+    13700058: skeleton_knee pad_LOD0
+    13700060: skeleton_knee pad_LOD1
+    13700062: skeleton_knee pad_LOD2
+    13700064: skeleton_leg plate_LOD0
+    13700066: skeleton_leg plate_LOD1
+    13700068: skeleton_leg plate_LOD2
+    13700070: skeleton_leg ring_LOD0
+    13700072: skeleton_leg ring_LOD1
+    13700074: skeleton_leg ring_LOD2
+    13700076: skeleton_LOD0
+    13700078: skeleton_LOD1
+    13700080: skeleton_LOD2
+    13700082: skeleton_pelvis_armor_LOD0
+    13700084: skeleton_pelvis_armor_LOD1
+    13700086: skeleton_pelvis_armor_LOD2
+    13700088: skeleton_shoulder pad_01_LOD0
+    13700090: skeleton_shoulder pad_01_LOD1
+    13700092: skeleton_shoulder pad_01_LOD2
+    13700094: skeleton_shoulder pad_02_LOD0
+    13700096: skeleton_shoulder pad_02_LOD1
+    13700098: skeleton_shoulder pad_02_LOD2
+    13700100: skeleton_shoulder pad_03_LOD0
+    13700102: skeleton_shoulder pad_03_LOD1
+    13700104: skeleton_shoulder pad_03_LOD2
+    13700106: skeleton_shoulder pad_04_LOD0
+    13700108: skeleton_shoulder pad_04_LOD1
+    13700110: skeleton_shoulder pad_04_LOD2
+    13700112: skeleton_shoulder pad_05_LOD0
+    13700114: skeleton_shoulder pad_05_LOD1
+    13700116: skeleton_shoulder pad_05_LOD2
+    13700118: skeleton_shoulder pad_06_LOD0
+    13700120: skeleton_shoulder pad_06_LOD1
+    13700122: skeleton_shoulder pad_06_LOD2
+    13700124: skeleton_strong_LOD2
+    13700126: skeleton_wizard_LOD0
+    13700128: skeleton_wizard_LOD1
+    13700130: skeleton_wizard_LOD2
+    13700132: skeleton_cloth_01_LOD0
+    13700134: skeleton_cloth_01_LOD1
+    13700136: skeleton_cloth_01_LOD2
+    13700138: Box001
+    20500000: //RootNode
+    2186277476908879412: ImportLogs
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: skeleton_shield_metal
+    second: {fileID: 2100000, guid: e87bd53f9fc277b41b1cdfbff3f61e2b, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: skeleton_shield_wood
+    second: {fileID: 2100000, guid: 22cff6e8e7cbc9d4a88d73f8ee07f2c2, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: skeleton_weapons
+    second: {fileID: 2100000, guid: 0a67d4ea713a9f84d98a864d125eb418, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: skeleton_wizard_01
+    second: {fileID: 2100000, guid: fbf065068639a3c43842f9cd5e1f4d9e, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: skeletons_01
+    second: {fileID: 2100000, guid: 20fd91b5a8ad10b4a986d4655961dc05, type: 2}
+  materials:
+    importMaterials: 1
+    materialName: 0
+    materialSearch: 1
+    materialLocation: 0
+  animations:
+    legacyGenerateAnimations: 4
+    bakeSimulation: 0
+    resampleCurves: 1
+    optimizeGameObjects: 0
+    motionNodeName: 
+    rigImportErrors: 
+    rigImportWarnings: 
+    animationImportErrors: 
+    animationImportWarnings: 
+    animationRetargetingWarnings: 
+    animationDoRetargetingWarnings: 0
+    importAnimatedCustomProperties: 0
+    importConstraints: 0
+    animationCompression: 3
+    animationRotationError: 0.5
+    animationPositionError: 0.5
+    animationScaleError: 0.5
+    animationWrapMode: 0
+    extraExposedTransformPaths: []
+    extraUserProperties: []
+    clipAnimations:
+    - serializedVersion: 16
+      name: idle
+      takeName: 
+      firstFrame: 5
+      lastFrame: 90
+      wrapMode: 2
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 1
+      hasAdditiveReferencePose: 0
+      loopTime: 1
+      loopBlend: 0
+      loopBlendOrientation: 1
+      loopBlendPositionY: 1
+      loopBlendPositionXZ: 1
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 0
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
+      name: idle break01
+      takeName: 
+      firstFrame: 90
+      lastFrame: 160
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 1
+      loopBlendPositionXZ: 1
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 0
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
+      name: idle break02
+      takeName: 
+      firstFrame: 160
+      lastFrame: 230
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 1
+      loopBlendPositionY: 1
+      loopBlendPositionXZ: 1
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 0
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
+      name: salute
+      takeName: 
+      firstFrame: 300
+      lastFrame: 370
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 1
+      loopBlendPositionY: 1
+      loopBlendPositionXZ: 1
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 0
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
+      name: crouch
+      takeName: 
+      firstFrame: 370
+      lastFrame: 385
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 1
+      loopBlendPositionXZ: 1
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 0
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
+      name: hit
+      takeName: 
+      firstFrame: 390
+      lastFrame: 410
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 1
+      loopBlendPositionY: 1
+      loopBlendPositionXZ: 1
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 0
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
+      name: jump
+      takeName: 
+      firstFrame: 410
+      lastFrame: 455
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 1
+      loopBlendPositionY: 1
+      loopBlendPositionXZ: 1
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 0
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
+      name: die01
+      takeName: 
+      firstFrame: 455
+      lastFrame: 480
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 0
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
+      name: getup
+      takeName: 
+      firstFrame: 480
+      lastFrame: 510
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 0
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
+      name: die02
+      takeName: 
+      firstFrame: 510
+      lastFrame: 535
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 0
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
+      name: blocking
+      takeName: 
+      firstFrame: 540
+      lastFrame: 560
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 0
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
+      name: attack01
+      takeName: 
+      firstFrame: 560
+      lastFrame: 585
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 0
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
+      name: attack02
+      takeName: 
+      firstFrame: 585
+      lastFrame: 610
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 0
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
+      name: attack double
+      takeName: 
+      firstFrame: 610
+      lastFrame: 645
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 0
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
+      name: arch attack
+      takeName: 
+      firstFrame: 700
+      lastFrame: 755
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 0
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
+      name: prepare spear
+      takeName: 
+      firstFrame: 755
+      lastFrame: 765
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 0
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
+      name: spear attack
+      takeName: 
+      firstFrame: 765
+      lastFrame: 785
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 0
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
+      name: spear loop
+      takeName: 
+      firstFrame: 761
+      lastFrame: 780
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 0
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
+      name: casting
+      takeName: 
+      firstFrame: 800
+      lastFrame: 840
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 0
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    isReadable: 1
+  meshes:
+    lODScreenPercentages:
+    - 0.25
+    - 0.125
+    - 0.01
+    globalScale: 0.01
+    meshCompression: 0
+    addColliders: 0
+    useSRGBMaterialColor: 1
+    importVisibility: 0
+    importBlendShapes: 1
+    importCameras: 0
+    importLights: 0
+    swapUVChannels: 0
+    generateSecondaryUV: 0
+    useFileUnits: 1
+    optimizeMeshForGPU: 1
+    keepQuads: 0
+    weldVertices: 1
+    preserveHierarchy: 0
+    indexFormat: 1
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15.000001
+    secondaryUVHardAngle: 88
+    secondaryUVPackMargin: 4
+    useFileScale: 0
+    previousCalculatedGlobalScale: 0.01
+    hasPreviousCalculatedGlobalScale: 1
+  tangentSpace:
+    normalSmoothAngle: 60
+    normalImportMode: 0
+    tangentImportMode: 4
+    normalCalculationMode: 0
+    legacyComputeAllNormalsFromSmoothingGroupsWhenMeshHasBlendShapes: 1
+    blendShapeNormalImportMode: 1
+    normalSmoothingSource: 0
+  importAnimation: 0
+  copyAvatar: 0
+  humanDescription:
+    serializedVersion: 2
+    human:
+    - boneName: bip_hordePelvis
+      humanName: Hips
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: bip_hordeLThigh
+      humanName: LeftUpperLeg
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: bip_hordeRThigh
+      humanName: RightUpperLeg
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: bip_hordeLCalf
+      humanName: LeftLowerLeg
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: bip_hordeRCalf
+      humanName: RightLowerLeg
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: bip_hordeLFoot
+      humanName: LeftFoot
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: bip_hordeRFoot
+      humanName: RightFoot
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: bip_hordeSpine1
+      humanName: Spine
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: bip_hordeSpine2
+      humanName: Chest
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: bip_hordeNeck1
+      humanName: Neck
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: bip_hordeHead
+      humanName: Head
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: bip_hordeLCollarbone
+      humanName: LeftShoulder
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: bip_hordeRCollarbone
+      humanName: RightShoulder
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: bip_hordeLUpperarm
+      humanName: LeftUpperArm
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: bip_hordeRUpperarm
+      humanName: RightUpperArm
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: bip_hordeLForearm
+      humanName: LeftLowerArm
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: bip_hordeRForearm
+      humanName: RightLowerArm
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: bip_hordeLPalm
+      humanName: LeftHand
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: bip_hordeRPalm
+      humanName: RightHand
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: bip_hordeLDigit11
+      humanName: LeftToes
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: bip_hordeRDigit11
+      humanName: RightToes
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: bip_hordemouth
+      humanName: Jaw
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: bip_hordeRDigit31
+      humanName: Right Middle Proximal
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: bip_hordeRDigit32
+      humanName: Right Middle Intermediate
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: bip_hordeLDigit11 1
+      humanName: Left Thumb Proximal
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: bip_hordeLDigit12
+      humanName: Left Thumb Intermediate
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: bip_hordeLDigit31
+      humanName: Left Middle Proximal
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: bip_hordeLDigit32
+      humanName: Left Middle Intermediate
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: bip_hordeRDigit11 1
+      humanName: Right Thumb Proximal
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: bip_hordeRDigit12
+      humanName: Right Thumb Intermediate
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    skeleton:
+    - name: FH-skeleton(Clone)
+      parentName: 
+      position: {x: 0, y: 0, z: 0}
+      rotation: {x: 0, y: 0, z: 0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Box001
+      parentName: 
+      position: {x: 0, y: 0, z: 0}
+      rotation: {x: 0, y: 0, z: 0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: skeleton_arm plate_LOD1
+      parentName: 
+      position: {x: 0, y: 0, z: 0}
+      rotation: {x: 0, y: 0, z: 0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: skeleton_arm plate_LOD2
+      parentName: 
+      position: {x: 0, y: 0, z: 0}
+      rotation: {x: 0, y: 0, z: 0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: skeleton_arm_plate_LOD0
+      parentName: 
+      position: {x: 0, y: 0, z: 0}
+      rotation: {x: 0, y: 0, z: 0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: skeleton_cloth_01_LOD0
+      parentName: 
+      position: {x: -0.0000008392334, y: 0, z: -0.00000027656554}
+      rotation: {x: 0.00000047683716, y: -4.092726e-12, z: -0.000008583069, w: 1}
+      scale: {x: 1, y: 0.99999994, z: 0.99999994}
+    - name: skeleton_cloth_01_LOD1
+      parentName: 
+      position: {x: -0.0000008392334, y: 0, z: -0.00000027656554}
+      rotation: {x: 0.00000047683716, y: -4.092726e-12, z: -0.000008583069, w: 1}
+      scale: {x: 1, y: 0.99999994, z: 0.99999994}
+    - name: skeleton_cloth_01_LOD2
+      parentName: 
+      position: {x: -0.0000008392334, y: 0, z: -0.00000027656554}
+      rotation: {x: 0.00000047683716, y: -4.092726e-12, z: -0.000008583069, w: 1}
+      scale: {x: 1, y: 0.99999994, z: 0.99999994}
+    - name: skeleton_hood_LOD0
+      parentName: 
+      position: {x: 0, y: 0, z: 0}
+      rotation: {x: 0, y: 0, z: 0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: skeleton_hood_LOD1
+      parentName: 
+      position: {x: 0, y: 0, z: 0}
+      rotation: {x: 0, y: 0, z: 0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: skeleton_hood_LOD2
+      parentName: 
+      position: {x: 0, y: 0, z: 0}
+      rotation: {x: 0, y: 0, z: 0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: skeleton_knee pad_LOD0
+      parentName: 
+      position: {x: 0, y: 0, z: 0}
+      rotation: {x: 0, y: 0, z: 0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: skeleton_knee pad_LOD1
+      parentName: 
+      position: {x: 0, y: 0, z: 0}
+      rotation: {x: 0, y: 0, z: 0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: skeleton_knee pad_LOD2
+      parentName: 
+      position: {x: 0, y: 0, z: 0}
+      rotation: {x: 0, y: 0, z: 0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: skeleton_leg plate_LOD0
+      parentName: 
+      position: {x: 0, y: 0, z: 0}
+      rotation: {x: 0, y: 0, z: 0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: skeleton_leg plate_LOD1
+      parentName: 
+      position: {x: 0.000007972717, y: -0.000004272461, z: -0.000023765564}
+      rotation: {x: 0.00002366305, y: -0.0000075544067, z: 0.00000071694797, w: 1}
+      scale: {x: 0.9999999, y: 1, z: 0.9999999}
+    - name: skeleton_leg plate_LOD2
+      parentName: 
+      position: {x: 0.000007972717, y: -0.000004272461, z: -0.000023765564}
+      rotation: {x: 0.00002366305, y: -0.0000075544067, z: 0.00000071694797, w: 1}
+      scale: {x: 0.9999999, y: 1, z: 0.9999999}
+    - name: skeleton_LOD0
+      parentName: 
+      position: {x: 0, y: 0, z: 0}
+      rotation: {x: 0, y: 0, z: 0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: skeleton_LOD1
+      parentName: 
+      position: {x: 0, y: 0, z: 0}
+      rotation: {x: 0, y: 0, z: 0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: skeleton_LOD2
+      parentName: 
+      position: {x: 0, y: 0, z: 0}
+      rotation: {x: 0, y: 0, z: 0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: skeleton_pelvis_armor_LOD0
+      parentName: 
+      position: {x: 0, y: 0, z: 0}
+      rotation: {x: 0, y: 0, z: 0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: skeleton_pelvis_armor_LOD1
+      parentName: 
+      position: {x: 0, y: 0, z: 0}
+      rotation: {x: 0, y: 0, z: 0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: skeleton_pelvis_armor_LOD2
+      parentName: 
+      position: {x: 0, y: 0, z: 0}
+      rotation: {x: 0, y: 0, z: 0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: skeleton_shoulder pad_01_LOD0
+      parentName: 
+      position: {x: 0, y: 0, z: 0}
+      rotation: {x: 0, y: 0, z: 0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: skeleton_shoulder pad_01_LOD1
+      parentName: 
+      position: {x: 0, y: 0, z: 0}
+      rotation: {x: 0, y: 0, z: 0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: skeleton_shoulder pad_01_LOD2
+      parentName: 
+      position: {x: 0, y: 0, z: 0}
+      rotation: {x: 0, y: 0, z: 0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: skeleton_shoulder pad_02_LOD0
+      parentName: 
+      position: {x: 0, y: 0, z: 0}
+      rotation: {x: 0, y: 0, z: 0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: skeleton_shoulder pad_02_LOD1
+      parentName: 
+      position: {x: 0, y: 0, z: 0}
+      rotation: {x: 0, y: 0, z: 0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: skeleton_shoulder pad_02_LOD2
+      parentName: 
+      position: {x: 0, y: 0, z: 0}
+      rotation: {x: 0, y: 0, z: 0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: skeleton_shoulder pad_03_LOD0
+      parentName: 
+      position: {x: 0, y: 0, z: 0}
+      rotation: {x: 0, y: 0, z: 0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: skeleton_shoulder pad_03_LOD1
+      parentName: 
+      position: {x: 0, y: 0, z: 0}
+      rotation: {x: 0, y: 0, z: 0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: skeleton_shoulder pad_03_LOD2
+      parentName: 
+      position: {x: 0, y: 0, z: 0}
+      rotation: {x: 0, y: 0, z: 0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: skeleton_shoulder pad_04_LOD0
+      parentName: 
+      position: {x: 0.834312, y: 0.6411945, z: -0.86460936}
+      rotation: {x: 0.5994774, y: -0.37968907, z: 0.5334693, w: -0.46029723}
+      scale: {x: 1, y: 1.0000006, z: 0.99999875}
+    - name: skeleton_shoulder pad_04_LOD1
+      parentName: 
+      position: {x: 0, y: 0, z: 0}
+      rotation: {x: 0, y: 0, z: 0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: skeleton_shoulder pad_04_LOD2
+      parentName: 
+      position: {x: 0, y: 0, z: 0}
+      rotation: {x: 0, y: 0, z: 0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: skeleton_shoulder pad_05_LOD0
+      parentName: 
+      position: {x: 0, y: 0, z: 0}
+      rotation: {x: 0, y: 0, z: 0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: skeleton_shoulder pad_05_LOD1
+      parentName: 
+      position: {x: 0, y: 0, z: 0}
+      rotation: {x: 0, y: 0, z: 0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: skeleton_shoulder pad_05_LOD2
+      parentName: 
+      position: {x: 0, y: 0, z: 0}
+      rotation: {x: 0, y: 0, z: 0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: skeleton_shoulder pad_06_LOD0
+      parentName: 
+      position: {x: 0, y: 0, z: 0}
+      rotation: {x: 0, y: 0, z: 0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: skeleton_shoulder pad_06_LOD1
+      parentName: 
+      position: {x: 0, y: 0, z: 0}
+      rotation: {x: 0, y: 0, z: 0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: skeleton_shoulder pad_06_LOD2
+      parentName: 
+      position: {x: 0, y: 0, z: 0}
+      rotation: {x: 0, y: 0, z: 0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: skeleton_wizard_LOD0
+      parentName: 
+      position: {x: 0, y: 0, z: 0}
+      rotation: {x: 0, y: 0, z: 0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: skeleton_wizard_LOD1
+      parentName: 
+      position: {x: 0, y: 0, z: 0}
+      rotation: {x: 0, y: 0, z: 0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: skeleton_wizard_LOD2
+      parentName: 
+      position: {x: 0, y: 0, z: 0}
+      rotation: {x: 0, y: 0, z: 0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: root
+      parentName: 
+      position: {x: 0, y: 0, z: 0}
+      rotation: {x: 0, y: 0, z: 0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: bip_hordePelvis
+      parentName: 
+      position: {x: -0.00025653958, y: 0.97995174, z: -0.002721727}
+      rotation: {x: 0.49912697, y: -0.50087154, z: -0.4991269, w: 0.50087166}
+      scale: {x: 1, y: 1, z: 1}
+    - name: skeleton_belt_01_LOD0
+      parentName: 
+      position: {x: 0.9674331, y: 0.040971022, z: -0.00025566696}
+      rotation: {x: -0.7071057, y: 0.0012279324, z: 0.7071057, w: 0.0012399554}
+      scale: {x: 1, y: 1, z: 1}
+    - name: skeleton_belt_01_LOD1
+      parentName: 
+      position: {x: 0.9674331, y: 0.04097104, z: -0.00025566696}
+      rotation: {x: 0.0000060773946, y: 0.7071068, z: 0.0000059456975, w: 0.7071068}
+      scale: {x: -1.0096753, y: -1.0096751, z: -1.009675}
+    - name: skeleton_belt_01_LOD2
+      parentName: 
+      position: {x: 0.9674329, y: 0.04097104, z: -0.00025559068}
+      rotation: {x: 0.0000060805423, y: 0.7071068, z: 0.000005942548, w: 0.7071068}
+      scale: {x: -1.0000002, y: -1.0000001, z: -0.99999994}
+    - name: skeleton_belt_02_LOD0
+      parentName: 
+      position: {x: 0.9674331, y: 0.040971022, z: -0.00025566696}
+      rotation: {x: -0.7071057, y: 0.0012279324, z: 0.7071057, w: 0.0012399554}
+      scale: {x: 1, y: 1, z: 1}
+    - name: skeleton_belt_02_LOD1
+      parentName: 
+      position: {x: 0.96743286, y: 0.04097103, z: -0.00025566696}
+      rotation: {x: -0.70710635, y: 0.0007571879, z: 0.70710635, w: 0.0007692109}
+      scale: {x: 0.9999999, y: 0.9999998, z: 0.9999997}
+    - name: skeleton_belt_02_LOD2
+      parentName: 
+      position: {x: 0.96743286, y: 0.04097103, z: -0.00025566696}
+      rotation: {x: -0.70710635, y: 0.0007571879, z: 0.70710635, w: 0.0007692109}
+      scale: {x: 0.9999999, y: 0.9999998, z: 0.9999997}
+    - name: bip_hordeTail1
+      parentName: 
+      position: {x: -0.038930662, y: -0.081079185, z: 0.0000000057742}
+      rotation: {x: 5.2837196e-11, y: -1.951584e-11, z: 0.9983777, w: 0.05693854}
+      scale: {x: 1.0000002, y: 1.0000002, z: 1}
+    - name: bip_hordecloth1
+      parentName: 
+      position: {x: -0.043261793, y: 0.09704662, z: -0.000000022966415}
+      rotation: {x: -1.3957327e-10, y: 0.0000000048933138, z: 0.9992495, w: -0.038735308}
+      scale: {x: 0.99999994, y: 1, z: 1}
+    - name: bip_hordeSpine1
+      parentName: 
+      position: {x: -0.038965225, y: -0.013282604, z: -0.00000000461936}
+      rotation: {x: 0.0027496736, y: -0.00061610533, z: 0.03928086, w: 0.99922425}
+      scale: {x: 1.0000004, y: 1, z: 0.99999994}
+    - name: bip_hordeSpine2
+      parentName: 
+      position: {x: -0.14791976, y: 0.0000000047683715, z: 0}
+      rotation: {x: 0.0046572764, y: -0.0013774094, z: -0.037362404, w: 0.99929}
+      scale: {x: 1.0000006, y: 1.0000006, z: 1}
+    - name: skeleton_body armor_LOD0
+      parentName: 
+      position: {x: 1.1540942, y: 0.061438646, z: -0.0049340343}
+      rotation: {x: -0.70588356, y: 0.007867347, z: 0.708279, w: -0.0027132516}
+      scale: {x: 1, y: 0.9999993, z: 0.9999992}
+    - name: skeleton_body armor_LOD1
+      parentName: 
+      position: {x: 1.1540943, y: 0.06143867, z: -0.0049339584}
+      rotation: {x: -0.0027071657, y: 0.70827913, z: -0.007874066, w: 0.7058834}
+      scale: {x: -1.0000006, y: -0.99999946, z: -0.9999992}
+    - name: skeleton_body armor_LOD2
+      parentName: 
+      position: {x: 1.1540943, y: 0.06143867, z: -0.0049339584}
+      rotation: {x: -0.0027071657, y: 0.70827913, z: -0.007874066, w: 0.7058834}
+      scale: {x: -1.0000006, y: -0.99999946, z: -0.9999992}
+    - name: bip_hordeSpine3
+      parentName: 
+      position: {x: -0.16608337, y: 0, z: 0}
+      rotation: {x: -0.007910861, y: 0.0016924414, z: -0.04288175, w: 0.9990474}
+      scale: {x: 1.0000004, y: 1.0000006, z: 1.0000001}
+    - name: bip_hordeRibcage
+      parentName: 
+      position: {x: -0.14690262, y: 0, z: -1.4901161e-10}
+      rotation: {x: 0.00036981003, y: -0.0002925304, z: 0.039221425, w: 0.99923044}
+      scale: {x: 0.999999, y: 0.99999905, z: 0.99999994}
+    - name: skeleton_quiver_LOD0
+      parentName: 
+      position: {x: -0.011099395, y: -0.07521299, z: -0.06741058}
+      rotation: {x: 0.71921575, y: 0.084193334, z: -0.6776087, w: -0.12840016}
+      scale: {x: 1.0000002, y: 1.0000007, z: 0.99999934}
+    - name: skeleton_quiver_LOD1
+      parentName: 
+      position: {x: -0.011099395, y: -0.07521299, z: -0.06741058}
+      rotation: {x: 0.71921575, y: 0.084193334, z: -0.6776087, w: -0.12840016}
+      scale: {x: 1.0000002, y: 1.0000007, z: 0.99999934}
+    - name: skeleton_quiver_LOD2
+      parentName: 
+      position: {x: -0.011099395, y: -0.07521299, z: -0.06741058}
+      rotation: {x: 0.71921575, y: 0.084193334, z: -0.6776087, w: -0.12840016}
+      scale: {x: 1.0000002, y: 1.0000007, z: 0.99999934}
+    - name: bip_hordeLCollarbone
+      parentName: 
+      position: {x: 0.010931854, y: 0.091286086, z: 0.015482781}
+      rotation: {x: 0.114439376, y: 0.681299, z: 0.10992223, w: 0.7145996}
+      scale: {x: 1.0000002, y: 0.9999996, z: 1.0000007}
+    - name: bip_hordeLUpperarm
+      parentName: 
+      position: {x: -0.12968975, y: 0, z: 0}
+      rotation: {x: -0.005047464, y: 0.030548263, z: -0.19457245, w: 0.98039937}
+      scale: {x: 0.99999994, y: 0.9999999, z: 1.0000001}
+    - name: bip_hordeLForearm
+      parentName: 
+      position: {x: -0.30891433, y: -0.0000000023841857, z: -0.00000015258789}
+      rotation: {x: 0.004238664, y: -0.0025002083, z: -0.0036834406, w: 0.9999811}
+      scale: {x: 0.9999997, y: 1.0000012, z: 0.99999946}
+    - name: bip_hordeLPalm
+      parentName: 
+      position: {x: -0.28733462, y: 0.0000000047683715, z: 0}
+      rotation: {x: -0.7090784, y: -0.014995837, z: 0.012851647, w: 0.70485306}
+      scale: {x: 0.9999972, y: 1, z: 1.0000019}
+    - name: Weapon_L
+      parentName: 
+      position: {x: -0.055773087, y: -0.03598343, z: -0.005595016}
+      rotation: {x: 0.9530632, y: -0.12589324, z: 0.26229113, w: 0.08381415}
+      scale: {x: 1.0000007, y: 0.9999999, z: 0.9999992}
+    - name: shield_01_LOD0
+      parentName: 
+      position: {x: -0.0101935575, y: 0.019075776, z: 0.017962264}
+      rotation: {x: 0.6462309, y: 0.026774433, z: 0.33829588, w: 0.6835384}
+      scale: {x: 1.0000031, y: 0.99999964, z: 0.9999972}
+    - name: shield_01_LOD1
+      parentName: 
+      position: {x: -0.0101935575, y: 0.019075776, z: 0.017962264}
+      rotation: {x: 0.6462309, y: 0.026774433, z: 0.33829588, w: 0.6835384}
+      scale: {x: 1.0000031, y: 0.99999964, z: 0.9999972}
+    - name: shield_01_LOD2
+      parentName: 
+      position: {x: -0.0101935575, y: 0.019075776, z: 0.017962264}
+      rotation: {x: 0.6462309, y: 0.026774433, z: 0.33829588, w: 0.6835384}
+      scale: {x: 1.0000031, y: 0.99999964, z: 0.9999972}
+    - name: shield_02_LOD0
+      parentName: 
+      position: {x: -0.0101935575, y: 0.019075776, z: 0.017962264}
+      rotation: {x: 0.6462309, y: 0.026774433, z: 0.33829588, w: 0.6835384}
+      scale: {x: 1.0000031, y: 0.99999964, z: 0.9999972}
+    - name: shield_02_LOD1
+      parentName: 
+      position: {x: -0.0101935575, y: 0.019075776, z: 0.017962264}
+      rotation: {x: 0.6462309, y: 0.026774433, z: 0.33829588, w: 0.6835384}
+      scale: {x: 1.0000031, y: 0.99999964, z: 0.9999972}
+    - name: shield_02_LOD2
+      parentName: 
+      position: {x: -0.0101935575, y: 0.019075776, z: 0.017962264}
+      rotation: {x: 0.6462309, y: 0.026774433, z: 0.33829588, w: 0.6835384}
+      scale: {x: 1.0000031, y: 0.99999964, z: 0.9999972}
+    - name: bip_hordeLDigit31
+      parentName: 
+      position: {x: -0.08240158, y: 0.00008575439, z: -0.005711837}
+      rotation: {x: 0.0069992035, y: -0.0032038146, z: -0.013635047, w: 0.99987745}
+      scale: {x: 0.9999973, y: 0.9999998, z: 1.0000026}
+    - name: bip_hordeLDigit32
+      parentName: 
+      position: {x: -0.06241272, y: 0, z: 0}
+      rotation: {x: -0.004947362, y: 0.005897098, z: 0.02666993, w: 0.9996147}
+      scale: {x: 0.9999971, y: 0.9999997, z: 1.0000025}
+    - name: bip_hordeLDigit11 1
+      parentName: 
+      position: {x: -0.033623353, y: -0.0062564085, z: 0.026328705}
+      rotation: {x: 0.2269756, y: 0.38176185, z: -0.017108154, w: 0.8957942}
+      scale: {x: 0.9999963, y: 0.99999654, z: 1.0000072}
+    - name: bip_hordeLDigit12
+      parentName: 
+      position: {x: -0.068136595, y: 0, z: 0}
+      rotation: {x: 0.045796823, y: 0.026891718, z: 0.3258197, w: 0.9439391}
+      scale: {x: 0.9999963, y: 1.0000029, z: 1.0000002}
+    - name: bip_hordeNeck1
+      parentName: 
+      position: {x: -0.018203583, y: -0.014318437, z: -0.0000000036880372}
+      rotation: {x: -0.0000030700064, y: -0.000025918702, z: -0.15698272, w: 0.98760134}
+      scale: {x: 0.99999994, y: 0.9999999, z: 0.99999994}
+    - name: bip_hordeNeck2
+      parentName: 
+      position: {x: -0.097257994, y: 0, z: 0}
+      rotation: {x: 0.00000002926669, y: -0.00000001238368, z: 0.073296875, w: 0.9973102}
+      scale: {x: 1, y: 1, z: 0.99999994}
+    - name: bip_hordeHead
+      parentName: 
+      position: {x: -0.07793258, y: 0.000000019073486, z: 0}
+      rotation: {x: 0.0000049336722, y: 0.000025651634, z: 0.08417237, w: 0.99645126}
+      scale: {x: 1, y: 1.0000001, z: 1.0000001}
+    - name: skeleton_helmet_01_LOD0
+      parentName: 
+      position: {x: 1.6536442, y: 0.03063939, z: 0.0004478006}
+      rotation: {x: 0.7071069, y: 0.0000000309086, z: -0.70710665, w: 0.00000003090861}
+      scale: {x: 1, y: 1, z: 1}
+    - name: skeleton_helmet_01_LOD1
+      parentName: 
+      position: {x: 1.6536437, y: 0.0306394, z: 0.0004478006}
+      rotation: {x: 0.7071069, y: 0.00000013771837, z: -0.70710665, w: 0.00000013771842}
+      scale: {x: 0.99999994, y: 1, z: 0.99999994}
+    - name: skeleton_helmet_01_LOD2
+      parentName: 
+      position: {x: 1.6536437, y: 0.0306394, z: 0.0004478006}
+      rotation: {x: 0.7071069, y: 0.00000013771837, z: -0.70710665, w: 0.00000013771842}
+      scale: {x: 0.99999994, y: 1, z: 0.99999994}
+    - name: skeleton_helmet_02_LOD0
+      parentName: 
+      position: {x: 1.6536437, y: 0.0306394, z: 0.0004478006}
+      rotation: {x: 0.7071069, y: 0.00000013767871, z: -0.70710665, w: 0.00000013767875}
+      scale: {x: 1.0000001, y: 0.99999976, z: 0.99999994}
+    - name: skeleton_helmet_02_LOD1
+      parentName: 
+      position: {x: 1.6536437, y: 0.0306394, z: 0.0004478006}
+      rotation: {x: 0.7071069, y: 0.00000013767871, z: -0.70710665, w: 0.00000013767875}
+      scale: {x: 1.0000001, y: 0.99999976, z: 0.99999994}
+    - name: skeleton_helmet_02_LOD2
+      parentName: 
+      position: {x: 1.6536437, y: 0.0306394, z: 0.0004478006}
+      rotation: {x: 0.7071069, y: 0.00000013767871, z: -0.70710665, w: 0.00000013767875}
+      scale: {x: 1.0000001, y: 0.99999976, z: 0.99999994}
+    - name: skeleton_helmet_03_LOD0
+      parentName: 
+      position: {x: -0.040397797, y: 0.020800186, z: 0.00062789913}
+      rotation: {x: 0.0000005479091, y: 0.70710665, z: -0.00000054790894, w: 0.7071069}
+      scale: {x: 1, y: 1, z: 1}
+    - name: skeleton_helmet_03_LOD1
+      parentName: 
+      position: {x: -0.040397797, y: 0.02080032, z: 0.00062759395}
+      rotation: {x: 0.0000005473324, y: 0.70710665, z: -0.0000005473322, w: 0.7071069}
+      scale: {x: -1.0000004, y: -1, z: -1.0000004}
+    - name: skeleton_helmet_03_LOD2
+      parentName: 
+      position: {x: -0.040397797, y: 0.020800322, z: 0.00044784544}
+      rotation: {x: 0.0000005473324, y: 0.70710665, z: -0.0000005473322, w: 0.7071069}
+      scale: {x: -1.0000004, y: -1, z: -1.0000004}
+    - name: skeleton_helmet_04_LOD0
+      parentName: 
+      position: {x: 1.6536437, y: 0.0306394, z: 0.0004478006}
+      rotation: {x: 0.7071069, y: 0.0000001372241, z: -0.70710665, w: 0.00000013722415}
+      scale: {x: 0.9999999, y: 0.99999994, z: 0.9999998}
+    - name: skeleton_helmet_04_LOD1
+      parentName: 
+      position: {x: 1.6536437, y: 0.0306394, z: 0.0004478006}
+      rotation: {x: 0.7071069, y: 0.0000001372241, z: -0.70710665, w: 0.00000013722415}
+      scale: {x: 0.9999999, y: 0.99999994, z: 0.9999998}
+    - name: skeleton_helmet_04_LOD2
+      parentName: 
+      position: {x: 1.6536437, y: 0.0306394, z: 0.0004478006}
+      rotation: {x: 0.7071069, y: 0.0000001372241, z: -0.70710665, w: 0.00000013722415}
+      scale: {x: 0.9999999, y: 0.99999994, z: 0.9999998}
+    - name: skeleton_helmet_05_LOD0
+      parentName: 
+      position: {x: 1.6536437, y: 0.0306394, z: 0.0004478006}
+      rotation: {x: 0.7071069, y: 0.0000001372241, z: -0.70710665, w: 0.00000013722415}
+      scale: {x: 0.9999999, y: 0.99999994, z: 0.9999998}
+    - name: skeleton_helmet_05_LOD1
+      parentName: 
+      position: {x: 1.6536437, y: 0.0306394, z: 0.0004478006}
+      rotation: {x: 0.7071069, y: 0.0000001372241, z: -0.70710665, w: 0.00000013722415}
+      scale: {x: 0.9999999, y: 0.99999994, z: 0.9999998}
+    - name: skeleton_helmet_05_LOD2
+      parentName: 
+      position: {x: 1.6536437, y: 0.0306394, z: 0.0004478006}
+      rotation: {x: 0.7071069, y: 0.0000001372241, z: -0.70710665, w: 0.00000013722415}
+      scale: {x: 0.9999999, y: 0.99999994, z: 0.9999998}
+    - name: bip_hordemouth
+      parentName: 
+      position: {x: 0.009752197, y: 0.051605575, z: -0.000000008307397}
+      rotation: {x: 1.2391252e-13, y: 2.5263038e-13, z: 0.8943996, w: -0.44726893}
+      scale: {x: 0.9999999, y: 1, z: 1}
+    - name: bip_hordeRCollarbone
+      parentName: 
+      position: {x: 0.010931854, y: 0.09128608, z: -0.015482783}
+      rotation: {x: -0.11443934, y: -0.68129903, z: 0.10992202, w: 0.71459955}
+      scale: {x: 1.0000002, y: 0.9999996, z: 1.0000007}
+    - name: bip_hordeRUpperarm
+      parentName: 
+      position: {x: -0.12968975, y: 0.000000009536743, z: 0}
+      rotation: {x: 0.0050474387, y: -0.030548532, z: -0.19457242, w: 0.98039937}
+      scale: {x: 0.9999999, y: 0.9999999, z: 1.0000001}
+    - name: bip_hordeRForearm
+      parentName: 
+      position: {x: -0.3089144, y: 0, z: 0.00000015258789}
+      rotation: {x: -0.0042386716, y: 0.0025002086, z: -0.003683436, w: 0.9999811}
+      scale: {x: 0.9999998, y: 1.0000012, z: 0.99999946}
+    - name: bip_hordeRPalm
+      parentName: 
+      position: {x: -0.28733465, y: 0, z: 0}
+      rotation: {x: 0.7090783, y: 0.014995795, z: 0.0128516955, w: 0.7048531}
+      scale: {x: 0.9999972, y: 1, z: 1.000002}
+    - name: Weapon_R
+      parentName: 
+      position: {x: -0.056699675, y: -0.022082672, z: 0.00410151}
+      rotation: {x: -0.047876947, y: 0.113212205, z: 0.04390719, w: 0.9914449}
+      scale: {x: 1.0000005, y: 1.0000008, z: 1.0000007}
+    - name: skeleton_axe_01
+      parentName: 
+      position: {x: -0.000000076293944, y: 0, z: 0}
+      rotation: {x: 0.000000011175607, y: 0.00000030221423, z: 0.0000008419157, w: 1}
+      scale: {x: 0.9999987, y: 1.0000021, z: 0.99999523}
+    - name: skeleton_axe_02
+      parentName: 
+      position: {x: -0, y: 0, z: 0.000000009536743}
+      rotation: {x: -0.00000045796816, y: 0.00000020721964, z: -0.00000042457614,
+        w: 1}
+      scale: {x: 0.7808981, y: 0.7809012, z: 0.7808957}
+    - name: skeleton_axe_03
+      parentName: 
+      position: {x: 0.000000076293944, y: 0, z: 0.000000038146972}
+      rotation: {x: -0.00000010803317, y: 0.00000011688114, z: -0.000000007450578,
+        w: 1}
+      scale: {x: 0.99999875, y: 1.0000023, z: 0.99999577}
+    - name: skeleton_club_01
+      parentName: 
+      position: {x: 0.00000015258789, y: 0.00000015258789, z: 0.000000019073486}
+      rotation: {x: 0.00000024587004, y: -0.00000028451774, z: -0.0000008456363, w: 1}
+      scale: {x: 1.0000057, y: 0.9999949, z: 0.999997}
+    - name: skeleton_club_02
+      parentName: 
+      position: {x: -0, y: 0, z: 0.000000028610229}
+      rotation: {x: -0.00000015645533, y: 0.00000005219865, z: -0.00000007559802,
+        w: 1}
+      scale: {x: 1.0348299, y: 1.000044, z: 0.966094}
+    - name: skeleton_hammer_01
+      parentName: 
+      position: {x: 0.000000076293944, y: 0, z: 0.000000009536743}
+      rotation: {x: -0.000000022351692, y: 0.00000022631166, z: 0.000000018626478,
+        w: 1}
+      scale: {x: 0.99999887, y: 1.0000024, z: 0.9999958}
+    - name: skeleton_spear
+      parentName: 
+      position: {x: -0, y: 0, z: -0.000000028610229}
+      rotation: {x: 0.0000001676377, y: -0.00000039441593, z: 0.000000018626556, w: 1}
+      scale: {x: 0.9999985, y: 1.0000023, z: 0.9999954}
+    - name: skeleton_staff_01
+      parentName: 
+      position: {x: 0.000000076293944, y: 0, z: 0.000000009536743}
+      rotation: {x: 0.00000027668867, y: -0.00000029487802, z: -0.0000007871358, w: 1}
+      scale: {x: 0.780898, y: 0.780902, z: 0.7808965}
+    - name: skeleton_staff_02
+      parentName: 
+      position: {x: 0.000000076293944, y: 0, z: 0.000000028610229}
+      rotation: {x: -0.00000006705495, y: 0.00000014295834, z: -0.00000066682827,
+        w: 1}
+      scale: {x: 0.9999978, y: 1.0000032, z: 0.99999493}
+    - name: skeleton_staff_03
+      parentName: 
+      position: {x: 0, y: 0, z: 0}
+      rotation: {x: 0.000000007450654, y: 0.0000001471492, z: -0.00000064820154, w: 1}
+      scale: {x: 0.9999982, y: 1.0000031, z: 0.9999949}
+    - name: skeleton_staff_04
+      parentName: 
+      position: {x: -0, y: 0, z: 0.000000009536743}
+      rotation: {x: 0.00000006705505, y: 0.00000005168848, z: -0.00000022724312, w: 1}
+      scale: {x: 0.9999981, y: 1.0000031, z: 0.9999952}
+    - name: skeleton_staff_05
+      parentName: 
+      position: {x: 0, y: 0, z: 0}
+      rotation: {x: -0.000000019081975, y: 0.00000008199332, z: -0.00000051998666,
+        w: 1}
+      scale: {x: 0.780898, y: 0.78090096, z: 0.7808952}
+    - name: skeleton_sword_01
+      parentName: 
+      position: {x: -0, y: 0, z: 0.000000009536743}
+      rotation: {x: -0.000001273723, y: 0.00000031515276, z: -0.00000015265627, w: 1}
+      scale: {x: 0.780898, y: 0.78090173, z: 0.78089464}
+    - name: skeleton_sword_02
+      parentName: 
+      position: {x: 0, y: 0, z: 0}
+      rotation: {x: -0.00000012665959, y: 0.00000015180574, z: 0.000000007450607,
+        w: 1}
+      scale: {x: 0.999999, y: 1.0000023, z: 0.99999565}
+    - name: skeleton_sword_03
+      parentName: 
+      position: {x: 0.000000076293944, y: -0.00000015258789, z: 0.000000028610229}
+      rotation: {x: -0.000001166016, y: 0.000000508034, z: 0.0000016391266, w: 1}
+      scale: {x: 1.0000037, y: 0.9999982, z: 0.9999952}
+    - name: skeleton_sword_gladius
+      parentName: 
+      position: {x: -0.000000076293944, y: 0, z: 0.000000019073486}
+      rotation: {x: -0.00000003725282, y: -0.000000030268016, z: -0.00000005215412,
+        w: 1}
+      scale: {x: 0.999999, y: 1.0000023, z: 0.99999565}
+    - name: bip_hordeRDigit11 1
+      parentName: 
+      position: {x: -0.033623353, y: -0.0062565613, z: -0.026328666}
+      rotation: {x: -0.22697558, y: -0.3817616, z: -0.01710779, w: 0.8957944}
+      scale: {x: 0.9999963, y: 0.9999966, z: 1.0000073}
+    - name: bip_hordeRDigit12
+      parentName: 
+      position: {x: -0.068136595, y: 0, z: 0}
+      rotation: {x: -0.04579688, y: -0.026891872, z: 0.32581964, w: 0.9439391}
+      scale: {x: 0.9999965, y: 1.0000026, z: 1.0000004}
+    - name: bip_hordeRDigit31
+      parentName: 
+      position: {x: -0.08240173, y: 0.0000856018, z: 0.0057117534}
+      rotation: {x: -0.006999257, y: 0.0032038125, z: -0.013635047, w: 0.99987745}
+      scale: {x: 0.9999975, y: 0.9999998, z: 1.0000026}
+    - name: bip_hordeRDigit32
+      parentName: 
+      position: {x: -0.062412642, y: 0, z: 0}
+      rotation: {x: 0.004947385, y: -0.005897059, z: 0.026669942, w: 0.9996147}
+      scale: {x: 0.9999971, y: 0.99999964, z: 1.0000025}
+    - name: bip_hordeLThigh
+      parentName: 
+      position: {x: 0.013626556, y: 0.0026741957, z: 0.12486955}
+      rotation: {x: -0.04821464, y: 0.99732065, z: -0.0107490225, w: 0.053957317}
+      scale: {x: 1.0000001, y: 1.0000004, z: 1.0000001}
+    - name: bip_hordeLCalf
+      parentName: 
+      position: {x: -0.41547447, y: -0.0000010108947, z: -0.00000022888183}
+      rotation: {x: 0.0020185853, y: 0.017570674, z: 0.12811269, w: 0.99160194}
+      scale: {x: 1.0000007, y: 0.99999946, z: 1}
+    - name: bip_hordeLFoot
+      parentName: 
+      position: {x: -0.46290514, y: 0, z: 0}
+      rotation: {x: -0.10210946, y: -0.010736608, z: -0.5833835, w: 0.8056811}
+      scale: {x: 1.0000013, y: 0.99999917, z: 1.0000002}
+    - name: bip_hordeLDigit11
+      parentName: 
+      position: {x: -0.15804887, y: 0, z: 0.000000019073486}
+      rotation: {x: 0.00004549192, y: -0.00076077535, z: -0.23203242, w: 0.97270775}
+      scale: {x: 1.0000002, y: 0.99999976, z: 1}
+    - name: bip_hordeRThigh
+      parentName: 
+      position: {x: 0.01362648, y: 0.0026741957, z: -0.12486956}
+      rotation: {x: -0.04799173, y: 0.99731404, z: 0.010768479, w: -0.054273654}
+      scale: {x: 1.0000001, y: 1.0000005, z: 1.0000001}
+    - name: bip_hordeRCalf
+      parentName: 
+      position: {x: -0.4154743, y: -0.000001001358, z: 0.00000019073485}
+      rotation: {x: -0.0020086458, y: -0.017607082, z: 0.12780274, w: 0.9916413}
+      scale: {x: 1.0000004, y: 0.99999917, z: 0.99999976}
+    - name: bip_hordeRFoot
+      parentName: 
+      position: {x: -0.46290514, y: -0.000000009536743, z: 0.000000019073486}
+      rotation: {x: 0.10220638, y: 0.010490831, z: -0.5834277, w: 0.80564004}
+      scale: {x: 1.000001, y: 0.99999934, z: 0.99999994}
+    - name: bip_hordeRDigit11
+      parentName: 
+      position: {x: -0.15804884, y: 0.0000000047683715, z: -0.000000019073486}
+      rotation: {x: -0.000050453473, y: 0.000781795, z: -0.23186566, w: 0.9727475}
+      scale: {x: 0.99999994, y: 0.9999997, z: 0.9999999}
+    - name: skeleton_boot_01_LOD0
+      parentName: 
+      position: {x: 0, y: 0, z: 0}
+      rotation: {x: 0, y: 0, z: 0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: skeleton_boot_01_LOD1
+      parentName: 
+      position: {x: 0, y: 0, z: 0}
+      rotation: {x: 0, y: 0, z: 0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: skeleton_boot_01_LOD2
+      parentName: 
+      position: {x: 0, y: 0, z: 0}
+      rotation: {x: 0, y: 0, z: 0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: skeleton_leg ring_LOD0
+      parentName: 
+      position: {x: 0, y: 0, z: 0}
+      rotation: {x: 0, y: 0, z: 0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: skeleton_leg ring_LOD1
+      parentName: 
+      position: {x: 0, y: 0, z: 0}
+      rotation: {x: 0, y: 0, z: 0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: skeleton_leg ring_LOD2
+      parentName: 
+      position: {x: 0, y: 0, z: 0}
+      rotation: {x: 0, y: 0, z: 0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    armTwist: 0.5
+    foreArmTwist: 0.5
+    upperLegTwist: 0.5
+    legTwist: 0.5
+    armStretch: 0.05
+    legStretch: 0.05
+    feetSpacing: 0
+    rootMotionBoneName: 
+    hasTranslationDoF: 0
+    hasExtraRoot: 0
+    skeletonHasParents: 0
+  lastHumanDescriptionAvatarSource: {instanceID: 0}
+  animationType: 3
+  humanoidOversampling: 1
+  additionalBone: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

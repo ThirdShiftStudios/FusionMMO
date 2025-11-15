@@ -46,7 +46,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _priority: 0
   _checkPriorityOnExit: 1
-  _defaultNext: {fileID: 0}
 --- !u!1 &1118751691350814076
 GameObject:
   m_ObjectHideFlags: 0
@@ -93,7 +92,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _priority: 0
   _checkPriorityOnExit: 1
-  _defaultNext: {fileID: 0}
   _attackRange: 2
   _damagePerHit: 10
   _attackCooldown: 1
@@ -201,7 +199,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _priority: 0
   _checkPriorityOnExit: 1
-  _defaultNext: {fileID: 0}
   _idleDuration: 3
 --- !u!1 &3285449150716045749
 GameObject:
@@ -249,7 +246,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _priority: 0
   _checkPriorityOnExit: 1
-  _defaultNext: {fileID: 0}
   _maxChaseDistance: 25
 --- !u!1 &4051220625260798225
 GameObject:
@@ -385,6 +381,7 @@ GameObject:
   - component: {fileID: 5080629933351417973}
   - component: {fileID: 243891210694590397}
   - component: {fileID: 5165296287603800587}
+  - component: {fileID: 2406405750017403177}
   m_Layer: 0
   m_Name: EnemyBase_v2
   m_TagString: Untagged
@@ -677,6 +674,21 @@ MonoBehaviour:
   bezierTangentLength: 0.4
   offset: 0.2
   factor: 0.1
+--- !u!114 &2406405750017403177
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4434025654594137658}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0ad50f81b1d25c441943c37a89ba23f6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _Animator: {fileID: 0}
+  _Transitions: {fileID: 0}
+  _ActionOnDisable: 0
 --- !u!1 &4823237390333467735
 GameObject:
   m_ObjectHideFlags: 0
@@ -723,7 +735,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _priority: 0
   _checkPriorityOnExit: 1
-  _defaultNext: {fileID: 0}
   _patrolRadius: 10
   _patrolStoppingDistance: 0.5
 --- !u!1 &6590854322678965273
@@ -772,7 +783,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _priority: 0
   _checkPriorityOnExit: 1
-  _defaultNext: {fileID: 0}
   _spawnDuration: 2
 --- !u!1 &6843358591492904340
 GameObject:
@@ -859,7 +869,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _priority: 0
   _checkPriorityOnExit: 1
-  _defaultNext: {fileID: 0}
 --- !u!1 &7357393273378370436
 GameObject:
   m_ObjectHideFlags: 0
@@ -906,4 +915,3 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _priority: 0
   _checkPriorityOnExit: 1
-  _defaultNext: {fileID: 0}
