@@ -6,8 +6,12 @@ namespace TPSBR.Enemies
     public class EnemyAttackPlayerBehavior : SingleClipBehavior
     {
         [SerializeField]
-        [Tooltip("Maximum distance from the target required to start the attack.")]
-        private float _attackRange = 2f;
+        [Tooltip("Transform used as the origin of the attack sphere.")]
+        private Transform _attackOrigin;
+
+        [SerializeField]
+        [Tooltip("Radius of the sphere used to detect targets when attacking.")]
+        private float _attackRadius = 2f;
 
         [SerializeField]
         [Tooltip("Damage dealt per successful attack.")]
@@ -25,11 +29,10 @@ namespace TPSBR.Enemies
         [Tooltip("Hit type reported when damaging the target.")]
         private EHitType _hitType = EHitType.Suicide;
 
-        private readonly Collider[] _overlapResults = new Collider[8];
         private float _cooldownTimer;
         private bool _shouldChase;
 
-        public float AttackRange => _attackRange;
+        public float AttackRange => _attackRadius;
         public bool ShouldChase => _shouldChase;
         bool _attackTriggered = false;
 
@@ -114,11 +117,12 @@ namespace TPSBR.Enemies
             if (enemy == null || enemy.HasPlayerTarget == false)
                 return false;
 
+            Vector3 originPosition = GetAttackOriginPosition(enemy);
             Vector3 targetPosition = enemy.GetTargetPosition();
-            Vector3 delta = targetPosition - enemy.transform.position;
+            Vector3 delta = targetPosition - originPosition;
             delta.y = 0f;
 
-            float sqrAttackRange = _attackRange * _attackRange;
+            float sqrAttackRange = _attackRadius * _attackRadius;
             return delta.sqrMagnitude <= sqrAttackRange;
         }
 
@@ -130,31 +134,64 @@ namespace TPSBR.Enemies
                 mask = ObjectLayerMask.Agent;
             }
 
-            var physicsScene = Runner.SimulationUnityScene.GetPhysicsScene();
-            int hitCount = physicsScene.OverlapSphere(enemy.transform.position, _attackRange, _overlapResults, mask, QueryTriggerInteraction.UseGlobal);
+            var hits = ListPool.Get<LagCompensatedHit>(8);
+            var hitRoots = ListPool.Get<int>(8);
+
+            Vector3 originPosition = GetAttackOriginPosition(enemy);
+            int hitCount = Runner.LagCompensation.OverlapSphere(originPosition, _attackRadius, enemy.Object.InputAuthority, hits, mask);
 
             bool hitAny = false;
 
             for (int i = 0; i < hitCount; i++)
             {
-                Collider collider = _overlapResults[i];
-                if (collider == null)
+                var hit = hits[i];
+
+                if (hit.Hitbox == null)
                     continue;
 
-                if (collider.transform.IsChildOf(enemy.transform) == true)
+                var hitRoot = hit.Hitbox.Root;
+                if (hitRoot == null)
                     continue;
 
-                Agent agent = collider.GetComponentInParent<Agent>();
-                if (agent == null)
+                if (hitRoot.transform.IsChildOf(enemy.transform) == true)
                     continue;
 
-                if (HitUtility.ProcessHit(enemy, collider, _damagePerHit, _hitType, out HitData _))
+                int hitRootID = hitRoot.GetInstanceID();
+                if (hitRoots.Contains(hitRootID) == true)
+                    continue;
+
+                Vector3 direction = hit.Point - originPosition;
+                float magnitude = direction.magnitude;
+                if (magnitude > 0.001f)
+                {
+                    direction /= magnitude;
+                }
+                else
+                {
+                    direction = enemy.transform.forward;
+                }
+
+                if (HitUtility.ProcessHit(enemy.Object, direction, hit, _damagePerHit, _hitType, out HitData _))
                 {
                     hitAny = true;
+                    hitRoots.Add(hitRootID);
                 }
             }
 
+            ListPool.Return(hitRoots);
+            ListPool.Return(hits);
+
             return hitAny;
+        }
+
+        private Vector3 GetAttackOriginPosition(TestEnemy enemy)
+        {
+            if (_attackOrigin != null)
+            {
+                return _attackOrigin.position;
+            }
+
+            return enemy.transform.position;
         }
     }
 }
