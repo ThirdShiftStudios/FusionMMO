@@ -1,3 +1,4 @@
+using Animancer;
 using Fusion;
 using UnityEngine;
 
@@ -5,12 +6,18 @@ namespace TPSBR
 {
     [DisallowMultipleComponent]
     [RequireComponent(typeof(EnemyHealth))]
+    [RequireComponent(typeof(AnimancerComponent))]
     public sealed class EnemyNetworkBehavior : ContextBehaviour
     {
         [SerializeField]
         private EnemyHealth _health;
 
+        [SerializeField]
+        private AnimancerComponent _animancer;
+
         private PrototypeEnemySpawner _spawner;
+
+        public AnimancerComponent Animancer => _animancer;
 
         public override void Spawned()
         {
@@ -19,6 +26,11 @@ namespace TPSBR
             if (_health == null)
             {
                 _health = GetComponent<EnemyHealth>();
+            }
+
+            if (_animancer == null)
+            {
+                _animancer = GetComponent<AnimancerComponent>();
             }
         }
 
