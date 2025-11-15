@@ -25,6 +25,11 @@ namespace TPSBR.Enemies
         [Tooltip("Hit type reported when damaging the target.")]
         private EHitType _hitType = EHitType.Suicide;
 
+        [SerializeField]
+        [Range(0f, 1f)]
+        [Tooltip("Normalized time in the attack animation when the hit should be registered.")]
+        private float _attackTime = 0.5f;
+
         private bool _shouldChase;
 
         public float AttackRange => _attackRadius;
@@ -39,7 +44,7 @@ namespace TPSBR.Enemies
         protected override void OnRender()
         {
             base.OnRender();
-            if(_attackTriggered == false && AnimationNormalizedTime >= 0.5f)
+            if(_attackTriggered == false && AnimationNormalizedTime >= _attackTime)
             {
                 Debug.Log($"Render: Attack Trigger : {Runner.Tick}");
                 _attackTriggered = true;
@@ -61,7 +66,7 @@ namespace TPSBR.Enemies
         {
             base.OnFixedUpdate();
 
-            if (_attackTriggered == false && AnimationNormalizedTime >= 0.5f)
+            if (_attackTriggered == false && AnimationNormalizedTime >= _attackTime)
             {
                 Debug.Log($"FixedUpdate: Attack Trigger : {Runner.Tick}");
                 _attackTriggered = true;
@@ -87,7 +92,7 @@ namespace TPSBR.Enemies
                 return;
             }
 
-            if (_attackTriggered == false && AnimationNormalizedTime >= 0.5f && PerformAttack(enemy) == true)
+            if (_attackTriggered == false && AnimationNormalizedTime >= _attackTime && PerformAttack(enemy) == true)
             {
                 _attackTriggered = true;
             }
