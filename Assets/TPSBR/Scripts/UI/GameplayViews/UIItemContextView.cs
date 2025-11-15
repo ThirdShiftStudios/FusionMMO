@@ -392,19 +392,33 @@ namespace TPSBR.UI
                 Sprite abilityIcon = option.Definition != null ? option.Definition.Icon : null;
                 slot.SetItem(abilityIcon, abilityIcon != null ? 1 : 0);
 
-                UIAbilityOptionSlot abilityContent = slot.Content as UIAbilityOptionSlot;
+                UIAbilityListItem listItemDetails = slot.GetComponent<UIAbilityListItem>();
 
-                if (abilityContent == null)
+                if (listItemDetails == null)
                 {
-                    abilityContent = slot.GetComponent<UIAbilityOptionSlot>();
+                    listItemDetails = slot.GetComponentInChildren<UIAbilityListItem>(true);
                 }
 
-                if (abilityContent == null)
+                if (listItemDetails != null)
                 {
-                    abilityContent = slot.GetComponentInChildren<UIAbilityOptionSlot>(true);
+                    listItemDetails.SetAbility(option, allowSelection);
                 }
+                else
+                {
+                    UIAbilityOptionSlot abilityContent = slot.Content as UIAbilityOptionSlot;
 
-                abilityContent?.SetAbility(option, allowSelection);
+                    if (abilityContent == null)
+                    {
+                        abilityContent = slot.GetComponent<UIAbilityOptionSlot>();
+                    }
+
+                    if (abilityContent == null)
+                    {
+                        abilityContent = slot.GetComponentInChildren<UIAbilityOptionSlot>(true);
+                    }
+
+                    abilityContent?.SetAbility(option, allowSelection);
+                }
             }
 
             for (int i = options.Count; i < slots.Count; ++i)
