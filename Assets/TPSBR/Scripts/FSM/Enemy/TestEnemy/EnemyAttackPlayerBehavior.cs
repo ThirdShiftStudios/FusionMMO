@@ -18,6 +18,11 @@ namespace TPSBR.Enemies
         private float _attackCooldown = 1f;
 
         [SerializeField]
+        [Range(0f, 1f)]
+        [Tooltip("Normalized time inside the attack animation when the hit should occur.")]
+        private float _attackTime = 0.5f;
+
+        [SerializeField]
         [Tooltip("Optional override for the layer mask used when looking for targets.")]
         private LayerMask _targetMask;
 
@@ -38,15 +43,6 @@ namespace TPSBR.Enemies
             base.OnEnterStateRender();
             _attackTriggered = false;
         }
-        protected override void OnRender()
-        {
-            base.OnRender();
-            if(_attackTriggered == false && AnimationNormalizedTime >= 0.5f)
-            {
-                Debug.Log($"Render: Attack Trigger : {Runner.Tick}");
-                _attackTriggered = true;
-            }
-        }
         protected override void OnEnterState()
         {
             base.OnEnterState();
@@ -63,12 +59,6 @@ namespace TPSBR.Enemies
         protected override void OnFixedUpdate()
         {
             base.OnFixedUpdate();
-
-            if (_attackTriggered == false && AnimationNormalizedTime >= 0.5f)
-            {
-                Debug.Log($"FixedUpdate: Attack Trigger : {Runner.Tick}");
-                _attackTriggered = true;
-            }
 
             if (HasStateAuthority == false)
                 return;
@@ -95,6 +85,19 @@ namespace TPSBR.Enemies
                 _cooldownTimer = Mathf.Max(0f, _cooldownTimer - Runner.DeltaTime);
                 return;
             }
+
+            if (AnimationNormalizedTime < _attackTime)
+            {
+                return;
+            }
+
+            if (_attackTriggered == true)
+            {
+                return;
+            }
+
+            Debug.Log($"FixedUpdate: Attack Trigger : {Runner.Tick}");
+            _attackTriggered = true;
 
             if (PerformAttack(enemy) == true && _attackCooldown > 0f)
             {
