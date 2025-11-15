@@ -65,6 +65,8 @@ namespace FusionMMO.Dungeons
         [SerializeField]
         private Transform _networkObjectRoot;
 
+        public Transform NetworkObjectRoot => _networkObjectRoot;
+
         private bool _dungeonGenerated;
         private DungeonSpawnPoint _spawnPoint;
         private AstarPath _astarPath;

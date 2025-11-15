@@ -75,15 +75,86 @@ namespace TPSBR
             return true;
         }
 
+        public override void Spawned()
+        {
+            base.Spawned();
+            CacheNetworkDungeon();
+        }
+
         private NetworkedDungeon ResolveDungeon()
         {
-            if (_dungeon != null)
+            if (CacheNetworkDungeon())
             {
                 return _dungeon;
             }
 
-            _dungeon = GetComponentInParent<NetworkedDungeon>();
-            return _dungeon;
+            return null;
+        }
+
+        private bool CacheNetworkDungeon()
+        {
+            if (_dungeon != null)
+            {
+                return true;
+            }
+
+            var dungeon = GetComponentInParent<NetworkedDungeon>();
+            if (dungeon == null)
+            {
+                var dungeons = Object.FindObjectsOfType<NetworkedDungeon>(includeInactive: true);
+                for (int i = 0; i < dungeons.Length; ++i)
+                {
+                    var candidate = dungeons[i];
+                    if (candidate == null)
+                    {
+                        continue;
+                    }
+
+                    if (Runner != null && candidate.Runner != Runner)
+                    {
+                        continue;
+                    }
+
+                    var root = candidate.NetworkObjectRoot;
+                    if (root != null && (transform == root || transform.IsChildOf(root)))
+                    {
+                        dungeon = candidate;
+                        break;
+                    }
+
+                    if (transform.IsChildOf(candidate.transform))
+                    {
+                        dungeon = candidate;
+                        break;
+                    }
+
+                    if (Object != null && candidate.Object != null && candidate.Object.InputAuthority == Object.InputAuthority)
+                    {
+                        dungeon = candidate;
+                        break;
+                    }
+                }
+
+                if (dungeon == null && dungeons.Length == 1)
+                {
+                    dungeon = dungeons[0];
+                }
+            }
+
+            if (dungeon == null)
+            {
+                return false;
+            }
+
+            _dungeon = dungeon;
+
+            var objectRoot = _dungeon.NetworkObjectRoot;
+            if (objectRoot != null && transform.parent != objectRoot)
+            {
+                transform.SetParent(objectRoot, true);
+            }
+
+            return true;
         }
 
         private void Awake()
@@ -92,19 +163,28 @@ namespace TPSBR
             {
                 _interactionCollider = GetComponent<Collider>();
             }
+
+            CacheNetworkDungeon();
         }
 
         private void OnValidate()
         {
-            if (_dungeon == null)
-            {
-                _dungeon = GetComponentInParent<NetworkedDungeon>();
-            }
+            CacheNetworkDungeon();
 
             if (_interactionCollider == null)
             {
                 _interactionCollider = GetComponent<Collider>();
             }
+
+            if (_hudPivot == null)
+            {
+                _hudPivot = transform;
+            }
+        }
+
+        private void OnTransformParentChanged()
+        {
+            CacheNetworkDungeon();
         }
     }
 }

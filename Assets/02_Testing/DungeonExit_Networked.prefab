@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 279826279607853338}
   - component: {fileID: 2012347076809492385}
   - component: {fileID: 7951525357193599562}
+  - component: {fileID: 1052308720115460942}
   - component: {fileID: 238112750958822926}
   m_Layer: 0
   m_Name: DungeonExit_Networked
@@ -71,6 +72,19 @@ MonoBehaviour:
   SyncParent: 0
   _autoAOIOverride: 1
   DisableSharedModeInterpolation: 0
+--- !u!65 &1052308720115460942
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1624432713509769362}
+  m_Material: {fileID: 0}
+  m_IsTrigger: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Size: {x: 0.925824, y: 1.153421, z: 0.925822}
+  m_Center: {x: 0, y: 0.5767105, z: 0}
 --- !u!114 &238112750958822926
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -81,8 +95,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: baa45258b4d66be478e44390ea4d2887, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
+  _interactionName: Dungeon Exit
+  _interactionDescription: Leave the dungeon.
+  _hudPivot: {fileID: 7028194941428778297}
+  _interactionCollider: {fileID: 1052308720115460942}
+  _dungeon: {fileID: 0}
 --- !u!1001 &7028194941428391859
 PrefabInstance:
   m_ObjectHideFlags: 0
