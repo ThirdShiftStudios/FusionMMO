@@ -103,6 +103,8 @@ MonoBehaviour:
   _networkedObjectMap:
   - monoBehavior: {fileID: 8071144532658473420, guid: fa8e028d989380a43942c9d345bc5c3b, type: 3}
     networkBehavior: {fileID: -5717904615716700270, guid: 86c51e17c5c0d504ca184e0c432a8b4d, type: 3}
+  - monoBehavior: {fileID: 100010, guid: 53ecf64b354f9254a923244765d36470, type: 3}
+    networkBehavior: {fileID: 2012347076809492385, guid: 3dbfea14f965d054a9dee5f748e13c6c, type: 3}
   _networkObjectRoot: {fileID: 8260583232873212699}
 --- !u!114 &8394946952555285233
 MonoBehaviour:
@@ -1321,7 +1323,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   styledBanner: 0
-  messageNoHeightFogGlobal: 0
+  messageNoHeightFogGlobal: 1
   categoryVolume: 1
   volumeTriggerMode: 10
   volumeTriggerPoint: {fileID: 0}

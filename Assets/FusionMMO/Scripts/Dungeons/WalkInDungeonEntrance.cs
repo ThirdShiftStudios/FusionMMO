@@ -10,6 +10,9 @@ namespace FusionMMO.Dungeons
         private Transform _entrance;
 
         [SerializeField]
+        private Transform _exit;
+
+        [SerializeField]
         private NetworkedDungeon _dungeonPrefab;
 
         [SerializeField]
