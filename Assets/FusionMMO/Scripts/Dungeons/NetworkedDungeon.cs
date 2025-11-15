@@ -52,6 +52,9 @@ namespace FusionMMO.Dungeons
         [Networked, Capacity(REQUEST_CAPACITY)]
         private NetworkArray<LoadingSceneRequest> _loadingSceneRequests { get; }
 
+        [Networked]
+        public WalkInDungeonEntrance Entrance { get; private set; }
+
         private int _lastSeedGenerated = -1;
         [SerializeField]
         private Dungeon _dungeon;
@@ -534,7 +537,7 @@ namespace FusionMMO.Dungeons
             }
         }
 
-        private void ScheduleLoadingSceneHide(PlayerRef player)
+        public void ScheduleLoadingSceneHide(PlayerRef player)
         {
             if (Runner == null || player == PlayerRef.None)
             {
@@ -554,6 +557,16 @@ namespace FusionMMO.Dungeons
             request.IsActive = true;
 
             _loadingSceneRequests.Set(requestIndex, request);
+        }
+
+        public void SetEntrance(WalkInDungeonEntrance entrance)
+        {
+            if (HasStateAuthority == false)
+            {
+                return;
+            }
+
+            Entrance = entrance;
         }
 
         private void ProcessLoadingSceneRequest()
