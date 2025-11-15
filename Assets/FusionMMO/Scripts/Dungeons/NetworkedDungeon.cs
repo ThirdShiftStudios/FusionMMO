@@ -47,7 +47,7 @@ namespace FusionMMO.Dungeons
         private NetworkBool _dungeonReadyToGenerate { get; set; }
 
         [Networked]
-        private NetworkBehaviourRef<WalkInDungeonEntrance> _entrance { get; set; }
+        private NetworkBehaviourId _entranceId { get; set; }
 
         [Networked, Capacity(REQUEST_CAPACITY)]
         private NetworkArray<TeleportRequest> _teleportRequests { get; }
@@ -139,13 +139,14 @@ namespace FusionMMO.Dungeons
             _dungeonReadyToGenerate = true;
             ClearTeleportRequests();
             ClearLoadingSceneRequests();
+            _entranceId = NetworkBehaviourId.None;
             _pendingTeleportPlayers.Clear();
             ClearPendingNetworkSpawns();
             DespawnSpawnedNetworkObjects();
             TryGenerateDungeon();
         }
 
-        public NetworkBehaviourRef<WalkInDungeonEntrance> Entrance => _entrance;
+        public NetworkBehaviourId EntranceId => _entranceId;
 
         public void SetEntrance(WalkInDungeonEntrance entrance)
         {
@@ -154,18 +155,24 @@ namespace FusionMMO.Dungeons
                 return;
             }
 
-            _entrance = entrance;
+            _entranceId = entrance != null ? entrance : NetworkBehaviourId.None;
         }
 
         public bool TryGetEntrance(out WalkInDungeonEntrance entrance)
         {
-            if (_entrance.TryResolve(out entrance) == false)
+            if (_entranceId.IsValid == false || Runner == null)
             {
                 entrance = null;
                 return false;
             }
 
-            return entrance != null;
+            if (Runner.TryFindBehaviour(_entranceId, out entrance))
+            {
+                return entrance != null;
+            }
+
+            entrance = null;
+            return false;
         }
 
         public bool TryTeleportPlayerToEntranceExit(Agent agent, out string message)
