@@ -54,19 +54,36 @@ namespace TPSBR.Enemies
 
         protected override void OnCollectStateMachines(List<IStateMachine> stateMachines)
         {
-            List<EnemyBehavior> states = new List<EnemyBehavior>();
-            states.Add(_spawning);
-            states.Add(_death);
-            states.Add(_patrol);
-            states.Add(_despawn);
-            states.Add(_idle);
-            states.Add(_chaseAgent);
-            states.Add(_attackPlayer);
-            states.Add(_returnToPatrolZone);
+            var states = new EnemyBehavior[]
+            {
+                _spawning,
+                _death,
+                _patrol,
+                _despawn,
+                _idle,
+                _chaseAgent,
+                _attackPlayer,
+                _returnToPatrolZone,
+            };
 
-            _machine = new EnemyBehaviorMachine(_machineName, this, states.ToArray());
-            
+            _machine = new EnemyBehaviorMachine(_machineName, this, states);
+
             stateMachines.Add(_machine);
+
+            _spawning.AddTransition(_idle, () => _spawning.IsSpawnComplete, true);
+
+            _idle.AddTransition(_chaseAgent, () => HasPlayerTarget, true);
+            _idle.AddTransition(_patrol, () => _idle.IsIdleDurationComplete, true);
+
+            _patrol.AddTransition(_chaseAgent, () => HasPlayerTarget, true);
+            _patrol.AddTransition(_idle, () => _patrol.ReadyToIdle, true);
+
+            _chaseAgent.AddTransition(_attackPlayer, () => _chaseAgent.ShouldAttackPlayer, true);
+            _chaseAgent.AddTransition(_returnToPatrolZone, () => _chaseAgent.ShouldReturnToPatrolZone, true);
+
+            _attackPlayer.AddTransition(_chaseAgent, () => _attackPlayer.ShouldChase, true);
+
+            _returnToPatrolZone.AddTransition(_patrol, () => _returnToPatrolZone.ReadyToResumePatrol, true);
         }
 
         public override void FixedUpdateNetwork()

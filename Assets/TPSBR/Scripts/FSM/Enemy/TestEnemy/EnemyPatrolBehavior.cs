@@ -14,14 +14,17 @@ namespace TPSBR.Enemies
 
         private Vector3 _currentTarget;
         private bool _hasTarget;
+        private bool _readyToIdle;
 
         public float PatrolRadius => _patrolRadius;
+        public bool ReadyToIdle => _readyToIdle;
 
         protected override void OnEnterState()
         {
             base.OnEnterState();
 
             _hasTarget = false;
+            _readyToIdle = false;
             SelectNewTarget();
         }
 
@@ -35,9 +38,9 @@ namespace TPSBR.Enemies
             if (Controller is not TestEnemy enemy)
                 return;
 
-            if (enemy.HasPlayerTarget == true && enemy.ChaseAgent != null)
+            if (enemy.HasPlayerTarget == true)
             {
-                Machine.ForceActivateState(enemy.ChaseAgent.StateId);
+                enemy.StopNavigation();
                 return;
             }
 
@@ -57,7 +60,7 @@ namespace TPSBR.Enemies
                 {
                     if (enemy.Idle != null)
                     {
-                        Machine.ForceActivateState(enemy.Idle.StateId);
+                        _readyToIdle = true;
                     }
                     else
                     {
@@ -73,7 +76,7 @@ namespace TPSBR.Enemies
                 {
                     if (enemy.Idle != null)
                     {
-                        Machine.ForceActivateState(enemy.Idle.StateId);
+                        _readyToIdle = true;
                     }
                     else
                     {
@@ -83,11 +86,19 @@ namespace TPSBR.Enemies
             }
         }
 
+        protected override void OnExitState()
+        {
+            base.OnExitState();
+
+            _readyToIdle = false;
+        }
+
         private void SelectNewTarget()
         {
             if (Controller is not TestEnemy enemy)
             {
                 _hasTarget = false;
+                _readyToIdle = false;
                 return;
             }
 
@@ -95,6 +106,7 @@ namespace TPSBR.Enemies
             Vector2 randomOffset = Random.insideUnitCircle * _patrolRadius;
             _currentTarget = new Vector3(spawnPosition.x + randomOffset.x, spawnPosition.y, spawnPosition.z + randomOffset.y);
             _hasTarget = true;
+            _readyToIdle = false;
 
             if (enemy.AIPath != null && enemy.Seeker != null)
             {

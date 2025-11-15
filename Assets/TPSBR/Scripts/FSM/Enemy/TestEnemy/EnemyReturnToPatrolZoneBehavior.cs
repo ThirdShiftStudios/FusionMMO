@@ -4,6 +4,17 @@ namespace TPSBR.Enemies
 {
     public class EnemyReturnToPatrolZoneBehavior : EnemyBehaviorBase
     {
+        private bool _readyToResumePatrol;
+
+        public bool ReadyToResumePatrol => _readyToResumePatrol;
+
+        protected override void OnEnterState()
+        {
+            base.OnEnterState();
+
+            _readyToResumePatrol = false;
+        }
+
         protected override void OnFixedUpdate()
         {
             base.OnFixedUpdate();
@@ -22,20 +33,27 @@ namespace TPSBR.Enemies
                 enemy.NavigateTo(spawnPosition, stoppingDistance);
 
                 bool reachedDestination = enemy.HasReachedDestination(stoppingDistance);
-                if ((reachedDestination == true || enemy.IsWithinPatrolRadius(enemy.transform.position) == true) && enemy.Patrol != null)
+                if (reachedDestination == true || enemy.IsWithinPatrolRadius(enemy.transform.position) == true)
                 {
-                    Machine.ForceActivateState(enemy.Patrol.StateId);
+                    _readyToResumePatrol = true;
                 }
             }
             else
             {
                 bool reached = enemy.MoveTowardsXZ(spawnPosition, enemy.MovementSpeed, Runner.DeltaTime);
 
-                if ((reached == true || enemy.IsWithinPatrolRadius(enemy.transform.position) == true) && enemy.Patrol != null)
+                if (reached == true || enemy.IsWithinPatrolRadius(enemy.transform.position) == true)
                 {
-                    Machine.ForceActivateState(enemy.Patrol.StateId);
+                    _readyToResumePatrol = true;
                 }
             }
+        }
+
+        protected override void OnExitState()
+        {
+            base.OnExitState();
+
+            _readyToResumePatrol = false;
         }
     }
 }

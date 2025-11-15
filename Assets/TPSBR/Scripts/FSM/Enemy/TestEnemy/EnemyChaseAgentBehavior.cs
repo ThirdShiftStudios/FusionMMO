@@ -8,6 +8,20 @@ namespace TPSBR.Enemies
         [Tooltip("Maximum chase distance before giving up.")]
         private float _maxChaseDistance = 20f;
 
+        private bool _shouldReturnToPatrolZone;
+        private bool _shouldAttackPlayer;
+
+        public bool ShouldReturnToPatrolZone => _shouldReturnToPatrolZone;
+        public bool ShouldAttackPlayer => _shouldAttackPlayer;
+
+        protected override void OnEnterState()
+        {
+            base.OnEnterState();
+
+            _shouldReturnToPatrolZone = false;
+            _shouldAttackPlayer = false;
+        }
+
         protected override void OnFixedUpdate()
         {
             base.OnFixedUpdate();
@@ -18,19 +32,13 @@ namespace TPSBR.Enemies
             if (Controller is not TestEnemy enemy)
                 return;
 
+            _shouldAttackPlayer = false;
+            _shouldReturnToPatrolZone = false;
+
             if (enemy.HasPlayerTarget == false)
             {
                 enemy.StopNavigation();
-
-                if (enemy.ReturnToPatrolZone != null)
-                {
-                    Machine.ForceActivateState(enemy.ReturnToPatrolZone.StateId);
-                }
-                else if (enemy.Patrol != null)
-                {
-                    Machine.ForceActivateState(enemy.Patrol.StateId);
-                }
-
+                _shouldReturnToPatrolZone = true;
                 return;
             }
 
@@ -40,7 +48,7 @@ namespace TPSBR.Enemies
             if (enemy.AttackPlayer != null && enemy.AttackPlayer.IsWithinAttackRange(enemy))
             {
                 enemy.StopNavigation();
-                Machine.ForceActivateState(enemy.AttackPlayer.StateId);
+                _shouldAttackPlayer = true;
                 return;
             }
 
@@ -56,19 +64,16 @@ namespace TPSBR.Enemies
             float distanceFromSpawn = enemy.GetHorizontalDistanceFromSpawn();
             if (distanceFromSpawn >= _maxChaseDistance)
             {
-                if (enemy.ReturnToPatrolZone != null)
-                {
-                    Machine.ForceActivateState(enemy.ReturnToPatrolZone.StateId);
-                }
-                else if (enemy.Patrol != null)
-                {
-                    Machine.ForceActivateState(enemy.Patrol.StateId);
-                }
+                enemy.StopNavigation();
+                _shouldReturnToPatrolZone = true;
             }
         }
 
         protected override void OnExitState()
         {
+            _shouldReturnToPatrolZone = false;
+            _shouldAttackPlayer = false;
+
             if (Controller is TestEnemy enemy)
             {
                 enemy.StopNavigation();

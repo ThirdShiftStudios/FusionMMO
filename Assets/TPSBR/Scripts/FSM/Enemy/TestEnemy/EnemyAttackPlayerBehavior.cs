@@ -27,14 +27,17 @@ namespace TPSBR.Enemies
 
         private readonly Collider[] _overlapResults = new Collider[8];
         private float _cooldownTimer;
+        private bool _shouldChase;
 
         public float AttackRange => _attackRange;
+        public bool ShouldChase => _shouldChase;
 
         protected override void OnEnterState()
         {
             base.OnEnterState();
 
             _cooldownTimer = 0f;
+            _shouldChase = false;
 
             if (Controller is TestEnemy enemy)
             {
@@ -52,15 +55,17 @@ namespace TPSBR.Enemies
             if (Controller is not TestEnemy enemy)
                 return;
 
+            _shouldChase = false;
+
             if (enemy.HasPlayerTarget == false)
             {
-                TransitionToChase(enemy);
+                _shouldChase = true;
                 return;
             }
 
             if (IsWithinAttackRange(enemy) == false)
             {
-                TransitionToChase(enemy);
+                _shouldChase = true;
                 return;
             }
 
@@ -76,6 +81,13 @@ namespace TPSBR.Enemies
             }
         }
 
+        protected override void OnExitState()
+        {
+            base.OnExitState();
+
+            _shouldChase = false;
+        }
+
         public bool IsWithinAttackRange(TestEnemy enemy)
         {
             if (enemy == null || enemy.HasPlayerTarget == false)
@@ -87,25 +99,6 @@ namespace TPSBR.Enemies
 
             float sqrAttackRange = _attackRange * _attackRange;
             return delta.sqrMagnitude <= sqrAttackRange;
-        }
-
-        private void TransitionToChase(TestEnemy enemy)
-        {
-            if (enemy == null)
-                return;
-
-            if (enemy.ChaseAgent != null)
-            {
-                Machine.ForceActivateState(enemy.ChaseAgent.StateId);
-            }
-            else if (enemy.Patrol != null)
-            {
-                Machine.ForceActivateState(enemy.Patrol.StateId);
-            }
-            else if (DefaultNext != null)
-            {
-                Machine.ForceActivateState(DefaultNext.StateId);
-            }
         }
 
         private bool PerformAttack(TestEnemy enemy)

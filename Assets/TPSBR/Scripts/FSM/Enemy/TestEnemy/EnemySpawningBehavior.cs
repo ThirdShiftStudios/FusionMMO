@@ -11,6 +11,8 @@ namespace TPSBR.Enemies
 
         private float _spawnTimer;
 
+        public bool IsSpawnComplete => _spawnTimer <= 0f;
+
         protected override void OnEnterState()
         {
             base.OnEnterState();
@@ -27,15 +29,6 @@ namespace TPSBR.Enemies
             if (_spawnTimer > 0f)
             {
                 _spawnTimer -= Runner.DeltaTime;
-            }
-
-            if (_spawnTimer <= 0f)
-            {
-                var next = ResolveDefaultNext<EnemyPatrolBehavior>();
-                if (next != null)
-                {
-                    Machine.ForceActivateState(next.StateId);
-                }
             }
         }
 
