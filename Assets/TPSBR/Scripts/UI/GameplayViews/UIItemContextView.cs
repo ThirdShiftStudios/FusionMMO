@@ -33,7 +33,7 @@ namespace TPSBR.UI
         [SerializeField]
         private RectTransform _lockedAbilityContainer;
         [SerializeField]
-        private UIListItem _abilitySlotPrefab;
+        private UIAbilityListItem _abilitySlotPrefab;
         [SerializeField]
         private TextMeshProUGUI _noLockedAbilitiesLabel;
         [SerializeField]
@@ -60,8 +60,8 @@ namespace TPSBR.UI
         private readonly List<UIListItem> _spawnedSlots = new List<UIListItem>();
         private readonly List<UpgradeStation.ItemData> _currentItems = new List<UpgradeStation.ItemData>();
         private readonly List<UpgradeStation.ItemData> _lastItems = new List<UpgradeStation.ItemData>();
-        private readonly List<UIListItem> _unlockedAbilitySlots = new List<UIListItem>();
-        private readonly List<UIListItem> _lockedAbilitySlots = new List<UIListItem>();
+        private readonly List<UIAbilityListItem> _unlockedAbilitySlots = new List<UIAbilityListItem>();
+        private readonly List<UIAbilityListItem> _lockedAbilitySlots = new List<UIAbilityListItem>();
         private readonly List<ArcaneConduit.AbilityOption> _allAbilityOptions = new List<ArcaneConduit.AbilityOption>();
         private readonly List<ArcaneConduit.AbilityOption> _lockedAbilityOptions = new List<ArcaneConduit.AbilityOption>();
         private readonly List<ArcaneConduit.AbilityOption> _unlockedAbilityOptions = new List<ArcaneConduit.AbilityOption>();
@@ -362,7 +362,7 @@ namespace TPSBR.UI
             UpdateUnlockButtonState();
         }
 
-        private void RefreshAbilitySection(List<ArcaneConduit.AbilityOption> options, List<UIListItem> slots, RectTransform container, bool allowSelection)
+        private void RefreshAbilitySection(List<ArcaneConduit.AbilityOption> options, List<UIAbilityListItem> slots, RectTransform container, bool allowSelection)
         {
             if (container == null || _abilitySlotPrefab == null)
             {
@@ -382,73 +382,76 @@ namespace TPSBR.UI
 
             for (int i = 0; i < options.Count; ++i)
             {
-                UIListItem slot = slots[i];
+                UIAbilityListItem abilitySlot = slots[i];
+                if (abilitySlot == null)
+                    continue;
+
+                UIListItem slot = abilitySlot.Slot;
                 ArcaneConduit.AbilityOption option = options[i];
 
-                slot.InitializeSlot(this, i);
-                slot.gameObject.SetActive(true);
-                slot.SetSelectionHighlight(false, _selectedSlotColor);
-
-                Sprite abilityIcon = option.Definition != null ? option.Definition.Icon : null;
-                slot.SetItem(abilityIcon, abilityIcon != null ? 1 : 0);
-
-                UIAbilityOptionSlot abilityContent = slot.Content as UIAbilityOptionSlot;
-
-                if (abilityContent == null)
-                {
-                    abilityContent = slot.GetComponent<UIAbilityOptionSlot>();
-                }
-
-                if (abilityContent == null)
-                {
-                    abilityContent = slot.GetComponentInChildren<UIAbilityOptionSlot>(true);
-                }
-
-                abilityContent?.SetAbility(option, allowSelection);
+                abilitySlot.gameObject.SetActive(true);
+                abilitySlot.InitializeSlot(this, i);
+                slot?.SetSelectionHighlight(false, _selectedSlotColor);
+                abilitySlot.SetAbility(option, allowSelection);
             }
 
             for (int i = options.Count; i < slots.Count; ++i)
             {
-                UIListItem slot = slots[i];
-                if (slot == null)
+                UIAbilityListItem abilitySlot = slots[i];
+                if (abilitySlot == null)
                     continue;
 
-                slot.gameObject.SetActive(false);
+                abilitySlot.gameObject.SetActive(false);
             }
 
             if (allowSelection == false)
             {
                 for (int i = 0; i < slots.Count; ++i)
                 {
-                    UIListItem slot = slots[i];
-                    if (slot == null)
+                    UIAbilityListItem abilitySlot = slots[i];
+                    if (abilitySlot == null)
                         continue;
 
-                    slot.SetSelectionHighlight(false, _selectedSlotColor);
+                    abilitySlot.Slot?.SetSelectionHighlight(false, _selectedSlotColor);
                 }
             }
         }
 
-        private void EnsureAbilitySlotCapacity(List<UIListItem> slots, RectTransform container, int required)
+        private void EnsureAbilitySlotCapacity(List<UIAbilityListItem> slots, RectTransform container, int required)
         {
             if (container == null || _abilitySlotPrefab == null)
                 return;
 
             while (slots.Count < required)
             {
-                UIListItem newSlot = Instantiate(_abilitySlotPrefab, container);
+                UIAbilityListItem newSlot = Instantiate(_abilitySlotPrefab, container);
                 newSlot.InitializeSlot(this, slots.Count);
                 newSlot.gameObject.SetActive(false);
                 slots.Add(newSlot);
             }
         }
 
+        private int IndexOfAbilitySlot(List<UIAbilityListItem> slots, UIListItem slot)
+        {
+            if (slot == null)
+                return -1;
+
+            for (int i = 0; i < slots.Count; ++i)
+            {
+                if (slots[i]?.Slot == slot)
+                    return i;
+            }
+
+            return -1;
+        }
+
         private void UpdateLockedAbilitySelectionVisuals()
         {
             for (int i = 0; i < _lockedAbilitySlots.Count; ++i)
             {
-                UIListItem slot = _lockedAbilitySlots[i];
-                if (slot == null || slot.gameObject.activeSelf == false)
+                UIAbilityListItem abilitySlot = _lockedAbilitySlots[i];
+                UIListItem slot = abilitySlot?.Slot;
+                if (abilitySlot == null || abilitySlot.gameObject.activeSelf == false || slot == null)
                     continue;
 
                 bool isSelected = i == _selectedLockedAbilityIndex;
@@ -717,7 +720,7 @@ namespace TPSBR.UI
             if (slot == null)
                 return false;
 
-            int unlockedSlotIndex = _unlockedAbilitySlots.IndexOf(slot);
+            int unlockedSlotIndex = IndexOfAbilitySlot(_unlockedAbilitySlots, slot);
             if (unlockedSlotIndex >= 0)
             {
                 if (unlockedSlotIndex < _unlockedAbilityOptions.Count)
@@ -921,7 +924,7 @@ namespace TPSBR.UI
                 return;
             }
 
-            int lockedSlotIndex = _lockedAbilitySlots.IndexOf(slot);
+            int lockedSlotIndex = IndexOfAbilitySlot(_lockedAbilitySlots, slot);
             if (lockedSlotIndex >= 0)
             {
                 if (_selectedLockedAbilityIndex == lockedSlotIndex)
@@ -938,7 +941,7 @@ namespace TPSBR.UI
                 return;
             }
 
-            int unlockedSlotIndex = _unlockedAbilitySlots.IndexOf(slot);
+            int unlockedSlotIndex = IndexOfAbilitySlot(_unlockedAbilitySlots, slot);
             if (unlockedSlotIndex >= 0)
             {
                 if (unlockedSlotIndex < _unlockedAbilityOptions.Count)
