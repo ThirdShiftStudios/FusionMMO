@@ -8,15 +8,11 @@ namespace TPSBR.Enemies
     public abstract class EnemyBehaviorBase : EnemyBehavior
     {
         [SerializeField]
-        private AnimationClip _enterStateAnimation;
-
-        [SerializeField]
-        private AnimationClip _enterRenderAnimation;
+        private AnimationClip _enterAnimation;
 
         private AnimancerComponent _animancer;
 
-        protected virtual AnimationClip EnterStateAnimation => _enterStateAnimation;
-        protected virtual AnimationClip EnterRenderAnimation => _enterRenderAnimation;
+        protected virtual AnimationClip EnterAnimation => _enterAnimation;
 
         protected AnimancerComponent Animancer
         {
@@ -35,7 +31,7 @@ namespace TPSBR.Enemies
         {
             base.OnEnterState();
 
-            PlayAnimation(EnterStateAnimation);
+            PlayAnimation(EnterAnimation);
         }
 
         protected override void OnEnterStateRender()
@@ -45,8 +41,7 @@ namespace TPSBR.Enemies
             if (HasStateAuthority == true)
                 return;
 
-            var clip = EnterRenderAnimation ?? EnterStateAnimation;
-            PlayAnimation(clip);
+            PlayAnimation(EnterAnimation);
         }
 
         protected AnimancerState PlayAnimation(ITransition transition)
