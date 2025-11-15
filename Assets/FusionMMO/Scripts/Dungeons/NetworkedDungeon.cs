@@ -40,6 +40,8 @@ namespace FusionMMO.Dungeons
     {
         private const int REQUEST_CAPACITY = 16;
 
+        private static readonly List<NetworkedDungeon> _instances = new List<NetworkedDungeon>();
+
         [Networked]
         private int _seed { get; set; }
 
@@ -79,6 +81,19 @@ namespace FusionMMO.Dungeons
             public Vector3 Position;
             public Quaternion Rotation;
             public Vector3 Scale;
+        }
+
+        private void OnEnable()
+        {
+            if (_instances.Contains(this) == false)
+            {
+                _instances.Add(this);
+            }
+        }
+
+        private void OnDisable()
+        {
+            _instances.Remove(this);
         }
 
         private void Awake()
@@ -173,6 +188,31 @@ namespace FusionMMO.Dungeons
             return true;
         }
 
+        public static NetworkedDungeon FindOwner(Transform target)
+        {
+            if (target == null)
+            {
+                return null;
+            }
+
+            for (int index = _instances.Count - 1; index >= 0; --index)
+            {
+                var instance = _instances[index];
+                if (instance == null)
+                {
+                    _instances.RemoveAt(index);
+                    continue;
+                }
+
+                if (instance.OwnsTransform(target))
+                {
+                    return instance;
+                }
+            }
+
+            return null;
+        }
+
         private bool CacheDungeon()
         {
             if (_dungeon != null)
@@ -206,6 +246,24 @@ namespace FusionMMO.Dungeons
 
             _astarPath = activeAstar;
             return true;
+        }
+
+        private bool OwnsTransform(Transform target)
+        {
+            if (target == null)
+            {
+                return false;
+            }
+
+            if (_networkObjectRoot != null)
+            {
+                if (target == _networkObjectRoot || target.IsChildOf(_networkObjectRoot))
+                {
+                    return true;
+                }
+            }
+
+            return target == transform || target.IsChildOf(transform);
         }
 
         private void UpdateAstarPath()

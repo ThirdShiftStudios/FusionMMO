@@ -105,6 +105,12 @@ namespace TPSBR
             }
 
             _networkedDungeon = GetComponentInParent<NetworkedDungeon>();
+            if (_networkedDungeon != null)
+            {
+                return true;
+            }
+
+            _networkedDungeon = NetworkedDungeon.FindOwner(transform);
             return _networkedDungeon != null;
         }
 
