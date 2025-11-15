@@ -128,7 +128,11 @@ namespace TPSBR.UI
         private void OnUpdateCharacterContent(int index, MonoBehaviour content)
         {
             var view = content as UICharacterListItemView;
-            var listItem = content != null ? content.GetComponentInParent<UICharacterListItem>() : null;
+            UICharacterListItem listItem = null;
+            if (_characterList != null)
+            {
+                listItem = _characterList.GetItem(index);
+            }
 
             var cloud = Global.PlayerCloudSaveService;
             var characters = cloud != null ? cloud.GetCharacters() : null;

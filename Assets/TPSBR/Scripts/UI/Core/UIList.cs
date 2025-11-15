@@ -83,6 +83,14 @@ namespace TPSBR.UI
 			}
 		}
 
+		public TListItem GetItem(int index)
+		{
+			if (index < 0 || index >= _items.Count)
+				return null;
+
+			return _items[index];
+		}
+
 		// MONOBEHAVIOR
 
 		protected void Awake()
