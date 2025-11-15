@@ -58,6 +58,8 @@ namespace TPSBR.UI
         {
             _assignedOption = option;
 
+            UIListItem slot = Slot;
+
             if (option.HasValue == false)
             {
                 UIExtensions.SetTextSafe(_abilityLabel, _emptyAbilityText);
@@ -68,6 +70,7 @@ namespace TPSBR.UI
                     _abilityIcon.enabled = false;
                 }
 
+                slot?.Clear();
                 return;
             }
 
@@ -82,11 +85,17 @@ namespace TPSBR.UI
 
             UIExtensions.SetTextSafe(_abilityLabel, abilityName);
 
+            Sprite icon = definition != null ? definition.Icon : null;
+
             if (_abilityIcon != null)
             {
-                Sprite icon = definition != null ? definition.Icon : null;
                 _abilityIcon.sprite = icon;
                 _abilityIcon.enabled = icon != null;
+            }
+
+            if (slot != null)
+            {
+                slot.SetItem(icon, icon != null ? 1 : 0);
             }
         }
 
