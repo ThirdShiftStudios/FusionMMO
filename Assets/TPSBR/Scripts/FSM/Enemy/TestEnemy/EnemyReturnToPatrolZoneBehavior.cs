@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace TPSBR.Enemies
 {
-    public class EnemyReturnToPatrolZoneBehavior : EnemyBehaviorBase
+    public class EnemyReturnToPatrolZoneBehavior : SingleClipBehavior
     {
         private bool _readyToResumePatrol;
 

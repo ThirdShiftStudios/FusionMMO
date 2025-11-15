@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace TPSBR.Enemies
 {
-    public class EnemySpawningBehavior : EnemyBehaviorBase
+    public class EnemySpawningBehavior : SingleClipBehavior
     {
         [SerializeField]
         [Tooltip("How long the spawn presentation should take before transitioning to idle.")]

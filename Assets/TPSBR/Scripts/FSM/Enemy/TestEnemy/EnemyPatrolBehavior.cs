@@ -2,7 +2,7 @@
 
 namespace TPSBR.Enemies
 {
-    public class EnemyPatrolBehavior : EnemyBehaviorBase
+    public class EnemyPatrolBehavior : SingleClipBehavior
     {
         [SerializeField]
         [Tooltip("Radius around the spawn point considered the patrol zone.")]

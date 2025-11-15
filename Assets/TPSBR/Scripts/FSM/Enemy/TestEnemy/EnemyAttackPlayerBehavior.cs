@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace TPSBR.Enemies
 {
-    public class EnemyAttackPlayerBehavior : EnemyBehaviorBase
+    public class EnemyAttackPlayerBehavior : SingleClipBehavior
     {
         [SerializeField]
         [Tooltip("Maximum distance from the target required to start the attack.")]
@@ -31,11 +31,26 @@ namespace TPSBR.Enemies
 
         public float AttackRange => _attackRange;
         public bool ShouldChase => _shouldChase;
+        bool _attackTriggered = false;
 
+        protected override void OnEnterStateRender()
+        {
+            base.OnEnterStateRender();
+            _attackTriggered = false;
+        }
+        protected override void OnRender()
+        {
+            base.OnRender();
+            if(_attackTriggered == false && AnimationNormalizedTime >= 0.5f)
+            {
+                Debug.Log($"Render: Attack Trigger : {Runner.Tick}");
+                _attackTriggered = true;
+            }
+        }
         protected override void OnEnterState()
         {
             base.OnEnterState();
-
+            _attackTriggered = false;
             _cooldownTimer = 0f;
             _shouldChase = false;
 
@@ -48,6 +63,12 @@ namespace TPSBR.Enemies
         protected override void OnFixedUpdate()
         {
             base.OnFixedUpdate();
+
+            if (_attackTriggered == false && AnimationNormalizedTime >= 0.5f)
+            {
+                Debug.Log($"FixedUpdate: Attack Trigger : {Runner.Tick}");
+                _attackTriggered = true;
+            }
 
             if (HasStateAuthority == false)
                 return;

@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace TPSBR.Enemies
 {
-    public class EnemyChaseAgentBehavior : EnemyBehaviorBase
+    public class EnemyChaseAgentBehavior : SingleClipBehavior
     {
         [SerializeField]
         [Tooltip("Maximum chase distance before giving up.")]

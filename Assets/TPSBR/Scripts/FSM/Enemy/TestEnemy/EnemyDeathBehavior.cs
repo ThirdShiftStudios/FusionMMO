@@ -1,6 +1,6 @@
 ﻿namespace TPSBR.Enemies
 {
-    public class EnemyDeathBehavior : EnemyBehaviorBase
+    public class EnemyDeathBehavior : SingleClipBehavior
     {
         protected override void OnEnterState()
         {

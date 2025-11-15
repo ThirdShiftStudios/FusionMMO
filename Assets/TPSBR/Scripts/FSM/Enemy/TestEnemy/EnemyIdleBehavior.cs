@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace TPSBR.Enemies
 {
-    public class EnemyIdleBehavior : EnemyBehaviorBase
+    public class EnemyIdleBehavior : SingleClipBehavior
     {
         [SerializeField]
         [Tooltip("Time the enemy waits before resuming patrol.")]
