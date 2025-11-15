@@ -1,4 +1,5 @@
 using Fusion;
+using Fusion.Addons.FSM;
 using UnityEngine;
 
 namespace TPSBR.Enemies
@@ -47,7 +48,7 @@ namespace TPSBR.Enemies
             if(_attackTriggered == false && AnimationNormalizedTime >= _attackTime)
             {
                 Debug.Log($"Render: Attack Trigger : {Runner.Tick}");
-                _attackTriggered = true;
+                //_attackTriggered = true;
             }
         }
         protected override void OnEnterState()
@@ -66,16 +67,10 @@ namespace TPSBR.Enemies
         {
             base.OnFixedUpdate();
 
-            if (_attackTriggered == false && AnimationNormalizedTime >= _attackTime)
-            {
-                Debug.Log($"FixedUpdate: Attack Trigger : {Runner.Tick}");
-                _attackTriggered = true;
-            }
-
             if (HasStateAuthority == false)
                 return;
 
-            if (Controller is not TestEnemy enemy)
+            if (Controller is not EnemyBehaviorController enemy)
                 return;
 
             _shouldChase = false;
@@ -94,7 +89,13 @@ namespace TPSBR.Enemies
 
             if (_attackTriggered == false && AnimationNormalizedTime >= _attackTime && PerformAttack(enemy) == true)
             {
+                Debug.Log($"FixedUpdate: Attack Trigger : {Runner.Tick}");
                 _attackTriggered = true;
+            }
+
+            if(IsWithinAttackRange(Controller) && AnimationNormalizedTime >= .95f)
+            {
+                Machine.ForceActivateState(this.StateId, true);
             }
         }
 
@@ -105,7 +106,7 @@ namespace TPSBR.Enemies
             _shouldChase = false;
         }
 
-        public bool IsWithinAttackRange(TestEnemy enemy)
+        public bool IsWithinAttackRange(EnemyBehaviorController enemy)
         {
             if (enemy == null || enemy.HasPlayerTarget == false)
                 return false;
@@ -119,7 +120,7 @@ namespace TPSBR.Enemies
             return delta.sqrMagnitude <= sqrAttackRange;
         }
 
-        private bool PerformAttack(TestEnemy enemy)
+        private bool PerformAttack(EnemyBehaviorController enemy)
         {
             int mask = _targetMask;
             if (mask == 0)
@@ -177,7 +178,7 @@ namespace TPSBR.Enemies
             return hitAny;
         }
 
-        private Vector3 GetAttackOriginPosition(TestEnemy enemy)
+        private Vector3 GetAttackOriginPosition(EnemyBehaviorController enemy)
         {
             if (_attackOrigin != null)
             {

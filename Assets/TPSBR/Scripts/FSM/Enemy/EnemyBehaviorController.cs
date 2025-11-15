@@ -103,5 +103,13 @@ namespace Fusion.Addons.FSM
                 _aiPath.Teleport(transform.position);
             }
         }
+
+        public Vector3 GetTargetPosition()
+        {
+            if (_target == null)
+                return transform.position;
+
+            return _target.position;
+        }
     }
 }

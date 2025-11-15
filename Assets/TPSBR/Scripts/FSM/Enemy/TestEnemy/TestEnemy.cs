@@ -82,6 +82,7 @@ namespace TPSBR.Enemies
             _chaseAgent.AddTransition(_returnToPatrolZone, () => _chaseAgent.ShouldReturnToPatrolZone, true);
 
             _attackPlayer.AddTransition(_chaseAgent, () => _attackPlayer.ShouldChase, true);
+            
 
             _returnToPatrolZone.AddTransition(_patrol, () => _returnToPatrolZone.ReadyToResumePatrol, true);
         }
@@ -131,13 +132,7 @@ namespace TPSBR.Enemies
             AIPath.FinalizeMovement(nextPosition, nextRotation);
         }
 
-        public Vector3 GetTargetPosition()
-        {
-            if (_target == null)
-                return transform.position;
-
-            return _target.position;
-        }
+       
 
         public void StopNavigation()
         {

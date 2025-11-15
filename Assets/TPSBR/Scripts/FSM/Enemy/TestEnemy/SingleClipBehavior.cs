@@ -73,6 +73,7 @@ namespace TPSBR.Enemies
                 return null;
 
             var state = animancer.Play(clip);
+            state.Time = 0; // play from beginning
             if (state != null)
             {
                 _currentAnimationState = state;
@@ -81,7 +82,7 @@ namespace TPSBR.Enemies
             return state;
         }
 
-        protected float AnimationNormalizedTime
+        public float AnimationNormalizedTime
         {
             get
             {
