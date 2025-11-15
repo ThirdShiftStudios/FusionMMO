@@ -186,7 +186,8 @@ namespace TPSBR
                 return;
             }
 
-            if (runner.TryGetNetworkedBehaviourId(_networkedDungeon, out var id) == false)
+            NetworkBehaviourId id = runner.TryGetNetworkedBehaviourId(_networkedDungeon);
+            if (id.IsValid == false)
             {
                 if (_networkedDungeonId.IsValid)
                 {
