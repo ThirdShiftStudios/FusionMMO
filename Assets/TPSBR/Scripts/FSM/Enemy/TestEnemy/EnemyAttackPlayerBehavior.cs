@@ -18,10 +18,6 @@ namespace TPSBR.Enemies
         private float _damagePerHit = 10f;
 
         [SerializeField]
-        [Tooltip("Delay between consecutive attacks in seconds.")]
-        private float _attackCooldown = 1f;
-
-        [SerializeField]
         [Tooltip("Optional override for the layer mask used when looking for targets.")]
         private LayerMask _targetMask;
 
@@ -29,7 +25,6 @@ namespace TPSBR.Enemies
         [Tooltip("Hit type reported when damaging the target.")]
         private EHitType _hitType = EHitType.Suicide;
 
-        private float _cooldownTimer;
         private bool _shouldChase;
 
         public float AttackRange => _attackRadius;
@@ -54,7 +49,6 @@ namespace TPSBR.Enemies
         {
             base.OnEnterState();
             _attackTriggered = false;
-            _cooldownTimer = 0f;
             _shouldChase = false;
 
             if (Controller is TestEnemy enemy)
@@ -93,15 +87,9 @@ namespace TPSBR.Enemies
                 return;
             }
 
-            if (_cooldownTimer > 0f)
+            if (_attackTriggered == false && AnimationNormalizedTime >= 0.5f && PerformAttack(enemy) == true)
             {
-                _cooldownTimer = Mathf.Max(0f, _cooldownTimer - Runner.DeltaTime);
-                return;
-            }
-
-            if (PerformAttack(enemy) == true && _attackCooldown > 0f)
-            {
-                _cooldownTimer = _attackCooldown;
+                _attackTriggered = true;
             }
         }
 
