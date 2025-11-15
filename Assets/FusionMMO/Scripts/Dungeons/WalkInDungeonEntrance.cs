@@ -23,6 +23,8 @@ namespace FusionMMO.Dungeons
 
         private NetworkedDungeon _spawnedDungeon;
 
+        public Transform ExitTransform => _exit;
+
         public override void FixedUpdateNetwork()
         {
             if (HasStateAuthority == false)
@@ -93,10 +95,21 @@ namespace FusionMMO.Dungeons
             if (_spawnedDungeon != null)
             {
                 _spawnedDungeon.RandomizeSeed();
+                _spawnedDungeon.SetEntrance(this);
                 return _spawnedDungeon.SetPendingTeleportPlayer(playerRef);
             }
 
             return false;
+        }
+
+        public void RequestLoadingScreen(PlayerRef targetPlayer)
+        {
+            if (HasStateAuthority == false)
+            {
+                return;
+            }
+
+            RPC_ShowLoadingScene(targetPlayer);
         }
 
         [Rpc(RpcSources.StateAuthority, RpcTargets.All)]

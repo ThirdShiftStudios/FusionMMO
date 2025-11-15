@@ -46,6 +46,9 @@ namespace FusionMMO.Dungeons
         [Networked]
         private NetworkBool _dungeonReadyToGenerate { get; set; }
 
+        [Networked]
+        private NetworkBehaviourRef<WalkInDungeonEntrance> _entrance { get; set; }
+
         [Networked, Capacity(REQUEST_CAPACITY)]
         private NetworkArray<TeleportRequest> _teleportRequests { get; }
 
@@ -138,6 +141,85 @@ namespace FusionMMO.Dungeons
             ClearPendingNetworkSpawns();
             DespawnSpawnedNetworkObjects();
             TryGenerateDungeon();
+        }
+
+        public NetworkBehaviourRef<WalkInDungeonEntrance> Entrance => _entrance;
+
+        public void SetEntrance(WalkInDungeonEntrance entrance)
+        {
+            if (HasStateAuthority == false)
+            {
+                return;
+            }
+
+            _entrance = entrance;
+        }
+
+        public bool TryGetEntrance(out WalkInDungeonEntrance entrance)
+        {
+            if (_entrance.TryResolve(out entrance) == false)
+            {
+                entrance = null;
+                return false;
+            }
+
+            return entrance != null;
+        }
+
+        public bool TryTeleportPlayerToEntranceExit(Agent agent, out string message)
+        {
+            message = string.Empty;
+
+            if (HasStateAuthority == false)
+            {
+                message = "No authority to teleport player.";
+                return false;
+            }
+
+            if (agent == null)
+            {
+                message = "No agent available.";
+                return false;
+            }
+
+            if (TryGetEntrance(out var entrance) == false)
+            {
+                message = "Dungeon entrance unavailable.";
+                return false;
+            }
+
+            var exitTransform = entrance.ExitTransform;
+            if (exitTransform == null)
+            {
+                message = "Dungeon entrance exit transform not configured.";
+                return false;
+            }
+
+            var character = agent.Character;
+            if (character == null)
+            {
+                message = "No character available.";
+                return false;
+            }
+
+            var controller = character.CharacterController;
+            if (controller != null)
+            {
+                controller.SetPosition(exitTransform.position);
+                controller.SetLookRotation(exitTransform.rotation);
+            }
+
+            agent.transform.SetPositionAndRotation(exitTransform.position, exitTransform.rotation);
+
+            if (agent.Object == null)
+            {
+                message = "Player object unavailable.";
+                return false;
+            }
+
+            ScheduleLoadingSceneHide(agent.Object.InputAuthority);
+
+            return true;
         }
 
         public bool SetPendingTeleportPlayer(PlayerRef playerRef)
@@ -532,6 +614,16 @@ namespace FusionMMO.Dungeons
             {
                 TryScheduleTeleport();
             }
+        }
+
+        public void RequestLoadingSceneHide(PlayerRef player)
+        {
+            if (HasStateAuthority == false)
+            {
+                return;
+            }
+
+            ScheduleLoadingSceneHide(player);
         }
 
         private void ScheduleLoadingSceneHide(PlayerRef player)
