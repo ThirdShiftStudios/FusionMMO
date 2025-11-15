@@ -378,6 +378,9 @@ namespace TPSBR.UI
                 slot.gameObject.SetActive(true);
                 slot.SetSelectionHighlight(false, _selectedSlotColor);
 
+                Sprite abilityIcon = option.Definition != null ? option.Definition.Icon : null;
+                slot.SetItem(abilityIcon, abilityIcon != null ? 1 : 0);
+
                 UIAbilityOptionSlot abilityContent = slot.Content as UIAbilityOptionSlot;
 
                 if (abilityContent == null)
