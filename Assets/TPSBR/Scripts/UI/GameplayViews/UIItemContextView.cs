@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
 using StaffWeapon = TPSBR.StaffWeapon;
 
@@ -52,6 +53,10 @@ namespace TPSBR.UI
         [SerializeField]
         private UIAbilityControlSlot[] _abilityControlSlots;
 
+        [Header("Drag Visualization")]
+        [SerializeField]
+        private RectTransform _dragLayer;
+
         private readonly List<UIListItem> _spawnedSlots = new List<UIListItem>();
         private readonly List<UpgradeStation.ItemData> _currentItems = new List<UpgradeStation.ItemData>();
         private readonly List<UpgradeStation.ItemData> _lastItems = new List<UpgradeStation.ItemData>();
@@ -67,6 +72,10 @@ namespace TPSBR.UI
         private int _selectedIndex = -1;
         private int _selectedLockedAbilityIndex = -1;
         private int[] _currentAssignedAbilityIndexes;
+        private UIListItem _dragSource;
+        private RectTransform _dragIcon;
+        private Image _dragImage;
+        private CanvasGroup _dragCanvasGroup;
 
         public event Action<UpgradeStation.ItemData> ItemSelected;
         protected event Action<int> AbilityUnlockRequested;
@@ -128,6 +137,8 @@ namespace TPSBR.UI
             ClearSlots();
             ClearAbilityOptions();
             SetEmptyState(string.Empty);
+            _dragSource = null;
+            SetDragVisible(false);
 
             TryRestoreSuppressedViews();
         }
@@ -782,17 +793,38 @@ namespace TPSBR.UI
 
         void IUIListItemOwner.BeginSlotDrag(UIListItem slot, PointerEventData eventData)
         {
-            // Drag & drop is not supported within the conduit view yet.
+            if (slot == null || eventData == null)
+                return;
+
+            if (TryResolveAbilityDragSource(slot, out int abilityIndex, out StaffWeapon.AbilityControlSlot? _) == false)
+                return;
+
+            Sprite dragSprite = ResolveAbilityIcon(slot, abilityIndex);
+            if (dragSprite == null)
+                return;
+
+            _dragSource = slot;
+            EnsureDragVisual();
+            UpdateDragIcon(dragSprite, GetSlotSize(slot));
+            SetDragVisible(true);
+            UpdateDragPosition(eventData);
         }
 
         void IUIListItemOwner.UpdateSlotDrag(PointerEventData eventData)
         {
-            // Drag & drop is not supported within the conduit view yet.
+            if (_dragSource == null || eventData == null)
+                return;
+
+            UpdateDragPosition(eventData);
         }
 
         void IUIListItemOwner.EndSlotDrag(UIListItem slot, PointerEventData eventData)
         {
-            // Drag & drop is not supported within the conduit view yet.
+            if (_dragSource != slot)
+                return;
+
+            _dragSource = null;
+            SetDragVisible(false);
         }
 
         void IUIListItemOwner.HandleSlotDrop(UIListItem source, UIListItem target)
@@ -921,6 +953,97 @@ namespace TPSBR.UI
             {
                 UpdateSelectedAbilityDetails(controlSlot.AssignedOption);
                 return;
+            }
+        }
+
+        private Sprite ResolveAbilityIcon(UIListItem slot, int abilityIndex)
+        {
+            if (slot != null && slot.IconSprite != null)
+                return slot.IconSprite;
+
+            ArcaneConduit.AbilityOption? option = FindAbilityOption(abilityIndex);
+            if (option.HasValue == true && option.Value.Definition != null)
+                return option.Value.Definition.Icon;
+
+            return null;
+        }
+
+        private Vector2 GetSlotSize(UIListItem slot)
+        {
+            if (slot != null && slot.SlotRectTransform != null)
+            {
+                Rect rect = slot.SlotRectTransform.rect;
+                if (rect.width > 0f && rect.height > 0f)
+                {
+                    return rect.size;
+                }
+            }
+
+            return new Vector2(64f, 64f);
+        }
+
+        private void EnsureDragVisual()
+        {
+            if (_dragIcon != null)
+                return;
+
+            RectTransform parent = _dragLayer != null ? _dragLayer : SceneUI?.Canvas.transform as RectTransform;
+            if (parent == null)
+                return;
+
+            GameObject dragObject = new GameObject("AbilityDrag", typeof(RectTransform), typeof(CanvasGroup), typeof(Image));
+            dragObject.transform.SetParent(parent, false);
+
+            _dragIcon = dragObject.GetComponent<RectTransform>();
+            _dragCanvasGroup = dragObject.GetComponent<CanvasGroup>();
+            _dragImage = dragObject.GetComponent<Image>();
+
+            _dragCanvasGroup.blocksRaycasts = false;
+            _dragCanvasGroup.interactable = false;
+            _dragImage.raycastTarget = false;
+            _dragImage.preserveAspect = true;
+
+            dragObject.SetActive(false);
+        }
+
+        private void UpdateDragIcon(Sprite sprite, Vector2 size)
+        {
+            if (_dragIcon == null || _dragImage == null)
+                return;
+
+            _dragImage.sprite = sprite;
+            _dragImage.color = sprite != null ? Color.white : Color.clear;
+            _dragIcon.sizeDelta = size;
+        }
+
+        private void UpdateDragPosition(PointerEventData eventData)
+        {
+            if (_dragIcon == null || eventData == null)
+                return;
+
+            RectTransform referenceRect = _dragIcon.parent as RectTransform;
+            if (referenceRect == null)
+                return;
+
+            Canvas canvas = SceneUI?.Canvas;
+            if (canvas == null)
+                return;
+
+            if (RectTransformUtility.ScreenPointToLocalPointInRectangle(referenceRect, eventData.position, canvas.worldCamera, out Vector2 localPoint) == true)
+            {
+                _dragIcon.localPosition = localPoint;
+            }
+        }
+
+        private void SetDragVisible(bool visible)
+        {
+            if (_dragIcon == null)
+                return;
+
+            _dragIcon.gameObject.SetActive(visible);
+            if (_dragCanvasGroup != null)
+            {
+                _dragCanvasGroup.alpha = visible ? 1f : 0f;
             }
         }
     }
