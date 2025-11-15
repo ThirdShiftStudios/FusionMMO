@@ -11,6 +11,11 @@ namespace TPSBR.Abilities
         private string _displayName;
 
         [SerializeField]
+        [Tooltip("Rich text description displayed to players when inspecting the ability.")]
+        [TextArea(3, 10)]
+        private string _abilityDescription;
+
+        [SerializeField]
         [Tooltip("Icon displayed in UI when referencing this ability.")]
         private Sprite _icon;
 
@@ -20,6 +25,7 @@ namespace TPSBR.Abilities
 
         public override string Name => _displayName;
         public override Sprite Icon => _icon;
+        public string AbilityDescription => _abilityDescription;
         public string StringCode => _stringCode;
 
         public bool IsStringCode(string value, StringComparison comparison = StringComparison.Ordinal)
