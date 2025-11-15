@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using TMPro;
 using UnityEngine;
 
@@ -16,6 +17,8 @@ namespace TPSBR.UI
         private TextMeshProUGUI _emptyStateLabel;
         [SerializeField]
         private UIBehaviour _emptyStateGroup;
+
+        private const string LevelFormat = "Level {0}";
 
         private string _selectedCharacterId;
 
@@ -125,8 +128,7 @@ namespace TPSBR.UI
         private void OnUpdateCharacterContent(int index, MonoBehaviour content)
         {
             var view = content as UICharacterListItemView;
-            if (view == null)
-                return;
+            var listItem = content as UICharacterListItem;
 
             var cloud = Global.PlayerCloudSaveService;
             var characters = cloud != null ? cloud.GetCharacters() : null;
@@ -137,7 +139,25 @@ namespace TPSBR.UI
                 character = characters[index];
             }
 
-            view.SetCharacter(character);
+            if (view != null)
+            {
+                view.SetCharacter(character);
+            }
+
+            if (listItem != null)
+            {
+                if (character == null)
+                {
+                    listItem.CharacterName = string.Empty;
+                    listItem.CharacterLevel = string.Empty;
+                }
+                else
+                {
+                    int level = character.CharacterLevel > 0 ? character.CharacterLevel : 1;
+                    listItem.CharacterName = character.CharacterName ?? string.Empty;
+                    listItem.CharacterLevel = string.Format(CultureInfo.InvariantCulture, LevelFormat, level);
+                }
+            }
         }
 
         private void OnCreateCharacterButton()
