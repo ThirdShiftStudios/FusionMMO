@@ -146,6 +146,24 @@ namespace TPSBR
                         return leveledUp;
                 }
 
+                public void ApplyProgress(int level, int experience)
+                {
+                        level = Mathf.Clamp(level, 1, MAX_LEVEL);
+                        experience = Mathf.Max(0, experience);
+
+                        bool changed = _level != level || _experience != experience;
+
+                        _level = level;
+                        _experience = experience;
+
+                        EnsureProgressInitialized();
+
+                        if (changed == true)
+                        {
+                                IsDirty = true;
+                        }
+                }
+
                 public bool TryLevelUp()
                 {
                         if (_level >= MAX_LEVEL)

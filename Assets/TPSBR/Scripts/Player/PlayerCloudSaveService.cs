@@ -59,6 +59,7 @@ namespace TPSBR
         public string CharacterDefinitionCode;
         public long CreatedAtUtc;
         public int CharacterLevel;
+        public int CharacterExperience;
     }
 
     [Serializable]
@@ -192,6 +193,8 @@ namespace TPSBR
             }
 
             ProcessDeferredComponents();
+
+            SyncActiveCharacterProgressFromPlayerData();
 
             if (_pendingSave == false)
                 return;
@@ -445,6 +448,8 @@ namespace TPSBR
             if (IsCharacterNameAvailable(trimmedName) == false)
                 return null;
 
+            SyncActiveCharacterProgressFromPlayerData();
+
             var record = new PlayerCharacterSaveData
             {
                 CharacterId = Guid.NewGuid().ToString("N"),
@@ -452,6 +457,7 @@ namespace TPSBR
                 CharacterDefinitionCode = definition.StringCode,
                 CreatedAtUtc = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
                 CharacterLevel = 1,
+                CharacterExperience = 0,
             };
 
             EnsureCharacterDefaults(record);
@@ -463,6 +469,7 @@ namespace TPSBR
 
             ApplyCharacterDataToCachedData();
             UpdatePlayerActiveCharacter();
+            ApplyActiveCharacterProgressToPlayerData();
             NotifyCharactersChanged();
             NotifyActiveCharacterChanged();
             MarkDirty();
@@ -481,6 +488,8 @@ namespace TPSBR
             if (GetCharacter(characterId) == null)
                 return false;
 
+            SyncActiveCharacterProgressFromPlayerData();
+
             _activeCharacterId = characterId;
             EnsureCharacterInventoryData(_activeCharacterId);
             EnsureCharacterProfessionData(_activeCharacterId);
@@ -488,6 +497,7 @@ namespace TPSBR
 
             ApplyCharacterDataToCachedData();
             UpdatePlayerActiveCharacter();
+            ApplyActiveCharacterProgressToPlayerData();
             NotifyActiveCharacterChanged();
             MarkDirty();
 
@@ -1352,10 +1362,55 @@ namespace TPSBR
             _pendingSave = true;
         }
 
+        private void SyncActiveCharacterProgressFromPlayerData()
+        {
+            if (_activeCharacterId.HasValue() == false)
+                return;
+
+            var playerData = Global.PlayerService?.PlayerData;
+            if (playerData == null)
+                return;
+
+            var character = GetCharacter(_activeCharacterId);
+            if (character == null)
+                return;
+
+            int playerLevel = Mathf.Max(1, playerData.Level);
+            int playerExperience = Mathf.Max(0, playerData.Experience);
+
+            if (character.CharacterLevel == playerLevel && character.CharacterExperience == playerExperience)
+                return;
+
+            character.CharacterLevel = playerLevel;
+            character.CharacterExperience = playerExperience;
+            MarkDirty();
+        }
+
+        private void ApplyActiveCharacterProgressToPlayerData()
+        {
+            if (_activeCharacterId.HasValue() == false)
+                return;
+
+            var playerData = Global.PlayerService?.PlayerData;
+            if (playerData == null)
+                return;
+
+            var character = GetCharacter(_activeCharacterId);
+            if (character == null)
+                return;
+
+            int level = Mathf.Max(1, character.CharacterLevel);
+            int experience = Mathf.Max(0, character.CharacterExperience);
+
+            playerData.ApplyProgress(level, experience);
+        }
+
         private async Task CaptureAndStoreSnapshotAsync(bool forceSave)
         {
             _ = forceSave;
             _pendingSave = false;
+
+            SyncActiveCharacterProgressFromPlayerData();
 
             if (_cloudSaveReady == false || _storageKey.HasValue() == false)
                 return;
@@ -1588,6 +1643,11 @@ namespace TPSBR
             {
                 character.CharacterLevel = 1;
             }
+
+            if (character.CharacterExperience < 0)
+            {
+                character.CharacterExperience = 0;
+            }
         }
 
         private void SyncCharactersFromCachedData(bool notify)
@@ -1787,6 +1847,7 @@ namespace TPSBR
             }
 
             UpdatePlayerActiveCharacter();
+            ApplyActiveCharacterProgressToPlayerData();
 
             if (notify == true)
             {
