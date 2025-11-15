@@ -74,6 +74,7 @@ namespace FusionMMO.Dungeons
         private readonly List<PendingNetworkSpawn> _pendingNetworkSpawns = new List<PendingNetworkSpawn>();
         private readonly List<NetworkObject> _spawnedNetworkObjects = new List<NetworkObject>();
         private readonly List<Transform> _dungeonTransformBuffer = new List<Transform>();
+        private readonly List<DungeonEnemySpawnPoint> _enemySpawnPointBuffer = new List<DungeonEnemySpawnPoint>();
 
         private struct PendingNetworkSpawn
         {
@@ -461,6 +462,7 @@ namespace FusionMMO.Dungeons
             UpdateAstarPath();
 
             HideAndQueueNetworkedObjects();
+            QueueEnemySpawns();
 
             _lastSeedGenerated = _seed;
             _dungeonGenerated = true;
@@ -908,6 +910,58 @@ namespace FusionMMO.Dungeons
             }
 
             _dungeonTransformBuffer.Clear();
+        }
+
+        private void QueueEnemySpawns()
+        {
+            if (HasStateAuthority == false || Runner == null)
+            {
+                return;
+            }
+
+            _enemySpawnPointBuffer.Clear();
+            GetComponentsInChildren(true, _enemySpawnPointBuffer);
+
+            for (int i = 0; i < _enemySpawnPointBuffer.Count; ++i)
+            {
+                var spawnPoint = _enemySpawnPointBuffer[i];
+                if (spawnPoint == null)
+                {
+                    continue;
+                }
+
+                var spawnDataArray = spawnPoint.SpawnData;
+                if (spawnDataArray == null || spawnDataArray.Length == 0)
+                {
+                    continue;
+                }
+
+                for (int dataIndex = 0; dataIndex < spawnDataArray.Length; ++dataIndex)
+                {
+                    var spawnData = spawnDataArray[dataIndex];
+                    if (spawnData._enemy == null || spawnData._spawnCount <= 0)
+                    {
+                        continue;
+                    }
+
+                    var networkObject = spawnData._enemy.GetComponent<NetworkObject>();
+                    if (networkObject == null)
+                    {
+                        Debug.LogWarning($"{nameof(DungeonEnemySpawnPoint)} requires enemies with a {nameof(NetworkObject)} component.", spawnPoint);
+                        continue;
+                    }
+
+                    for (int spawnIndex = 0; spawnIndex < spawnData._spawnCount; ++spawnIndex)
+                    {
+                        PendingNetworkSpawn pendingSpawn = default;
+                        pendingSpawn.Prefab = networkObject;
+                        pendingSpawn.Position = spawnPoint.GetRandomSpawnPosition();
+                        pendingSpawn.Rotation = spawnPoint.transform.rotation;
+                        pendingSpawn.Scale = spawnData._enemy.transform.localScale;
+                        _pendingNetworkSpawns.Add(pendingSpawn);
+                    }
+                }
+            }
         }
     }
 }
