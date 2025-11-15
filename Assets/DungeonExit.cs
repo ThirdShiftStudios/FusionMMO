@@ -15,6 +15,9 @@ namespace TPSBR
         [Header("References")]
         [SerializeField] private NetworkedDungeon _networkedDungeon;
 
+        [Networked(OnChanged = nameof(OnNetworkedDungeonChanged))]
+        private NetworkBehaviourRef<NetworkedDungeon> _networkedDungeonRef { get; set; }
+
         string IInteraction.Name => _interactionName;
         string IInteraction.Description => _interactionDescription;
         Vector3 IInteraction.HUDPosition => _hudPivot != null ? _hudPivot.position : transform.position;
@@ -101,17 +104,29 @@ namespace TPSBR
         {
             if (_networkedDungeon != null)
             {
+                TrySyncNetworkedDungeonRef();
+                return true;
+            }
+
+            if (_networkedDungeonRef.TryGet(out var cachedDungeon) && cachedDungeon != null)
+            {
+                _networkedDungeon = cachedDungeon;
                 return true;
             }
 
             _networkedDungeon = GetComponentInParent<NetworkedDungeon>();
+            if (_networkedDungeon == null)
+            {
+                _networkedDungeon = NetworkedDungeon.FindOwner(transform);
+            }
+
             if (_networkedDungeon != null)
             {
+                TrySyncNetworkedDungeonRef();
                 return true;
             }
 
-            _networkedDungeon = NetworkedDungeon.FindOwner(transform);
-            return _networkedDungeon != null;
+            return false;
         }
 
         private void UpdateInteractionCollider()
@@ -126,6 +141,40 @@ namespace TPSBR
             {
                 _interactionCollider.enabled = shouldEnable;
             }
+        }
+
+        private void TrySyncNetworkedDungeonRef()
+        {
+            if (_networkedDungeon == null || Object == null || Object.HasStateAuthority == false)
+            {
+                return;
+            }
+
+            if (_networkedDungeonRef.TryGet(out var existing) && existing == _networkedDungeon)
+            {
+                return;
+            }
+
+            _networkedDungeonRef = _networkedDungeon;
+        }
+
+        private void HandleNetworkedDungeonChanged()
+        {
+            if (_networkedDungeonRef.TryGet(out var dungeon) && dungeon != null)
+            {
+                _networkedDungeon = dungeon;
+            }
+            else
+            {
+                _networkedDungeon = null;
+            }
+
+            UpdateInteractionCollider();
+        }
+
+        private static void OnNetworkedDungeonChanged(Changed<DungeonExit> changed)
+        {
+            changed.Behaviour.HandleNetworkedDungeonChanged();
         }
     }
 }
