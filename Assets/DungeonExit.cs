@@ -15,8 +15,9 @@ namespace TPSBR
         [Header("References")]
         [SerializeField] private NetworkedDungeon _networkedDungeon;
 
-        [Networked(OnChanged = nameof(OnNetworkedDungeonChanged))]
-        private NetworkBehaviourRef<NetworkedDungeon> _networkedDungeonRef { get; set; }
+        [Networked]
+        [OnChangedRender(nameof(OnNetworkedDungeonIdChanged))]
+        private NetworkBehaviourId _networkedDungeonId { get; set; }
 
         string IInteraction.Name => _interactionName;
         string IInteraction.Description => _interactionDescription;
@@ -104,25 +105,24 @@ namespace TPSBR
         {
             if (_networkedDungeon != null)
             {
-                TrySyncNetworkedDungeonRef();
-                return true;
-            }
-
-            if (_networkedDungeonRef.TryGet(out var cachedDungeon) && cachedDungeon != null)
-            {
-                _networkedDungeon = cachedDungeon;
+                TrySyncNetworkedDungeonId();
                 return true;
             }
 
             _networkedDungeon = GetComponentInParent<NetworkedDungeon>();
             if (_networkedDungeon == null)
             {
+                if (TryResolveNetworkedDungeonId())
+                {
+                    return true;
+                }
+
                 _networkedDungeon = NetworkedDungeon.FindOwner(transform);
             }
 
             if (_networkedDungeon != null)
             {
-                TrySyncNetworkedDungeonRef();
+                TrySyncNetworkedDungeonId();
                 return true;
             }
 
@@ -143,38 +143,73 @@ namespace TPSBR
             }
         }
 
-        private void TrySyncNetworkedDungeonRef()
+        private bool TryResolveNetworkedDungeonId()
         {
-            if (_networkedDungeon == null || Object == null || Object.HasStateAuthority == false)
+            if (Runner == null || _networkedDungeonId.IsValid == false)
             {
-                return;
+                return false;
             }
 
-            if (_networkedDungeonRef.TryGet(out var existing) && existing == _networkedDungeon)
+            if (Runner.TryFindBehaviour(_networkedDungeonId, out NetworkedDungeon dungeon) && dungeon != null)
             {
-                return;
+                if (_networkedDungeon != dungeon)
+                {
+                    _networkedDungeon = dungeon;
+                }
+
+                return true;
             }
 
-            _networkedDungeonRef = _networkedDungeon;
+            return false;
         }
 
-        private void HandleNetworkedDungeonChanged()
+        private void TrySyncNetworkedDungeonId()
         {
-            if (_networkedDungeonRef.TryGet(out var dungeon) && dungeon != null)
+            if (Object == null || Object.HasStateAuthority == false)
             {
-                _networkedDungeon = dungeon;
+                return;
             }
-            else
+
+            var runner = Runner;
+            if (runner == null)
+            {
+                return;
+            }
+
+            if (_networkedDungeon == null)
+            {
+                if (_networkedDungeonId.IsValid)
+                {
+                    _networkedDungeonId = default;
+                }
+
+                return;
+            }
+
+            if (runner.TryGetNetworkedBehaviourId(_networkedDungeon, out var id) == false)
+            {
+                if (_networkedDungeonId.IsValid)
+                {
+                    _networkedDungeonId = default;
+                }
+
+                return;
+            }
+
+            if (_networkedDungeonId != id)
+            {
+                _networkedDungeonId = id;
+            }
+        }
+
+        private void OnNetworkedDungeonIdChanged()
+        {
+            if (TryResolveNetworkedDungeonId() == false)
             {
                 _networkedDungeon = null;
             }
 
             UpdateInteractionCollider();
-        }
-
-        private static void OnNetworkedDungeonChanged(Changed<DungeonExit> changed)
-        {
-            changed.Behaviour.HandleNetworkedDungeonChanged();
         }
     }
 }
