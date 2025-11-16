@@ -111,6 +111,12 @@ namespace TPSBR.UI
                         SetItem(null, 0);
                 }
 
+                internal void SetItemMetadata(Sprite icon, int quantity)
+                {
+                        _iconSprite = icon;
+                        _quantity = quantity;
+                }
+
                 // EVENT HANDLERS
 
                 public void OnBeginDrag(PointerEventData eventData)

@@ -17,6 +17,8 @@ namespace TPSBR.UI
         [SerializeField]
         private TextMeshProUGUI _statusLabel;
 
+        private UIInventorySlotListItem _inventorySlot;
+
         public UIListItem Slot
         {
             get
@@ -49,6 +51,13 @@ namespace TPSBR.UI
                 _iconImage.sprite = abilityIcon;
                 _iconImage.enabled = abilityIcon != null;
             }
+
+            if (_inventorySlot == null)
+            {
+                _inventorySlot = Slot;
+            }
+
+            _inventorySlot?.SetItemMetadata(abilityIcon, abilityIcon != null ? 1 : 0);
 
             if (_statusLabel != null)
             {
