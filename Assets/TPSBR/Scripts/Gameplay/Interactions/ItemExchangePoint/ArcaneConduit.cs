@@ -332,7 +332,7 @@ namespace TPSBR
 
             IReadOnlyList<AbilityDefinition> availableAbilities = definition.AvailableAbilities;
 
-            if (StaffWeapon.TryGetAbilityConfiguration(configurationHash, out StaffWeapon.AbilityConfiguration abilityConfiguration) == false)
+            if (StaffWeapon.TryGetAbilityConfiguration(definition, configurationHash, out StaffWeapon.AbilityConfiguration abilityConfiguration) == false)
             {
                 abilityConfiguration = new StaffWeapon.AbilityConfiguration(Array.Empty<int>(), null);
             }
@@ -451,7 +451,7 @@ namespace TPSBR
                 return;
             }
 
-            if (StaffWeapon.TryGetAbilityConfiguration(configurationHash, out StaffWeapon.AbilityConfiguration abilityConfiguration) == false)
+            if (StaffWeapon.TryGetAbilityConfiguration(definition, configurationHash, out StaffWeapon.AbilityConfiguration abilityConfiguration) == false)
             {
                 abilityConfiguration = new StaffWeapon.AbilityConfiguration(Array.Empty<int>(), null);
             }

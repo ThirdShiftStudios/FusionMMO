@@ -1421,6 +1421,41 @@ namespace TPSBR
             return TryGetAbilityIndexes(configurationHash.ToString(), out abilityIndexes);
         }
 
+        public static bool TryGetAbilityConfiguration(WeaponDefinition definition, string configurationHash, out AbilityConfiguration configuration)
+        {
+            if (TryGetAbilityConfiguration(configurationHash, out configuration) == false)
+            {
+                return false;
+            }
+
+            if (definition == null)
+            {
+                return true;
+            }
+
+            if (configuration.UnlockedIndexes != null && configuration.UnlockedIndexes.Count > 0)
+            {
+                return true;
+            }
+
+            int[] defaultIndexes = CreateDefaultUnlockedAbilityIndexes(definition);
+            if (defaultIndexes == null || defaultIndexes.Length == 0)
+            {
+                return true;
+            }
+
+            int[] slotAssignments = CloneSlotAssignments(configuration.SlotAssignments);
+            SanitizeAssignmentsAgainstUnlocked(slotAssignments, defaultIndexes);
+
+            configuration = new AbilityConfiguration(defaultIndexes, slotAssignments);
+            return true;
+        }
+
+        public static bool TryGetAbilityConfiguration(WeaponDefinition definition, NetworkString<_32> configurationHash, out AbilityConfiguration configuration)
+        {
+            return TryGetAbilityConfiguration(definition, configurationHash.ToString(), out configuration);
+        }
+
         public static bool TryGetAbilityConfiguration(string configurationHash, out AbilityConfiguration configuration)
         {
             configuration = new AbilityConfiguration(Array.Empty<int>(), null);
@@ -1619,6 +1654,47 @@ namespace TPSBR
                     assignments[i] = -1;
                 }
             }
+        }
+
+        private static int[] CreateDefaultUnlockedAbilityIndexes(WeaponDefinition definition)
+        {
+            if (definition == null)
+            {
+                return Array.Empty<int>();
+            }
+
+            IReadOnlyList<AbilityDefinition> availableAbilities = definition.AvailableAbilities;
+            if (availableAbilities == null || availableAbilities.Count == 0)
+            {
+                return Array.Empty<int>();
+            }
+
+            for (int i = 0; i < availableAbilities.Count; ++i)
+            {
+                AbilityDefinition ability = availableAbilities[i];
+                if (ability == null)
+                {
+                    continue;
+                }
+
+                if (ability is StaffAbilityDefinition)
+                {
+                    return new[] { i };
+                }
+            }
+
+            return Array.Empty<int>();
+        }
+
+        private static int[] CloneSlotAssignments(IReadOnlyList<int> source)
+        {
+            int[] copy = new int[AbilityControlSlotCount];
+            for (int i = 0; i < copy.Length; ++i)
+            {
+                copy[i] = source != null && i < source.Count ? source[i] : -1;
+            }
+
+            return copy;
         }
 
         private static int[] SanitizeSlotAssignments(IReadOnlyList<int> requestedAssignments, IReadOnlyList<int> unlockedIndexes)
