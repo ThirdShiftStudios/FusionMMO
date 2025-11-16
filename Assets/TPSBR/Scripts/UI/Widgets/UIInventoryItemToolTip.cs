@@ -14,6 +14,7 @@ namespace TPSBR.UI
         [SerializeField] private Image _iconImage;
         [SerializeField] private float _screenPadding = 16f;
         [SerializeField] private Vector2 _cursorOffset = new Vector2(24f, 24f);
+        [SerializeField] private bool _followCursor = true;
 
         private RectTransform _rectTransform;
         private bool _isVisible;
@@ -98,8 +99,17 @@ namespace TPSBR.UI
             ShowInternal(title, description, icon, screenPosition);
         }
 
+        public bool FollowCursor
+        {
+            get => _followCursor;
+            set => _followCursor = value;
+        }
+
         public void UpdatePosition(Vector2 screenPosition)
         {
+            if (_followCursor == false)
+                return;
+
             if (_rectTransform == null || SceneUI?.Canvas == null)
                 return;
 
@@ -242,7 +252,10 @@ namespace TPSBR.UI
                 LayoutRebuilder.ForceRebuildLayoutImmediate(_rectTransform);
             }
 
-            UpdatePosition(screenPosition);
+            if (_followCursor == true)
+            {
+                UpdatePosition(screenPosition);
+            }
             SetVisible(true);
         }
 
