@@ -156,6 +156,10 @@ namespace TPSBR.UI
 
             var listItem = content as UICharacterListItem ?? content.GetComponent<UICharacterListItem>();
             if (listItem == null)
+            {
+                listItem = content.GetComponentInParent<UICharacterListItem>(true);
+            }
+            if (listItem == null)
                 return false;
 
             if (character == null)
