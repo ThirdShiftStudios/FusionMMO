@@ -13,7 +13,7 @@ namespace TPSBR
         [SerializeField]
         private int _abilityCost = 50;
 
-        private UIArcaneConduitView _arcaneView;
+        private UIItemContextView _arcaneView;
         private Agent _activeAgent;
         private Inventory _trackedInventory;
         private readonly List<AbilityOption> _abilityOptions = new List<AbilityOption>();
@@ -38,11 +38,20 @@ namespace TPSBR
 
         protected override UIView _uiView => GetArcaneView() ?? base._uiView;
 
-        private UIArcaneConduitView GetArcaneView()
+        private UIItemContextView GetArcaneView()
         {
             if (_arcaneView == null && Context != null && Context.UI != null)
             {
-                _arcaneView = Context.UI.Get<UIArcaneConduitView>();
+                UIArcaneConduitView arcaneView = Context.UI.Get<UIArcaneConduitView>();
+
+                if (arcaneView != null)
+                {
+                    _arcaneView = arcaneView;
+                }
+                else
+                {
+                    _arcaneView = Context.UI.Get<UIItemContextView>();
+                }
             }
 
             return _arcaneView;
@@ -64,20 +73,20 @@ namespace TPSBR
         {
             base.SubscribeToViewEvents(view);
 
-            if (view is UIArcaneConduitView arcaneView)
+            if (view is UIItemContextView arcaneView)
             {
                 arcaneView.ItemSelected += HandleItemContextSelection;
-                arcaneView.AbilityPurchaseRequested += HandleAbilityPurchaseRequested;
+                arcaneView.AbilityUnlockRequested += HandleAbilityPurchaseRequested;
                 arcaneView.AbilityAssignmentRequested += HandleAbilityAssignmentRequested;
             }
         }
 
         protected override void UnsubscribeFromViewEvents(UIView view)
         {
-            if (view is UIArcaneConduitView arcaneView)
+            if (view is UIItemContextView arcaneView)
             {
                 arcaneView.ItemSelected -= HandleItemContextSelection;
-                arcaneView.AbilityPurchaseRequested -= HandleAbilityPurchaseRequested;
+                arcaneView.AbilityUnlockRequested -= HandleAbilityPurchaseRequested;
                 arcaneView.AbilityAssignmentRequested -= HandleAbilityAssignmentRequested;
             }
 

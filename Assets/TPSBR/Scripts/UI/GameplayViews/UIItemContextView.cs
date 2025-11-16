@@ -78,8 +78,8 @@ namespace TPSBR.UI
         private CanvasGroup _dragCanvasGroup;
 
         public event Action<UpgradeStation.ItemData> ItemSelected;
-        protected event Action<int> AbilityUnlockRequested;
-        protected event Action<StaffWeapon.AbilityControlSlot, int> AbilityAssignmentRequested;
+        public event Action<int> AbilityUnlockRequested;
+        public event Action<StaffWeapon.AbilityControlSlot, int> AbilityAssignmentRequested;
 
         public void Configure(Agent agent, Func<List<UpgradeStation.ItemData>, UpgradeStation.ItemStatus> itemProvider)
         {
