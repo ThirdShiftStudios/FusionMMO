@@ -7,9 +7,9 @@ namespace TPSBR.Abilities
     [Serializable]
     public struct IceShardAbilityUpgradeLevel
     {
-        public float NumberOfShardsDelta;
-        public float DamageDelta;
-        public float CastingTimeDelta;
+        public float NumberOfShards;
+        public float Damage;
+        public float CastingTime;
     }
 
     [Serializable]

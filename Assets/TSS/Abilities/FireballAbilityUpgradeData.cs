@@ -7,9 +7,9 @@ namespace TPSBR.Abilities
     [Serializable]
     public struct FireballAbilityUpgradeLevel
     {
-        public float RadiusDelta;
-        public float DamageDelta;
-        public float CastingTimeDelta;
+        public float Radius;
+        public float Damage;
+        public float CastingTime;
     }
 
     [Serializable]

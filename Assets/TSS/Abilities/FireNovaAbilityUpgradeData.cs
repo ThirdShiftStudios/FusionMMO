@@ -7,11 +7,11 @@ namespace TPSBR.Abilities
     [Serializable]
     public struct FireNovaAbilityUpgradeLevel
     {
-        public float RadiusDelta;
-        public float DamageDelta;
-        public float BurnDurationDelta;
-        public float BurnDamageDelta;
-        public float CastingTimeDelta;
+        public float Radius;
+        public float Damage;
+        public float BurnDuration;
+        public float BurnDamage;
+        public float CastingTime;
     }
 
     [Serializable]
