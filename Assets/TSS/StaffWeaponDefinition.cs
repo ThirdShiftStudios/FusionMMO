@@ -8,6 +8,12 @@ namespace TPSBR
     {
         private const string DefaultFireballAbilityResource = "Abilities/FireballAbilityDefinition";
 
+        protected override System.Collections.Generic.IReadOnlyList<AbilityDefinition> GetAvailableAbilitiesInternal()
+        {
+            EnsureDefaultAbilities();
+            return base.GetAvailableAbilitiesInternal();
+        }
+
         private void OnEnable()
         {
             EnsureDefaultAbilities();
@@ -23,7 +29,7 @@ namespace TPSBR
 
         private void EnsureDefaultAbilities()
         {
-            var abilities = AvailableAbilities;
+            var abilities = GetRawAvailableAbilities();
 
             if (abilities != null)
             {

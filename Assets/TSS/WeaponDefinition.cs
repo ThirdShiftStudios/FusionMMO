@@ -15,10 +15,20 @@ namespace Unity.Template.CompetitiveActionMultiplayer
         private AbilityDefinition[] _availableAbilities = Array.Empty<AbilityDefinition>();
 
         public Weapon WeaponPrefab => _weaponPrefab;
-        public IReadOnlyList<AbilityDefinition> AvailableAbilities => _availableAbilities ?? Array.Empty<AbilityDefinition>();
+        public IReadOnlyList<AbilityDefinition> AvailableAbilities => GetAvailableAbilitiesInternal();
         protected ushort ItemDefinitionMaxStack => base.MaxStack;
         public override ushort MaxStack => 1;
         public override ESlotCategory SlotCategory => ESlotCategory.Weapon;
+
+        protected virtual IReadOnlyList<AbilityDefinition> GetAvailableAbilitiesInternal()
+        {
+            return GetRawAvailableAbilities();
+        }
+
+        protected IReadOnlyList<AbilityDefinition> GetRawAvailableAbilities()
+        {
+            return _availableAbilities ?? Array.Empty<AbilityDefinition>();
+        }
 
         public bool HasAbility(AbilityDefinition ability)
         {
