@@ -72,6 +72,7 @@ namespace TPSBR
         private int[] _configuredAbilityIndexes = Array.Empty<int>();
         private readonly int[] _assignedAbilityIndexes = CreateDefaultSlotAssignments();
         private readonly StaffAbilityDefinition[] _assignedAbilities = new StaffAbilityDefinition[AbilityControlSlotCount];
+        private readonly Dictionary<StaffAbilityDefinition, int> _abilityLevels = new Dictionary<StaffAbilityDefinition, int>();
 
         public float BaseDamage => _baseDamage;
         public float HealthRegen => _healthRegen;
@@ -82,6 +83,21 @@ namespace TPSBR
         public IReadOnlyList<int> AssignedAbilityIndexes => _assignedAbilityIndexes;
 
         public static int GetAbilityControlSlotCount() => AbilityControlSlotCount;
+
+        public int GetAbilityLevel(StaffAbilityDefinition ability)
+        {
+            if (ability == null)
+            {
+                return 1;
+            }
+
+            if (_abilityLevels.TryGetValue(ability, out int level) == true && level > 0)
+            {
+                return level;
+            }
+
+            return 1;
+        }
 
         public StaffAbilityDefinition GetAssignedAbility(AbilityControlSlot slot)
         {
@@ -1131,6 +1147,7 @@ namespace TPSBR
                 {
                     _configuredAbilities.Add(staffAbility);
                     resolvedIndexes.Add(index);
+                    RegisterAbilityLevel(staffAbility, index);
                 }
             }
 
@@ -1145,6 +1162,21 @@ namespace TPSBR
             _configuredAbilities.Clear();
             _configuredAbilityIndexes = Array.Empty<int>();
             ClearAssignedAbilities();
+            _abilityLevels.Clear();
+        }
+
+        private void RegisterAbilityLevel(StaffAbilityDefinition ability, int abilityIndex)
+        {
+            _ = abilityIndex;
+
+            if (ability == null)
+            {
+                return;
+            }
+
+            int maxLevel = ability.UpgradeData != null ? Mathf.Max(1, ability.UpgradeData.LevelCount) : 1;
+            int configuredLevel = 1;
+            _abilityLevels[ability] = Mathf.Clamp(configuredLevel, 1, maxLevel);
         }
 
         private void ApplyAbilityAssignments(IReadOnlyList<int> slotAssignments, IReadOnlyList<AbilityDefinition> availableAbilities, IReadOnlyList<int> unlockedIndexes)

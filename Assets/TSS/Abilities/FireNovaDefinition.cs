@@ -1,4 +1,4 @@
-﻿using Fusion;
+using Fusion;
 using UnityEngine;
 
 namespace TPSBR.Abilities
@@ -9,7 +9,7 @@ namespace TPSBR.Abilities
         public const string AbilityCode = "FIRENOVA";
 
         private const string LogPrefix = "[<color=#FFA500>FireNovaAbility</color>]";
-        
+
         [Header("Projectile")]
         [SerializeField]
         private NetworkPrefabRef _fireNovaPrefab;
@@ -79,6 +79,8 @@ namespace TPSBR.Abilities
                 return;
             }
 
+            FireNovaAbilityUpgradeLevel levelData = ResolveUpgradeLevel(staffWeapon);
+
             runner.Spawn(_fireNovaPrefab, firePosition, default, owner.InputAuthority, (spawnRunner, spawnedObject) =>
             {
                 FireNova projectile = spawnedObject.GetComponent<FireNova>();
@@ -88,8 +90,25 @@ namespace TPSBR.Abilities
                     return;
                 }
 
+                projectile.ConfigureLevel(levelData.Radius, levelData.Damage, levelData.BurnDuration, levelData.BurnDamage);
                 projectile.StartNova(owner, firePosition, hitMask, staffWeapon.HitType);
             });
+        }
+
+        private FireNovaAbilityUpgradeLevel ResolveUpgradeLevel(StaffWeapon staffWeapon)
+        {
+            FireNovaAbilityUpgradeData upgradeData = FireNovaUpgradeData;
+
+            if (upgradeData == null || upgradeData.LevelCount == 0)
+            {
+                return new FireNovaAbilityUpgradeLevel
+                {
+                    CastingTime = BaseCastTime
+                };
+            }
+
+            int abilityLevel = staffWeapon != null ? staffWeapon.GetAbilityLevel(this) : 1;
+            return upgradeData.GetLevelData(abilityLevel);
         }
     }
 }

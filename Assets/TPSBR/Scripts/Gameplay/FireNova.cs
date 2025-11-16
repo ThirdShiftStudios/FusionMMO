@@ -25,6 +25,8 @@ namespace TPSBR
         private LayerMask _hitMask;
         private EHitType _hitType;
         private float _visualTimer;
+        private float _burnDuration;
+        private float _burnDamage;
 
         public override void Spawned()
         {
@@ -77,7 +79,7 @@ namespace TPSBR
             if (_scalarRoot != null)
             {
                 _initialScalarScale = _scalarRoot.localScale;
-                _initialScalarScale = new Vector3(_radius * 2, 1, _radius * 2);
+                UpdateInitialScaleFromRadius();
             }
         }
 
@@ -102,6 +104,8 @@ namespace TPSBR
             _hitType = default;
             _lifeTimer = default;
             _visualTimer = 0f;
+            _burnDuration = 0f;
+            _burnDamage = 0f;
 
             if (_scalarRoot != null)
             {
@@ -109,6 +113,23 @@ namespace TPSBR
             }
 
             base.Despawned(runner, hasState);
+        }
+
+        public void ConfigureLevel(float radius, float damage, float burnDuration, float burnDamage)
+        {
+            if (radius > 0f)
+            {
+                _radius = radius;
+                UpdateInitialScaleFromRadius();
+            }
+
+            if (damage > 0f)
+            {
+                _damage = damage;
+            }
+
+            _burnDuration = Mathf.Max(0f, burnDuration);
+            _burnDamage = Mathf.Max(0f, burnDamage);
         }
 
         public void StartNova(NetworkObject owner, Vector3 firePosition, LayerMask hitMask, EHitType staffWeaponHitType)
@@ -291,6 +312,12 @@ namespace TPSBR
 
             Vector3 baseScale = _initialScalarScale;
             _scalarRoot.localScale = new Vector3(baseScale.x * scaleMultiplier, baseScale.y, baseScale.z * scaleMultiplier);
+        }
+
+        private void UpdateInitialScaleFromRadius()
+        {
+            float diameter = Mathf.Max(0f, _radius) * 2f;
+            _initialScalarScale = new Vector3(diameter, 1f, diameter);
         }
 
 

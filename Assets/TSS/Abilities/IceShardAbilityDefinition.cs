@@ -90,16 +90,35 @@ public class IceShardAbilityDefinition: StaffAbilityDefinition
             return;
         }
 
+        IceShardAbilityUpgradeLevel levelData = ResolveUpgradeLevel(staffWeapon);
+
         runner.Spawn(_projectilePrefab, firePosition, Quaternion.LookRotation(direction), owner.InputAuthority, (spawnRunner, spawnedObject) =>
         {
-            FireballProjectile projectile = spawnedObject.GetComponent<FireballProjectile>();
+            IceShardProjectile projectile = spawnedObject.GetComponent<IceShardProjectile>();
 
             if (projectile == null)
             {
                 return;
             }
 
+            projectile.ConfigureDamage(levelData.Damage);
             projectile.Fire(owner, firePosition, initialVelocity, hitMask, staffWeapon.HitType);
         });
+    }
+
+    private IceShardAbilityUpgradeLevel ResolveUpgradeLevel(StaffWeapon staffWeapon)
+    {
+        IceShardAbilityUpgradeData upgradeData = IceShardUpgradeData;
+
+        if (upgradeData == null || upgradeData.LevelCount == 0)
+        {
+            return new IceShardAbilityUpgradeLevel
+            {
+                CastingTime = BaseCastTime
+            };
+        }
+
+        int abilityLevel = staffWeapon != null ? staffWeapon.GetAbilityLevel(this) : 1;
+        return upgradeData.GetLevelData(abilityLevel);
     }
 }

@@ -19,8 +19,8 @@ namespace TPSBR
 
 		// PRIVATE MEMBERS
 
-		[SerializeField]
-		private ProjectileDamage _damage;
+                [SerializeField]
+                private ProjectileDamage _damage;
 		[SerializeField]
 		private float            _fireDespawnTime = 3f;
 		[SerializeField]
@@ -80,8 +80,8 @@ namespace TPSBR
 
 		// PUBLIC METHODS
 
-		public override void Fire(NetworkObject owner, Vector3 firePosition, Vector3 initialVelocity, LayerMask hitMask, EHitType hitType)
-		{
+                public override void Fire(NetworkObject owner, Vector3 firePosition, Vector3 initialVelocity, LayerMask hitMask, EHitType hitType)
+                {
 			// Prepare data
 			ProjectileData data = default;
 
@@ -107,8 +107,18 @@ namespace TPSBR
 			}
 
 			_data = data;
-			_bounceCount = default;
-		}
+                        _bounceCount = default;
+                }
+
+                protected void SetDamageOverride(float damage)
+                {
+                        if (_damage == null)
+                        {
+                                _damage = new ProjectileDamage();
+                        }
+
+                        _damage.Damage = Mathf.Max(0f, damage);
+                }
 
 		public void SetDespawnCooldown(float cooldown)
 		{

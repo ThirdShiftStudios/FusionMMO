@@ -92,6 +92,8 @@ namespace TPSBR.Abilities
                 return;
             }
 
+            FireballAbilityUpgradeLevel levelData = ResolveUpgradeLevel(staffWeapon);
+
             runner.Spawn(_projectilePrefab, firePosition, Quaternion.LookRotation(direction), owner.InputAuthority, (spawnRunner, spawnedObject) =>
             {
                 FireballProjectile projectile = spawnedObject.GetComponent<FireballProjectile>();
@@ -101,8 +103,25 @@ namespace TPSBR.Abilities
                     return;
                 }
 
+                projectile.ConfigureDamage(levelData.Damage);
                 projectile.Fire(owner, firePosition, initialVelocity, hitMask, staffWeapon.HitType);
             });
+        }
+
+        private FireballAbilityUpgradeLevel ResolveUpgradeLevel(StaffWeapon staffWeapon)
+        {
+            FireballAbilityUpgradeData upgradeData = FireballUpgradeData;
+
+            if (upgradeData == null || upgradeData.LevelCount == 0)
+            {
+                return new FireballAbilityUpgradeLevel
+                {
+                    CastingTime = BaseCastTime
+                };
+            }
+
+            int abilityLevel = staffWeapon != null ? staffWeapon.GetAbilityLevel(this) : 1;
+            return upgradeData.GetLevelData(abilityLevel);
         }
     }
 }

@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace TPSBR
 {
-        public class FireballProjectile : KinematicProjectile
+        public class IceShardProjectile : KinematicProjectile
         {
                 public void ConfigureDamage(float damage)
                 {
@@ -15,7 +15,7 @@ namespace TPSBR
                         base.OnImpact(hit);
 
                         string hitObjectName = hit.GameObject != null ? hit.GameObject.name : "<null>";
-                        Debug.Log($"[FireballProjectile] Impacted {hitObjectName}.");
+                        Debug.Log($"[IceShardProjectile] Impacted {hitObjectName}.");
 
                         if (Runner != null && Object != null && Object.IsValid == true)
                         {
