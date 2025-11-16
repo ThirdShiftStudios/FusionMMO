@@ -458,6 +458,14 @@ namespace TPSBR
 
             IReadOnlyList<int> unlockedIndexList = abilityConfiguration.UnlockedIndexes;
             var unlockedIndexes = unlockedIndexList != null ? new HashSet<int>(unlockedIndexList) : new HashSet<int>();
+
+            int defaultUnlockedIndex = ResolveDefaultUnlockedAbilityIndex(abilities);
+
+            if (defaultUnlockedIndex >= 0)
+            {
+                unlockedIndexes.Add(defaultUnlockedIndex);
+            }
+
             int unlockedCount = unlockedIndexes.Count;
             int gold = _activeAgent.Inventory != null ? _activeAgent.Inventory.Gold : 0;
             bool canAfford = gold >= _abilityCost;
@@ -477,6 +485,24 @@ namespace TPSBR
 
             _arcaneView.SetAbilityOptions(_abilityOptions);
             _arcaneView.SetAbilityAssignments(CopyAssignments(abilityConfiguration.SlotAssignments));
+        }
+
+        private static int ResolveDefaultUnlockedAbilityIndex(IReadOnlyList<AbilityDefinition> abilities)
+        {
+            if (abilities == null)
+            {
+                return -1;
+            }
+
+            for (int i = 0; i < abilities.Count; ++i)
+            {
+                if (abilities[i] != null)
+                {
+                    return i;
+                }
+            }
+
+            return -1;
         }
 
         private static int[] CopyAssignments(IReadOnlyList<int> source)
