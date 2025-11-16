@@ -64,7 +64,7 @@ namespace TPSBR
 
             if (_activeConsumable is BeerUsable beerUsable)
             {
-                beerUsable.NotifyDrinkProgress(_drinkState.AnimationTime);
+                beerUsable.NotifyDrinkProgress(_drinkState.AnimationTime, _drinkState.BuffApplyNormalizedTime);
             }
 
             if (inventory != null && inventory.CurrentWeapon != _activeWeapon)

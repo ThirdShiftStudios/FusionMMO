@@ -23,8 +23,6 @@ namespace TPSBR
         [FormerlySerializedAs("_drunkBuffDefinition")]
         [SerializeField]
         private BuffDefinition _buffDefinition;
-        [SerializeField, Range(0f, 1f)]
-        private float _buffApplyNormalizedTime = 1f;
         [SerializeField]
         private Animator _animator;
         [SerializeField]
@@ -168,14 +166,14 @@ namespace TPSBR
             ApplyBuffIfNeeded();
         }
 
-        internal void NotifyDrinkProgress(float normalizedTime)
+        internal void NotifyDrinkProgress(float normalizedTime, float buffApplyNormalizedTime)
         {
             if (_buffAppliedThisUse == true)
             {
                 return;
             }
 
-            if (normalizedTime < Mathf.Clamp01(_buffApplyNormalizedTime))
+            if (normalizedTime < Mathf.Clamp01(buffApplyNormalizedTime))
             {
                 return;
             }
