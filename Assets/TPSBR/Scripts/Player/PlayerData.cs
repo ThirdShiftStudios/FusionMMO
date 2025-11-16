@@ -180,6 +180,36 @@ namespace TPSBR
                         return true;
                 }
 
+                public void SetProgress(int level, int experience)
+                {
+                        level = Mathf.Clamp(level, 1, MAX_LEVEL);
+
+                        if (level >= MAX_LEVEL)
+                        {
+                                level = MAX_LEVEL;
+                                experience = 0;
+                        }
+                        else
+                        {
+                                int experienceRequired = GetExperienceRequiredForLevel(level);
+                                if (experienceRequired > 0)
+                                {
+                                        experience = Mathf.Clamp(experience, 0, Mathf.Max(0, experienceRequired - 1));
+                                }
+                                else
+                                {
+                                        experience = 0;
+                                }
+                        }
+
+                        if (_level == level && _experience == experience)
+                                return;
+
+                        _level = level;
+                        _experience = experience;
+                        IsDirty = true;
+                }
+
                 public void EnsureProgressInitialized()
                 {
                         bool wasDirty = IsDirty;
@@ -307,10 +337,16 @@ namespace TPSBR
 
                 private int GetExperienceRequiredForNextLevel()
                 {
-                        if (_level >= MAX_LEVEL)
+                        return GetExperienceRequiredForLevel(_level);
+                }
+
+                private static int GetExperienceRequiredForLevel(int level)
+                {
+                        if (level >= MAX_LEVEL)
                                 return 0;
 
-                        return Mathf.RoundToInt(BASE_EXPERIENCE_PER_LEVEL * Mathf.Pow(_level, EXPERIENCE_GROWTH_EXPONENT));
+                        level = Mathf.Max(1, level);
+                        return Mathf.RoundToInt(BASE_EXPERIENCE_PER_LEVEL * Mathf.Pow(level, EXPERIENCE_GROWTH_EXPONENT));
                 }
         }
 }

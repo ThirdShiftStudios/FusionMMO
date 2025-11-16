@@ -59,6 +59,7 @@ namespace TPSBR
         public string CharacterDefinitionCode;
         public long CreatedAtUtc;
         public int CharacterLevel;
+        public int CharacterExperience;
     }
 
     [Serializable]
@@ -176,6 +177,7 @@ namespace TPSBR
             _pendingStatsRegistration = pendingStats;
             _pendingRestoreStats = pendingStats;
 
+            SubscribePlayerDataEvents();
             _ = InitializeAsync();
         }
 
@@ -211,6 +213,7 @@ namespace TPSBR
             var saveTask = CaptureAndStoreSnapshotAsync(true);
             ObserveTask(saveTask);
 
+            UnsubscribePlayerDataEvents();
             DetachInventory();
             DetachProfessions();
             DetachStats();
@@ -452,6 +455,7 @@ namespace TPSBR
                 CharacterDefinitionCode = definition.StringCode,
                 CreatedAtUtc = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
                 CharacterLevel = 1,
+                CharacterExperience = 0,
             };
 
             EnsureCharacterDefaults(record);
@@ -1565,6 +1569,8 @@ namespace TPSBR
                 {
                     playerData.ActiveCharacterName = character.CharacterName;
                     playerData.ActiveCharacterDefinitionCode = character.CharacterDefinitionCode;
+                    playerData.SetProgress(character.CharacterLevel, character.CharacterExperience);
+                    return;
                 }
                 else
                 {
@@ -1577,6 +1583,8 @@ namespace TPSBR
                 playerData.ActiveCharacterName = null;
                 playerData.ActiveCharacterDefinitionCode = null;
             }
+
+            playerData.SetProgress(1, 0);
         }
 
         private static void EnsureCharacterDefaults(PlayerCharacterSaveData character)
@@ -1587,6 +1595,62 @@ namespace TPSBR
             if (character.CharacterLevel <= 0)
             {
                 character.CharacterLevel = 1;
+            }
+
+            if (character.CharacterExperience < 0)
+            {
+                character.CharacterExperience = 0;
+            }
+        }
+
+        private void SubscribePlayerDataEvents()
+        {
+            var playerService = Global.PlayerService;
+            if (playerService == null)
+                return;
+
+            playerService.PlayerDataChanged -= OnPlayerDataChanged;
+            playerService.PlayerDataChanged += OnPlayerDataChanged;
+        }
+
+        private void UnsubscribePlayerDataEvents()
+        {
+            var playerService = Global.PlayerService;
+            if (playerService == null)
+                return;
+
+            playerService.PlayerDataChanged -= OnPlayerDataChanged;
+        }
+
+        private void OnPlayerDataChanged(PlayerData playerData)
+        {
+            if (playerData == null)
+                return;
+
+            if (_activeCharacterId.HasValue() == false)
+                return;
+
+            var activeCharacter = GetCharacter(_activeCharacterId);
+            if (activeCharacter == null)
+                return;
+
+            bool updated = false;
+
+            if (activeCharacter.CharacterLevel != playerData.Level)
+            {
+                activeCharacter.CharacterLevel = playerData.Level;
+                updated = true;
+            }
+
+            if (activeCharacter.CharacterExperience != playerData.Experience)
+            {
+                activeCharacter.CharacterExperience = playerData.Experience;
+                updated = true;
+            }
+
+            if (updated == true)
+            {
+                MarkDirty();
             }
         }
 
