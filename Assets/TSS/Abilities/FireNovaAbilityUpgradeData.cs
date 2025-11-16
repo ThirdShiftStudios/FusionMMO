@@ -5,42 +5,41 @@ using UnityEngine;
 namespace TPSBR.Abilities
 {
     [Serializable]
+    public struct FireNovaAbilityUpgradeLevel
+    {
+        public float RadiusDelta;
+        public float DamageDelta;
+        public float BurnDurationDelta;
+        public float BurnDamageDelta;
+        public float CastingTimeDelta;
+    }
+
+    [Serializable]
     public sealed class FireNovaAbilityUpgradeData : AbilityUpgradeData
     {
-        private const string RadiusTrackId = "RadiusDelta";
-        private const string DamageTrackId = "DamageDelta";
-        private const string BurnDurationTrackId = "BurnDurationDelta";
-        private const string BurnDamageTrackId = "BurnDamageDelta";
-        private const string CastTimeTrackId = "CastingTimeDelta";
-
         [SerializeField]
-        private float[] _radiusDeltaPerLevel = Array.Empty<float>();
+        private FireNovaAbilityUpgradeLevel[] _levels = Array.Empty<FireNovaAbilityUpgradeLevel>();
 
-        [SerializeField]
-        private float[] _damageDeltaPerLevel = Array.Empty<float>();
+        public IReadOnlyList<FireNovaAbilityUpgradeLevel> Levels => _levels ?? Array.Empty<FireNovaAbilityUpgradeLevel>();
+        public override int LevelCount => Levels.Count;
 
-        [SerializeField]
-        private float[] _burnDurationDeltaPerLevel = Array.Empty<float>();
-
-        [SerializeField]
-        private float[] _burnDamageDeltaPerLevel = Array.Empty<float>();
-
-        [SerializeField]
-        private float[] _castingTimeDeltaPerLevel = Array.Empty<float>();
-
-        public IReadOnlyList<float> RadiusDeltaPerLevel => _radiusDeltaPerLevel ?? Array.Empty<float>();
-        public IReadOnlyList<float> DamageDeltaPerLevel => _damageDeltaPerLevel ?? Array.Empty<float>();
-        public IReadOnlyList<float> BurnDurationDeltaPerLevel => _burnDurationDeltaPerLevel ?? Array.Empty<float>();
-        public IReadOnlyList<float> BurnDamageDeltaPerLevel => _burnDamageDeltaPerLevel ?? Array.Empty<float>();
-        public IReadOnlyList<float> CastingTimeDeltaPerLevel => _castingTimeDeltaPerLevel ?? Array.Empty<float>();
-
-        public override IEnumerable<AbilityUpgradeTrack> EnumerateTracks()
+        public FireNovaAbilityUpgradeLevel GetLevelData(int level)
         {
-            yield return new AbilityUpgradeTrack(RadiusTrackId, "Radius", RadiusDeltaPerLevel);
-            yield return new AbilityUpgradeTrack(DamageTrackId, "Damage", DamageDeltaPerLevel);
-            yield return new AbilityUpgradeTrack(BurnDurationTrackId, "Burn Duration", BurnDurationDeltaPerLevel);
-            yield return new AbilityUpgradeTrack(BurnDamageTrackId, "Burn Damage", BurnDamageDeltaPerLevel);
-            yield return new AbilityUpgradeTrack(CastTimeTrackId, "Cast Time", CastingTimeDeltaPerLevel);
+            if (Levels.Count == 0)
+            {
+                return default;
+            }
+
+            int index = Mathf.Clamp(level - 1, 0, Levels.Count - 1);
+            return _levels[index];
         }
+
+#if UNITY_EDITOR
+        public override void OnValidate()
+        {
+            base.OnValidate();
+            _levels ??= Array.Empty<FireNovaAbilityUpgradeLevel>();
+        }
+#endif
     }
 }

@@ -5,30 +5,39 @@ using UnityEngine;
 namespace TPSBR.Abilities
 {
     [Serializable]
+    public struct FireballAbilityUpgradeLevel
+    {
+        public float RadiusDelta;
+        public float DamageDelta;
+        public float CastingTimeDelta;
+    }
+
+    [Serializable]
     public sealed class FireballAbilityUpgradeData : AbilityUpgradeData
     {
-        private const string RadiusTrackId = "RadiusDelta";
-        private const string DamageTrackId = "DamageDelta";
-        private const string CastTimeTrackId = "CastingTimeDelta";
-
         [SerializeField]
-        private float[] _radiusDeltaPerLevel = Array.Empty<float>();
+        private FireballAbilityUpgradeLevel[] _levels = Array.Empty<FireballAbilityUpgradeLevel>();
 
-        [SerializeField]
-        private float[] _damageDeltaPerLevel = Array.Empty<float>();
+        public IReadOnlyList<FireballAbilityUpgradeLevel> Levels => _levels ?? Array.Empty<FireballAbilityUpgradeLevel>();
+        public override int LevelCount => Levels.Count;
 
-        [SerializeField]
-        private float[] _castingTimeDeltaPerLevel = Array.Empty<float>();
-
-        public IReadOnlyList<float> RadiusDeltaPerLevel => _radiusDeltaPerLevel ?? Array.Empty<float>();
-        public IReadOnlyList<float> DamageDeltaPerLevel => _damageDeltaPerLevel ?? Array.Empty<float>();
-        public IReadOnlyList<float> CastingTimeDeltaPerLevel => _castingTimeDeltaPerLevel ?? Array.Empty<float>();
-
-        public override IEnumerable<AbilityUpgradeTrack> EnumerateTracks()
+        public FireballAbilityUpgradeLevel GetLevelData(int level)
         {
-            yield return new AbilityUpgradeTrack(RadiusTrackId, "Radius", RadiusDeltaPerLevel);
-            yield return new AbilityUpgradeTrack(DamageTrackId, "Damage", DamageDeltaPerLevel);
-            yield return new AbilityUpgradeTrack(CastTimeTrackId, "Cast Time", CastingTimeDeltaPerLevel);
+            if (Levels.Count == 0)
+            {
+                return default;
+            }
+
+            int index = Mathf.Clamp(level - 1, 0, Levels.Count - 1);
+            return _levels[index];
         }
+
+#if UNITY_EDITOR
+        public override void OnValidate()
+        {
+            base.OnValidate();
+            _levels ??= Array.Empty<FireballAbilityUpgradeLevel>();
+        }
+#endif
     }
 }

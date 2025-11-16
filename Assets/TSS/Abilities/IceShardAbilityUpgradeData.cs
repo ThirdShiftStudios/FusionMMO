@@ -5,30 +5,39 @@ using UnityEngine;
 namespace TPSBR.Abilities
 {
     [Serializable]
+    public struct IceShardAbilityUpgradeLevel
+    {
+        public float NumberOfShardsDelta;
+        public float DamageDelta;
+        public float CastingTimeDelta;
+    }
+
+    [Serializable]
     public sealed class IceShardAbilityUpgradeData : AbilityUpgradeData
     {
-        private const string ShardTrackId = "NumberOfShardsDelta";
-        private const string DamageTrackId = "DamageDelta";
-        private const string CastTimeTrackId = "CastingTimeDelta";
-
         [SerializeField]
-        private float[] _numberOfShardsDeltaPerLevel = Array.Empty<float>();
+        private IceShardAbilityUpgradeLevel[] _levels = Array.Empty<IceShardAbilityUpgradeLevel>();
 
-        [SerializeField]
-        private float[] _damageDeltaPerLevel = Array.Empty<float>();
+        public IReadOnlyList<IceShardAbilityUpgradeLevel> Levels => _levels ?? Array.Empty<IceShardAbilityUpgradeLevel>();
+        public override int LevelCount => Levels.Count;
 
-        [SerializeField]
-        private float[] _castingTimeDeltaPerLevel = Array.Empty<float>();
-
-        public IReadOnlyList<float> NumberOfShardsDeltaPerLevel => _numberOfShardsDeltaPerLevel ?? Array.Empty<float>();
-        public IReadOnlyList<float> DamageDeltaPerLevel => _damageDeltaPerLevel ?? Array.Empty<float>();
-        public IReadOnlyList<float> CastingTimeDeltaPerLevel => _castingTimeDeltaPerLevel ?? Array.Empty<float>();
-
-        public override IEnumerable<AbilityUpgradeTrack> EnumerateTracks()
+        public IceShardAbilityUpgradeLevel GetLevelData(int level)
         {
-            yield return new AbilityUpgradeTrack(ShardTrackId, "Additional Shards", NumberOfShardsDeltaPerLevel);
-            yield return new AbilityUpgradeTrack(DamageTrackId, "Damage", DamageDeltaPerLevel);
-            yield return new AbilityUpgradeTrack(CastTimeTrackId, "Cast Time", CastingTimeDeltaPerLevel);
+            if (Levels.Count == 0)
+            {
+                return default;
+            }
+
+            int index = Mathf.Clamp(level - 1, 0, Levels.Count - 1);
+            return _levels[index];
         }
+
+#if UNITY_EDITOR
+        public override void OnValidate()
+        {
+            base.OnValidate();
+            _levels ??= Array.Empty<IceShardAbilityUpgradeLevel>();
+        }
+#endif
     }
 }
