@@ -90,7 +90,8 @@ namespace TPSBR.Abilities
                     return;
                 }
 
-                projectile.ConfigureLevel(levelData.Radius, levelData.Damage, levelData.BurnDuration, levelData.BurnDamage);
+                projectile.ConfigureDamage(levelData.Damage);
+                projectile.ConfigureLevel(levelData.Radius, levelData.BurnDuration, levelData.BurnDamage);
                 projectile.StartNova(owner, firePosition, hitMask, staffWeapon.HitType);
             });
         }

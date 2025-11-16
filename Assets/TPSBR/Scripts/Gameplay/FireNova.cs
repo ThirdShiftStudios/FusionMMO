@@ -115,17 +115,20 @@ namespace TPSBR
             base.Despawned(runner, hasState);
         }
 
-        public void ConfigureLevel(float radius, float damage, float burnDuration, float burnDamage)
+        public void ConfigureDamage(float damage)
+        {
+            if (damage > 0f)
+            {
+                _damage = damage;
+            }
+        }
+
+        public void ConfigureLevel(float radius, float burnDuration, float burnDamage)
         {
             if (radius > 0f)
             {
                 _radius = radius;
                 UpdateInitialScaleFromRadius();
-            }
-
-            if (damage > 0f)
-            {
-                _damage = damage;
             }
 
             _burnDuration = Mathf.Max(0f, burnDuration);
