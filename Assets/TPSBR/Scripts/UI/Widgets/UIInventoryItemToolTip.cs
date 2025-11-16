@@ -11,6 +11,7 @@ namespace TPSBR.UI
         [SerializeField] private CanvasGroup _canvasGroup;
         [SerializeField] private TextMeshProUGUI _titleLabel;
         [SerializeField] private TextMeshProUGUI _descriptionLabel;
+        [SerializeField] private Image _iconImage;
         [SerializeField] private float _screenPadding = 16f;
         [SerializeField] private Vector2 _cursorOffset = new Vector2(24f, 24f);
 
@@ -70,8 +71,9 @@ namespace TPSBR.UI
                 description = details.GetDescription();
             }
 
-            ApplyTitleColor(definition ?? ResolveDefinition(details));
-            ShowInternal(displayName, description, screenPosition);
+            ItemDefinition resolvedDefinition = definition ?? ResolveDefinition(details);
+            ApplyTitleColor(resolvedDefinition);
+            ShowInternal(displayName, description, resolvedDefinition != null ? resolvedDefinition.Icon : null, screenPosition);
         }
 
         public void Show(IInventoryItemDetails details, NetworkString<_32> configurationHash, Vector2 screenPosition)
@@ -82,13 +84,18 @@ namespace TPSBR.UI
         public void Show(ItemDefinition definition, string title, string description, Vector2 screenPosition)
         {
             ApplyTitleColor(definition);
-            ShowInternal(title, description, screenPosition);
+            ShowInternal(title, description, definition != null ? definition.Icon : null, screenPosition);
         }
 
         public void Show(string title, string description, Vector2 screenPosition)
         {
+            Show(title, description, null, screenPosition);
+        }
+
+        public void Show(string title, string description, Sprite icon, Vector2 screenPosition)
+        {
             ApplyDefaultTitleColor();
-            ShowInternal(title, description, screenPosition);
+            ShowInternal(title, description, icon, screenPosition);
         }
 
         public void UpdatePosition(Vector2 screenPosition)
@@ -176,7 +183,23 @@ namespace TPSBR.UI
         public void Hide()
         {
             ApplyDefaultTitleColor();
+            SetIcon(null);
             SetVisible(false);
+        }
+
+        private void SetIcon(Sprite icon)
+        {
+            if (_iconImage == null)
+                return;
+
+            _iconImage.sprite = icon;
+            bool hasIcon = icon != null;
+            _iconImage.enabled = hasIcon;
+
+            if (_iconImage.gameObject.activeSelf != hasIcon)
+            {
+                _iconImage.gameObject.SetActive(hasIcon);
+            }
         }
 
         private void SetVisible(bool visible, bool immediate = false)
@@ -193,13 +216,15 @@ namespace TPSBR.UI
             _canvasGroup.interactable = false;
         }
 
-        private void ShowInternal(string title, string description, Vector2 screenPosition)
+        private void ShowInternal(string title, string description, Sprite icon, Vector2 screenPosition)
         {
             if (string.IsNullOrEmpty(title) && string.IsNullOrEmpty(description))
             {
                 Hide();
                 return;
             }
+
+            SetIcon(icon);
 
             if (_titleLabel != null)
             {

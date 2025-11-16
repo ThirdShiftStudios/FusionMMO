@@ -10,6 +10,7 @@ namespace TPSBR.UI
         {
             string title = option.Definition != null ? option.Definition.Name : string.Empty;
             string description = option.Definition != null ? option.Definition.AbilityDescription : string.Empty;
+            Sprite icon = option.Definition != null ? option.Definition.Icon : null;
             string status = FormatStatus(option);
 
             if (string.IsNullOrWhiteSpace(status) == false)
@@ -19,7 +20,7 @@ namespace TPSBR.UI
                     : $"{description}\n\n{status}";
             }
 
-            base.Show(title, description, screenPosition);
+            base.Show(title, description, icon, screenPosition);
         }
 
         private static string FormatStatus(ArcaneConduit.AbilityOption option)
