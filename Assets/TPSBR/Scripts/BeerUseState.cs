@@ -62,6 +62,11 @@ namespace TPSBR
             Agent agent = character != null ? character.Agent : null;
             Inventory inventory = agent != null ? agent.Inventory : null;
 
+            if (_activeConsumable is BeerUsable beerUsable)
+            {
+                beerUsable.NotifyDrinkProgress(_drinkState.AnimationTime, _drinkState.BuffApplyNormalizedTime);
+            }
+
             if (inventory != null && inventory.CurrentWeapon != _activeWeapon)
             {
                 Finish();
