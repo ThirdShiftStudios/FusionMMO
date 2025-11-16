@@ -1423,14 +1423,11 @@ namespace TPSBR
 
         public static bool TryGetAbilityConfiguration(WeaponDefinition definition, string configurationHash, out AbilityConfiguration configuration)
         {
-            if (TryGetAbilityConfiguration(configurationHash, out configuration) == false)
-            {
-                return false;
-            }
+            bool hasExplicitConfiguration = TryGetAbilityConfiguration(configurationHash, out configuration);
 
             if (definition == null)
             {
-                return true;
+                return hasExplicitConfiguration;
             }
 
             if (configuration.UnlockedIndexes != null && configuration.UnlockedIndexes.Count > 0)
@@ -1441,10 +1438,13 @@ namespace TPSBR
             int[] defaultIndexes = CreateDefaultUnlockedAbilityIndexes(definition);
             if (defaultIndexes == null || defaultIndexes.Length == 0)
             {
-                return true;
+                return hasExplicitConfiguration;
             }
 
-            int[] slotAssignments = CloneSlotAssignments(configuration.SlotAssignments);
+            int[] slotAssignments = hasExplicitConfiguration
+                ? CloneSlotAssignments(configuration.SlotAssignments)
+                : CreateDefaultSlotAssignments();
+
             SanitizeAssignmentsAgainstUnlocked(slotAssignments, defaultIndexes);
 
             configuration = new AbilityConfiguration(defaultIndexes, slotAssignments);
