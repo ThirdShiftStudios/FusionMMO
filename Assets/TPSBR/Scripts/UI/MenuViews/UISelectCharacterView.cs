@@ -127,9 +127,6 @@ namespace TPSBR.UI
 
         private void OnUpdateCharacterContent(int index, MonoBehaviour content)
         {
-            if (content == null)
-                return;
-
             var cloud = Global.PlayerCloudSaveService;
             var characters = cloud != null ? cloud.GetCharacters() : null;
             PlayerCharacterSaveData character = null;
@@ -139,7 +136,10 @@ namespace TPSBR.UI
                 character = characters[index];
             }
 
-            if (TryApplyCharacterToListItem(content, character) == true)
+            if (TryApplyCharacterToListItem(index, content, character) == true)
+                return;
+
+            if (content == null)
                 return;
 
             var view = content as UICharacterListItemView ?? content.GetComponent<UICharacterListItemView>();
@@ -149,16 +149,24 @@ namespace TPSBR.UI
             }
         }
 
-        private bool TryApplyCharacterToListItem(MonoBehaviour content, PlayerCharacterSaveData character)
+        private bool TryApplyCharacterToListItem(int index, MonoBehaviour content, PlayerCharacterSaveData character)
         {
-            if (content == null)
-                return false;
+            UICharacterListItem listItem = null;
 
-            var listItem = content as UICharacterListItem ?? content.GetComponent<UICharacterListItem>();
-            if (listItem == null)
+            if (_characterList != null && index >= 0)
             {
-                listItem = content.GetComponentInParent<UICharacterListItem>(true);
+                listItem = _characterList.GetItem(index);
             }
+
+            if (listItem == null && content != null)
+            {
+                listItem = content as UICharacterListItem ?? content.GetComponent<UICharacterListItem>();
+                if (listItem == null)
+                {
+                    listItem = content.GetComponentInParent<UICharacterListItem>(true);
+                }
+            }
+
             if (listItem == null)
                 return false;
 
