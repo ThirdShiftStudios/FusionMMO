@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using TMPro;
 using UnityEngine;
 
@@ -122,10 +123,11 @@ namespace TPSBR.UI
             }
         }
 
+        private const string LevelFormat = "Level {0}";
+
         private void OnUpdateCharacterContent(int index, MonoBehaviour content)
         {
-            var view = content as UICharacterListItemView;
-            if (view == null)
+            if (content == null)
                 return;
 
             var cloud = Global.PlayerCloudSaveService;
@@ -137,7 +139,38 @@ namespace TPSBR.UI
                 character = characters[index];
             }
 
-            view.SetCharacter(character);
+            if (TryApplyCharacterToListItem(content, character) == true)
+                return;
+
+            var view = content as UICharacterListItemView ?? content.GetComponent<UICharacterListItemView>();
+            if (view != null)
+            {
+                view.SetCharacter(character);
+            }
+        }
+
+        private bool TryApplyCharacterToListItem(MonoBehaviour content, PlayerCharacterSaveData character)
+        {
+            if (content == null)
+                return false;
+
+            var listItem = content as UICharacterListItem ?? content.GetComponent<UICharacterListItem>();
+            if (listItem == null)
+                return false;
+
+            if (character == null)
+            {
+                listItem.CharacterName = string.Empty;
+                listItem.CharacterLevel = string.Empty;
+                return true;
+            }
+
+            int level = character.CharacterLevel > 0 ? character.CharacterLevel : 1;
+
+            listItem.CharacterName = character.CharacterName ?? string.Empty;
+            listItem.CharacterLevel = string.Format(CultureInfo.InvariantCulture, LevelFormat, level);
+
+            return true;
         }
 
         private void OnCreateCharacterButton()
