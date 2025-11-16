@@ -17,6 +17,10 @@ namespace TPSBR.UI
         [SerializeField] private bool _followCursor = true;
 
         private RectTransform _rectTransform;
+        private Vector2 _configuredAnchorMin;
+        private Vector2 _configuredAnchorMax;
+        private Vector2 _configuredPivot;
+        private bool _configuredAnchorsCached;
         private bool _isVisible;
         private Color _defaultTitleColor;
         private bool _defaultTitleColorSet;
@@ -26,12 +30,8 @@ namespace TPSBR.UI
             base.OnInitialize();
 
             _rectTransform = transform as RectTransform;
-            if (_rectTransform != null)
-            {
-                _rectTransform.anchorMin = new Vector2(0.5f, 0.5f);
-                _rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
-                _rectTransform.pivot = new Vector2(0.5f, 0.5f);
-            }
+            CacheConfiguredAnchors();
+            ApplyAnchorsForFollowState();
 
             if (_canvasGroup == null)
             {
@@ -102,7 +102,14 @@ namespace TPSBR.UI
         public bool FollowCursor
         {
             get => _followCursor;
-            set => _followCursor = value;
+            set
+            {
+                if (_followCursor == value)
+                    return;
+
+                _followCursor = value;
+                ApplyAnchorsForFollowState();
+            }
         }
 
         public void UpdatePosition(Vector2 screenPosition)
@@ -277,6 +284,36 @@ namespace TPSBR.UI
             if (_titleLabel != null && _defaultTitleColorSet == true)
             {
                 _titleLabel.color = _defaultTitleColor;
+            }
+        }
+
+        private void CacheConfiguredAnchors()
+        {
+            if (_rectTransform == null || _configuredAnchorsCached == true)
+                return;
+
+            _configuredAnchorMin = _rectTransform.anchorMin;
+            _configuredAnchorMax = _rectTransform.anchorMax;
+            _configuredPivot = _rectTransform.pivot;
+            _configuredAnchorsCached = true;
+        }
+
+        private void ApplyAnchorsForFollowState()
+        {
+            if (_rectTransform == null)
+                return;
+
+            if (_followCursor == true)
+            {
+                _rectTransform.anchorMin = new Vector2(0.5f, 0.5f);
+                _rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
+                _rectTransform.pivot = new Vector2(0.5f, 0.5f);
+            }
+            else if (_configuredAnchorsCached == true)
+            {
+                _rectTransform.anchorMin = _configuredAnchorMin;
+                _rectTransform.anchorMax = _configuredAnchorMax;
+                _rectTransform.pivot = _configuredPivot;
             }
         }
 
