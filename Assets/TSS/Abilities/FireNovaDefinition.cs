@@ -18,11 +18,14 @@ namespace TPSBR.Abilities
         [SerializeField]
         private float _targetDistance = 40f;
 
+        public FireNovaAbilityUpgradeData FireNovaUpgradeData => GetUpgradeData<FireNovaAbilityUpgradeData>();
+
 #if UNITY_EDITOR
         protected override void OnValidate()
         {
             base.OnValidate();
             SetStringCode(AbilityCode);
+            EnsureUpgradeData<FireNovaAbilityUpgradeData>();
         }
 #endif
 

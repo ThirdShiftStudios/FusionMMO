@@ -28,11 +28,16 @@ namespace TPSBR.Abilities
         [Min(0f)]
         private float _baseCastTime = 1f;
 
+        [SerializeReference]
+        [Tooltip("Polymorphic data container that describes how this ability can be upgraded.")]
+        private AbilityUpgradeData _upgradeData;
+
         public override string Name => _displayName;
         public override Sprite Icon => _icon;
         public string AbilityDescription => _abilityDescription;
         public string StringCode => _stringCode;
         public float BaseCastTime => _baseCastTime;
+        public AbilityUpgradeData UpgradeData => _upgradeData;
 
         public bool IsStringCode(string value, StringComparison comparison = StringComparison.Ordinal)
         {
@@ -49,12 +54,33 @@ namespace TPSBR.Abilities
             _stringCode = string.IsNullOrWhiteSpace(value) == true ? string.Empty : value.Trim();
         }
 
+        protected T EnsureUpgradeData<T>() where T : AbilityUpgradeData, new()
+        {
+            if (_upgradeData is T typed && _upgradeData != null)
+            {
+#if UNITY_EDITOR
+                typed.OnValidate();
+#endif
+                return typed;
+            }
+
+            var created = new T();
+            _upgradeData = created;
+            return created;
+        }
+
+        public T GetUpgradeData<T>() where T : AbilityUpgradeData
+        {
+            return _upgradeData as T;
+        }
+
 #if UNITY_EDITOR
         protected override void OnValidate()
         {
             base.OnValidate();
             SetStringCode(_stringCode);
             _baseCastTime = Mathf.Max(0f, _baseCastTime);
+            _upgradeData?.OnValidate();
         }
 #endif
     }

@@ -18,11 +18,14 @@ public class IceShardAbilityDefinition: StaffAbilityDefinition
     [SerializeField]
     private float _targetDistance = 40f;
 
+    public IceShardAbilityUpgradeData IceShardUpgradeData => GetUpgradeData<IceShardAbilityUpgradeData>();
+
 #if UNITY_EDITOR
     protected override void OnValidate()
     {
         base.OnValidate();
         SetStringCode(AbilityCode);
+        EnsureUpgradeData<IceShardAbilityUpgradeData>();
     }
 #endif
 

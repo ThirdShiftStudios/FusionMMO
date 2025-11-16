@@ -20,11 +20,14 @@ namespace TPSBR.Abilities
         [SerializeField]
         private float _targetDistance = 40f;
 
+        public FireballAbilityUpgradeData FireballUpgradeData => GetUpgradeData<FireballAbilityUpgradeData>();
+
 #if UNITY_EDITOR
         protected override void OnValidate()
         {
             base.OnValidate();
             SetStringCode(AbilityCode);
+            EnsureUpgradeData<FireballAbilityUpgradeData>();
         }
 #endif
 
