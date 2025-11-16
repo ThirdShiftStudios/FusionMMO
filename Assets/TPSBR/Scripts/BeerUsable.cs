@@ -15,6 +15,7 @@ namespace TPSBR
         private byte _beerStack { get; set; }
 
         private bool _isDrinking;
+        private bool _buffAppliedThisUse;
         [SerializeField]
         private Renderer[] _renderers;
         [SerializeField]
@@ -22,6 +23,8 @@ namespace TPSBR
         [FormerlySerializedAs("_drunkBuffDefinition")]
         [SerializeField]
         private BuffDefinition _buffDefinition;
+        [SerializeField, Range(0f, 1f)]
+        private float _buffApplyNormalizedTime = 1f;
         [SerializeField]
         private Animator _animator;
         [SerializeField]
@@ -118,6 +121,7 @@ namespace TPSBR
             if (request.Animation == WeaponUseAnimation.BeerDrink)
             {
                 _isDrinking = true;
+                _buffAppliedThisUse = false;
             }
         }
 
@@ -160,6 +164,33 @@ namespace TPSBR
         internal void NotifyDrinkFinished()
         {
             _isDrinking = false;
+
+            ApplyBuffIfNeeded();
+        }
+
+        internal void NotifyDrinkProgress(float normalizedTime)
+        {
+            if (_buffAppliedThisUse == true)
+            {
+                return;
+            }
+
+            if (normalizedTime < Mathf.Clamp01(_buffApplyNormalizedTime))
+            {
+                return;
+            }
+
+            ApplyBuffIfNeeded();
+        }
+
+        private void ApplyBuffIfNeeded()
+        {
+            if (_buffAppliedThisUse == true)
+            {
+                return;
+            }
+
+            _buffAppliedThisUse = true;
 
             if (HasStateAuthority == true)
             {
