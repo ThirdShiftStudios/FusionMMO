@@ -342,8 +342,11 @@ namespace TPSBR.UI
 
         private void RefreshAbilityLists()
         {
-            RefreshAbilitySection(_unlockedAbilityOptions, _unlockedAbilitySlots, _unlockedAbilityContainer, false);
-            RefreshAbilitySection(_lockedAbilityOptions, _lockedAbilitySlots, _lockedAbilityContainer, true);
+            RectTransform sharedContainer = GetAbilitySlotRoot();
+            int siblingIndex = 0;
+
+            siblingIndex = RefreshAbilitySection(_unlockedAbilityOptions, _unlockedAbilitySlots, sharedContainer, false, siblingIndex);
+            RefreshAbilitySection(_lockedAbilityOptions, _lockedAbilitySlots, sharedContainer, true, siblingIndex);
 
             bool hasLockedAbilities = _lockedAbilityOptions.Count > 0;
             bool hasUnlockedAbilities = _unlockedAbilityOptions.Count > 0;
@@ -359,11 +362,13 @@ namespace TPSBR.UI
             }
 
             UpdateLockedAbilitySelectionVisuals();
-            UpdateUnlockButtonState();
         }
 
-        private void RefreshAbilitySection(List<ArcaneConduit.AbilityOption> options, List<UIListItem> slots, RectTransform container, bool allowSelection)
+        private int RefreshAbilitySection(List<ArcaneConduit.AbilityOption> options, List<UIListItem> slots, RectTransform container, bool allowSelection, int siblingStartIndex)
         {
+            if (slots == null)
+                return siblingStartIndex;
+
             if (container == null || _abilitySlotPrefab == null)
             {
                 for (int i = 0; i < slots.Count; ++i)
@@ -374,16 +379,28 @@ namespace TPSBR.UI
                     }
                 }
 
-                return;
+                return siblingStartIndex;
             }
 
-            container.gameObject.SetActive(true);
             EnsureAbilitySlotCapacity(slots, container, options.Count);
 
             for (int i = 0; i < options.Count; ++i)
             {
                 UIListItem slot = slots[i];
                 ArcaneConduit.AbilityOption option = options[i];
+
+                if (slot == null)
+                    continue;
+
+                if (container != null && slot.transform.parent != container)
+                {
+                    slot.transform.SetParent(container, false);
+                }
+
+                if (container != null)
+                {
+                    slot.transform.SetSiblingIndex(siblingStartIndex + i);
+                }
 
                 slot.InitializeSlot(this, i);
                 slot.gameObject.SetActive(true);
@@ -441,6 +458,8 @@ namespace TPSBR.UI
                     slot.SetSelectionHighlight(false, _selectedSlotColor);
                 }
             }
+
+            return siblingStartIndex + options.Count;
         }
 
         private void EnsureAbilitySlotCapacity(List<UIListItem> slots, RectTransform container, int required)
@@ -455,6 +474,17 @@ namespace TPSBR.UI
                 newSlot.gameObject.SetActive(false);
                 slots.Add(newSlot);
             }
+        }
+
+        private RectTransform GetAbilitySlotRoot()
+        {
+            if (_unlockedAbilityContainer != null)
+                return _unlockedAbilityContainer;
+
+            if (_lockedAbilityContainer != null)
+                return _lockedAbilityContainer;
+
+            return null;
         }
 
         private void UpdateLockedAbilitySelectionVisuals()
@@ -477,6 +507,7 @@ namespace TPSBR.UI
             }
 
             UpdateSelectedAbilityDetails(selectedOption);
+            UpdateUnlockButtonState();
         }
 
         private void UpdateUnlockButtonState()
@@ -938,16 +969,12 @@ namespace TPSBR.UI
             int lockedSlotIndex = _lockedAbilitySlots.IndexOf(slot);
             if (lockedSlotIndex >= 0)
             {
-                if (_selectedLockedAbilityIndex == lockedSlotIndex)
-                {
-                    UpdateLockedAbilitySelectionVisuals();
-                }
-                else
+                if (_selectedLockedAbilityIndex != lockedSlotIndex)
                 {
                     _selectedLockedAbilityIndex = lockedSlotIndex;
-                    UpdateLockedAbilitySelectionVisuals();
-                    UpdateUnlockButtonState();
                 }
+
+                UpdateLockedAbilitySelectionVisuals();
 
                 return;
             }
