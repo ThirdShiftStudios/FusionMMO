@@ -142,8 +142,7 @@ namespace TPSBR
 
         private void HandleItemContextSelection(UpgradeStation.ItemData data)
         {
-            _ = data;
-            RefreshAbilityOptions();
+            RefreshAbilityOptions(data);
         }
 
         private void HandleAbilityPurchaseRequested(int abilityIndex)
@@ -419,7 +418,7 @@ namespace TPSBR
             return false;
         }
 
-        private void RefreshAbilityOptions()
+        private void RefreshAbilityOptions(UpgradeStation.ItemData? selectedItem = null)
         {
             _abilityOptions.Clear();
 
@@ -436,7 +435,10 @@ namespace TPSBR
                 return;
             }
 
-            if (TryResolveSelection(_activeAgent, _currentSelectedSourceType, _currentSelectedSourceIndex, out WeaponDefinition definition, out NetworkString<_32> configurationHash, out _) == false)
+            UpgradeStation.ItemSourceType sourceType = selectedItem?.SourceType ?? _currentSelectedSourceType;
+            int sourceIndex = selectedItem?.SourceIndex ?? _currentSelectedSourceIndex;
+
+            if (TryResolveSelection(_activeAgent, sourceType, sourceIndex, out WeaponDefinition definition, out NetworkString<_32> configurationHash, out _) == false)
             {
                 _arcaneView.ClearAbilityOptions();
                 _arcaneView.ClearAbilityAssignments();
