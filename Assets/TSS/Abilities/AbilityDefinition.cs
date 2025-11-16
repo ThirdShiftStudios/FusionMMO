@@ -23,10 +23,15 @@ namespace TPSBR.Abilities
         [Tooltip("Unique string identifier used when referencing this ability across systems.")]
         private string _stringCode;
 
+        [SerializeField]
+        [Tooltip("Baseline cast time (in seconds) used to synchronize ability animations.")]
+        private float _baseCastTime = 1f;
+
         public override string Name => _displayName;
         public override Sprite Icon => _icon;
         public string AbilityDescription => _abilityDescription;
         public string StringCode => _stringCode;
+        public float BaseCastTime => Mathf.Max(0f, _baseCastTime);
 
         public bool IsStringCode(string value, StringComparison comparison = StringComparison.Ordinal)
         {

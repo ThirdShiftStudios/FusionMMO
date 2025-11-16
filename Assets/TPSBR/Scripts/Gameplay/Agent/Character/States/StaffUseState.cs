@@ -240,6 +240,7 @@ namespace TPSBR
                         _isCharging = false;
                         _activeAbilityState = state;
                         _activeAbilityDefinition = state.Ability ?? assignedAbility;
+                        _activeAbilityState.SetRuntimeAbilityDefinition(_activeAbilityDefinition);
                         _activeAbilitySlot = slot;
                         _shouldNotifyLightAttack = notifyLightAttack;
                         _abilityTriggered = false;
