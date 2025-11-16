@@ -14,6 +14,8 @@ namespace TPSBR.UI
         private TextMeshProUGUI _descriptionLabel;
         [SerializeField]
         private Image _iconImage;
+        [SerializeField]
+        private TextMeshProUGUI _statusLabel;
 
         public UIListItem Slot
         {
@@ -28,7 +30,7 @@ namespace TPSBR.UI
             }
         }
 
-        public void SetAbilityDetails(ArcaneConduit.AbilityOption option)
+        public void SetAbilityDetails(ArcaneConduit.AbilityOption option, bool isUnlocked)
         {
             string abilityName = option.Definition != null ? option.Definition.Name : string.Empty;
             string abilityDescription = option.Definition != null ? option.Definition.AbilityDescription : string.Empty;
@@ -46,6 +48,12 @@ namespace TPSBR.UI
             {
                 _iconImage.sprite = abilityIcon;
                 _iconImage.enabled = abilityIcon != null;
+            }
+
+            if (_statusLabel != null)
+            {
+                UIExtensions.SetTextSafe(_statusLabel, isUnlocked == true ? "Unlocked" : "Locked");
+                _statusLabel.gameObject.SetActive(true);
             }
         }
     }

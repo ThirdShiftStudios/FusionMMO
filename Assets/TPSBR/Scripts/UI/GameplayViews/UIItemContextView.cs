@@ -29,9 +29,7 @@ namespace TPSBR.UI
 
         [Header("Abilities")]
         [SerializeField]
-        private RectTransform _unlockedAbilityContainer;
-        [SerializeField]
-        private RectTransform _lockedAbilityContainer;
+        private RectTransform _allWeaponAbilityRoot;
         [SerializeField]
         private UIListItem _abilitySlotPrefab;
         [SerializeField]
@@ -342,29 +340,30 @@ namespace TPSBR.UI
 
         private void RefreshAbilityLists()
         {
-            RefreshAbilitySection(_unlockedAbilityOptions, _unlockedAbilitySlots, _unlockedAbilityContainer, false);
-            RefreshAbilitySection(_lockedAbilityOptions, _lockedAbilitySlots, _lockedAbilityContainer, true);
+            int siblingIndex = 0;
+            siblingIndex = RefreshAbilitySection(_unlockedAbilityOptions, _unlockedAbilitySlots, siblingIndex, false, true);
+            siblingIndex = RefreshAbilitySection(_lockedAbilityOptions, _lockedAbilitySlots, siblingIndex, true, false);
 
             bool hasLockedAbilities = _lockedAbilityOptions.Count > 0;
             bool hasUnlockedAbilities = _unlockedAbilityOptions.Count > 0;
 
             if (_noLockedAbilitiesLabel != null)
             {
-                _noLockedAbilitiesLabel.gameObject.SetActive(hasLockedAbilities == false && _lockedAbilityContainer != null);
+                _noLockedAbilitiesLabel.gameObject.SetActive(hasLockedAbilities == false);
             }
 
             if (_noUnlockedAbilitiesLabel != null)
             {
-                _noUnlockedAbilitiesLabel.gameObject.SetActive(hasUnlockedAbilities == false && _unlockedAbilityContainer != null);
+                _noUnlockedAbilitiesLabel.gameObject.SetActive(hasUnlockedAbilities == false);
             }
 
             UpdateLockedAbilitySelectionVisuals();
             UpdateUnlockButtonState();
         }
 
-        private void RefreshAbilitySection(List<ArcaneConduit.AbilityOption> options, List<UIListItem> slots, RectTransform container, bool allowSelection)
+        private int RefreshAbilitySection(List<ArcaneConduit.AbilityOption> options, List<UIListItem> slots, int siblingIndex, bool allowSelection, bool isUnlockedSection)
         {
-            if (container == null || _abilitySlotPrefab == null)
+            if (_allWeaponAbilityRoot == null || _abilitySlotPrefab == null)
             {
                 for (int i = 0; i < slots.Count; ++i)
                 {
@@ -374,16 +373,29 @@ namespace TPSBR.UI
                     }
                 }
 
-                return;
+                return siblingIndex;
             }
 
-            container.gameObject.SetActive(true);
-            EnsureAbilitySlotCapacity(slots, container, options.Count);
+            RectTransform rootTransform = _allWeaponAbilityRoot;
+            rootTransform.gameObject.SetActive(true);
+
+            EnsureAbilitySlotCapacity(slots, options.Count);
 
             for (int i = 0; i < options.Count; ++i)
             {
                 UIListItem slot = slots[i];
                 ArcaneConduit.AbilityOption option = options[i];
+
+                RectTransform slotTransform = slot.transform as RectTransform;
+                if (slotTransform != null && slotTransform.parent != rootTransform)
+                {
+                    slotTransform.SetParent(rootTransform, false);
+                }
+
+                if (slotTransform != null)
+                {
+                    slotTransform.SetSiblingIndex(siblingIndex++);
+                }
 
                 slot.InitializeSlot(this, i);
                 slot.gameObject.SetActive(true);
@@ -407,7 +419,7 @@ namespace TPSBR.UI
                 abilityContent?.SetAbility(option, allowSelection);
 
                 UIAbilityListItem abilityListItem = slot.GetComponent<UIAbilityListItem>();
-                abilityListItem?.SetAbilityDetails(option);
+                abilityListItem?.SetAbilityDetails(option, isUnlockedSection);
             }
 
             for (int i = options.Count; i < slots.Count; ++i)
@@ -430,16 +442,18 @@ namespace TPSBR.UI
                     slot.SetSelectionHighlight(false, _selectedSlotColor);
                 }
             }
+
+            return siblingIndex;
         }
 
-        private void EnsureAbilitySlotCapacity(List<UIListItem> slots, RectTransform container, int required)
+        private void EnsureAbilitySlotCapacity(List<UIListItem> slots, int required)
         {
-            if (container == null || _abilitySlotPrefab == null)
+            if (_allWeaponAbilityRoot == null || _abilitySlotPrefab == null)
                 return;
 
             while (slots.Count < required)
             {
-                UIListItem newSlot = Instantiate(_abilitySlotPrefab, container);
+                UIListItem newSlot = Instantiate(_abilitySlotPrefab, _allWeaponAbilityRoot);
                 newSlot.InitializeSlot(this, slots.Count);
                 newSlot.gameObject.SetActive(false);
                 slots.Add(newSlot);

@@ -386,6 +386,7 @@ MonoBehaviour:
   _nameLabel: {fileID: 2950468108432960180}
   _descriptionLabel: {fileID: 5253867837915320837}
   _iconImage: {fileID: 2463742668833277708}
+  _statusLabel: {fileID: 3635347818403448559}
 --- !u!1 &3450563582141344038
 GameObject:
   m_ObjectHideFlags: 0
@@ -473,7 +474,7 @@ GameObject:
   - component: {fileID: 2873327637130450447}
   - component: {fileID: 3635347818403448559}
   m_Layer: 5
-  m_Name: AbilityLevel
+  m_Name: AbilityStatus
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -526,7 +527,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Level 99
+  m_text: Unlocked
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: ef99547d5e3343243952d1fdd910ba20, type: 2}
   m_sharedMaterial: {fileID: 1973918710382178373, guid: ef99547d5e3343243952d1fdd910ba20, type: 2}

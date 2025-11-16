@@ -2803,8 +2803,7 @@ MonoBehaviour:
   _slotContainer: {fileID: 4526319057944705124}
   _itemSlotPrefab: {fileID: 4284538436436629100, guid: 2240850c425092947a275dd96f69fc73, type: 3}
   _selectedSlotColor: {r: 1, g: 1, b: 1, a: 1}
-  _unlockedAbilityContainer: {fileID: 3054392643739680829}
-  _lockedAbilityContainer: {fileID: 8644482045189979703}
+  _allWeaponAbilityRoot: {fileID: 3054392643739680829}
   _abilitySlotPrefab: {fileID: 4284538436436629100, guid: ebf1dab02aa14e599fe7e4ffa4efb61e, type: 3}
   _noLockedAbilitiesLabel: {fileID: 4453303060336637504}
   _noUnlockedAbilitiesLabel: {fileID: 3352409881864081995}
@@ -3443,7 +3442,7 @@ GameObject:
   - component: {fileID: 3054392643739680829}
   - component: {fileID: 2033500207123884791}
   m_Layer: 5
-  m_Name: UnlockedAbilitiesListRoot
+  m_Name: AllWeaponAbilitiesRoot
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
