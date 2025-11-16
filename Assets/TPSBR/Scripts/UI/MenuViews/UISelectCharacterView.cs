@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using TMPro;
 using UnityEngine;
 
@@ -122,12 +123,10 @@ namespace TPSBR.UI
             }
         }
 
+        private const string LevelFormat = "Level {0}";
+
         private void OnUpdateCharacterContent(int index, MonoBehaviour content)
         {
-            var view = content as UICharacterListItemView;
-            if (view == null)
-                return;
-
             var cloud = Global.PlayerCloudSaveService;
             var characters = cloud != null ? cloud.GetCharacters() : null;
             PlayerCharacterSaveData character = null;
@@ -137,7 +136,53 @@ namespace TPSBR.UI
                 character = characters[index];
             }
 
-            view.SetCharacter(character);
+            if (TryApplyCharacterToListItem(index, content, character) == true)
+                return;
+
+            if (content == null)
+                return;
+
+            var view = content as UICharacterListItemView ?? content.GetComponent<UICharacterListItemView>();
+            if (view != null)
+            {
+                view.SetCharacter(character);
+            }
+        }
+
+        private bool TryApplyCharacterToListItem(int index, MonoBehaviour content, PlayerCharacterSaveData character)
+        {
+            UICharacterListItem listItem = null;
+
+            if (_characterList != null && index >= 0)
+            {
+                listItem = _characterList.GetItem(index);
+            }
+
+            if (listItem == null && content != null)
+            {
+                listItem = content as UICharacterListItem ?? content.GetComponent<UICharacterListItem>();
+                if (listItem == null)
+                {
+                    listItem = content.GetComponentInParent<UICharacterListItem>(true);
+                }
+            }
+
+            if (listItem == null)
+                return false;
+
+            if (character == null)
+            {
+                listItem.CharacterName = string.Empty;
+                listItem.CharacterLevel = string.Empty;
+                return true;
+            }
+
+            int level = character.CharacterLevel > 0 ? character.CharacterLevel : 1;
+
+            listItem.CharacterName = character.CharacterName ?? string.Empty;
+            listItem.CharacterLevel = string.Format(CultureInfo.InvariantCulture, LevelFormat, level);
+
+            return true;
         }
 
         private void OnCreateCharacterButton()

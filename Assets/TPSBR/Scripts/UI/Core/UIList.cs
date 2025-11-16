@@ -18,8 +18,16 @@ namespace TPSBR.UI
 		public event Action<int, RContent> UpdateContent;
 		public event Action<int> SelectionChanged;
 
-		public int Selection { get { return _selection; } set { SetSelection(value, false); } }
-		public int Count => _dataCount;
+                public int Selection { get { return _selection; } set { SetSelection(value, false); } }
+                public int Count => _dataCount;
+
+                public TListItem GetItem(int index)
+                {
+                        if (index < 0 || index >= _items.Count)
+                                return null;
+
+                        return _items[index];
+                }
 
 		// PRIVATE MEMBERS
 
