@@ -343,6 +343,13 @@ namespace TPSBR.UI
         private void RefreshAbilityLists()
         {
             RectTransform sharedContainer = GetAbilitySlotRoot();
+            bool hasAnyAbilities = (_lockedAbilityOptions.Count + _unlockedAbilityOptions.Count) > 0;
+
+            if (sharedContainer != null)
+            {
+                sharedContainer.gameObject.SetActive(hasAnyAbilities);
+            }
+
             int siblingIndex = 0;
 
             siblingIndex = RefreshAbilitySection(_unlockedAbilityOptions, _unlockedAbilitySlots, sharedContainer, false, siblingIndex);
