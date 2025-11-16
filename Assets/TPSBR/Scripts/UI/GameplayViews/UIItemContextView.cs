@@ -405,6 +405,9 @@ namespace TPSBR.UI
                 }
 
                 abilityContent?.SetAbility(option, allowSelection);
+
+                UIAbilityListItem abilityListItem = slot.GetComponent<UIAbilityListItem>();
+                abilityListItem?.SetAbilityDetails(option);
             }
 
             for (int i = options.Count; i < slots.Count; ++i)
