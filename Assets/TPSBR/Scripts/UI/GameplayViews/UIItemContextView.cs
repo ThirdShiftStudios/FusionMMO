@@ -50,6 +50,8 @@ namespace TPSBR.UI
         private string _unlockAbilityUnavailableText = "Unlock";
         [SerializeField]
         private UIAbilityControlSlot[] _abilityControlSlots;
+        [SerializeField]
+        private UIAbilityToolTip _abilityToolTip;
 
         [Header("Drag Visualization")]
         [SerializeField]
@@ -74,6 +76,7 @@ namespace TPSBR.UI
         private RectTransform _dragIcon;
         private Image _dragImage;
         private CanvasGroup _dragCanvasGroup;
+        private UIListItem _activeAbilityTooltipSlot;
 
         public event Action<UpgradeStation.ItemData> ItemSelected;
         protected event Action<int> AbilityUnlockRequested;
@@ -109,6 +112,8 @@ namespace TPSBR.UI
             {
                 _unlockAbilityButton.onClick.RemoveListener(HandleUnlockAbilityClicked);
             }
+
+            HideAbilityTooltip();
 
             base.OnDeinitialize();
         }
@@ -190,6 +195,8 @@ namespace TPSBR.UI
             _unlockedAbilityOptions.Clear();
             _selectedLockedAbilityIndex = -1;
             _abilityOptionLookup.Clear();
+
+            HideAbilityTooltip();
 
             RefreshAbilityLists();
             ClearAbilityAssignments();
@@ -723,6 +730,58 @@ namespace TPSBR.UI
             return false;
         }
 
+        private bool TryGetAbilityOptionForSlot(UIListItem slot, out ArcaneConduit.AbilityOption option)
+        {
+            option = default;
+
+            if (slot == null)
+                return false;
+
+            int unlockedIndex = _unlockedAbilitySlots.IndexOf(slot);
+            if (unlockedIndex >= 0 && unlockedIndex < _unlockedAbilityOptions.Count)
+            {
+                option = _unlockedAbilityOptions[unlockedIndex];
+                return true;
+            }
+
+            int lockedIndex = _lockedAbilitySlots.IndexOf(slot);
+            if (lockedIndex >= 0 && lockedIndex < _lockedAbilityOptions.Count)
+            {
+                option = _lockedAbilityOptions[lockedIndex];
+                return true;
+            }
+
+            if (TryGetControlSlot(slot, out UIAbilityControlSlot controlSlot) == true && controlSlot.AssignedOption.HasValue == true)
+            {
+                option = controlSlot.AssignedOption.Value;
+                return true;
+            }
+
+            return false;
+        }
+
+        private bool TryShowAbilityTooltip(UIListItem slot, PointerEventData eventData)
+        {
+            if (_abilityToolTip == null || eventData == null)
+                return false;
+
+            if (TryGetAbilityOptionForSlot(slot, out ArcaneConduit.AbilityOption option) == false)
+                return false;
+
+            _activeAbilityTooltipSlot = slot;
+            _abilityToolTip.Show(option, eventData.position);
+            return true;
+        }
+
+        private void HideAbilityTooltip(UIListItem slot = null)
+        {
+            if (slot != null && _activeAbilityTooltipSlot != slot)
+                return;
+
+            _activeAbilityTooltipSlot = null;
+            _abilityToolTip?.Hide();
+        }
+
         private bool TryResolveAbilityDragSource(UIListItem slot, out int abilityIndex, out StaffWeapon.AbilityControlSlot? controlSlot)
         {
             abilityIndex = -1;
@@ -782,14 +841,26 @@ namespace TPSBR.UI
 
         void IUIListItemOwner.HandleSlotPointerEnter(UIListItem slot, PointerEventData eventData)
         {
+            if (TryShowAbilityTooltip(slot, eventData) == true)
+                return;
+
+            HideAbilityTooltip();
         }
 
         void IUIListItemOwner.HandleSlotPointerExit(UIListItem slot)
         {
+            HideAbilityTooltip(slot);
         }
 
         void IUIListItemOwner.HandleSlotPointerMove(UIListItem slot, PointerEventData eventData)
         {
+            if (_activeAbilityTooltipSlot != slot)
+                return;
+
+            if (_abilityToolTip == null || eventData == null)
+                return;
+
+            _abilityToolTip.UpdatePosition(eventData.position);
         }
 
         private void UpdateSelectionVisuals()
@@ -807,6 +878,8 @@ namespace TPSBR.UI
 
         void IUIListItemOwner.BeginSlotDrag(UIListItem slot, PointerEventData eventData)
         {
+            HideAbilityTooltip();
+
             if (slot == null || eventData == null)
                 return;
 
