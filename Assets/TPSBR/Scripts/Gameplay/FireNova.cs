@@ -17,6 +17,9 @@ namespace TPSBR
         [Networked]
         private TickTimer _lifeTimer { get; set; }
 
+        [Networked(OnChanged = nameof(OnNetworkStatsChanged))]
+        private FireNovaStats _networkStats { get; set; }
+
         private readonly HashSet<IHitTarget> _processedTargets = new HashSet<IHitTarget>();
 
         private Vector3 _initialScalarScale = Vector3.one;
@@ -34,6 +37,7 @@ namespace TPSBR
 
             CacheInitialReferences();
             ResetVisualState();
+            ApplyStatsFromNetwork();
         }
 
         public override void FixedUpdateNetwork()
@@ -121,6 +125,8 @@ namespace TPSBR
             {
                 _damage = damage;
             }
+
+            UpdateNetworkStats(damageValue: Mathf.Max(0f, damage));
         }
 
         public void ConfigureLevel(float radius, float burnDuration, float burnDamage)
@@ -133,6 +139,8 @@ namespace TPSBR
 
             _burnDuration = Mathf.Max(0f, burnDuration);
             _burnDamage = Mathf.Max(0f, burnDamage);
+
+            UpdateNetworkStats(radiusValue: Mathf.Max(0f, radius), burnDurationValue: _burnDuration, burnDamageValue: _burnDamage);
         }
 
         public void StartNova(NetworkObject owner, Vector3 firePosition, LayerMask hitMask, EHitType staffWeaponHitType)
@@ -321,6 +329,72 @@ namespace TPSBR
         {
             float diameter = Mathf.Max(0f, _radius) * 2f;
             _initialScalarScale = new Vector3(diameter, 1f, diameter);
+        }
+
+        private void ApplyStatsFromNetwork()
+        {
+            var stats = _networkStats;
+
+            if (stats.Radius > 0f)
+            {
+                _radius = stats.Radius;
+                UpdateInitialScaleFromRadius();
+            }
+
+            if (stats.Damage > 0f)
+            {
+                _damage = stats.Damage;
+            }
+
+            _burnDuration = Mathf.Max(0f, stats.BurnDuration);
+            _burnDamage = Mathf.Max(0f, stats.BurnDamage);
+
+            UpdateVisualScale();
+        }
+
+        private void UpdateNetworkStats(float radiusValue = -1f, float damageValue = -1f, float burnDurationValue = -1f, float burnDamageValue = -1f)
+        {
+            if (HasStateAuthority == false)
+            {
+                return;
+            }
+
+            var stats = _networkStats;
+
+            if (radiusValue >= 0f)
+            {
+                stats.Radius = radiusValue;
+            }
+
+            if (damageValue >= 0f)
+            {
+                stats.Damage = damageValue;
+            }
+
+            if (burnDurationValue >= 0f)
+            {
+                stats.BurnDuration = burnDurationValue;
+            }
+
+            if (burnDamageValue >= 0f)
+            {
+                stats.BurnDamage = burnDamageValue;
+            }
+
+            _networkStats = stats;
+        }
+
+        private static void OnNetworkStatsChanged(Changed<FireNova> changed)
+        {
+            changed.Behaviour.ApplyStatsFromNetwork();
+        }
+
+        private struct FireNovaStats : INetworkStruct
+        {
+            public float Radius;
+            public float Damage;
+            public float BurnDuration;
+            public float BurnDamage;
         }
 
 
