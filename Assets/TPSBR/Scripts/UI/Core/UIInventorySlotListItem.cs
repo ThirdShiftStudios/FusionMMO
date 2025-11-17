@@ -30,10 +30,13 @@ namespace TPSBR.UI
                 private CanvasGroup _canvasGroup;
                 private Image _iconImage;
                 private TextMeshProUGUI _quantityLabel;
+                [SerializeField]
+                private RectTransform _tooltipHotspot;
                 private Sprite _iconSprite;
                 private int _quantity;
                 private bool _isDragging;
                 private bool _isPointerOver;
+                private bool _isPointerInsideTooltipRegion;
 
                 // MONOBEHAVIOR
 
@@ -131,10 +134,14 @@ namespace TPSBR.UI
                         if (_isPointerOver == true)
                         {
                                 _isPointerOver = false;
-                                var hoveredSlot = OwnerSlot;
-                                if (hoveredSlot != null)
+                                if (_isPointerInsideTooltipRegion == true)
                                 {
-                                        _owner.HandleSlotPointerExit(hoveredSlot);
+                                        _isPointerInsideTooltipRegion = false;
+                                        var hoveredSlot = OwnerSlot;
+                                        if (hoveredSlot != null)
+                                        {
+                                                _owner.HandleSlotPointerExit(hoveredSlot);
+                                        }
                                 }
                         }
                         _activeDragSlot = this;
@@ -261,7 +268,7 @@ namespace TPSBR.UI
                                 return;
 
                         _isPointerOver = true;
-                        _owner.HandleSlotPointerEnter(ownerSlot, eventData);
+                        UpdateTooltipHoverState(ownerSlot, eventData, allowMove: false);
                 }
 
                 public void OnPointerExit(PointerEventData eventData)
@@ -274,7 +281,11 @@ namespace TPSBR.UI
                                 return;
 
                         _isPointerOver = false;
-                        _owner.HandleSlotPointerExit(ownerSlot);
+                        if (_isPointerInsideTooltipRegion == true)
+                        {
+                                _isPointerInsideTooltipRegion = false;
+                                _owner.HandleSlotPointerExit(ownerSlot);
+                        }
                 }
 
                 public void OnPointerMove(PointerEventData eventData)
@@ -292,7 +303,7 @@ namespace TPSBR.UI
                         if (ownerSlot == null)
                                 return;
 
-                        _owner.HandleSlotPointerMove(ownerSlot, eventData);
+                        UpdateTooltipHoverState(ownerSlot, eventData, allowMove: true);
                 }
 
                 // PRIVATE METHODS
@@ -450,7 +461,56 @@ namespace TPSBR.UI
                                 return;
 
                         _isPointerOver = true;
-                        _owner.HandleSlotPointerEnter(ownerSlot, eventData);
+                        if (IsPointerInsideTooltipRegion(eventData) == true)
+                        {
+                                _isPointerInsideTooltipRegion = true;
+                                _owner.HandleSlotPointerEnter(ownerSlot, eventData);
+                        }
+                        else
+                        {
+                                _isPointerInsideTooltipRegion = false;
+                        }
+                }
+
+                private RectTransform TooltipHotspot => _tooltipHotspot != null ? _tooltipHotspot : SlotRectTransform;
+
+                private bool IsPointerInsideTooltipRegion(PointerEventData eventData)
+                {
+                        var hotspot = TooltipHotspot;
+                        if (hotspot == null || eventData == null)
+                                return false;
+
+                        var camera = eventData.pressEventCamera != null ? eventData.pressEventCamera : eventData.enterEventCamera;
+                        return RectTransformUtility.RectangleContainsScreenPoint(hotspot, eventData.position, camera);
+                }
+
+                private void UpdateTooltipHoverState(UIListItem ownerSlot, PointerEventData eventData, bool allowMove)
+                {
+                        if (ownerSlot == null || eventData == null)
+                                return;
+
+                        bool isInsideRegion = IsPointerInsideTooltipRegion(eventData);
+                        if (isInsideRegion == false)
+                        {
+                                if (_isPointerInsideTooltipRegion == true)
+                                {
+                                        _isPointerInsideTooltipRegion = false;
+                                        _owner?.HandleSlotPointerExit(ownerSlot);
+                                }
+                                return;
+                        }
+
+                        if (_isPointerInsideTooltipRegion == false)
+                        {
+                                _isPointerInsideTooltipRegion = true;
+                                _owner?.HandleSlotPointerEnter(ownerSlot, eventData);
+                                return;
+                        }
+
+                        if (allowMove == true)
+                        {
+                                _owner?.HandleSlotPointerMove(ownerSlot, eventData);
+                        }
                 }
         }
 }
