@@ -14,7 +14,7 @@ namespace TSS.Data
         [FormerlySerializedAs("_iconTexture")]
         [FormerlySerializedAs("_iconSprite")]
         [SerializeField] private Sprite _icon;
-        [SerializeField] private ushort maxStack = 100;
+        [SerializeField] private ushort maxStack = 1;
         [SerializeField] private EItemRarity _itemRarity = EItemRarity.Common;
         [SerializeField] private string _shortCode;
         [SerializeField] private ESlotCategory _slotCategory = ESlotCategory.General;
