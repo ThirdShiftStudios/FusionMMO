@@ -24,6 +24,7 @@ namespace TPSBR.UI
         private UIInventorySlotListItem _inventorySlot;
         private ArcaneConduit.AbilityOption _currentOption;
         private bool _hasOption;
+        private LevelImageDisplay _levelImageDisplay;
 
         public UIListItem Slot
         {
@@ -49,6 +50,8 @@ namespace TPSBR.UI
             {
                 _levelUpButton.onClick.AddListener(HandleLevelUpClicked);
             }
+
+            _levelImageDisplay = GetComponentInChildren<LevelImageDisplay>();
         }
 
         private void OnDestroy()
@@ -97,26 +100,17 @@ namespace TPSBR.UI
 
             if (_statusLabel != null)
             {
-                string statusText;
+                string statusText = string.Empty;
                 if (unlockedState == true)
                 {
                     int maxLevel = Mathf.Max(1, option.MaxLevel);
                     int currentLevel = Mathf.Clamp(option.CurrentLevel, 1, maxLevel);
-
-                    if (maxLevel > 1)
-                    {
-                        statusText = currentLevel >= maxLevel
-                            ? $"Level {currentLevel}/{maxLevel} (Max)"
-                            : $"Level {currentLevel}/{maxLevel}";
-                    }
-                    else
-                    {
-                        statusText = "Unlocked";
-                    }
+                    _levelImageDisplay.SetData(currentLevel);
                 }
                 else
                 {
                     statusText = option.CanPurchase ? $"Unlock ({option.Cost})" : "Locked";
+                    _levelImageDisplay.SetData(-1);
                 }
 
                 UIExtensions.SetTextSafe(_statusLabel, statusText);

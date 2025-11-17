@@ -13,14 +13,6 @@ namespace TPSBR.UI
     {
         [Header("Items")]
         [SerializeField]
-        private TextMeshProUGUI _emptyStateLabel;
-        [SerializeField]
-        private string _noAgentText = "No agent available.";
-        [SerializeField]
-        private string _noInventoryText = "Inventory unavailable.";
-        [SerializeField]
-        private string _noItemsText = "No items available.";
-        [SerializeField]
         private RectTransform _slotContainer;
         [SerializeField]
         private UIListItem _itemSlotPrefab;
@@ -140,7 +132,6 @@ namespace TPSBR.UI
             _selectedLockedAbilityIndex = -1;
             ClearSlots();
             ClearAbilityOptions();
-            SetEmptyState(string.Empty);
             _dragSource = null;
             SetDragVisible(false);
 
@@ -314,7 +305,6 @@ namespace TPSBR.UI
             }
 
             CopyItems(_currentItems, _lastItems);
-            SetEmptyState(string.Empty);
 
             if (_selectedIndex >= _currentItems.Count)
             {
@@ -581,28 +571,7 @@ namespace TPSBR.UI
 
         private void HandleEmptyState(UpgradeStation.ItemStatus status)
         {
-            switch (status)
-            {
-                case UpgradeStation.ItemStatus.NoAgent:
-                    SetEmptyState(_noAgentText);
-                    break;
-                case UpgradeStation.ItemStatus.NoInventory:
-                    SetEmptyState(_noInventoryText);
-                    break;
-                case UpgradeStation.ItemStatus.NoItems:
-                default:
-                    SetEmptyState(_noItemsText);
-                    break;
-            }
-        }
-
-        private void SetEmptyState(string message)
-        {
-            if (_emptyStateLabel == null)
-                return;
-
-            UIExtensions.SetTextSafe(_emptyStateLabel, message);
-            _emptyStateLabel.gameObject.SetActive(string.IsNullOrWhiteSpace(message) == false);
+            
         }
 
         private void InitializeAbilityControlSlots()
