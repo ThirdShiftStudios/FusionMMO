@@ -748,6 +748,24 @@ namespace TPSBR.UI
             return true;
         }
 
+        private bool ShouldDisplayAbilityTooltip(UIListItem slot, PointerEventData eventData)
+        {
+            if (slot == null || eventData == null)
+                return false;
+
+            UIListItemTooltipRegion tooltipRegion = slot.GetComponent<UIListItemTooltipRegion>();
+            if (tooltipRegion == null)
+            {
+                tooltipRegion = slot.GetComponentInChildren<UIListItemTooltipRegion>(true);
+            }
+
+            if (tooltipRegion == null)
+                return true;
+
+            Camera eventCamera = eventData.enterEventCamera != null ? eventData.enterEventCamera : eventData.pressEventCamera;
+            return tooltipRegion.ContainsScreenPoint(eventData.position, eventCamera);
+        }
+
         private void HideAbilityTooltip(UIListItem slot = null)
         {
             if (slot != null && _activeAbilityTooltipSlot != slot)
@@ -816,7 +834,7 @@ namespace TPSBR.UI
 
         void IUIListItemOwner.HandleSlotPointerEnter(UIListItem slot, PointerEventData eventData)
         {
-            if (TryShowAbilityTooltip(slot, eventData) == true)
+            if (ShouldDisplayAbilityTooltip(slot, eventData) == true && TryShowAbilityTooltip(slot, eventData) == true)
                 return;
 
             HideAbilityTooltip();
@@ -829,10 +847,26 @@ namespace TPSBR.UI
 
         void IUIListItemOwner.HandleSlotPointerMove(UIListItem slot, PointerEventData eventData)
         {
-            if (_activeAbilityTooltipSlot != slot)
+            if (slot == null || eventData == null)
                 return;
 
-            if (_abilityToolTip == null || eventData == null)
+            if (ShouldDisplayAbilityTooltip(slot, eventData) == false)
+            {
+                HideAbilityTooltip();
+                return;
+            }
+
+            if (_activeAbilityTooltipSlot != slot)
+            {
+                if (TryShowAbilityTooltip(slot, eventData) == false)
+                {
+                    HideAbilityTooltip();
+                }
+
+                return;
+            }
+
+            if (_abilityToolTip == null)
                 return;
 
             _abilityToolTip.UpdatePosition(eventData.position);
