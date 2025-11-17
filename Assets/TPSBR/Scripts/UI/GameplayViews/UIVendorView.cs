@@ -563,7 +563,7 @@ namespace TPSBR.UI
                                 return;
                         }
 
-                        if (TryGetInventoryDetails(itemData.Value, out IInventoryItemDetails itemDetails, out NetworkString<_32> configurationHash) == false || itemDetails == null)
+                        if (TryGetInventoryDetails(itemData.Value, out IInventoryItemDetails itemDetails, out NetworkString<_64> configurationHash) == false || itemDetails == null)
                         {
                                 _detailsPanel.Hide();
                                 return;
@@ -572,7 +572,7 @@ namespace TPSBR.UI
                         _detailsPanel.Show(itemDetails, configurationHash);
                 }
 
-                private bool TryGetInventoryDetails(ItemVendor.VendorItemData itemData, out IInventoryItemDetails itemDetails, out NetworkString<_32> configurationHash)
+                private bool TryGetInventoryDetails(ItemVendor.VendorItemData itemData, out IInventoryItemDetails itemDetails, out NetworkString<_64> configurationHash)
                 {
                         itemDetails = null;
                         configurationHash = default;

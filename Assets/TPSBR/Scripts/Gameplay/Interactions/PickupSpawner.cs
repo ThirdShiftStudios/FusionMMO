@@ -60,7 +60,7 @@ namespace TPSBR
 
                                 _activePickup = Runner.Spawn(_pickupPrefab, position, rotation);
 
-                                NetworkString<_32> configurationHash = default;
+                                NetworkString<_64> configurationHash = default;
 
                                 if (definition is WeaponDefinition weaponDefinition && weaponDefinition.WeaponPrefab != null)
                                 {

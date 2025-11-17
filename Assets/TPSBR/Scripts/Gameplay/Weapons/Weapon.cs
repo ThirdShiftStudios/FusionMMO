@@ -61,11 +61,11 @@ namespace TPSBR
         {
             return _description + " this is the description";
         }
-        public virtual string GetDisplayName(NetworkString<_32> configurationHash)
+        public virtual string GetDisplayName(NetworkString<_64> configurationHash)
         {
             return DisplayName;
         }
-        public virtual string GetDescription(NetworkString<_32> configurationHash)
+        public virtual string GetDescription(NetworkString<_64> configurationHash)
         {
             return GetDescription();
         }
@@ -75,7 +75,7 @@ namespace TPSBR
         public NetworkObject Owner => _owner;
         public Character Character => _character;
         public WeaponSize Size => _weaponSize;
-        public NetworkString<_32> ConfigurationHash => _configurationHash;
+        public NetworkString<_64> ConfigurationHash => _configurationHash;
 
         // PRIVATE MEMBERS
 
@@ -96,7 +96,7 @@ namespace TPSBR
 
         //[Networked(OnChanged = nameof(OnConfigurationHashChanged))]
         [Networked]
-        private NetworkString<_32> _configurationHash { get; set; }
+        private NetworkString<_64> _configurationHash { get; set; }
 
         private bool _isInitialized;
         private bool _isArmed;
@@ -105,7 +105,7 @@ namespace TPSBR
         private Transform _armedParent;
         private Transform _disarmedParent;
         private AudioEffect[] _audioEffects;
-        private NetworkString<_32> _appliedConfigurationHash;
+        private NetworkString<_64> _appliedConfigurationHash;
 
         // PUBLIC METHODS
 
@@ -306,7 +306,7 @@ namespace TPSBR
         }
         
 
-        private void ApplyConfigurationHash(NetworkString<_32> configurationHash)
+        private void ApplyConfigurationHash(NetworkString<_64> configurationHash)
         {
             if (_appliedConfigurationHash == configurationHash)
                 return;
@@ -339,7 +339,7 @@ namespace TPSBR
             return string.Empty;
         }
 
-        public void SetConfigurationHash(NetworkString<_32> configurationHash)
+        public void SetConfigurationHash(NetworkString<_64> configurationHash)
         {
             if (HasStateAuthority == false)
             {

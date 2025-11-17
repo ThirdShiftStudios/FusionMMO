@@ -77,9 +77,9 @@ namespace TPSBR
         private bool _visualsVisible = true;
 
         [Networked]
-        private NetworkString<_32> _configurationHash { get; set; }
+        private NetworkString<_64> _configurationHash { get; set; }
 
-        private NetworkString<_32> _appliedConfigurationHash;
+        private NetworkString<_64> _appliedConfigurationHash;
 
         public ToolTier Tier => _tier;
         public int Speed => _speed;
@@ -90,7 +90,7 @@ namespace TPSBR
         public Sprite Icon => GetIcon();
         public bool IsEquipped => _isEquipped;
 
-        public static NetworkString<_32> CreateConfiguration(ToolConfiguration configuration)
+        public static NetworkString<_64> CreateConfiguration(ToolConfiguration configuration)
         {
             string encodedConfiguration = EncodeConfiguration(configuration);
             if (string.IsNullOrEmpty(encodedConfiguration) == true)
@@ -98,7 +98,7 @@ namespace TPSBR
                 return default;
             }
 
-            NetworkString<_32> networkConfiguration = encodedConfiguration;
+            NetworkString<_64> networkConfiguration = encodedConfiguration;
             return networkConfiguration;
         }
 
@@ -219,7 +219,7 @@ namespace TPSBR
             ApplyConfigurationHash(_configurationHash);
         }
 
-        public virtual string GetDisplayName(NetworkString<_32> configurationHash)
+        public virtual string GetDisplayName(NetworkString<_64> configurationHash)
         {
             string hash = configurationHash.ToString();
 
@@ -241,7 +241,7 @@ namespace TPSBR
             return BuildDescription(_tier, _speed, _yield, _luck);
         }
 
-        public virtual string GetDescription(NetworkString<_32> configurationHash)
+        public virtual string GetDescription(NetworkString<_64> configurationHash)
         {
             string hash = configurationHash.ToString();
 
@@ -261,7 +261,7 @@ namespace TPSBR
             return $"{HASH_PREFIX}:{encodedSeed}";
         }
 
-        public void SetConfigurationHash(NetworkString<_32> configurationHash)
+        public void SetConfigurationHash(NetworkString<_64> configurationHash)
         {
             if (HasStateAuthority == false)
             {
@@ -349,7 +349,7 @@ namespace TPSBR
             RefreshVisibility();
         }
 
-        private void ApplyConfigurationHash(NetworkString<_32> configurationHash)
+        private void ApplyConfigurationHash(NetworkString<_64> configurationHash)
         {
             if (_appliedConfigurationHash == configurationHash)
                 return;

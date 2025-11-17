@@ -25,7 +25,7 @@ namespace TPSBR
 
     public struct InventorySlot : INetworkStruct, IEquatable<InventorySlot>
     {
-        public InventorySlot(int itemDefinitionId, byte quantity, NetworkString<_32> configurationHash)
+        public InventorySlot(int itemDefinitionId, byte quantity, NetworkString<_64> configurationHash)
         {
             ItemDefinitionId = itemDefinitionId;
             Quantity = quantity;
@@ -34,7 +34,7 @@ namespace TPSBR
 
         public int ItemDefinitionId { get; private set; }
         public byte Quantity { get; private set; }
-        public NetworkString<_32> ConfigurationHash { get; private set; }
+        public NetworkString<_64> ConfigurationHash { get; private set; }
 
         public bool IsEmpty => Quantity == 0;
 
@@ -505,7 +505,7 @@ namespace TPSBR
                     if (slotData.ItemDefinitionId == 0 || slotData.Quantity == 0)
                         continue;
 
-                    NetworkString<_32> configurationHash = default;
+                    NetworkString<_64> configurationHash = default;
                     if (string.IsNullOrEmpty(slotData.ConfigurationHash) == false)
                     {
                         configurationHash = slotData.ConfigurationHash;
@@ -526,7 +526,7 @@ namespace TPSBR
                     if (slotData.ItemDefinitionId == 0 || slotData.Quantity == 0)
                         continue;
 
-                    NetworkString<_32> configurationHash = default;
+                    NetworkString<_64> configurationHash = default;
                     if (string.IsNullOrEmpty(slotData.ConfigurationHash) == false)
                     {
                         configurationHash = slotData.ConfigurationHash;
@@ -539,7 +539,7 @@ namespace TPSBR
 
             if (data.PickaxeSlot.ItemDefinitionId != 0 && data.PickaxeSlot.Quantity != 0)
             {
-                NetworkString<_32> pickaxeHash = default;
+                NetworkString<_64> pickaxeHash = default;
                 if (string.IsNullOrEmpty(data.PickaxeSlot.ConfigurationHash) == false)
                 {
                     pickaxeHash = data.PickaxeSlot.ConfigurationHash;
@@ -551,7 +551,7 @@ namespace TPSBR
 
             if (data.WoodAxeSlot.ItemDefinitionId != 0 && data.WoodAxeSlot.Quantity != 0)
             {
-                NetworkString<_32> woodAxeHash = default;
+                NetworkString<_64> woodAxeHash = default;
                 if (string.IsNullOrEmpty(data.WoodAxeSlot.ConfigurationHash) == false)
                 {
                     woodAxeHash = data.WoodAxeSlot.ConfigurationHash;
@@ -563,7 +563,7 @@ namespace TPSBR
 
             if (data.FishingPoleSlot.ItemDefinitionId != 0 && data.FishingPoleSlot.Quantity != 0)
             {
-                NetworkString<_32> fishingPoleHash = default;
+                NetworkString<_64> fishingPoleHash = default;
                 if (string.IsNullOrEmpty(data.FishingPoleSlot.ConfigurationHash) == false)
                 {
                     fishingPoleHash = data.FishingPoleSlot.ConfigurationHash;
@@ -575,7 +575,7 @@ namespace TPSBR
 
             if (data.HeadSlot.ItemDefinitionId != 0 && data.HeadSlot.Quantity != 0)
             {
-                NetworkString<_32> headHash = default;
+                NetworkString<_64> headHash = default;
                 if (string.IsNullOrEmpty(data.HeadSlot.ConfigurationHash) == false)
                 {
                     headHash = data.HeadSlot.ConfigurationHash;
@@ -587,7 +587,7 @@ namespace TPSBR
 
             if (data.UpperBodySlot.ItemDefinitionId != 0 && data.UpperBodySlot.Quantity != 0)
             {
-                NetworkString<_32> upperBodyHash = default;
+                NetworkString<_64> upperBodyHash = default;
                 if (string.IsNullOrEmpty(data.UpperBodySlot.ConfigurationHash) == false)
                 {
                     upperBodyHash = data.UpperBodySlot.ConfigurationHash;
@@ -599,7 +599,7 @@ namespace TPSBR
 
             if (data.LowerBodySlot.ItemDefinitionId != 0 && data.LowerBodySlot.Quantity != 0)
             {
-                NetworkString<_32> lowerBodyHash = default;
+                NetworkString<_64> lowerBodyHash = default;
                 if (string.IsNullOrEmpty(data.LowerBodySlot.ConfigurationHash) == false)
                 {
                     lowerBodyHash = data.LowerBodySlot.ConfigurationHash;
@@ -611,7 +611,7 @@ namespace TPSBR
 
             if (data.PipeSlot.ItemDefinitionId != 0 && data.PipeSlot.Quantity != 0)
             {
-                NetworkString<_32> pipeHash = default;
+                NetworkString<_64> pipeHash = default;
                 if (string.IsNullOrEmpty(data.PipeSlot.ConfigurationHash) == false)
                 {
                     pipeHash = data.PipeSlot.ConfigurationHash;
@@ -639,7 +639,7 @@ namespace TPSBR
                         quantity = 1;
 
                     bool hasConfiguration = string.IsNullOrEmpty(slotData.ConfigurationHash) == false;
-                    NetworkString<_32> configurationHash = default;
+                    NetworkString<_64> configurationHash = default;
 
                     var itemDefinition = ItemDefinition.Get(slotData.WeaponDefinitionId) as WeaponDefinition;
                     if (itemDefinition == null)
@@ -718,7 +718,7 @@ namespace TPSBR
                     if (slotData.ItemDefinitionId == 0 || slotData.Quantity == 0)
                         continue;
 
-                    NetworkString<_32> configurationHash = default;
+                    NetworkString<_64> configurationHash = default;
                     if (string.IsNullOrEmpty(slotData.ConfigurationHash) == false)
                     {
                         configurationHash = slotData.ConfigurationHash;
@@ -738,7 +738,7 @@ namespace TPSBR
                     if (slotData.ItemDefinitionId == 0 || slotData.Quantity == 0)
                         continue;
 
-                    NetworkString<_32> configurationHash = default;
+                    NetworkString<_64> configurationHash = default;
                     if (string.IsNullOrEmpty(slotData.ConfigurationHash) == false)
                     {
                         configurationHash = slotData.ConfigurationHash;
@@ -766,7 +766,7 @@ namespace TPSBR
                     if (slotData.WeaponDefinitionId == 0)
                         continue;
 
-                    NetworkString<_32> configurationHash = default;
+                    NetworkString<_64> configurationHash = default;
                     if (string.IsNullOrEmpty(slotData.ConfigurationHash) == false)
                     {
                         configurationHash = slotData.ConfigurationHash;
@@ -791,7 +791,7 @@ namespace TPSBR
                 if (slotData.ItemDefinitionId == 0 || slotData.Quantity == 0)
                     return;
 
-                NetworkString<_32> configurationHash = default;
+                NetworkString<_64> configurationHash = default;
                 if (string.IsNullOrEmpty(slotData.ConfigurationHash) == false)
                 {
                     configurationHash = slotData.ConfigurationHash;
@@ -909,7 +909,7 @@ namespace TPSBR
             return false;
         }
 
-        public bool TrySetInventorySlotConfiguration(int index, NetworkString<_32> configurationHash)
+        public bool TrySetInventorySlotConfiguration(int index, NetworkString<_64> configurationHash)
         {
             if (HasStateAuthority == false)
                 return false;
@@ -978,7 +978,7 @@ namespace TPSBR
             return RemoveInventoryItemInternal(index, quantity);
         }
 
-        public bool TrySetHotbarConfiguration(int index, NetworkString<_32> configurationHash)
+        public bool TrySetHotbarConfiguration(int index, NetworkString<_64> configurationHash)
         {
             if (HasStateAuthority == false)
                 return false;
@@ -1032,7 +1032,7 @@ namespace TPSBR
             };
         }
 
-        public byte AddItem(ItemDefinition definition, byte quantity, NetworkString<_32> configurationHash = default)
+        public byte AddItem(ItemDefinition definition, byte quantity, NetworkString<_64> configurationHash = default)
         {
             if (definition == null || quantity == 0)
                 return quantity;
@@ -1043,7 +1043,7 @@ namespace TPSBR
             return AddItemInternal(definition, quantity, configurationHash);
         }
 
-        public void RequestAddItem(ItemDefinition definition, byte quantity, NetworkString<_32> configurationHash = default)
+        public void RequestAddItem(ItemDefinition definition, byte quantity, NetworkString<_64> configurationHash = default)
         {
             if (definition == null || quantity == 0)
                 return;
@@ -2260,7 +2260,7 @@ namespace TPSBR
             };
         }
 
-        private static string ResolveConfigurationString(NetworkString<_32> configurationHash)
+        private static string ResolveConfigurationString(NetworkString<_64> configurationHash)
         {
             string value = configurationHash.ToString();
             return string.IsNullOrEmpty(value) == false ? value : null;
@@ -2298,7 +2298,7 @@ namespace TPSBR
         }
 
         [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
-        private void RPC_RequestSetInventorySlot(byte index, int itemDefinitionId, byte quantity, NetworkString<_32> configurationHash)
+        private void RPC_RequestSetInventorySlot(byte index, int itemDefinitionId, byte quantity, NetworkString<_64> configurationHash)
         {
             if (HasStateAuthority == false || _pendingRestoreData == null)
                 return;
@@ -2315,7 +2315,7 @@ namespace TPSBR
         }
 
         [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
-        private void RPC_RequestSetBagSlot(byte index, int itemDefinitionId, byte quantity, NetworkString<_32> configurationHash)
+        private void RPC_RequestSetBagSlot(byte index, int itemDefinitionId, byte quantity, NetworkString<_64> configurationHash)
         {
             if (HasStateAuthority == false || _pendingRestoreData == null)
                 return;
@@ -2332,7 +2332,7 @@ namespace TPSBR
         }
 
         [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
-        private void RPC_RequestSetHotbarSlot(byte index, int weaponDefinitionId, byte quantity, NetworkString<_32> configurationHash)
+        private void RPC_RequestSetHotbarSlot(byte index, int weaponDefinitionId, byte quantity, NetworkString<_64> configurationHash)
         {
             if (HasStateAuthority == false || _pendingRestoreData == null)
                 return;
@@ -2349,7 +2349,7 @@ namespace TPSBR
         }
 
         [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
-        private void RPC_RequestSetSpecialSlot(SpecialRestoreSlot slot, int itemDefinitionId, byte quantity, NetworkString<_32> configurationHash)
+        private void RPC_RequestSetSpecialSlot(SpecialRestoreSlot slot, int itemDefinitionId, byte quantity, NetworkString<_64> configurationHash)
         {
             if (HasStateAuthority == false || _pendingRestoreData == null)
                 return;
@@ -2418,7 +2418,7 @@ namespace TPSBR
         }
 
         [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
-        private void RPC_RequestAddItem(int itemDefinitionId, byte quantity, NetworkString<_32> configurationHash)
+        private void RPC_RequestAddItem(int itemDefinitionId, byte quantity, NetworkString<_64> configurationHash)
         {
             if (quantity == 0)
                 return;
@@ -2490,7 +2490,7 @@ namespace TPSBR
             HandleFightingMinigameProgressInternal(successHits, Mathf.Max(1, requiredHits));
         }
 
-        private byte AddItemInternal(ItemDefinition definition, byte quantity, NetworkString<_32> configurationHash)
+        private byte AddItemInternal(ItemDefinition definition, byte quantity, NetworkString<_64> configurationHash)
         {
             if (definition == null)
             {
@@ -4170,7 +4170,7 @@ namespace TPSBR
             var definition = weapon.Definition;
             var slotData = _hotbarItems[weaponSlot];
             byte quantity = slotData.Quantity;
-            NetworkString<_32> dropConfiguration = slotData.ConfigurationHash;
+            NetworkString<_64> dropConfiguration = slotData.ConfigurationHash;
 
             if (quantity == 0)
             {
@@ -4374,7 +4374,7 @@ namespace TPSBR
             }
         }
 
-        private byte AddToPickaxeSlot(ItemDefinition definition, byte quantity, NetworkString<_32> configurationHash)
+        private byte AddToPickaxeSlot(ItemDefinition definition, byte quantity, NetworkString<_64> configurationHash)
         {
             if (quantity == 0)
                 return 0;
@@ -4434,7 +4434,7 @@ namespace TPSBR
             }
         }
 
-        private byte AddToWoodAxeSlot(ItemDefinition definition, byte quantity, NetworkString<_32> configurationHash)
+        private byte AddToWoodAxeSlot(ItemDefinition definition, byte quantity, NetworkString<_64> configurationHash)
         {
             if (quantity == 0)
                 return 0;
@@ -4494,7 +4494,7 @@ namespace TPSBR
             }
         }
 
-        private byte AddToFishingPoleSlot(ItemDefinition definition, byte quantity, NetworkString<_32> configurationHash)
+        private byte AddToFishingPoleSlot(ItemDefinition definition, byte quantity, NetworkString<_64> configurationHash)
         {
             if (quantity == 0)
                 return 0;
@@ -4554,7 +4554,7 @@ namespace TPSBR
             }
         }
 
-        private byte AddToHeadSlot(ItemDefinition definition, byte quantity, NetworkString<_32> configurationHash)
+        private byte AddToHeadSlot(ItemDefinition definition, byte quantity, NetworkString<_64> configurationHash)
         {
             if (quantity == 0)
                 return 0;
@@ -4614,7 +4614,7 @@ namespace TPSBR
             }
         }
 
-        private byte AddToUpperBodySlot(ItemDefinition definition, byte quantity, NetworkString<_32> configurationHash)
+        private byte AddToUpperBodySlot(ItemDefinition definition, byte quantity, NetworkString<_64> configurationHash)
         {
             if (quantity == 0)
                 return 0;
@@ -4674,7 +4674,7 @@ namespace TPSBR
             }
         }
 
-        private byte AddToLowerBodySlot(ItemDefinition definition, byte quantity, NetworkString<_32> configurationHash)
+        private byte AddToLowerBodySlot(ItemDefinition definition, byte quantity, NetworkString<_64> configurationHash)
         {
             if (quantity == 0)
                 return 0;
@@ -4724,7 +4724,7 @@ namespace TPSBR
             return (byte)(quantity - space);
         }
 
-        private byte AddToPipeSlot(ItemDefinition definition, byte quantity, NetworkString<_32> configurationHash)
+        private byte AddToPipeSlot(ItemDefinition definition, byte quantity, NetworkString<_64> configurationHash)
         {
             if (quantity == 0)
                 return 0;
@@ -4774,7 +4774,7 @@ namespace TPSBR
             return (byte)(quantity - space);
         }
 
-        private byte AddToBagSlots(ItemDefinition definition, byte quantity, NetworkString<_32> configurationHash)
+        private byte AddToBagSlots(ItemDefinition definition, byte quantity, NetworkString<_64> configurationHash)
         {
             if (quantity == 0)
                 return 0;
@@ -5684,7 +5684,7 @@ namespace TPSBR
             return _cachedFallbackWoodAxe;
         }
 
-        private static NetworkString<_32> ResolveDefaultPickaxeConfiguration()
+        private static NetworkString<_64> ResolveDefaultPickaxeConfiguration()
         {
             var defaultDefinitions = DefaultItemDefinitions.Instance;
             if (defaultDefinitions == null)
@@ -5693,7 +5693,7 @@ namespace TPSBR
             return ToNetworkConfiguration(defaultDefinitions.DefaultPickaxeConfiguration);
         }
 
-        private static NetworkString<_32> ResolveDefaultWoodAxeConfiguration()
+        private static NetworkString<_64> ResolveDefaultWoodAxeConfiguration()
         {
             var defaultDefinitions = DefaultItemDefinitions.Instance;
             if (defaultDefinitions == null)
@@ -5702,7 +5702,7 @@ namespace TPSBR
             return ToNetworkConfiguration(defaultDefinitions.DefaultWoodAxeConfiguration);
         }
 
-        private static NetworkString<_32> ToNetworkConfiguration(ToolConfiguration configuration)
+        private static NetworkString<_64> ToNetworkConfiguration(ToolConfiguration configuration)
         {
             string encodedConfiguration = Tool.EncodeConfiguration(configuration);
             if (string.IsNullOrEmpty(encodedConfiguration) == true)
@@ -5710,7 +5710,7 @@ namespace TPSBR
                 return default;
             }
 
-            NetworkString<_32> networkHash = encodedConfiguration;
+            NetworkString<_64> networkHash = encodedConfiguration;
             return networkHash;
         }
 
@@ -5878,7 +5878,7 @@ namespace TPSBR
             return TryGetBagArrayIndex(slotIndex, out _);
         }
 
-        private void SpawnInventoryItemPickup(ItemDefinition definition, byte quantity, NetworkString<_32> configurationHash = default)
+        private void SpawnInventoryItemPickup(ItemDefinition definition, byte quantity, NetworkString<_64> configurationHash = default)
         {
             if (HasStateAuthority == false)
                 return;

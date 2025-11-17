@@ -10,6 +10,7 @@ namespace TPSBR
     public class StaffWeapon : Weapon
     {
         private const string HASH_PREFIX = "STF";
+        private const int MaxConfigurationHashLength = 64;
         public const int MaxConfiguredAbilities = 4;
         private const string LogPrefix = "[<color=#FFA500>StaffWeapon</color>]";
         private const int AbilityControlSlotCount = 3;
@@ -192,7 +193,7 @@ namespace TPSBR
             return true;
         }
 
-        public bool TryGetStatBonuses(NetworkString<_32> configurationHash, out IReadOnlyList<int> statBonuses)
+        public bool TryGetStatBonuses(NetworkString<_64> configurationHash, out IReadOnlyList<int> statBonuses)
         {
             string hash = configurationHash.ToString();
 
@@ -457,7 +458,7 @@ namespace TPSBR
                     ? $"{HASH_PREFIX}:{encodedSeed}::{abilitySegment}"
                     : $"{HASH_PREFIX}:{encodedSeed}:{encodedStats}:{abilitySegment}";
 
-                if (candidateHash.Length <= 32)
+                if (candidateHash.Length <= MaxConfigurationHashLength)
                 {
                     return candidateHash;
                 }
@@ -491,7 +492,7 @@ namespace TPSBR
                 abilityConfiguration = new AbilityConfiguration(derivedAbilityIndexes, null);
 
                 if (HasStateAuthority == true &&
-                    StaffWeapon.TryApplyAbilityIndexes(configurationHash, derivedAbilityIndexes, out NetworkString<_32> updatedHash) == true &&
+                    StaffWeapon.TryApplyAbilityIndexes(configurationHash, derivedAbilityIndexes, out NetworkString<_64> updatedHash) == true &&
                     updatedHash.ToString() != configurationHash)
                 {
                     SetConfigurationHash(updatedHash);
@@ -1086,7 +1087,7 @@ namespace TPSBR
             return BuildDescription(_baseDamage, _healthRegen, _manaRegen);
         }
 
-        public override string GetDescription(NetworkString<_32> configurationHash)
+        public override string GetDescription(NetworkString<_64> configurationHash)
         {
             string hash = configurationHash.ToString();
 
@@ -1098,7 +1099,7 @@ namespace TPSBR
             return GetDescription();
         }
 
-        public override string GetDisplayName(NetworkString<_32> configurationHash)
+        public override string GetDisplayName(NetworkString<_64> configurationHash)
         {
             string hash = configurationHash.ToString();
 
@@ -1563,7 +1564,7 @@ namespace TPSBR
             return true;
         }
 
-        public static bool TryGetAbilityIndexes(NetworkString<_32> configurationHash, out int[] abilityIndexes)
+        public static bool TryGetAbilityIndexes(NetworkString<_64> configurationHash, out int[] abilityIndexes)
         {
             return TryGetAbilityIndexes(configurationHash.ToString(), out abilityIndexes);
         }
@@ -1598,7 +1599,7 @@ namespace TPSBR
             return true;
         }
 
-        public static bool TryGetAbilityConfiguration(NetworkString<_32> configurationHash, out AbilityConfiguration configuration)
+        public static bool TryGetAbilityConfiguration(NetworkString<_64> configurationHash, out AbilityConfiguration configuration)
         {
             return TryGetAbilityConfiguration(configurationHash.ToString(), out configuration);
         }
@@ -1639,10 +1640,10 @@ namespace TPSBR
 
             string newAbilitySegment = EncodeAbilityConfiguration(sanitizedIndexes, slotAssignments, sanitizedLevels);
             updatedHash = ComposeConfigurationHash(parts[0], parts[1], statsSegment, newAbilitySegment);
-            return updatedHash.Length <= 32;
+            return updatedHash.Length <= MaxConfigurationHashLength;
         }
 
-        public static bool TryApplyAbilityIndexes(NetworkString<_32> configurationHash, IReadOnlyList<int> abilityIndexes, out NetworkString<_32> updatedHash)
+        public static bool TryApplyAbilityIndexes(NetworkString<_64> configurationHash, IReadOnlyList<int> abilityIndexes, out NetworkString<_64> updatedHash)
         {
             updatedHash = configurationHash;
 
@@ -1651,7 +1652,7 @@ namespace TPSBR
                 return false;
             }
 
-            if (hashString.Length > 32)
+            if (hashString.Length > MaxConfigurationHashLength)
             {
                 return false;
             }
@@ -1694,10 +1695,10 @@ namespace TPSBR
             Dictionary<int, int> sanitizedLevels = SanitizeAbilityLevels(abilityLevels, abilityIndexes);
             string newAbilitySegment = EncodeAbilityConfiguration(abilityIndexes, sanitizedAssignments, sanitizedLevels);
             updatedHash = ComposeConfigurationHash(parts[0], parts[1], statsSegment, newAbilitySegment);
-            return updatedHash.Length <= 32;
+            return updatedHash.Length <= MaxConfigurationHashLength;
         }
 
-        public static bool TryApplyAbilityAssignments(NetworkString<_32> configurationHash, IReadOnlyList<int> slotAssignments, out NetworkString<_32> updatedHash)
+        public static bool TryApplyAbilityAssignments(NetworkString<_64> configurationHash, IReadOnlyList<int> slotAssignments, out NetworkString<_64> updatedHash)
         {
             updatedHash = configurationHash;
 
@@ -1706,7 +1707,7 @@ namespace TPSBR
                 return false;
             }
 
-            if (hashString.Length > 32)
+            if (hashString.Length > MaxConfigurationHashLength)
             {
                 return false;
             }
@@ -1748,10 +1749,10 @@ namespace TPSBR
             Dictionary<int, int> sanitizedLevels = SanitizeAbilityLevels(abilityLevels, abilityIndexes);
             string newAbilitySegment = EncodeAbilityConfiguration(abilityIndexes, assignments, sanitizedLevels);
             updatedHash = ComposeConfigurationHash(parts[0], parts[1], statsSegment, newAbilitySegment);
-            return updatedHash.Length <= 32;
+            return updatedHash.Length <= MaxConfigurationHashLength;
         }
 
-        public static bool TryApplyAbilityLevels(NetworkString<_32> configurationHash, IReadOnlyDictionary<int, int> abilityLevels, out NetworkString<_32> updatedHash)
+        public static bool TryApplyAbilityLevels(NetworkString<_64> configurationHash, IReadOnlyDictionary<int, int> abilityLevels, out NetworkString<_64> updatedHash)
         {
             updatedHash = configurationHash;
 
@@ -1760,7 +1761,7 @@ namespace TPSBR
                 return false;
             }
 
-            if (hashString.Length > 32)
+            if (hashString.Length > MaxConfigurationHashLength)
             {
                 return false;
             }

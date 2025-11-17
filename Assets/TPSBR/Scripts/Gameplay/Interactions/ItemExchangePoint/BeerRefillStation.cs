@@ -199,7 +199,7 @@ namespace TPSBR
                                 if (canIncreaseStack == true)
                                 {
                                         byte newStack = (byte)Mathf.Min(byte.MaxValue, currentStack + 1);
-                                        NetworkString<_32> newConfiguration = BeerUsable.CreateConfigurationHash(newStack);
+                                        NetworkString<_64> newConfiguration = BeerUsable.CreateConfigurationHash(newStack);
 
                                         if (inventory.TrySetInventorySlotConfiguration(_currentSelectedSourceIndex, newConfiguration) == false)
                                         {

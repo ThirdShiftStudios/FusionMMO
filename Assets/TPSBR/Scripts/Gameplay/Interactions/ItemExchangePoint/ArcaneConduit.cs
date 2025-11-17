@@ -309,7 +309,7 @@ namespace TPSBR
             if (sourceType == UpgradeStation.ItemSourceType.None || sourceIndex < 0)
                 return;
 
-            if (TryResolveSelection(agent, sourceType, sourceIndex, out WeaponDefinition definition, out NetworkString<_32> configurationHash, out Weapon weapon) == false)
+            if (TryResolveSelection(agent, sourceType, sourceIndex, out WeaponDefinition definition, out NetworkString<_64> configurationHash, out Weapon weapon) == false)
                 return;
 
             IReadOnlyList<AbilityDefinition> availableAbilities = definition.AvailableAbilities;
@@ -338,7 +338,7 @@ namespace TPSBR
             configuredIndexes.Add(abilityIndex);
             configuredIndexes.Sort();
 
-            if (StaffWeapon.TryApplyAbilityIndexes(configurationHash, configuredIndexes, out NetworkString<_32> updatedHash) == false)
+            if (StaffWeapon.TryApplyAbilityIndexes(configurationHash, configuredIndexes, out NetworkString<_64> updatedHash) == false)
                 return;
 
             if (inventory.TrySpendGold(_abilityCost) == false)
@@ -373,7 +373,7 @@ namespace TPSBR
             if (sourceType == UpgradeStation.ItemSourceType.None || sourceIndex < 0)
                 return;
 
-            if (TryResolveSelection(agent, sourceType, sourceIndex, out WeaponDefinition definition, out NetworkString<_32> configurationHash, out Weapon weapon) == false)
+            if (TryResolveSelection(agent, sourceType, sourceIndex, out WeaponDefinition definition, out NetworkString<_64> configurationHash, out Weapon weapon) == false)
                 return;
 
             IReadOnlyList<AbilityDefinition> availableAbilities = definition.AvailableAbilities;
@@ -432,7 +432,7 @@ namespace TPSBR
                 assignments[slotIndex] = -1;
             }
 
-            if (StaffWeapon.TryApplyAbilityAssignments(configurationHash, assignments, out NetworkString<_32> updatedHash) == false)
+            if (StaffWeapon.TryApplyAbilityAssignments(configurationHash, assignments, out NetworkString<_64> updatedHash) == false)
                 return;
 
             bool applied = ApplyConfigurationToSelection(inventory, sourceType, sourceIndex, updatedHash, weapon);
@@ -460,7 +460,7 @@ namespace TPSBR
             if (sourceType == UpgradeStation.ItemSourceType.None || sourceIndex < 0)
                 return;
 
-            if (TryResolveSelection(agent, sourceType, sourceIndex, out WeaponDefinition definition, out NetworkString<_32> configurationHash, out Weapon weapon) == false)
+            if (TryResolveSelection(agent, sourceType, sourceIndex, out WeaponDefinition definition, out NetworkString<_64> configurationHash, out Weapon weapon) == false)
                 return;
 
             IReadOnlyList<AbilityDefinition> availableAbilities = definition.AvailableAbilities;
@@ -495,7 +495,7 @@ namespace TPSBR
 
             updatedLevels[abilityIndex] = Mathf.Clamp(currentLevel + 1, 1, maxLevel);
 
-            if (StaffWeapon.TryApplyAbilityLevels(configurationHash, updatedLevels, out NetworkString<_32> updatedHash) == false)
+            if (StaffWeapon.TryApplyAbilityLevels(configurationHash, updatedLevels, out NetworkString<_64> updatedHash) == false)
                 return;
 
             if (inventory.TrySpendGold(_abilityLevelCost) == false)
@@ -512,7 +512,7 @@ namespace TPSBR
             RefreshAbilityOptions();
         }
 
-        private bool ApplyConfigurationToSelection(Inventory inventory, UpgradeStation.ItemSourceType sourceType, int sourceIndex, NetworkString<_32> configurationHash, Weapon weapon)
+        private bool ApplyConfigurationToSelection(Inventory inventory, UpgradeStation.ItemSourceType sourceType, int sourceIndex, NetworkString<_64> configurationHash, Weapon weapon)
         {
             switch (sourceType)
             {
@@ -565,7 +565,7 @@ namespace TPSBR
                 return;
             }
 
-            if (TryResolveSelection(_activeAgent, _currentSelectedSourceType, _currentSelectedSourceIndex, out WeaponDefinition definition, out NetworkString<_32> configurationHash, out _) == false)
+            if (TryResolveSelection(_activeAgent, _currentSelectedSourceType, _currentSelectedSourceIndex, out WeaponDefinition definition, out NetworkString<_64> configurationHash, out _) == false)
             {
                 _arcaneView.ClearAbilityOptions();
                 _arcaneView.ClearAbilityAssignments();
@@ -631,7 +631,7 @@ namespace TPSBR
             return assignments;
         }
 
-        private bool TryResolveSelection(Agent agent, UpgradeStation.ItemSourceType sourceType, int sourceIndex, out WeaponDefinition definition, out NetworkString<_32> configurationHash, out Weapon weapon)
+        private bool TryResolveSelection(Agent agent, UpgradeStation.ItemSourceType sourceType, int sourceIndex, out WeaponDefinition definition, out NetworkString<_64> configurationHash, out Weapon weapon)
         {
             definition = null;
             configurationHash = default;

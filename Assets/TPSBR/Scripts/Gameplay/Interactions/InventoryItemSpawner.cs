@@ -73,7 +73,7 @@ namespace TPSBR
                                 Quaternion rotation = Quaternion.Euler(0f, Random.Range(0f, 360f), 0f);
 
                                 var provider = Runner.Spawn(_itemPrefab, spawnPosition, rotation);
-                                NetworkString<_32> configurationHash = default;
+                                NetworkString<_64> configurationHash = default;
 
                                 if (definition is WeaponDefinition weaponDefinition &&
                                     weaponDefinition.WeaponPrefab != null)

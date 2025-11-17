@@ -52,7 +52,7 @@ namespace TPSBR.UI
             SetVisible(false, true);
         }
 
-        public void Show(IInventoryItemDetails details, ItemDefinition definition, NetworkString<_32> configurationHash, Vector2 screenPosition)
+        public void Show(IInventoryItemDetails details, ItemDefinition definition, NetworkString<_64> configurationHash, Vector2 screenPosition)
         {
             if (details == null)
             {
@@ -77,7 +77,7 @@ namespace TPSBR.UI
             ShowInternal(displayName, description, resolvedDefinition != null ? resolvedDefinition.Icon : null, screenPosition);
         }
 
-        public void Show(IInventoryItemDetails details, NetworkString<_32> configurationHash, Vector2 screenPosition)
+        public void Show(IInventoryItemDetails details, NetworkString<_64> configurationHash, Vector2 screenPosition)
         {
             Show(details, ResolveDefinition(details), configurationHash, screenPosition);
         }

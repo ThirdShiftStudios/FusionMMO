@@ -26,7 +26,7 @@ namespace TPSBR
                 [Networked]
                 public byte Quantity { get; private set; }
                 [Networked]
-                public NetworkString<_32> ConfigurationHash { get; private set; }
+                public NetworkString<_64> ConfigurationHash { get; private set; }
                 [Networked]
                 private TickTimer _despawnTimer { get; set; }
                 [Networked]
@@ -63,7 +63,7 @@ namespace TPSBR
                 private bool _visualInitialized;
                 private bool _visualAnchorInitialized;
 
-                public void Initialize(ItemDefinition definition, byte quantity, NetworkString<_32> configurationHash = default)
+                public void Initialize(ItemDefinition definition, byte quantity, NetworkString<_64> configurationHash = default)
                 {
                         if (HasStateAuthority == false)
                                 return;

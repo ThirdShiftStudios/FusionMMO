@@ -51,7 +51,7 @@ namespace TPSBR.UI
         
         internal SceneUI GameplaySceneUI => SceneUI;
 
-        internal void ShowItemTooltip(IInventoryItemDetails details, ItemDefinition definition, NetworkString<_32> configurationHash, Vector2 screenPosition)
+        internal void ShowItemTooltip(IInventoryItemDetails details, ItemDefinition definition, NetworkString<_64> configurationHash, Vector2 screenPosition)
         {
             _itemToolTip?.Show(details, definition, configurationHash, screenPosition);
         }
@@ -61,7 +61,7 @@ namespace TPSBR.UI
             _itemToolTip?.Show(definition, title, description, screenPosition);
         }
 
-        internal void ShowItemTooltip(IInventoryItemDetails details, NetworkString<_32> configurationHash, Vector2 screenPosition)
+        internal void ShowItemTooltip(IInventoryItemDetails details, NetworkString<_64> configurationHash, Vector2 screenPosition)
         {
             _itemToolTip?.Show(details, configurationHash, screenPosition);
         }
@@ -290,7 +290,7 @@ namespace TPSBR.UI
 
         // PRIVATE MEMBERS
 
-        private void OnInventoryItemSelected(IInventoryItemDetails item, NetworkString<_32> configurationHash)
+        private void OnInventoryItemSelected(IInventoryItemDetails item, NetworkString<_64> configurationHash)
         {
             if (item != null)
             {
@@ -300,7 +300,7 @@ namespace TPSBR.UI
             ShowItemDetails(item, configurationHash);
         }
 
-        private void OnHotbarItemSelected(IInventoryItemDetails item, NetworkString<_32> configurationHash)
+        private void OnHotbarItemSelected(IInventoryItemDetails item, NetworkString<_64> configurationHash)
         {
             if (item != null)
             {
@@ -331,7 +331,7 @@ namespace TPSBR.UI
             HideItemTooltip();
         }
 
-        private void ShowItemDetails(IInventoryItemDetails item, NetworkString<_32> configurationHash)
+        private void ShowItemDetails(IInventoryItemDetails item, NetworkString<_64> configurationHash)
         {
             if (_detailsPanel == null)
                 return;
@@ -412,7 +412,7 @@ namespace TPSBR.UI
             private Transform _generalSlotParent;
             private int _visibleGeneralSlotCount;
 
-            internal event Action<IInventoryItemDetails, NetworkString<_32>> ItemSelected;
+            internal event Action<IInventoryItemDetails, NetworkString<_64>> ItemSelected;
 
             private int _selectedSlotIndex = -1;
             private int _hoveredSlotIndex = -1;

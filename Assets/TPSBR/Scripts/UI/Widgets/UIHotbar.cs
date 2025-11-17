@@ -23,7 +23,7 @@ namespace TPSBR.UI
         private int _lastSelectedSlot = -1;
         [SerializeField]
         private Color _selectedSlotColor = Color.white;
-        internal event Action<IInventoryItemDetails, NetworkString<_32>> ItemSelected;
+        internal event Action<IInventoryItemDetails, NetworkString<_64>> ItemSelected;
 
         internal event Action<Weapon, Vector2> ItemPointerEnter;
         internal event Action<Vector2> ItemPointerMove;
@@ -400,7 +400,7 @@ namespace TPSBR.UI
 
         private void NotifySelectionChanged(Weapon weapon)
         {
-            NetworkString<_32> configurationHash = default;
+            NetworkString<_64> configurationHash = default;
 
             if (weapon != null)
             {

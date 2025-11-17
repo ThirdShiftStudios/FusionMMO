@@ -24,7 +24,7 @@ namespace TPSBR.UI
             Hide();
         }
 
-        internal void Show(IInventoryItemDetails item, NetworkString<_32> configurationHash)
+        internal void Show(IInventoryItemDetails item, NetworkString<_64> configurationHash)
         {
             if (item == null)
             {
@@ -112,7 +112,7 @@ namespace TPSBR.UI
             }
         }
 
-        private void UpdateStatDetails(IInventoryItemDetails item, NetworkString<_32> configurationHash)
+        private void UpdateStatDetails(IInventoryItemDetails item, NetworkString<_64> configurationHash)
         {
             if (_statDetails == null)
             {

@@ -436,7 +436,7 @@ namespace TPSBR
             for (int i = 0; i < count; ++i)
             {
                 string configurationHash = GenerateConfigurationHash(definition);
-                NetworkString<_32> networkHash = default;
+                NetworkString<_64> networkHash = default;
 
                 if (string.IsNullOrWhiteSpace(configurationHash) == false)
                 {

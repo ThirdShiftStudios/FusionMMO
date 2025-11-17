@@ -7,8 +7,8 @@ namespace TPSBR
     {
         string DisplayName { get; }
         Sprite Icon { get; }
-        string GetDisplayName(NetworkString<_32> configurationHash);
+        string GetDisplayName(NetworkString<_64> configurationHash);
         string GetDescription();
-        string GetDescription(NetworkString<_32> configurationHash);
+        string GetDescription(NetworkString<_64> configurationHash);
     }
 }

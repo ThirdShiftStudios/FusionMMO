@@ -49,16 +49,16 @@ namespace TPSBR
 
         public byte BeerStack => _beerStack;
 
-        internal static byte GetBeerStack(NetworkString<_32> configurationHash)
+        internal static byte GetBeerStack(NetworkString<_64> configurationHash)
         {
             return ParseBeerStack(configurationHash.ToString());
         }
 
-        internal static NetworkString<_32> CreateConfigurationHash(byte beerStack)
+        internal static NetworkString<_64> CreateConfigurationHash(byte beerStack)
         {
             string configuration = string.Concat(ConfigurationPrefix, beerStack.ToString(CultureInfo.InvariantCulture));
 
-            NetworkString<_32> hash = default;
+            NetworkString<_64> hash = default;
             hash = configuration;
 
             return hash;
@@ -359,7 +359,7 @@ namespace TPSBR
                 return;
             }
 
-            NetworkString<_32> newHash = CreateConfigurationHash(_beerStack);
+            NetworkString<_64> newHash = CreateConfigurationHash(_beerStack);
 
             if (ConfigurationHash.Equals(newHash) == true)
             {
