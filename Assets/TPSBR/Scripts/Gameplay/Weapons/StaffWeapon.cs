@@ -23,7 +23,9 @@ namespace TPSBR
 
         public readonly struct AbilityConfiguration
         {
-            public AbilityConfiguration(int[] unlockedIndexes, int[] slotAssignments)
+            private static readonly IReadOnlyDictionary<int, int> EmptyAbilityLevels = new Dictionary<int, int>();
+
+            public AbilityConfiguration(int[] unlockedIndexes, int[] slotAssignments, IDictionary<int, int> abilityLevels = null)
             {
                 UnlockedIndexes = unlockedIndexes != null && unlockedIndexes.Length > 0
                     ? (int[])unlockedIndexes.Clone()
@@ -43,10 +45,35 @@ namespace TPSBR
                 {
                     SlotAssignments = CreateDefaultSlotAssignments();
                 }
+
+                if (abilityLevels != null && abilityLevels.Count > 0)
+                {
+                    AbilityLevels = new Dictionary<int, int>(abilityLevels);
+                }
+                else
+                {
+                    AbilityLevels = EmptyAbilityLevels;
+                }
             }
 
             public IReadOnlyList<int> UnlockedIndexes { get; }
             public IReadOnlyList<int> SlotAssignments { get; }
+            public IReadOnlyDictionary<int, int> AbilityLevels { get; }
+
+            public int GetAbilityLevel(int abilityIndex, int defaultLevel = 1)
+            {
+                if (abilityIndex < 0)
+                {
+                    return Mathf.Max(1, defaultLevel);
+                }
+
+                if (AbilityLevels != null && AbilityLevels.Count > 0 && AbilityLevels.TryGetValue(abilityIndex, out int level) == true)
+                {
+                    return Mathf.Max(1, level);
+                }
+
+                return Mathf.Max(1, defaultLevel);
+            }
         }
 
         [SerializeField]
@@ -515,9 +542,9 @@ namespace TPSBR
 
             if (parts.Length > 3)
             {
-                if (TryDecodeAbilityConfiguration(parts[3], out int[] decodedAbilities, out int[] slotAssignments) == true)
+                if (TryDecodeAbilityConfiguration(parts[3], out int[] decodedAbilities, out int[] slotAssignments, out Dictionary<int, int> abilityLevels) == true)
                 {
-                    abilityConfiguration = new AbilityConfiguration(decodedAbilities, slotAssignments);
+                    abilityConfiguration = new AbilityConfiguration(decodedAbilities, slotAssignments, abilityLevels);
                 }
             }
 
@@ -1143,12 +1170,12 @@ namespace TPSBR
                     continue;
                 }
 
-                if (availableAbilities[index] is StaffAbilityDefinition staffAbility)
-                {
-                    _configuredAbilities.Add(staffAbility);
-                    resolvedIndexes.Add(index);
-                    RegisterAbilityLevel(staffAbility, index);
-                }
+                    if (availableAbilities[index] is StaffAbilityDefinition staffAbility)
+                    {
+                        _configuredAbilities.Add(staffAbility);
+                        resolvedIndexes.Add(index);
+                        RegisterAbilityLevel(staffAbility, index, abilityConfiguration);
+                    }
             }
 
             int[] resolvedArray = resolvedIndexes.Count > 0 ? resolvedIndexes.ToArray() : Array.Empty<int>();
@@ -1165,17 +1192,15 @@ namespace TPSBR
             _abilityLevels.Clear();
         }
 
-        private void RegisterAbilityLevel(StaffAbilityDefinition ability, int abilityIndex)
+        private void RegisterAbilityLevel(StaffAbilityDefinition ability, int abilityIndex, AbilityConfiguration abilityConfiguration)
         {
-            _ = abilityIndex;
-
             if (ability == null)
             {
                 return;
             }
 
             int maxLevel = ability.UpgradeData != null ? Mathf.Max(1, ability.UpgradeData.LevelCount) : 1;
-            int configuredLevel = 1;
+            int configuredLevel = abilityConfiguration.GetAbilityLevel(abilityIndex);
             _abilityLevels[ability] = Mathf.Clamp(configuredLevel, 1, maxLevel);
         }
 
@@ -1270,10 +1295,11 @@ namespace TPSBR
             }
         }
 
-        private static bool TryDecodeAbilityConfiguration(string encoded, out int[] abilityIndexes, out int[] slotAssignments)
+        private static bool TryDecodeAbilityConfiguration(string encoded, out int[] abilityIndexes, out int[] slotAssignments, out Dictionary<int, int> abilityLevels)
         {
             abilityIndexes = Array.Empty<int>();
             slotAssignments = CreateDefaultSlotAssignments();
+            abilityLevels = new Dictionary<int, int>();
 
             if (string.IsNullOrWhiteSpace(encoded) == true)
             {
@@ -1282,12 +1308,22 @@ namespace TPSBR
 
             string unlockedSegment = encoded;
             string assignmentSegment = string.Empty;
+            string levelSegment = string.Empty;
 
-            int separatorIndex = encoded.IndexOf('|');
-            if (separatorIndex >= 0)
+            string[] segments = encoded.Split('|');
+            if (segments.Length > 0)
             {
-                unlockedSegment = separatorIndex > 0 ? encoded.Substring(0, separatorIndex) : string.Empty;
-                assignmentSegment = separatorIndex + 1 < encoded.Length ? encoded.Substring(separatorIndex + 1) : string.Empty;
+                unlockedSegment = segments[0];
+            }
+
+            if (segments.Length > 1)
+            {
+                assignmentSegment = segments[1];
+            }
+
+            if (segments.Length > 2)
+            {
+                levelSegment = segments[2];
             }
 
             if (string.IsNullOrEmpty(unlockedSegment) == false)
@@ -1310,7 +1346,52 @@ namespace TPSBR
                 slotAssignments = decodedAssignments;
             }
 
+            if (string.IsNullOrEmpty(levelSegment) == false)
+            {
+                if (TryDecodeAbilityLevels(levelSegment, out Dictionary<int, int> decodedLevels) == false)
+                {
+                    return false;
+                }
+
+                abilityLevels = decodedLevels;
+            }
+
             return true;
+        }
+
+        private static bool TryDecodeAbilityLevels(string encoded, out Dictionary<int, int> abilityLevels)
+        {
+            abilityLevels = new Dictionary<int, int>();
+
+            if (string.IsNullOrWhiteSpace(encoded) == true)
+            {
+                return true;
+            }
+
+            try
+            {
+                byte[] payload = Convert.FromBase64String(encoded);
+                if (payload == null || payload.Length == 0)
+                {
+                    return true;
+                }
+
+                int pairCount = payload.Length / 2;
+
+                for (int i = 0; i < pairCount; ++i)
+                {
+                    int abilityIndex = payload[i * 2];
+                    int level = Mathf.Max(1, payload[i * 2 + 1]);
+                    abilityLevels[abilityIndex] = level;
+                }
+
+                return true;
+            }
+            catch (FormatException)
+            {
+                abilityLevels = new Dictionary<int, int>();
+                return false;
+            }
         }
 
         private static bool TryDecodeSlotAssignments(string encoded, out int[] assignments)
@@ -1407,22 +1488,56 @@ namespace TPSBR
             return Convert.ToBase64String(payload);
         }
 
-        private static string EncodeAbilityConfiguration(IReadOnlyList<int> abilityIndexes, IReadOnlyList<int> slotAssignments)
+        private static string EncodeAbilityLevels(IReadOnlyDictionary<int, int> abilityLevels)
+        {
+            if (abilityLevels == null || abilityLevels.Count == 0)
+            {
+                return string.Empty;
+            }
+
+            var sortedKeys = new List<int>(abilityLevels.Keys);
+            sortedKeys.Sort();
+
+            byte[] payload = new byte[sortedKeys.Count * 2];
+
+            for (int i = 0; i < sortedKeys.Count; ++i)
+            {
+                int key = sortedKeys[i];
+                payload[i * 2] = (byte)Mathf.Clamp(key, byte.MinValue, byte.MaxValue);
+                int level = abilityLevels[key];
+                payload[i * 2 + 1] = (byte)Mathf.Clamp(level, 1, byte.MaxValue);
+            }
+
+            return Convert.ToBase64String(payload);
+        }
+
+        private static string EncodeAbilityConfiguration(IReadOnlyList<int> abilityIndexes, IReadOnlyList<int> slotAssignments, IReadOnlyDictionary<int, int> abilityLevels)
         {
             string unlockedSegment = EncodeAbilityIndexes(abilityIndexes);
             string assignmentSegment = EncodeSlotAssignments(slotAssignments);
+            string levelSegment = EncodeAbilityLevels(abilityLevels);
 
-            if (string.IsNullOrEmpty(assignmentSegment) == true)
+            if (string.IsNullOrEmpty(assignmentSegment) == true && string.IsNullOrEmpty(levelSegment) == true)
             {
                 return unlockedSegment;
             }
 
-            if (string.IsNullOrEmpty(unlockedSegment) == true)
+            var segments = new List<string>
             {
-                return $"|{assignmentSegment}";
+                unlockedSegment ?? string.Empty
+            };
+
+            if (string.IsNullOrEmpty(assignmentSegment) == false || string.IsNullOrEmpty(levelSegment) == false)
+            {
+                segments.Add(assignmentSegment ?? string.Empty);
             }
 
-            return $"{unlockedSegment}|{assignmentSegment}";
+            if (string.IsNullOrEmpty(levelSegment) == false)
+            {
+                segments.Add(levelSegment);
+            }
+
+            return string.Join("|", segments);
         }
 
         public static bool TryGetAbilityIndexes(string configurationHash, out int[] abilityIndexes)
@@ -1474,12 +1589,12 @@ namespace TPSBR
                 return true;
             }
 
-            if (TryDecodeAbilityConfiguration(parts[3], out int[] abilityIndexes, out int[] assignments) == false)
+            if (TryDecodeAbilityConfiguration(parts[3], out int[] abilityIndexes, out int[] assignments, out Dictionary<int, int> abilityLevels) == false)
             {
                 return false;
             }
 
-            configuration = new AbilityConfiguration(abilityIndexes, assignments);
+            configuration = new AbilityConfiguration(abilityIndexes, assignments, abilityLevels);
             return true;
         }
 
@@ -1511,16 +1626,18 @@ namespace TPSBR
             string statsSegment = parts.Length >= 3 ? parts[2] : string.Empty;
             string abilitySegment = parts.Length >= 4 ? parts[3] : string.Empty;
 
-            if (TryDecodeAbilityConfiguration(abilitySegment, out int[] existingIndexes, out int[] slotAssignments) == false)
+            if (TryDecodeAbilityConfiguration(abilitySegment, out int[] existingIndexes, out int[] slotAssignments, out Dictionary<int, int> abilityLevels) == false)
             {
                 existingIndexes = Array.Empty<int>();
                 slotAssignments = CreateDefaultSlotAssignments();
+                abilityLevels = new Dictionary<int, int>();
             }
 
             int[] sanitizedIndexes = SanitizeAbilityIndexes(abilityIndexes);
             SanitizeAssignmentsAgainstUnlocked(slotAssignments, sanitizedIndexes);
+            Dictionary<int, int> sanitizedLevels = SanitizeAbilityLevels(abilityLevels, sanitizedIndexes);
 
-            string newAbilitySegment = EncodeAbilityConfiguration(sanitizedIndexes, slotAssignments);
+            string newAbilitySegment = EncodeAbilityConfiguration(sanitizedIndexes, slotAssignments, sanitizedLevels);
             updatedHash = ComposeConfigurationHash(parts[0], parts[1], statsSegment, newAbilitySegment);
             return updatedHash.Length <= 32;
         }
@@ -1566,14 +1683,16 @@ namespace TPSBR
             string statsSegment = parts.Length >= 3 ? parts[2] : string.Empty;
             string abilitySegment = parts.Length >= 4 ? parts[3] : string.Empty;
 
-            if (TryDecodeAbilityConfiguration(abilitySegment, out int[] abilityIndexes, out int[] existingAssignments) == false)
+            if (TryDecodeAbilityConfiguration(abilitySegment, out int[] abilityIndexes, out int[] existingAssignments, out Dictionary<int, int> abilityLevels) == false)
             {
                 abilityIndexes = Array.Empty<int>();
                 existingAssignments = CreateDefaultSlotAssignments();
+                abilityLevels = new Dictionary<int, int>();
             }
 
             int[] sanitizedAssignments = SanitizeSlotAssignments(slotAssignments, abilityIndexes);
-            string newAbilitySegment = EncodeAbilityConfiguration(abilityIndexes, sanitizedAssignments);
+            Dictionary<int, int> sanitizedLevels = SanitizeAbilityLevels(abilityLevels, abilityIndexes);
+            string newAbilitySegment = EncodeAbilityConfiguration(abilityIndexes, sanitizedAssignments, sanitizedLevels);
             updatedHash = ComposeConfigurationHash(parts[0], parts[1], statsSegment, newAbilitySegment);
             return updatedHash.Length <= 32;
         }
@@ -1583,6 +1702,60 @@ namespace TPSBR
             updatedHash = configurationHash;
 
             if (TryApplyAbilityAssignments(configurationHash.ToString(), slotAssignments, out string hashString) == false)
+            {
+                return false;
+            }
+
+            if (hashString.Length > 32)
+            {
+                return false;
+            }
+
+            updatedHash = hashString;
+            return true;
+        }
+
+        public static bool TryApplyAbilityLevels(string configurationHash, IReadOnlyDictionary<int, int> abilityLevels, out string updatedHash)
+        {
+            updatedHash = configurationHash;
+
+            if (string.IsNullOrWhiteSpace(configurationHash) == true)
+            {
+                return false;
+            }
+
+            string[] parts = configurationHash.Split(':');
+            if (parts.Length < 2)
+            {
+                return false;
+            }
+
+            if (string.Equals(parts[0], HASH_PREFIX, StringComparison.Ordinal) == false)
+            {
+                return false;
+            }
+
+            string statsSegment = parts.Length >= 3 ? parts[2] : string.Empty;
+            string abilitySegment = parts.Length >= 4 ? parts[3] : string.Empty;
+
+            if (TryDecodeAbilityConfiguration(abilitySegment, out int[] abilityIndexes, out int[] assignments, out Dictionary<int, int> existingLevels) == false)
+            {
+                abilityIndexes = Array.Empty<int>();
+                assignments = CreateDefaultSlotAssignments();
+                existingLevels = new Dictionary<int, int>();
+            }
+
+            Dictionary<int, int> sanitizedLevels = SanitizeAbilityLevels(abilityLevels, abilityIndexes);
+            string newAbilitySegment = EncodeAbilityConfiguration(abilityIndexes, assignments, sanitizedLevels);
+            updatedHash = ComposeConfigurationHash(parts[0], parts[1], statsSegment, newAbilitySegment);
+            return updatedHash.Length <= 32;
+        }
+
+        public static bool TryApplyAbilityLevels(NetworkString<_32> configurationHash, IReadOnlyDictionary<int, int> abilityLevels, out NetworkString<_32> updatedHash)
+        {
+            updatedHash = configurationHash;
+
+            if (TryApplyAbilityLevels(configurationHash.ToString(), abilityLevels, out string hashString) == false)
             {
                 return false;
             }
@@ -1695,6 +1868,34 @@ namespace TPSBR
             }
 
             return result;
+        }
+
+        private static Dictionary<int, int> SanitizeAbilityLevels(IReadOnlyDictionary<int, int> requestedLevels, IReadOnlyList<int> unlockedIndexes)
+        {
+            var sanitized = new Dictionary<int, int>();
+
+            if (requestedLevels == null || requestedLevels.Count == 0)
+            {
+                return sanitized;
+            }
+
+            if (unlockedIndexes == null || unlockedIndexes.Count == 0)
+            {
+                return sanitized;
+            }
+
+            foreach (var pair in requestedLevels)
+            {
+                if (IsIndexUnlocked(pair.Key, unlockedIndexes) == false)
+                {
+                    continue;
+                }
+
+                int clampedLevel = Mathf.Clamp(pair.Value, 1, byte.MaxValue);
+                sanitized[pair.Key] = clampedLevel;
+            }
+
+            return sanitized;
         }
 
         private static string ComposeConfigurationHash(string prefix, string seedSegment, string statsSegment, string abilitySegment)

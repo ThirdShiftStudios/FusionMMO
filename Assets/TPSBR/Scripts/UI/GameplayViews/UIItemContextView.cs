@@ -80,6 +80,7 @@ namespace TPSBR.UI
 
         public event Action<UpgradeStation.ItemData> ItemSelected;
         protected event Action<int> AbilityUnlockRequested;
+        protected event Action<int> AbilityLevelUpRequested;
         protected event Action<StaffWeapon.AbilityControlSlot, int> AbilityAssignmentRequested;
 
         public void Configure(Agent agent, Func<List<UpgradeStation.ItemData>, UpgradeStation.ItemStatus> itemProvider)
@@ -263,6 +264,11 @@ namespace TPSBR.UI
             AbilityUnlockRequested?.Invoke(abilityIndex);
         }
 
+        public void RequestAbilityLevelUpByAbilityIndex(int abilityIndex)
+        {
+            AbilityLevelUpRequested?.Invoke(abilityIndex);
+        }
+
         private void RefreshItemSlots(bool force)
         {
             if (_itemSlotPrefab == null || _slotContainer == null)
@@ -423,7 +429,7 @@ namespace TPSBR.UI
                 abilityContent?.SetAbility(option, allowSelection);
 
                 UIAbilityListItem abilityListItem = slot.GetComponent<UIAbilityListItem>();
-                abilityListItem?.SetAbilityDetails(option, isUnlockedSection);
+                abilityListItem?.SetAbilityDetails(option);
             }
 
             for (int i = options.Count; i < slots.Count; ++i)

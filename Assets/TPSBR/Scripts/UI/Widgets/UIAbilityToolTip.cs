@@ -26,7 +26,25 @@ namespace TPSBR.UI
         private static string FormatStatus(ArcaneConduit.AbilityOption option)
         {
             if (option.IsUnlocked == true)
-                return "Unlocked";
+            {
+                int maxLevel = Mathf.Max(1, option.MaxLevel);
+                int currentLevel = Mathf.Clamp(option.CurrentLevel, 1, maxLevel);
+                string status = maxLevel > 1 ? $"Level {currentLevel}/{maxLevel}" : "Unlocked";
+
+                if (maxLevel > 1)
+                {
+                    if (currentLevel >= maxLevel)
+                    {
+                        status = $"{status} (Max)";
+                    }
+                    else if (option.LevelUpCost > 0)
+                    {
+                        status = $"{status} (Level Up: {option.LevelUpCost})";
+                    }
+                }
+
+                return status;
+            }
 
             if (option.CanPurchase == true)
                 return $"Cost: {option.Cost}";

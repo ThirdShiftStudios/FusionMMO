@@ -12,6 +12,8 @@ namespace TPSBR
     {
         [SerializeField]
         private int _abilityCost = 50;
+        [SerializeField]
+        private int _abilityLevelCost = 50;
 
         private UIArcaneConduitView _arcaneView;
         private Agent _activeAgent;
@@ -20,13 +22,17 @@ namespace TPSBR
 
         public readonly struct AbilityOption
         {
-            public AbilityOption(int index, AbilityDefinition definition, bool isUnlocked, bool canPurchase, int cost)
+            public AbilityOption(int index, AbilityDefinition definition, bool isUnlocked, bool canPurchase, int cost, int currentLevel, int maxLevel, bool canLevelUp, int levelUpCost)
             {
                 Index = index;
                 Definition = definition;
                 IsUnlocked = isUnlocked;
                 CanPurchase = canPurchase;
                 Cost = cost;
+                CurrentLevel = currentLevel;
+                MaxLevel = maxLevel;
+                CanLevelUp = canLevelUp;
+                LevelUpCost = levelUpCost;
             }
 
             public int Index { get; }
@@ -34,6 +40,10 @@ namespace TPSBR
             public bool IsUnlocked { get; }
             public bool CanPurchase { get; }
             public int Cost { get; }
+            public int CurrentLevel { get; }
+            public int MaxLevel { get; }
+            public bool CanLevelUp { get; }
+            public int LevelUpCost { get; }
         }
 
         protected override UIView _uiView => GetArcaneView() ?? base._uiView;
@@ -69,6 +79,7 @@ namespace TPSBR
                 arcaneView.ItemSelected += HandleItemContextSelection;
                 arcaneView.AbilityPurchaseRequested += HandleAbilityPurchaseRequested;
                 arcaneView.AbilityAssignmentRequested += HandleAbilityAssignmentRequested;
+                arcaneView.AbilityLevelUpRequested += HandleAbilityLevelUpRequested;
             }
         }
 
@@ -79,6 +90,7 @@ namespace TPSBR
                 arcaneView.ItemSelected -= HandleItemContextSelection;
                 arcaneView.AbilityPurchaseRequested -= HandleAbilityPurchaseRequested;
                 arcaneView.AbilityAssignmentRequested -= HandleAbilityAssignmentRequested;
+                arcaneView.AbilityLevelUpRequested -= HandleAbilityLevelUpRequested;
             }
 
             base.UnsubscribeFromViewEvents(view);
@@ -140,6 +152,23 @@ namespace TPSBR
             }
         }
 
+        public void RequestAbilityLevelUp(Agent agent, int abilityIndex)
+        {
+            if (agent == null)
+                return;
+
+            abilityIndex = Mathf.Max(0, abilityIndex);
+
+            if (HasStateAuthority == true)
+            {
+                ProcessAbilityLevelUp(agent, abilityIndex);
+            }
+            else
+            {
+                RPC_RequestAbilityLevelUp(agent.Object.InputAuthority, agent.Object.Id, abilityIndex);
+            }
+        }
+
         private void HandleItemContextSelection(UpgradeStation.ItemData data)
         {
             _ = data;
@@ -160,6 +189,14 @@ namespace TPSBR
                 return;
 
             RequestAbilityAssignment(_activeAgent, slot, abilityIndex);
+        }
+
+        private void HandleAbilityLevelUpRequested(int abilityIndex)
+        {
+            if (_activeAgent == null)
+                return;
+
+            RequestAbilityLevelUp(_activeAgent, abilityIndex);
         }
 
         private void SubscribeToInventory(Inventory inventory)
@@ -243,6 +280,15 @@ namespace TPSBR
             int clampedSlot = Mathf.Clamp(slotValue, 0, StaffWeapon.GetAbilityControlSlotCount() - 1);
             StaffWeapon.AbilityControlSlot slot = (StaffWeapon.AbilityControlSlot)clampedSlot;
             ProcessAbilityAssignment(agent, slot, abilityIndex);
+        }
+
+        [Rpc(RpcSources.All, RpcTargets.StateAuthority, Channel = RpcChannel.Reliable)]
+        private void RPC_RequestAbilityLevelUp(PlayerRef playerRef, NetworkId agentId, int abilityIndex)
+        {
+            if (TryResolveAgent(playerRef, agentId, out Agent agent) == false)
+                return;
+
+            ProcessAbilityLevelUp(agent, abilityIndex);
         }
 
         private void ProcessAbilityPurchase(Agent agent, int abilityIndex)
@@ -397,6 +443,75 @@ namespace TPSBR
             RefreshAbilityOptions();
         }
 
+        private void ProcessAbilityLevelUp(Agent agent, int abilityIndex)
+        {
+            if (HasStateAuthority == false)
+                return;
+            if (agent == null)
+                return;
+
+            Inventory inventory = agent.Inventory;
+            if (inventory == null)
+                return;
+
+            UpgradeStation.ItemSourceType sourceType = SelectedItemSourceType;
+            int sourceIndex = SelectedItemSourceIndex;
+
+            if (sourceType == UpgradeStation.ItemSourceType.None || sourceIndex < 0)
+                return;
+
+            if (TryResolveSelection(agent, sourceType, sourceIndex, out WeaponDefinition definition, out NetworkString<_32> configurationHash, out Weapon weapon) == false)
+                return;
+
+            IReadOnlyList<AbilityDefinition> availableAbilities = definition.AvailableAbilities;
+            if (availableAbilities == null || abilityIndex < 0 || abilityIndex >= availableAbilities.Count)
+                return;
+
+            if (availableAbilities[abilityIndex] is StaffAbilityDefinition staffAbility == false)
+                return;
+
+            if (StaffWeapon.TryGetAbilityConfiguration(configurationHash, out StaffWeapon.AbilityConfiguration abilityConfiguration) == false)
+            {
+                abilityConfiguration = new StaffWeapon.AbilityConfiguration(Array.Empty<int>(), null);
+            }
+
+            if (IsAbilityUnlocked(abilityConfiguration.UnlockedIndexes, abilityIndex) == false)
+                return;
+
+            int maxLevel = staffAbility.UpgradeData != null ? Mathf.Max(1, staffAbility.UpgradeData.LevelCount) : 1;
+            if (maxLevel <= 1)
+                return;
+
+            int currentLevel = abilityConfiguration.GetAbilityLevel(abilityIndex);
+            if (currentLevel >= maxLevel)
+                return;
+
+            if (inventory.Gold < _abilityLevelCost)
+                return;
+
+            var updatedLevels = abilityConfiguration.AbilityLevels != null && abilityConfiguration.AbilityLevels.Count > 0
+                ? new Dictionary<int, int>(abilityConfiguration.AbilityLevels)
+                : new Dictionary<int, int>();
+
+            updatedLevels[abilityIndex] = Mathf.Clamp(currentLevel + 1, 1, maxLevel);
+
+            if (StaffWeapon.TryApplyAbilityLevels(configurationHash, updatedLevels, out NetworkString<_32> updatedHash) == false)
+                return;
+
+            if (inventory.TrySpendGold(_abilityLevelCost) == false)
+                return;
+
+            bool applied = ApplyConfigurationToSelection(inventory, sourceType, sourceIndex, updatedHash, weapon);
+
+            if (applied == false)
+            {
+                inventory.AddGold(_abilityLevelCost);
+                return;
+            }
+
+            RefreshAbilityOptions();
+        }
+
         private bool ApplyConfigurationToSelection(Inventory inventory, UpgradeStation.ItemSourceType sourceType, int sourceIndex, NetworkString<_32> configurationHash, Weapon weapon)
         {
             switch (sourceType)
@@ -413,6 +528,20 @@ namespace TPSBR
                         weapon.SetConfigurationHash(configurationHash);
                     }
 
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static bool IsAbilityUnlocked(IReadOnlyList<int> unlockedIndexes, int abilityIndex)
+        {
+            if (unlockedIndexes == null)
+                return false;
+
+            for (int i = 0; i < unlockedIndexes.Count; ++i)
+            {
+                if (unlockedIndexes[i] == abilityIndex)
                     return true;
             }
 
@@ -461,6 +590,7 @@ namespace TPSBR
             int unlockedCount = unlockedIndexes.Count;
             int gold = _activeAgent.Inventory != null ? _activeAgent.Inventory.Gold : 0;
             bool canAfford = gold >= _abilityCost;
+            bool canAffordLevel = gold >= _abilityLevelCost;
             int maxConfigured = StaffWeapon.MaxConfiguredAbilities;
 
             for (int i = 0; i < abilities.Count; ++i)
@@ -472,7 +602,16 @@ namespace TPSBR
                 bool isUnlocked = unlockedIndexes.Contains(i);
                 bool canPurchase = canAfford && isUnlocked == false && unlockedCount < maxConfigured;
 
-                _abilityOptions.Add(new AbilityOption(i, ability, isUnlocked, canPurchase, _abilityCost));
+                StaffAbilityDefinition staffAbility = ability as StaffAbilityDefinition;
+                int maxLevel = staffAbility != null && staffAbility.UpgradeData != null
+                    ? Mathf.Max(1, staffAbility.UpgradeData.LevelCount)
+                    : 1;
+
+                int currentLevel = isUnlocked ? Mathf.Clamp(abilityConfiguration.GetAbilityLevel(i), 1, maxLevel) : 0;
+                bool canLevelUp = isUnlocked && maxLevel > 1 && currentLevel < maxLevel && canAffordLevel;
+                int levelUpCost = maxLevel > 1 ? _abilityLevelCost : 0;
+
+                _abilityOptions.Add(new AbilityOption(i, ability, isUnlocked, canPurchase, _abilityCost, currentLevel, maxLevel, canLevelUp, levelUpCost));
             }
 
             _arcaneView.SetAbilityOptions(_abilityOptions);

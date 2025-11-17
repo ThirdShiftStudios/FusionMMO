@@ -22,7 +22,18 @@ namespace TPSBR.UI
 
             if (option.IsUnlocked == true)
             {
-                detailText = "Unlocked";
+                if (option.MaxLevel > 1)
+                {
+                    int maxLevel = Mathf.Max(1, option.MaxLevel);
+                    int currentLevel = Mathf.Clamp(option.CurrentLevel, 1, maxLevel);
+                    detailText = currentLevel >= maxLevel
+                        ? $"Level {currentLevel}/{maxLevel} (Max)"
+                        : $"Level {currentLevel}/{maxLevel}";
+                }
+                else
+                {
+                    detailText = "Unlocked";
+                }
             }
             else if (showCost == false)
             {

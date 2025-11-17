@@ -19,6 +19,12 @@ namespace TPSBR.UI
             remove => base.AbilityAssignmentRequested -= value;
         }
 
+        public event Action<int> AbilityLevelUpRequested
+        {
+            add => base.AbilityLevelUpRequested += value;
+            remove => base.AbilityLevelUpRequested -= value;
+        }
+
         internal void SetConduit(ArcaneConduit conduit)
         {
             _ = conduit;
@@ -54,6 +60,11 @@ namespace TPSBR.UI
         public void RequestAbilityPurchaseByAbilityIndex(int abilityIndex)
         {
             base.RequestAbilityUnlockByAbilityIndex(abilityIndex);
+        }
+
+        public void RequestAbilityLevelUp(int abilityIndex)
+        {
+            base.RequestAbilityLevelUpByAbilityIndex(abilityIndex);
         }
     }
 }
