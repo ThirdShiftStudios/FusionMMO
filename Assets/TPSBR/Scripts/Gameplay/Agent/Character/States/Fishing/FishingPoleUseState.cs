@@ -9,11 +9,13 @@ namespace TPSBR
         public  FishingWaitingState Waiting => _waiting;
         public  FishingFightingState Fighting => _fighting;
         public  FishingCatchParentState Catch => _catch;
+        public FishingReelingState Reel => _reel;
 
         [SerializeField] private FishingCastParentState _castState;
         [SerializeField] private FishingWaitingState _waiting;
         [SerializeField] private FishingFightingState _fighting;
         [SerializeField] private FishingCatchParentState _catch;
+        [SerializeField] private FishingReelingState _reel;
 
         [SerializeField] private float _blendInDuration = 0.1f;
         [SerializeField] private float _blendOutDuration = 0.15f;
