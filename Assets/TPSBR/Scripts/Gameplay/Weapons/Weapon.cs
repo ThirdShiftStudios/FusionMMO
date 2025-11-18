@@ -300,9 +300,21 @@ namespace TPSBR
             if (_isInitialized == false)
                 return;
 
-            transform.SetParent(_isArmed == true ? _armedParent : _disarmedParent, false);
+            Transform targetParent = _isArmed == true ? _armedParent : _disarmedParent;
+            if (targetParent == null)
+                return;
+
+            Vector3 worldScale = transform.lossyScale;
+
+            transform.SetParent(targetParent, false);
             transform.localPosition = Vector3.zero;
             transform.localRotation = Quaternion.identity;
+
+            Vector3 parentScale = targetParent.lossyScale;
+            transform.localScale = new Vector3(
+                parentScale.x != 0f ? worldScale.x / parentScale.x : 0f,
+                parentScale.y != 0f ? worldScale.y / parentScale.y : 0f,
+                parentScale.z != 0f ? worldScale.z / parentScale.z : 0f);
         }
         
 

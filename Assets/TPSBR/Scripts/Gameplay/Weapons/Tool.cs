@@ -341,9 +341,17 @@ namespace TPSBR
             Transform target = _isEquipped == true ? _equippedParent : _unequippedParent;
             if (target != null)
             {
+                Vector3 worldScale = transform.lossyScale;
+
                 transform.SetParent(target, false);
                 transform.localPosition = Vector3.zero;
                 transform.localRotation = Quaternion.identity;
+
+                Vector3 parentScale = target.lossyScale;
+                transform.localScale = new Vector3(
+                    parentScale.x != 0f ? worldScale.x / parentScale.x : 0f,
+                    parentScale.y != 0f ? worldScale.y / parentScale.y : 0f,
+                    parentScale.z != 0f ? worldScale.z / parentScale.z : 0f);
             }
 
             RefreshVisibility();
