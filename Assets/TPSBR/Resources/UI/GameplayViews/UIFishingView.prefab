@@ -730,7 +730,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &533335909278310763
 RectTransform:
   m_ObjectHideFlags: 0
@@ -3659,7 +3659,7 @@ RectTransform:
   m_Father: {fileID: 533335910467964616}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -15062,7 +15062,7 @@ RectTransform:
   m_Father: {fileID: 533335910402155787}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 50, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -29793,7 +29793,7 @@ RectTransform:
   m_Father: {fileID: 6378148716869935669}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
+  m_AnchorMax: {x: 0.439, y: 1}
   m_AnchoredPosition: {x: 2, y: 0}
   m_SizeDelta: {x: -4, y: -12}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -41018,8 +41018,8 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 6378148716804082166}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
+  m_AnchorMin: {x: 0.439, y: 0}
+  m_AnchorMax: {x: 0.439, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 30, y: -30}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -41805,7 +41805,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &6378148717827722646
 RectTransform:
   m_ObjectHideFlags: 0
@@ -50070,7 +50070,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   sliderTrack: {fileID: 1246615773439500688}
   sliderHandle: {fileID: 2049596463750696224}
-  safeZoneDisplay: {fileID: 0}
+  safeZoneDisplay: {fileID: 1524994469812206254}
   successProgressImage: {fileID: 1256947535585968036}
   failureProgressImage: {fileID: 2398603949795860716}
   pressSpeed: 0.5
