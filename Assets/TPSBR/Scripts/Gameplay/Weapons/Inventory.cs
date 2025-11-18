@@ -1275,6 +1275,21 @@ namespace TPSBR
             }
         }
 
+        public void SubmitReelingMinigameResult(bool wasSuccessful)
+        {
+            if (_localFishingPole == null)
+                return;
+
+            if (HasStateAuthority == true)
+            {
+                HandleReelingMinigameResultInternal(wasSuccessful);
+            }
+            else
+            {
+                RPC_SubmitReelingMinigameResult(wasSuccessful);
+            }
+        }
+
         public void UpdateHookSetSuccessZoneState(bool isInSuccessZone)
         {
             if (_isHookSetSuccessZoneActive == isInSuccessZone)
@@ -2488,6 +2503,12 @@ namespace TPSBR
         private void RPC_SubmitFightingMinigameProgress(byte successHits, byte requiredHits)
         {
             HandleFightingMinigameProgressInternal(successHits, Mathf.Max(1, requiredHits));
+        }
+
+        [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
+        private void RPC_SubmitReelingMinigameResult(bool wasSuccessful)
+        {
+            HandleReelingMinigameResultInternal(wasSuccessful);
         }
 
         private byte AddItemInternal(ItemDefinition definition, byte quantity, NetworkString<_64> configurationHash)
@@ -5614,12 +5635,29 @@ namespace TPSBR
                 }
 
                 ResetFightingMinigameProgress();
-                fishingPole.EnterCatchPhase();
+                fishingPole.EnterReelingPhase();
             }
             else
             {
                 ResetFightingMinigameProgress();
                 fishingPole.HandleFightingFailed();
+            }
+        }
+
+        private void HandleReelingMinigameResultInternal(bool wasSuccessful)
+        {
+            var fishingPole = _fishingPole ?? _localFishingPole;
+
+            if (fishingPole == null)
+                return;
+
+            if (wasSuccessful == true)
+            {
+                fishingPole.EnterCatchPhase();
+            }
+            else
+            {
+                fishingPole.HandleReelingFailed();
             }
         }
 

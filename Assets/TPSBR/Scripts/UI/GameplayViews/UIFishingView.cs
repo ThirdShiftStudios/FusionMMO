@@ -17,6 +17,7 @@ namespace TPSBR.UI
         private Inventory _inventory;
         private bool _isHookSetMinigameVisible;
         private bool _isFightingMinigameVisible;
+        private bool _isReelingMinigameVisible;
 
         internal void Bind(Inventory inventory)
         {
@@ -42,6 +43,7 @@ namespace TPSBR.UI
                 UpdateLifecycleLabel(initialState);
                 UpdateHookSetMinigameState(initialState);
                 UpdateFightingMinigameState(initialState);
+                UpdateReelingMinigameState(initialState);
             }
             else
             {
@@ -49,6 +51,7 @@ namespace TPSBR.UI
                 UpdateLifecycleLabel(FishingLifecycleState.Inactive);
                 UpdateHookSetMinigameState(FishingLifecycleState.Inactive);
                 UpdateFightingMinigameState(FishingLifecycleState.Inactive);
+                UpdateReelingMinigameState(FishingLifecycleState.Inactive);
             }
         }
 
@@ -69,6 +72,14 @@ namespace TPSBR.UI
                 _fightingMinigame.MinigameFinished += OnFightingMinigameFinished;
                 _fightingMinigame.SuccessProgressed += OnFightingMinigameProgressed;
             }
+
+            if (_reelingMinigame != null)
+            {
+                _reelingMinigame.gameObject.SetActive(false);
+                _reelingMinigame.StopMinigame();
+                _reelingMinigame.onSuccess.AddListener(OnReelingMinigameSucceeded);
+                _reelingMinigame.onFail.AddListener(OnReelingMinigameFailed);
+            }
         }
 
         protected override void OnDeinitialize()
@@ -87,8 +98,16 @@ namespace TPSBR.UI
                 _fightingMinigame.SuccessProgressed -= OnFightingMinigameProgressed;
             }
 
+            if (_reelingMinigame != null)
+            {
+                _reelingMinigame.StopMinigame();
+                _reelingMinigame.onSuccess.RemoveListener(OnReelingMinigameSucceeded);
+                _reelingMinigame.onFail.RemoveListener(OnReelingMinigameFailed);
+            }
+
             HideHookSetMinigame();
             HideFightingMinigame();
+            HideReelingMinigame();
             Bind(null);
             base.OnDeinitialize();
         }
@@ -100,6 +119,7 @@ namespace TPSBR.UI
             UpdateLifecycleLabel(state);
             UpdateHookSetMinigameState(state);
             UpdateFightingMinigameState(state);
+            UpdateReelingMinigameState(state);
         }
 
         private void OnFishingLifecycleStateChanged(FishingLifecycleState state)
@@ -107,6 +127,7 @@ namespace TPSBR.UI
             UpdateLifecycleLabel(state);
             UpdateHookSetMinigameState(state);
             UpdateFightingMinigameState(state);
+            UpdateReelingMinigameState(state);
         }
 
         private void UpdateVisibility(bool shouldBeVisible)
@@ -122,6 +143,8 @@ namespace TPSBR.UI
             {
                 Close();
                 HideHookSetMinigame();
+                HideFightingMinigame();
+                HideReelingMinigame();
             }
         }
 
@@ -140,6 +163,7 @@ namespace TPSBR.UI
                 FishingLifecycleState.LureInFlight => "Line In Flight",
                 FishingLifecycleState.Waiting      => "Waiting",
                 FishingLifecycleState.Fighting     => "Fighting",
+                FishingLifecycleState.Reeling      => "Reeling",
                 _                                  => state.ToString(),
             };
 
@@ -221,6 +245,40 @@ namespace TPSBR.UI
             _isFightingMinigameVisible = false;
         }
 
+        private void UpdateReelingMinigameState(FishingLifecycleState state)
+        {
+            if (_reelingMinigame == null)
+            {
+                return;
+            }
+
+            if (state == FishingLifecycleState.Reeling)
+            {
+                if (_isReelingMinigameVisible == false)
+                {
+                    _reelingMinigame.gameObject.SetActive(true);
+                    _reelingMinigame.StartMinigame();
+                    _isReelingMinigameVisible = true;
+                }
+            }
+            else
+            {
+                HideReelingMinigame();
+            }
+        }
+
+        private void HideReelingMinigame()
+        {
+            if (_reelingMinigame == null || _isReelingMinigameVisible == false)
+            {
+                return;
+            }
+
+            _reelingMinigame.StopMinigame();
+            _reelingMinigame.gameObject.SetActive(false);
+            _isReelingMinigameVisible = false;
+        }
+
         private void OnHookSetMinigameFinished(bool wasSuccessful)
         {
             HideHookSetMinigame();
@@ -255,6 +313,18 @@ namespace TPSBR.UI
         private void OnFightingMinigameProgressed(int currentHits, int requiredHits)
         {
             _inventory?.SubmitFightingMinigameProgress(currentHits, requiredHits);
+        }
+
+        private void OnReelingMinigameSucceeded()
+        {
+            HideReelingMinigame();
+            _inventory?.SubmitReelingMinigameResult(true);
+        }
+
+        private void OnReelingMinigameFailed()
+        {
+            HideReelingMinigame();
+            _inventory?.SubmitReelingMinigameResult(false);
         }
     }
 }

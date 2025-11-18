@@ -857,7 +857,9 @@ namespace TPSBR
                 return false;
             if (_use.HasActiveState())
             {
-                if (_use.FishingPoleUseState.Fighting.IsActive() || _use.FishingPoleUseState.Waiting.IsActive())
+                if (_use.FishingPoleUseState.Fighting.IsActive() ||
+                    _use.FishingPoleUseState.Waiting.IsActive() ||
+                    _use.FishingPoleUseState.Reel.IsActive())
                     return true;
             }
             return false;

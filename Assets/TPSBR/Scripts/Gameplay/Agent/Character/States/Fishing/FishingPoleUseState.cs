@@ -34,6 +34,7 @@ namespace TPSBR
         private bool _isWaiting;
         private bool _awaitingLureImpact;
         private bool _isFighting;
+        private bool _isReeling;
         private bool _isCatching;
         private FishingLureProjectile _reelLure;
         private Vector3 _reelDirection;
@@ -73,6 +74,7 @@ namespace TPSBR
             _isWaiting = false;
             _awaitingLureImpact = false;
             _isFighting = false;
+            _isReeling = false;
             _isCatching = false;
             ResetReeling();
 
@@ -124,6 +126,7 @@ namespace TPSBR
             bool throwActive = _castState.IsThrowActive;
             bool waitingActive = _isWaiting == true && _waiting != null && _waiting.IsActive(true) == true;
             bool fightingActive = _isFighting == true && _fighting != null && _fighting.IsActive(true) == true;
+            bool reelingActive = _isReeling == true && _reel != null && _reel.IsActive(true) == true;
             bool catchActive = _isCatching == true && _catch != null && _catch.IsActive(true) == true;
 
             if (beginActive == true)
@@ -168,6 +171,16 @@ namespace TPSBR
                 }
             }
             else if (fightingActive == true)
+            {
+                bool secondaryActivated = agentInput.WasActivated(EGameplayInputAction.Block) ||
+                                          agentInput.WasActivated(EGameplayInputAction.HeavyAttack);
+
+                if (secondaryActivated == true)
+                {
+                    CancelCast();
+                }
+            }
+            else if (reelingActive == true)
             {
                 bool secondaryActivated = agentInput.WasActivated(EGameplayInputAction.Block) ||
                                           agentInput.WasActivated(EGameplayInputAction.HeavyAttack);
@@ -232,6 +245,7 @@ namespace TPSBR
             _isWaiting = true;
             _awaitingLureImpact = false;
             _isFighting = false;
+            _isReeling = false;
             _isCatching = false;
 
             _waiting.SetActiveWeapon(weapon);
@@ -257,6 +271,7 @@ namespace TPSBR
 
             _isWaiting = false;
             _isFighting = true;
+            _isReeling = false;
             _isCatching = false;
 
             if (_waiting != null)
@@ -281,6 +296,33 @@ namespace TPSBR
             }
 
             weapon.NotifyFightingPhaseEntered();
+
+            Activate(_blendInDuration);
+        }
+
+        internal void EnterReelingPhase(FishingPoleWeapon weapon)
+        {
+            if (_reel == null || weapon == null || _activeWeapon != weapon)
+                return;
+
+            if (_isReeling == true)
+                return;
+
+            _isWaiting = false;
+            _isFighting = false;
+            _isReeling = true;
+            _isCatching = false;
+
+            if (_fighting != null)
+            {
+                _fighting.Stop(_blendOutDuration);
+                _fighting.ClearActiveWeapon(weapon);
+            }
+
+            _reel.SetActiveWeapon(weapon);
+            _reel.Play(_blendInDuration);
+
+            weapon.NotifyReelingPhaseEntered();
 
             Activate(_blendInDuration);
         }
@@ -368,12 +410,19 @@ namespace TPSBR
 
             _isWaiting = false;
             _isFighting = false;
+            _isReeling = false;
             _isCatching = true;
 
             if (_fighting != null)
             {
                 _fighting.Stop(_blendOutDuration);
                 _fighting.ClearActiveWeapon(weapon);
+            }
+
+            if (_reel != null)
+            {
+                _reel.Stop(_blendOutDuration);
+                _reel.ClearActiveWeapon(weapon);
             }
 
             if (_reelLure == null)
@@ -684,6 +733,12 @@ namespace TPSBR
                 _fighting.ClearActiveWeapon(_activeWeapon);
             }
 
+            if (_reel != null)
+            {
+                _reel.Stop(_blendOutDuration);
+                _reel.ClearActiveWeapon(_activeWeapon);
+            }
+
             if (_catch != null)
             {
                 _catch.Stop(_blendOutDuration);
@@ -693,6 +748,7 @@ namespace TPSBR
             _isWaiting = false;
             _awaitingLureImpact = false;
             _isFighting = false;
+            _isReeling = false;
             _isCatching = false;
 
             if (_activeWeapon != null)
@@ -724,6 +780,12 @@ namespace TPSBR
                 _fighting.ClearActiveWeapon(_activeWeapon);
             }
 
+            if (_reel != null)
+            {
+                _reel.Stop(_blendOutDuration);
+                _reel.ClearActiveWeapon(_activeWeapon);
+            }
+
             if (_catch != null)
             {
                 _catch.Stop(_blendOutDuration);
@@ -733,6 +795,7 @@ namespace TPSBR
             _isWaiting = false;
             _awaitingLureImpact = false;
             _isFighting = false;
+            _isReeling = false;
             _isCatching = false;
 
             if (_activeWeapon != null)
@@ -762,6 +825,11 @@ namespace TPSBR
                 _fighting.ClearActiveWeapon(_activeWeapon);
             }
 
+            if (_reel != null && _activeWeapon != null)
+            {
+                _reel.ClearActiveWeapon(_activeWeapon);
+            }
+
             if (_catch != null && _activeWeapon != null)
             {
                 _catch.ClearActiveWeapon(_activeWeapon);
@@ -771,6 +839,7 @@ namespace TPSBR
             _isWaiting = false;
             _awaitingLureImpact = false;
             _isFighting = false;
+            _isReeling = false;
             _isCatching = false;
 
             if (IsActive(true) == true)
