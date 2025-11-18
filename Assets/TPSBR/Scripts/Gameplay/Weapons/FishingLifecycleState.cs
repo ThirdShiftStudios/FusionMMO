@@ -11,5 +11,6 @@ namespace TPSBR
         LureInFlight,
         Waiting,
         Fighting,
+        Reeling,
     }
 }

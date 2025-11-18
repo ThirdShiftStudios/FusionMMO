@@ -302,6 +302,17 @@ namespace TPSBR
             layer.FishingPoleUseState.EnterFightingPhase(this);
         }
 
+        internal void EnterReelingPhase()
+        {
+            UseLayer layer = GetUseLayer();
+
+            if (layer?.FishingPoleUseState == null)
+                return;
+
+            EndWaitingPhase();
+            layer.FishingPoleUseState.EnterReelingPhase(this);
+        }
+
         internal void EnterCatchPhase()
         {
             UseLayer layer = GetUseLayer();
@@ -352,6 +363,11 @@ namespace TPSBR
             }
 
             RaiseLifecycleStateChanged(FishingLifecycleState.Fighting);
+        }
+
+        internal void NotifyReelingPhaseEntered()
+        {
+            RaiseLifecycleStateChanged(FishingLifecycleState.Reeling);
         }
 
         internal void HandleFightingMinigameProgress(int successHits, int requiredHits)
