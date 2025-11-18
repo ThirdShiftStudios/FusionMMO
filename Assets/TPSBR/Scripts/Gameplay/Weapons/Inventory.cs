@@ -1256,6 +1256,21 @@ namespace TPSBR
             }
         }
 
+        public void SubmitReelingMinigameResult(bool wasSuccessful)
+        {
+            if (_localFishingPole == null)
+                return;
+
+            if (HasStateAuthority == true)
+            {
+                HandleReelingMinigameResultInternal(wasSuccessful);
+            }
+            else
+            {
+                RPC_SubmitReelingMinigameResult(wasSuccessful);
+            }
+        }
+
         public void SubmitFightingMinigameProgress(int successHits, int requiredHits)
         {
             if (_localFishingPole == null)
@@ -2482,6 +2497,12 @@ namespace TPSBR
         private void RPC_SubmitFightingMinigameResult(bool wasSuccessful)
         {
             HandleFightingMinigameResultInternal(wasSuccessful);
+        }
+
+        [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
+        private void RPC_SubmitReelingMinigameResult(bool wasSuccessful)
+        {
+            HandleReelingMinigameResultInternal(wasSuccessful);
         }
 
         [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
@@ -5614,12 +5635,29 @@ namespace TPSBR
                 }
 
                 ResetFightingMinigameProgress();
-                fishingPole.EnterCatchPhase();
+                fishingPole.EnterReelingPhase();
             }
             else
             {
                 ResetFightingMinigameProgress();
                 fishingPole.HandleFightingFailed();
+            }
+        }
+
+        private void HandleReelingMinigameResultInternal(bool wasSuccessful)
+        {
+            var fishingPole = _fishingPole ?? _localFishingPole;
+
+            if (fishingPole == null)
+                return;
+
+            if (wasSuccessful == true)
+            {
+                fishingPole.EnterCatchPhase();
+            }
+            else
+            {
+                fishingPole.HandleReelingFailed();
             }
         }
 
