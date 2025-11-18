@@ -25336,6 +25336,7 @@ RectTransform:
   - {fileID: 1201439303155554322}
   - {fileID: 6378148717827722646}
   - {fileID: 533335909278310763}
+  - {fileID: 3053378133688465612}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -47052,3 +47053,84 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!1 &7681840064178284697
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3053378133688465612}
+  - component: {fileID: 2188309771681444438}
+  m_Layer: 5
+  m_Name: Fishing_Reeling
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &3053378133688465612
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7681840064178284697}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 889324605528703712}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 100, y: 100}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &2188309771681444438
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7681840064178284697}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e7d44b1e146449d9ac3dc874f1d586a8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  sliderTrack: {fileID: 0}
+  sliderHandle: {fileID: 0}
+  safeZoneDisplay: {fileID: 0}
+  successProgressImage: {fileID: 0}
+  failureProgressImage: {fileID: 0}
+  pressSpeed: 0.5
+  releaseSpeed: 0.35
+  safeZoneWidth: 0.15
+  safeZoneMidpoint: 0.5
+  safeZoneMoveSpeed: 0.65
+  safeZoneMovementAmplitude: 0.35
+  pingPongPattern: 0
+  successRate: 25
+  failureRate: 30
+  successTarget: 100
+  failureTarget: 100
+  autoStart: 1
+  stopOnComplete: 1
+  onSuccess:
+    m_PersistentCalls:
+      m_Calls: []
+  onFail:
+    m_PersistentCalls:
+      m_Calls: []
+  onSuccessProgress:
+    m_PersistentCalls:
+      m_Calls: []
+  onFailureProgress:
+    m_PersistentCalls:
+      m_Calls: []
+  onZoneStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
