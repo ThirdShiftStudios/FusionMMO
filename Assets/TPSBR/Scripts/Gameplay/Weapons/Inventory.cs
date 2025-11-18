@@ -3380,6 +3380,35 @@ namespace TPSBR
             RefreshWeapons();
         }
 
+        internal bool CanSwapHotbarSlots(int fromIndex, int toIndex)
+        {
+            int fromSlot = fromIndex + 1;
+            int toSlot = toIndex + 1;
+
+            if (fromSlot < 0 || fromSlot >= _hotbar.Length)
+                return false;
+
+            if (toSlot < 0 || toSlot >= _hotbar.Length)
+                return false;
+
+            if (IsValidHotbarAssignmentSlot(fromSlot) == false || IsValidHotbarAssignmentSlot(toSlot) == false)
+                return false;
+
+            if (fromSlot == toSlot)
+                return false;
+
+            var fromWeapon = _hotbar[fromSlot];
+            var toWeapon = _hotbar[toSlot];
+
+            if (CanAssignWeaponToHotbarSlot(fromWeapon, toSlot) == false)
+                return false;
+
+            if (CanAssignWeaponToHotbarSlot(toWeapon, fromSlot) == false)
+                return false;
+
+            return true;
+        }
+
         private void DropInventoryItem(int index)
         {
             if (index == PICKAXE_SLOT_INDEX)

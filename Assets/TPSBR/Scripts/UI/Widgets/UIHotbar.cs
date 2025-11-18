@@ -171,6 +171,11 @@ namespace TPSBR.UI
 
             if (ReferenceEquals(source.Owner, this) == true)
             {
+                if (_inventory.CanSwapHotbarSlots(source.Index, target.Index) == true)
+                {
+                    ApplyLocalHotbarSwap(source, target);
+                }
+
                 _inventory.RequestSwapHotbar(source.Index, target.Index);
             }
             else
@@ -442,6 +447,33 @@ namespace TPSBR.UI
             _hoveredSlotIndex = -1;
             _lastPointerPosition = Vector2.zero;
             ItemPointerExit?.Invoke();
+        }
+
+        private void ApplyLocalHotbarSwap(UIListItem source, UIListItem target)
+        {
+            if (source == null || target == null)
+                return;
+
+            Sprite sourceIcon = source.IconSprite;
+            int sourceQuantity = source.Quantity;
+            Sprite targetIcon = target.IconSprite;
+            int targetQuantity = target.Quantity;
+
+            source.SetItem(targetIcon, targetQuantity);
+            target.SetItem(sourceIcon, sourceQuantity);
+
+            if (_selectedSlotIndex == source.Index)
+            {
+                _selectedSlotIndex = target.Index;
+            }
+            else if (_selectedSlotIndex == target.Index)
+            {
+                _selectedSlotIndex = source.Index;
+            }
+
+            UpdateSelectionHighlight();
+            RefreshHover(source.Index);
+            RefreshHover(target.Index);
         }
 
         private void EnsureDragVisual()
