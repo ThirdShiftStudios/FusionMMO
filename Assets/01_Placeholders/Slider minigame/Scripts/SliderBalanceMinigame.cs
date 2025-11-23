@@ -171,9 +171,10 @@ public class SliderBalanceMinigame : MonoBehaviour
             return;
 
         float width = sliderTrack.rect.width;
+        float travelWidth = Mathf.Max(0f, width - sliderHandle.rect.width);
         Vector2 anchorPos = sliderHandle.anchoredPosition;
-        float minX = -width * 0.5f;
-        float maxX = width * 0.5f;
+        float minX = -travelWidth * 0.5f;
+        float maxX = travelWidth * 0.5f;
         anchorPos.x = Mathf.Lerp(minX, maxX, handlePosition);
         sliderHandle.anchoredPosition = anchorPos;
     }
