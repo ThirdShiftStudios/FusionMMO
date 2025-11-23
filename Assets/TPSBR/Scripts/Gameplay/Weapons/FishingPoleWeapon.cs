@@ -302,16 +302,7 @@ namespace TPSBR
             layer.FishingPoleUseState.EnterFightingPhase(this);
         }
 
-        internal void EnterReelingPhase()
-        {
-            UseLayer layer = GetUseLayer();
-
-            if (layer?.FishingPoleUseState == null)
-                return;
-
-            EndWaitingPhase();
-            layer.FishingPoleUseState.EnterReelingPhase(this);
-        }
+       
 
         internal void EnterCatchPhase()
         {

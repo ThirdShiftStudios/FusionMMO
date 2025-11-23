@@ -1275,20 +1275,7 @@ namespace TPSBR
             }
         }
 
-        public void SubmitReelingMinigameResult(bool wasSuccessful)
-        {
-            if (_localFishingPole == null)
-                return;
-
-            if (HasStateAuthority == true)
-            {
-                HandleReelingMinigameResultInternal(wasSuccessful);
-            }
-            else
-            {
-                RPC_SubmitReelingMinigameResult(wasSuccessful);
-            }
-        }
+        
 
         public void UpdateHookSetSuccessZoneState(bool isInSuccessZone)
         {
@@ -2505,11 +2492,7 @@ namespace TPSBR
             HandleFightingMinigameProgressInternal(successHits, Mathf.Max(1, requiredHits));
         }
 
-        [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
-        private void RPC_SubmitReelingMinigameResult(bool wasSuccessful)
-        {
-            HandleReelingMinigameResultInternal(wasSuccessful);
-        }
+        
 
         private byte AddItemInternal(ItemDefinition definition, byte quantity, NetworkString<_64> configurationHash)
         {

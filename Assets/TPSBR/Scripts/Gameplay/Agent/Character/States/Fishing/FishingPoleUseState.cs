@@ -9,13 +9,11 @@ namespace TPSBR
         public  FishingWaitingState Waiting => _waiting;
         public  FishingFightingState Fighting => _fighting;
         public  FishingCatchParentState Catch => _catch;
-        public FishingReelingState Reel => _reel;
 
         [SerializeField] private FishingCastParentState _castState;
         [SerializeField] private FishingWaitingState _waiting;
         [SerializeField] private FishingFightingState _fighting;
         [SerializeField] private FishingCatchParentState _catch;
-        [SerializeField] private FishingReelingState _reel;
 
         [SerializeField] private float _blendInDuration = 0.1f;
         [SerializeField] private float _blendOutDuration = 0.15f;
@@ -126,7 +124,6 @@ namespace TPSBR
             bool throwActive = _castState.IsThrowActive;
             bool waitingActive = _isWaiting == true && _waiting != null && _waiting.IsActive(true) == true;
             bool fightingActive = _isFighting == true && _fighting != null && _fighting.IsActive(true) == true;
-            bool reelingActive = _isReeling == true && _reel != null && _reel.IsActive(true) == true;
             bool catchActive = _isCatching == true && _catch != null && _catch.IsActive(true) == true;
 
             if (beginActive == true)
@@ -171,16 +168,6 @@ namespace TPSBR
                 }
             }
             else if (fightingActive == true)
-            {
-                bool secondaryActivated = agentInput.WasActivated(EGameplayInputAction.Block) ||
-                                          agentInput.WasActivated(EGameplayInputAction.HeavyAttack);
-
-                if (secondaryActivated == true)
-                {
-                    CancelCast();
-                }
-            }
-            else if (reelingActive == true)
             {
                 bool secondaryActivated = agentInput.WasActivated(EGameplayInputAction.Block) ||
                                           agentInput.WasActivated(EGameplayInputAction.HeavyAttack);
@@ -300,33 +287,6 @@ namespace TPSBR
             Activate(_blendInDuration);
         }
 
-        internal void EnterReelingPhase(FishingPoleWeapon weapon)
-        {
-            if (_reel == null || weapon == null || _activeWeapon != weapon)
-                return;
-
-            if (_isReeling == true)
-                return;
-
-            _isWaiting = false;
-            _isFighting = false;
-            _isReeling = true;
-            _isCatching = false;
-
-            if (_fighting != null)
-            {
-                _fighting.Stop(_blendOutDuration);
-                _fighting.ClearActiveWeapon(weapon);
-            }
-
-            _reel.SetActiveWeapon(weapon);
-            _reel.Play(_blendInDuration);
-
-            weapon.NotifyReelingPhaseEntered();
-
-            Activate(_blendInDuration);
-        }
-
         internal void UpdateFightingMinigameProgress(FishingPoleWeapon weapon, int successHits, int requiredHits)
         {
             if (weapon == null || _activeWeapon != weapon)
@@ -419,11 +379,7 @@ namespace TPSBR
                 _fighting.ClearActiveWeapon(weapon);
             }
 
-            if (_reel != null)
-            {
-                _reel.Stop(_blendOutDuration);
-                _reel.ClearActiveWeapon(weapon);
-            }
+            
 
             if (_reelLure == null)
             {
@@ -733,11 +689,7 @@ namespace TPSBR
                 _fighting.ClearActiveWeapon(_activeWeapon);
             }
 
-            if (_reel != null)
-            {
-                _reel.Stop(_blendOutDuration);
-                _reel.ClearActiveWeapon(_activeWeapon);
-            }
+            
 
             if (_catch != null)
             {
@@ -780,11 +732,7 @@ namespace TPSBR
                 _fighting.ClearActiveWeapon(_activeWeapon);
             }
 
-            if (_reel != null)
-            {
-                _reel.Stop(_blendOutDuration);
-                _reel.ClearActiveWeapon(_activeWeapon);
-            }
+           
 
             if (_catch != null)
             {
@@ -825,10 +773,7 @@ namespace TPSBR
                 _fighting.ClearActiveWeapon(_activeWeapon);
             }
 
-            if (_reel != null && _activeWeapon != null)
-            {
-                _reel.ClearActiveWeapon(_activeWeapon);
-            }
+           
 
             if (_catch != null && _activeWeapon != null)
             {
