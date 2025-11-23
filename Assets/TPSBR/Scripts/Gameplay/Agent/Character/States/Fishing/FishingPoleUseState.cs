@@ -9,17 +9,14 @@ namespace TPSBR
         public  FishingWaitingState Waiting => _waiting;
         public  FishingFightingState Fighting => _fighting;
         public  FishingCatchParentState Catch => _catch;
-        public FishingReelingState Reel => _reel;
 
         [SerializeField] private FishingCastParentState _castState;
         [SerializeField] private FishingWaitingState _waiting;
         [SerializeField] private FishingFightingState _fighting;
         [SerializeField] private FishingCatchParentState _catch;
-        [SerializeField] private FishingReelingState _reel;
 
         [SerializeField] private float _blendInDuration = 0.1f;
         [SerializeField] private float _blendOutDuration = 0.15f;
-        [SerializeField] private float _reelSmoothTime = 0.25f;
         [SerializeField] private float _fightingHorizontalRadius = 0.35f;
         [SerializeField] private float _fightingHorizontalSpeed = 0.65f;
         [SerializeField] private float _fightingHorizontalJitterRadius = 0.15f;
@@ -34,19 +31,7 @@ namespace TPSBR
         private bool _isWaiting;
         private bool _awaitingLureImpact;
         private bool _isFighting;
-        private bool _isReeling;
         private bool _isCatching;
-        private FishingLureProjectile _reelLure;
-        private Vector3 _reelDirection;
-        private float _reelInitialDistance;
-        private Vector3 _reelCurrentOffset;
-        private Vector3 _reelTargetOffset;
-        private Vector3 _reelOffsetVelocity;
-        private Vector3 _reelAnchorPosition;
-        private int _reelRequiredHits;
-        private int _reelAppliedHits;
-        private bool _isReelActive;
-        private bool _hasReelAnchorPosition;
         private bool _fightingMotionInitialized;
         private float _fightingMotionTime;
         private Vector3 _fightingMotionOffset;
@@ -74,9 +59,7 @@ namespace TPSBR
             _isWaiting = false;
             _awaitingLureImpact = false;
             _isFighting = false;
-            _isReeling = false;
             _isCatching = false;
-            ResetReeling();
 
             _castState.SetActiveWeapon(weapon);
             _waiting?.SetActiveWeapon(weapon);
@@ -97,16 +80,11 @@ namespace TPSBR
 
             float deltaTime = (_activeWeapon != null && _activeWeapon.Runner != null) ? _activeWeapon.Runner.DeltaTime : Time.fixedDeltaTime;
 
-            if (_activeWeapon != null && _activeWeapon.HasStateAuthority == true)
-            {
-                UpdateReelMovement(deltaTime);
-            }
-
             if (_activeWeapon == null || _castState == null)
             {
                 if (_activeWeapon == null)
                 {
-                    ResetReeling();
+                    // No active weapon, nothing to update.
                 }
 
                 return;
@@ -126,7 +104,6 @@ namespace TPSBR
             bool throwActive = _castState.IsThrowActive;
             bool waitingActive = _isWaiting == true && _waiting != null && _waiting.IsActive(true) == true;
             bool fightingActive = _isFighting == true && _fighting != null && _fighting.IsActive(true) == true;
-            bool reelingActive = _isReeling == true && _reel != null && _reel.IsActive(true) == true;
             bool catchActive = _isCatching == true && _catch != null && _catch.IsActive(true) == true;
 
             if (beginActive == true)
@@ -180,16 +157,6 @@ namespace TPSBR
                     CancelCast();
                 }
             }
-            else if (reelingActive == true)
-            {
-                bool secondaryActivated = agentInput.WasActivated(EGameplayInputAction.Block) ||
-                                          agentInput.WasActivated(EGameplayInputAction.HeavyAttack);
-
-                if (secondaryActivated == true)
-                {
-                    CancelCast();
-                }
-            }
             else if (catchActive == true)
             {
                 if (_catch != null && _catch.IsLoopActive == true)
@@ -219,19 +186,6 @@ namespace TPSBR
             }
         }
 
-        protected override void OnInterpolate()
-        {
-            base.OnInterpolate();
-
-            if (_activeWeapon == null)
-                return;
-
-            if (_activeWeapon.HasStateAuthority == true)
-                return;
-
-            UpdateReelMovement(Time.deltaTime);
-        }
-
         internal void EnterWaitingPhase(FishingPoleWeapon weapon)
         {
             if (_waiting == null || weapon == null || _activeWeapon != weapon)
@@ -240,12 +194,9 @@ namespace TPSBR
             if (_isWaiting == true)
                 return;
 
-            ResetReeling();
-
             _isWaiting = true;
             _awaitingLureImpact = false;
             _isFighting = false;
-            _isReeling = false;
             _isCatching = false;
 
             _waiting.SetActiveWeapon(weapon);
@@ -271,7 +222,6 @@ namespace TPSBR
 
             _isWaiting = false;
             _isFighting = true;
-            _isReeling = false;
             _isCatching = false;
 
             if (_waiting != null)
@@ -282,9 +232,6 @@ namespace TPSBR
 
             _fighting.SetActiveWeapon(weapon);
             _fighting.Play(_blendInDuration);
-
-            ResetReeling();
-            BeginReeling(weapon);
 
             if (weapon.HasStateAuthority == true)
             {
@@ -300,104 +247,10 @@ namespace TPSBR
             Activate(_blendInDuration);
         }
 
-        internal void EnterReelingPhase(FishingPoleWeapon weapon)
-        {
-            if (_reel == null || weapon == null || _activeWeapon != weapon)
-                return;
-
-            if (_isReeling == true)
-                return;
-
-            _isWaiting = false;
-            _isFighting = false;
-            _isReeling = true;
-            _isCatching = false;
-
-            if (_fighting != null)
-            {
-                _fighting.Stop(_blendOutDuration);
-                _fighting.ClearActiveWeapon(weapon);
-            }
-
-            _reel.SetActiveWeapon(weapon);
-            _reel.Play(_blendInDuration);
-
-            weapon.NotifyReelingPhaseEntered();
-
-            Activate(_blendInDuration);
-        }
-
         internal void UpdateFightingMinigameProgress(FishingPoleWeapon weapon, int successHits, int requiredHits)
         {
-            if (weapon == null || _activeWeapon != weapon)
+            if (weapon == null || _activeWeapon != weapon || _isFighting == false)
                 return;
-
-            if (_isFighting == false)
-                return;
-
-            if (_isReelActive == false)
-            {
-                BeginReeling(weapon);
-            }
-
-            if (_reelLure == null)
-            {
-                _reelLure = weapon.ActiveLure;
-            }
-
-            if (_isReelActive == false || _reelInitialDistance <= 0f || _reelLure == null)
-                return;
-
-            int clampedRequired = Mathf.Max(1, requiredHits);
-            bool hasNewRequirement = clampedRequired > _reelRequiredHits;
-            _reelRequiredHits = Mathf.Max(_reelRequiredHits, clampedRequired);
-
-            successHits = Mathf.Clamp(successHits, 0, _reelRequiredHits);
-
-            bool hasNewProgress = successHits > _reelAppliedHits;
-
-            if (hasNewProgress == false && hasNewRequirement == false)
-                return;
-
-            _reelAppliedHits = Mathf.Min(successHits, _reelRequiredHits);
-
-            float normalized = _reelRequiredHits > 0 ? (float)_reelAppliedHits / _reelRequiredHits : 0f;
-            normalized = Mathf.Clamp01(normalized);
-
-            Vector3 anchorPosition = _hasReelAnchorPosition == true ? _reelAnchorPosition : (_reelLure != null ? _reelLure.transform.position - _reelCurrentOffset : Vector3.zero);
-            Vector3 finalTargetPosition = anchorPosition + _reelDirection * _reelInitialDistance;
-
-            if (_hasReelAnchorPosition == true && TryGetReelTargetPosition(weapon, out Vector3 resolvedTarget) == true)
-            {
-                finalTargetPosition = resolvedTarget;
-
-                Vector3 toTarget = finalTargetPosition - anchorPosition;
-                float totalDistance = toTarget.magnitude;
-
-                if (totalDistance > 0.001f)
-                {
-                    _reelDirection = toTarget / totalDistance;
-                    _reelInitialDistance = totalDistance;
-                }
-            }
-
-            if (_hasReelAnchorPosition == true)
-            {
-                Vector3 desiredPosition = Vector3.Lerp(anchorPosition, finalTargetPosition, normalized);
-                _reelTargetOffset = desiredPosition - anchorPosition;
-            }
-            else
-            {
-                float targetDistance = _reelInitialDistance * normalized;
-                _reelTargetOffset = _reelDirection * targetDistance;
-            }
-
-            _isReelActive = true;
-
-            if (_reelAppliedHits >= _reelRequiredHits && _reelRequiredHits > 0)
-            {
-                SnapReeledLureToTarget(weapon, anchorPosition, finalTargetPosition);
-            }
         }
 
         internal void EnterCatchPhase(FishingPoleWeapon weapon)
@@ -410,7 +263,6 @@ namespace TPSBR
 
             _isWaiting = false;
             _isFighting = false;
-            _isReeling = false;
             _isCatching = true;
 
             if (_fighting != null)
@@ -418,32 +270,6 @@ namespace TPSBR
                 _fighting.Stop(_blendOutDuration);
                 _fighting.ClearActiveWeapon(weapon);
             }
-
-            if (_reel != null)
-            {
-                _reel.Stop(_blendOutDuration);
-                _reel.ClearActiveWeapon(weapon);
-            }
-
-            if (_reelLure == null)
-            {
-                _reelLure = weapon.ActiveLure;
-            }
-
-            if (_reelLure != null)
-            {
-                Vector3 anchorPosition = _hasReelAnchorPosition == true ? _reelAnchorPosition : (_reelLure.transform.position - _reelCurrentOffset);
-                Vector3 finalTargetPosition = anchorPosition + _reelDirection * _reelInitialDistance;
-
-                if (TryGetReelTargetPosition(weapon, out Vector3 resolvedTarget) == true)
-                {
-                    finalTargetPosition = resolvedTarget;
-                }
-
-                SnapReeledLureToTarget(weapon, anchorPosition, finalTargetPosition);
-            }
-
-            ResetReeling(clearVisualOffset: false);
 
             _catch.SetActiveWeapon(weapon);
             _catch.StartCatch(_blendInDuration);
@@ -478,121 +304,6 @@ namespace TPSBR
             CancelCast();
 
             return true;
-        }
-
-        private void BeginReeling(FishingPoleWeapon weapon)
-        {
-            if (weapon == null)
-                return;
-
-            FishingLureProjectile lure = weapon.ActiveLure;
-            Transform characterTransform = weapon.Character != null ? weapon.Character.transform : null;
-
-            if (lure == null || characterTransform == null)
-                return;
-
-            Vector3 lurePosition = lure.transform.position;
-            _reelAnchorPosition = lurePosition;
-            _hasReelAnchorPosition = true;
-
-            Vector3 targetPosition;
-
-            if (TryGetReelTargetPosition(weapon, out Vector3 resolvedTarget) == true)
-            {
-                targetPosition = resolvedTarget;
-            }
-            else
-            {
-                targetPosition = characterTransform.position;
-            }
-
-            Vector3 toCharacter = targetPosition - lurePosition;
-            float distance = toCharacter.magnitude;
-
-            if (distance <= 0.01f)
-                return;
-
-            _reelLure = lure;
-            _reelDirection = toCharacter / distance;
-            _reelInitialDistance = distance;
-            _reelCurrentOffset = Vector3.zero;
-            _reelTargetOffset = Vector3.zero;
-            _reelOffsetVelocity = Vector3.zero;
-            _reelRequiredHits = 0;
-            _reelAppliedHits = 0;
-            _isReelActive = true;
-
-            _reelLure.SetVisualOffset(Vector3.zero);
-        }
-
-        private void ResetReeling(bool clearVisualOffset = true)
-        {
-            if (_reelLure != null && clearVisualOffset == true)
-            {
-                _reelLure.SetVisualOffset(Vector3.zero);
-            }
-
-            _reelLure = null;
-            _reelDirection = Vector3.zero;
-            _reelInitialDistance = 0f;
-            _reelCurrentOffset = Vector3.zero;
-            _reelTargetOffset = Vector3.zero;
-            _reelOffsetVelocity = Vector3.zero;
-            _reelAnchorPosition = Vector3.zero;
-            _reelRequiredHits = 0;
-            _reelAppliedHits = 0;
-            _isReelActive = false;
-            _hasReelAnchorPosition = false;
-            ResetFightingMotion();
-        }
-
-        private void UpdateReelMovement(float deltaTime)
-        {
-            if (_isReelActive == false)
-                return;
-
-            if (_activeWeapon == null)
-            {
-                ResetReeling();
-                return;
-            }
-
-            if (_reelLure == null)
-            {
-                _reelLure = _activeWeapon.ActiveLure;
-
-                if (_reelLure == null)
-                {
-                    ResetReeling();
-                    return;
-                }
-            }
-
-            if (deltaTime <= 0f)
-            {
-                deltaTime = Time.deltaTime;
-            }
-
-            float smoothTime = Mathf.Max(0.01f, _reelSmoothTime);
-            _reelCurrentOffset = Vector3.SmoothDamp(_reelCurrentOffset, _reelTargetOffset, ref _reelOffsetVelocity, smoothTime, float.PositiveInfinity, deltaTime);
-
-            if ((_reelCurrentOffset - _reelTargetOffset).sqrMagnitude <= 0.0001f)
-            {
-                _reelCurrentOffset = _reelTargetOffset;
-            }
-
-            Vector3 fightingOffset = Vector3.zero;
-
-            if (_isFighting == true)
-            {
-                fightingOffset = UpdateFightingMotion(deltaTime);
-            }
-            else if (_fightingMotionInitialized == true || _fightingMotionOffset != Vector3.zero)
-            {
-                ResetFightingMotion();
-            }
-
-            _reelLure.SetVisualOffset(_reelCurrentOffset + fightingOffset);
         }
 
         private void BeginFightingMotion()
@@ -714,8 +425,6 @@ namespace TPSBR
 
         private void CompleteCast()
         {
-            ResetReeling();
-
             if (_castState != null)
             {
                 _castState.Stop(_blendOutDuration);
@@ -733,12 +442,6 @@ namespace TPSBR
                 _fighting.ClearActiveWeapon(_activeWeapon);
             }
 
-            if (_reel != null)
-            {
-                _reel.Stop(_blendOutDuration);
-                _reel.ClearActiveWeapon(_activeWeapon);
-            }
-
             if (_catch != null)
             {
                 _catch.Stop(_blendOutDuration);
@@ -748,7 +451,6 @@ namespace TPSBR
             _isWaiting = false;
             _awaitingLureImpact = false;
             _isFighting = false;
-            _isReeling = false;
             _isCatching = false;
 
             if (_activeWeapon != null)
@@ -761,8 +463,6 @@ namespace TPSBR
 
         private void CancelCast()
         {
-            ResetReeling();
-
             if (_castState != null)
             {
                 _castState.Stop(_blendOutDuration);
@@ -780,12 +480,6 @@ namespace TPSBR
                 _fighting.ClearActiveWeapon(_activeWeapon);
             }
 
-            if (_reel != null)
-            {
-                _reel.Stop(_blendOutDuration);
-                _reel.ClearActiveWeapon(_activeWeapon);
-            }
-
             if (_catch != null)
             {
                 _catch.Stop(_blendOutDuration);
@@ -795,7 +489,6 @@ namespace TPSBR
             _isWaiting = false;
             _awaitingLureImpact = false;
             _isFighting = false;
-            _isReeling = false;
             _isCatching = false;
 
             if (_activeWeapon != null)
@@ -808,8 +501,6 @@ namespace TPSBR
 
         private void Finish()
         {
-            ResetReeling();
-
             if (_castState != null && _activeWeapon != null)
             {
                 _castState.ClearActiveWeapon(_activeWeapon);
@@ -825,11 +516,6 @@ namespace TPSBR
                 _fighting.ClearActiveWeapon(_activeWeapon);
             }
 
-            if (_reel != null && _activeWeapon != null)
-            {
-                _reel.ClearActiveWeapon(_activeWeapon);
-            }
-
             if (_catch != null && _activeWeapon != null)
             {
                 _catch.ClearActiveWeapon(_activeWeapon);
@@ -839,7 +525,6 @@ namespace TPSBR
             _isWaiting = false;
             _awaitingLureImpact = false;
             _isFighting = false;
-            _isReeling = false;
             _isCatching = false;
 
             if (IsActive(true) == true)
@@ -855,73 +540,6 @@ namespace TPSBR
             CompleteCast();
         }
 
-        private bool TryGetReelTargetPosition(FishingPoleWeapon weapon, out Vector3 targetPosition)
-        {
-            targetPosition = default;
 
-            if (weapon == null)
-                return false;
-
-            Character character = weapon.Character;
-
-            if (character == null)
-                return false;
-
-            CharacterView view = character.ThirdPersonView;
-            Transform fireTransform = view != null ? view.FireTransform : null;
-
-            if (fireTransform != null)
-            {
-                targetPosition = fireTransform.position;
-                return true;
-            }
-
-            targetPosition = character.transform.position;
-            return true;
-        }
-
-        private void SnapReeledLureToTarget(FishingPoleWeapon weapon, Vector3 anchorPosition, Vector3 targetPosition)
-        {
-            if (weapon == null)
-                return;
-
-            if (_reelLure == null)
-            {
-                _reelLure = weapon.ActiveLure;
-
-                if (_reelLure == null)
-                    return;
-            }
-
-            if (_hasReelAnchorPosition == false)
-            {
-                anchorPosition = _reelLure.transform.position - _reelCurrentOffset;
-            }
-
-            if (TryGetReelTargetPosition(weapon, out Vector3 resolvedTarget) == true)
-            {
-                targetPosition = resolvedTarget;
-            }
-
-            _reelAnchorPosition = anchorPosition;
-            _hasReelAnchorPosition = true;
-
-            Vector3 offset = targetPosition - anchorPosition;
-
-            float distance = offset.magnitude;
-
-            if (distance > 0.001f)
-            {
-                _reelDirection = offset / distance;
-                _reelInitialDistance = distance;
-            }
-
-            _reelTargetOffset = offset;
-            _reelCurrentOffset = offset;
-            _reelOffsetVelocity = Vector3.zero;
-            _isReelActive = true;
-
-            _reelLure.SetVisualOffset(_reelCurrentOffset);
-        }
     }
 }

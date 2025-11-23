@@ -302,17 +302,6 @@ namespace TPSBR
             layer.FishingPoleUseState.EnterFightingPhase(this);
         }
 
-        internal void EnterReelingPhase()
-        {
-            UseLayer layer = GetUseLayer();
-
-            if (layer?.FishingPoleUseState == null)
-                return;
-
-            EndWaitingPhase();
-            layer.FishingPoleUseState.EnterReelingPhase(this);
-        }
-
         internal void EnterCatchPhase()
         {
             UseLayer layer = GetUseLayer();
@@ -352,20 +341,6 @@ namespace TPSBR
             RaiseLifecycleStateChanged(FishingLifecycleState.Ready);
         }
 
-        internal void HandleReelingFailed()
-        {
-            UseLayer layer = GetUseLayer();
-
-            if (layer?.FishingPoleUseState != null && layer.FishingPoleUseState.TryCancelActiveCast(this) == true)
-            {
-                return;
-            }
-
-            DespawnActiveFish();
-            EndWaitingPhase();
-            RaiseLifecycleStateChanged(FishingLifecycleState.Ready);
-        }
-
         internal void NotifyFightingPhaseEntered()
         {
             EndWaitingPhase();
@@ -377,12 +352,6 @@ namespace TPSBR
             }
 
             RaiseLifecycleStateChanged(FishingLifecycleState.Fighting);
-        }
-
-        internal void NotifyReelingPhaseEntered()
-        {
-            EndWaitingPhase();
-            RaiseLifecycleStateChanged(FishingLifecycleState.Reeling);
         }
 
         internal void HandleFightingMinigameProgress(int successHits, int requiredHits)
