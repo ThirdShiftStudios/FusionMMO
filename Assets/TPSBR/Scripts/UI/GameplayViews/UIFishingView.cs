@@ -10,6 +10,7 @@ namespace TPSBR.UI
         public const string ResourcePath = "UI/GameplayViews/UIFishingView";
 
         [SerializeField] private TextMeshProUGUI _lifecycleLabel;
+        // Only the hook set and fighting minigames are active; the former reeling stage has been removed.
         [SerializeField] private SliderMinigame _hookSetMinigame;
         [SerializeField] private SliderMinigame _fightingMinigame;
 
