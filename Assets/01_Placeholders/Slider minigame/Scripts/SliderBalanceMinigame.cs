@@ -168,9 +168,10 @@ public class SliderBalanceMinigame : MonoBehaviour
 
     void UpdateHandleVisual()
     {
+        float normalized = Mathf.Clamp01(handlePosition);
+
         if (unitySlider != null)
         {
-            float normalized = Mathf.Clamp01(handlePosition);
             unitySlider.minValue = 0f;
             unitySlider.maxValue = 1f;
             unitySlider.wholeNumbers = false;
@@ -183,7 +184,6 @@ public class SliderBalanceMinigame : MonoBehaviour
 
         // Drive the handle using normalized anchors so it always spans the full track width
         // regardless of the track or handle size.
-        float normalized = Mathf.Clamp01(handlePosition);
         Vector2 anchor = sliderHandle.anchorMin;
         anchor.x = normalized;
         sliderHandle.anchorMin = anchor;
