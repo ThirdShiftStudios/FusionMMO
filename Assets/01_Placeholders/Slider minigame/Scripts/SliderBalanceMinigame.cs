@@ -11,6 +11,7 @@ public class SliderBalanceMinigame : MonoBehaviour
     [Header("Slider Elements")]
     [SerializeField] RectTransform sliderTrack;
     [SerializeField] RectTransform sliderHandle;
+    [SerializeField] Slider unitySlider;
     [SerializeField] RectTransform safeZoneDisplay;
     [SerializeField] Image successProgressImage;
     [SerializeField] Image failureProgressImage;
@@ -167,6 +168,14 @@ public class SliderBalanceMinigame : MonoBehaviour
 
     void UpdateHandleVisual()
     {
+        if (unitySlider != null)
+        {
+            float sliderRange = unitySlider.maxValue - unitySlider.minValue;
+            float normalized = Mathf.Clamp01(handlePosition);
+            unitySlider.SetValueWithoutNotify(unitySlider.minValue + normalized * sliderRange);
+            return;
+        }
+
         if (sliderTrack == null || sliderHandle == null)
             return;
 
