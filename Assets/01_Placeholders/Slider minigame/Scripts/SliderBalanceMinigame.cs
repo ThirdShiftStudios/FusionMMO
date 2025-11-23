@@ -170,9 +170,24 @@ public class SliderBalanceMinigame : MonoBehaviour
     {
         if (unitySlider != null)
         {
-            float sliderRange = unitySlider.maxValue - unitySlider.minValue;
             float normalized = Mathf.Clamp01(handlePosition);
-            unitySlider.SetValueWithoutNotify(unitySlider.minValue + normalized * sliderRange);
+            unitySlider.minValue = 0f;
+            unitySlider.maxValue = 1f;
+            unitySlider.wholeNumbers = false;
+            unitySlider.SetValueWithoutNotify(normalized);
+
+            RectTransform handleRect = unitySlider.handleRect;
+            RectTransform container = handleRect != null ? handleRect.parent as RectTransform : null;
+            if (handleRect != null && container != null)
+            {
+                float travelWidth = Mathf.Max(0f, container.rect.width - handleRect.rect.width);
+                float minX = -travelWidth * 0.5f;
+                float maxX = travelWidth * 0.5f;
+                Vector2 anchorPos = handleRect.anchoredPosition;
+                anchorPos.x = Mathf.Lerp(minX, maxX, normalized);
+                handleRect.anchoredPosition = anchorPos;
+            }
+
             return;
         }
 
