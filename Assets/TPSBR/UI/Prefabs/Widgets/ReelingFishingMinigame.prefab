@@ -49,14 +49,14 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e7d44b1e146449d9ac3dc874f1d586a8, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   sliderTrack: {fileID: 100011}
   sliderHandle: {fileID: 100031}
   unitySlider: {fileID: 0}
   safeZoneDisplay: {fileID: 100021}
-  successProgressImage: {fileID: 100042}
-  failureProgressImage: {fileID: 100052}
+  successProgressImage: {fileID: 100043}
+  failureProgressImage: {fileID: 100053}
   pressSpeed: 0.5
   releaseSpeed: 0.35
   safeZoneWidth: 0.15
@@ -64,7 +64,7 @@ MonoBehaviour:
   safeZoneMoveSpeed: 0.65
   safeZoneMovementAmplitude: 0.35
   pingPongPattern: 1
-  successRate: 25
+  successRate: 100
   failureRate: 30
   successTarget: 100
   failureTarget: 100
@@ -142,8 +142,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
   m_Color: {r: 0.14117648, g: 0.18039216, b: 0.21568628, a: 0.8}
   m_RaycastTarget: 0
@@ -217,8 +217,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
   m_Color: {r: 0.37254903, g: 0.7372549, b: 0.36862746, a: 0.6}
   m_RaycastTarget: 0
@@ -292,8 +292,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
   m_Color: {r: 0.9137255, g: 0.7921569, b: 0.39215687, a: 1}
   m_RaycastTarget: 0
@@ -367,8 +367,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
   m_Color: {r: 0.2784314, g: 0.8196079, b: 0.3254902, a: 0.85}
   m_RaycastTarget: 0
@@ -377,12 +377,12 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 10905, guid: 0000000000000000f000000000000000, type: 0}
+  m_Sprite: {fileID: 21300000, guid: 2269aba0ebb7c7948a9158bdd4aa6233, type: 3}
   m_Type: 3
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 0
-  m_FillAmount: 0
+  m_FillAmount: 0.26
   m_FillClockwise: 1
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
@@ -442,8 +442,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
   m_Color: {r: 0.85098046, g: 0.22352941, b: 0.22352941, a: 0.85}
   m_RaycastTarget: 0
@@ -452,12 +452,12 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 10905, guid: 0000000000000000f000000000000000, type: 0}
+  m_Sprite: {fileID: 21300000, guid: 2269aba0ebb7c7948a9158bdd4aa6233, type: 3}
   m_Type: 3
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 0
-  m_FillAmount: 0
+  m_FillAmount: 0.26
   m_FillClockwise: 1
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
