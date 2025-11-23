@@ -180,12 +180,12 @@ public class SliderBalanceMinigame : MonoBehaviour
             RectTransform container = handleRect != null ? handleRect.parent as RectTransform : null;
             if (handleRect != null && container != null)
             {
-                float travelWidth = Mathf.Max(0f, container.rect.width - handleRect.rect.width);
-                float minX = -travelWidth * 0.5f;
-                float maxX = travelWidth * 0.5f;
-                Vector2 anchorPos = handleRect.anchoredPosition;
-                anchorPos.x = Mathf.Lerp(minX, maxX, normalized);
-                handleRect.anchoredPosition = anchorPos;
+                float sliderTravelWidth = Mathf.Max(0f, container.rect.width - handleRect.rect.width);
+                float sliderMinX = -sliderTravelWidth * 0.5f;
+                float sliderMaxX = sliderTravelWidth * 0.5f;
+                Vector2 sliderAnchorPos = handleRect.anchoredPosition;
+                sliderAnchorPos.x = Mathf.Lerp(sliderMinX, sliderMaxX, normalized);
+                handleRect.anchoredPosition = sliderAnchorPos;
             }
 
             return;
