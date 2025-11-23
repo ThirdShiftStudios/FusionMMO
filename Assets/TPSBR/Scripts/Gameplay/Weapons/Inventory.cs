@@ -5635,7 +5635,7 @@ namespace TPSBR
                 }
 
                 ResetFightingMinigameProgress();
-                fishingPole.EnterReelingPhase();
+                fishingPole.EnterCatchPhase();
             }
             else
             {
