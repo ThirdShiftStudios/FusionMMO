@@ -181,13 +181,14 @@ public class SliderBalanceMinigame : MonoBehaviour
         if (sliderTrack == null || sliderHandle == null)
             return;
 
-        float width = sliderTrack.rect.width;
-        float travelWidth = Mathf.Max(0f, width - sliderHandle.rect.width);
-        Vector2 anchorPos = sliderHandle.anchoredPosition;
-        float minX = -travelWidth * 0.5f;
-        float maxX = travelWidth * 0.5f;
-        anchorPos.x = Mathf.Lerp(minX, maxX, handlePosition);
-        sliderHandle.anchoredPosition = anchorPos;
+        // Drive the handle using normalized anchors so it always spans the full track width
+        // regardless of the track or handle size.
+        float normalized = Mathf.Clamp01(handlePosition);
+        Vector2 anchor = sliderHandle.anchorMin;
+        anchor.x = normalized;
+        sliderHandle.anchorMin = anchor;
+        sliderHandle.anchorMax = anchor;
+        sliderHandle.anchoredPosition = Vector2.zero;
     }
 
     void UpdateSafeZoneVisual()
