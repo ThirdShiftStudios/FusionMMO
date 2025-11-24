@@ -882,8 +882,7 @@ namespace TPSBR.UI
             if (string.IsNullOrEmpty(_currentConfigurationHash) == true)
                 return false;
 
-            if (StaffWeapon.TryGetAbilityConfiguration(_currentConfigurationHash, out StaffWeapon.AbilityConfiguration configur
-ation) == false)
+            if (StaffWeapon.TryGetAbilityConfiguration(_currentConfigurationHash, out StaffWeapon.AbilityConfiguration configuration) == false)
                 return false;
 
             if (configuration.UnlockedIndexes == null || configuration.UnlockedIndexes.Count == 0)
