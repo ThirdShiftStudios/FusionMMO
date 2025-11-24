@@ -1,4 +1,3 @@
-using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -9,13 +8,7 @@ namespace TPSBR.UI
         [SerializeField]
         private UIListItem _slot;
         [SerializeField]
-        private TextMeshProUGUI _nameLabel;
-        [SerializeField]
-        private TextMeshProUGUI _descriptionLabel;
-        [SerializeField]
         private Image _iconImage;
-        [SerializeField]
-        private TextMeshProUGUI _statusLabel;
         [SerializeField]
         private UIButton _unlockButton;
         [SerializeField]
@@ -73,17 +66,7 @@ namespace TPSBR.UI
             _hasOption = true;
             bool unlockedState = option.IsUnlocked;
 
-            string abilityName = option.Definition != null ? option.Definition.Name : string.Empty;
-            string abilityDescription = option.Definition != null ? option.Definition.AbilityDescription : string.Empty;
             Sprite abilityIcon = option.Definition != null ? option.Definition.Icon : null;
-
-            UIExtensions.SetTextSafe(_nameLabel, abilityName);
-            UIExtensions.SetTextSafe(_descriptionLabel, abilityDescription);
-
-            if (_descriptionLabel != null)
-            {
-                _descriptionLabel.gameObject.SetActive(string.IsNullOrWhiteSpace(abilityDescription) == false);
-            }
 
             if (_iconImage != null)
             {
@@ -98,23 +81,15 @@ namespace TPSBR.UI
 
             _inventorySlot?.SetItemMetadata(abilityIcon, abilityIcon != null ? 1 : 0);
 
-            if (_statusLabel != null)
+            if (unlockedState == true)
             {
-                string statusText = string.Empty;
-                if (unlockedState == true)
-                {
-                    int maxLevel = Mathf.Max(1, option.MaxLevel);
-                    int currentLevel = Mathf.Clamp(option.CurrentLevel, 1, maxLevel);
-                    _levelImageDisplay.SetData(currentLevel);
-                }
-                else
-                {
-                    statusText = option.CanPurchase ? $"Unlock ({option.Cost})" : "Locked";
-                    _levelImageDisplay.SetData(-1);
-                }
-
-                UIExtensions.SetTextSafe(_statusLabel, statusText);
-                _statusLabel.gameObject.SetActive(true);
+                int maxLevel = Mathf.Max(1, option.MaxLevel);
+                int currentLevel = Mathf.Clamp(option.CurrentLevel, 1, maxLevel);
+                _levelImageDisplay.SetData(currentLevel);
+            }
+            else
+            {
+                _levelImageDisplay.SetData(-1);
             }
 
             UpdateButtonVisibility(option);
