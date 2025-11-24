@@ -822,27 +822,28 @@ namespace TPSBR.UI
 
         private void UpdateLayoutDeterminism()
         {
-            string signature = BuildLayoutSignature();
+            string layoutIdentity = GetLayoutIdentity();
+            string signature = BuildLayoutSignature(layoutIdentity);
 
             if (string.Equals(signature, _layoutSignature, StringComparison.Ordinal) == true)
                 return;
 
             _layoutSignature = signature;
-            _layoutSeed = CalculateSeedFromHash(_currentConfigurationHash, signature);
+            _layoutSeed = CalculateSeedFromHash(layoutIdentity, signature);
             _layoutRootAbilityIndex = DetermineRootAbilityIndex();
         }
 
-        private string BuildLayoutSignature()
+        private string BuildLayoutSignature(string layoutIdentity)
         {
             if (_allAbilityOptions.Count == 0)
                 return string.Empty;
 
             System.Text.StringBuilder builder = new System.Text.StringBuilder();
 
-            if (string.IsNullOrEmpty(_currentConfigurationHash) == false)
+            if (string.IsNullOrEmpty(layoutIdentity) == false)
             {
                 builder.Append("H:");
-                builder.Append(_currentConfigurationHash);
+                builder.Append(layoutIdentity);
                 builder.Append('|');
             }
 
@@ -858,6 +859,18 @@ namespace TPSBR.UI
             }
 
             return builder.ToString();
+        }
+
+        private string GetLayoutIdentity()
+        {
+            if (string.IsNullOrEmpty(_currentConfigurationHash) == true)
+                return null;
+
+            string[] parts = _currentConfigurationHash.Split(':');
+            if (parts.Length < 2)
+                return _currentConfigurationHash;
+
+            return $"{parts[0]}:{parts[1]}";
         }
 
         private int DetermineRootAbilityIndex()
