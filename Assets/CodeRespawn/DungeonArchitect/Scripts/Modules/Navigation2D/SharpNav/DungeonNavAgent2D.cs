@@ -157,7 +157,7 @@ namespace DungeonArchitect.Navigation {
 				var navPoint = navMesh.NavMeshQuery.FindNearestPoly(agent.Position, ToSV3(Vector3.one * 4));
 				agent.Reset (navPoint.Polygon, navPoint.Position);
 			}
-			rigidBody2D.velocity = Vector2.zero;
+			rigidBody2D.linearVelocity = Vector2.zero;
 			running = false;
 		}
 
@@ -196,7 +196,7 @@ namespace DungeonArchitect.Navigation {
 					var svelocity = agent.Vel;
 					var velocity = ToV3 (svelocity);
 
-					rigidBody2D.velocity = FlipYZ(velocity);
+					rigidBody2D.linearVelocity = FlipYZ(velocity);
 
 					if (velocity.sqrMagnitude > 0.01f) {
 						previousDirection = velocity.normalized;

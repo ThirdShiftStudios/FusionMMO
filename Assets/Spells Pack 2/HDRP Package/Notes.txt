@@ -1,0 +1,17 @@
+
+Notes:
+
+    - HDRP uses separate shaders, materials, and some Timelines. Prefabs are variants of the original URP version of Spells Pack 2.
+
+    - Do not remove the original URP version, as many of its assets are dependencies for the HDRP version.
+
+    - Do not use HDRP assets if both URP and HDRP packages are installed in the same project, as this may cause unwanted visual artifacts.
+
+    - Some issues may occur in HDRP with VFX Graphs that use custom shaders they might not be visible.
+    If that happens, open the VFX Graph, select the Output Context (render node), and disable Alpha Clipping in the Inspector Window.
+    This option can sometimes be enabled automatically during the import process.
+
+    - Sometimes, when importing the HDRP package of Spells Pack 2, all decals created with VFX Graphs may have their Exposure Weight changed to 1 instead of the default 0.1, 
+    which can make most decals invisible.
+    
+ If you encounter any issues or need help, feel free to contact me at: Zakhanfx@hotmail.com

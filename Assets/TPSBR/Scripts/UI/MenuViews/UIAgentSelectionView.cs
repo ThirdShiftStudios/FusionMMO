@@ -1,16 +1,12 @@
 using System;
 using TMPro;
 using UnityEngine;
-using Cinemachine;
 
 namespace TPSBR.UI
 {
 	public class UIAgentSelectionView : UICloseView
 	{
 		// PRIVATE MEMBERS
-
-		[SerializeField]
-		private CinemachineVirtualCamera _camera;
 		[SerializeField]
 		private UIList _agentList;
 		[SerializeField]
@@ -56,7 +52,6 @@ namespace TPSBR.UI
 		{
 			base.OnOpen();
 
-			_camera.enabled = true;
 			_selectedEffect.SetActive(false);
 
 			_previewAgent = Context.PlayerData.AgentID;
@@ -68,8 +63,6 @@ namespace TPSBR.UI
 
 		protected override void OnClose()
 		{
-			_camera.enabled = false;
-
 			Context.PlayerPreview.ShowAgent(Context.PlayerData.AgentID);
 
 			base.OnClose();

@@ -16,13 +16,14 @@ Material:
   - _EMISSION
   - _SPECULAR_SETUP
   m_InvalidKeywords: []
-  m_LightmapFlags: 1
+  m_LightmapFlags: 7
   m_EnableInstancingVariants: 1
   m_DoubleSidedGI: 0
   m_CustomRenderQueue: 2450
   stringTagMap:
     RenderType: TransparentCutout
-  disabledShaderPasses: []
+  disabledShaderPasses:
+  - MOTIONVECTORS
   m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
@@ -98,6 +99,7 @@ Material:
     m_Ints: []
     m_Floats:
     - _AO: 0
+    - _AddPrecomputedVelocity: 0
     - _AlphaClip: 1
     - _AlphaToMask: 1
     - _BaseLight: 0.327
@@ -149,6 +151,7 @@ Material:
     - _TreeInstanceColor: {r: 1, g: 1, b: 1, a: 1}
     - _TreeInstanceScale: {r: 1, g: 1, b: 1, a: 1}
   m_BuildTextureStacks: []
+  m_AllowLocking: 1
 --- !u!114 &2194732819197351375
 MonoBehaviour:
   m_ObjectHideFlags: 11
@@ -161,4 +164,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d0353a89b1f911e48b9e16bdc9f2e058, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  version: 7
+  version: 10

@@ -508,7 +508,7 @@ namespace TPSBR.UI
                 if (search.Length > 0 && name.ToLowerInvariant().Contains(search) == false)
                     continue;
 
-                TMP_Dropdown.OptionData option = new TMP_Dropdown.OptionData(name, definition.Icon);
+                TMP_Dropdown.OptionData option = new TMP_Dropdown.OptionData(name, definition.Icon, Color.white);
                 options.Add(option);
                 _filteredItems.Add(definition);
             }
