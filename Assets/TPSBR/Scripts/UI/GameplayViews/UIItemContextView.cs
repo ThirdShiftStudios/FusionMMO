@@ -838,6 +838,14 @@ namespace TPSBR.UI
                 return string.Empty;
 
             System.Text.StringBuilder builder = new System.Text.StringBuilder();
+
+            if (string.IsNullOrEmpty(_currentConfigurationHash) == false)
+            {
+                builder.Append("H:");
+                builder.Append(_currentConfigurationHash);
+                builder.Append('|');
+            }
+
             builder.Append(_allAbilityOptions.Count);
 
             for (int i = 0; i < _allAbilityOptions.Count; ++i)
