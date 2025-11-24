@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace TPSBR.Abilities
 {
@@ -29,19 +31,23 @@ namespace TPSBR.Abilities
     {
         [SerializeField]
         private FireballAbilityUpgradeLevel _level;
+        [SerializeField, FormerlySerializedAs("_levels")]
+        private FireballAbilityUpgradeLevel[] _legacyLevels = Array.Empty<FireballAbilityUpgradeLevel>();
 
         public FireballAbilityUpgradeLevel Level => _level;
+        public IReadOnlyList<FireballAbilityUpgradeLevel> LegacyLevels => _legacyLevels ?? Array.Empty<FireballAbilityUpgradeLevel>();
         public override int LevelCount => MaxLevel;
 
         public FireballAbilityLevelData GetLevelData(int level)
         {
             int clampedLevel = ClampLevel(level);
+            FireballAbilityUpgradeLevel resolvedLevel = ResolveLevel();
 
             return new FireballAbilityLevelData
             {
-                Radius = ApplyPerLevelIncrease(_level.Radius, _level.RadiusIncreasePercent, clampedLevel),
-                Damage = ApplyPerLevelIncrease(_level.Damage, _level.DamageIncreasePercent, clampedLevel),
-                CastingTime = ApplyPerLevelIncrease(_level.CastingTime, _level.CastingTimeIncreasePercent, clampedLevel)
+                Radius = ApplyPerLevelIncrease(resolvedLevel.Radius, resolvedLevel.RadiusIncreasePercent, clampedLevel),
+                Damage = ApplyPerLevelIncrease(resolvedLevel.Damage, resolvedLevel.DamageIncreasePercent, clampedLevel),
+                CastingTime = ApplyPerLevelIncrease(resolvedLevel.CastingTime, resolvedLevel.CastingTimeIncreasePercent, clampedLevel)
             };
         }
 
@@ -49,7 +55,59 @@ namespace TPSBR.Abilities
         public override void OnValidate()
         {
             base.OnValidate();
+            _legacyLevels ??= Array.Empty<FireballAbilityUpgradeLevel>();
+
+            if (IsLevelConfigured(_level) == false && TryPopulateLevelFromLegacy(LegacyLevels) == true)
+            {
+                _level = PopulateLevelFromLegacy(LegacyLevels);
+            }
         }
 #endif
+
+        private FireballAbilityUpgradeLevel ResolveLevel()
+        {
+            if (IsLevelConfigured(_level) == true)
+            {
+                return _level;
+            }
+
+            if (TryPopulateLevelFromLegacy(LegacyLevels) == true)
+            {
+                return PopulateLevelFromLegacy(LegacyLevels);
+            }
+
+            return _level;
+        }
+
+        private static bool IsLevelConfigured(FireballAbilityUpgradeLevel level)
+        {
+            return level.Radius != 0f || level.Damage != 0f || level.CastingTime != 0f ||
+                   level.RadiusIncreasePercent != 0f || level.DamageIncreasePercent != 0f || level.CastingTimeIncreasePercent != 0f;
+        }
+
+        private static bool TryPopulateLevelFromLegacy(IReadOnlyList<FireballAbilityUpgradeLevel> levels)
+        {
+            return levels != null && levels.Count > 0;
+        }
+
+        private static FireballAbilityUpgradeLevel PopulateLevelFromLegacy(IReadOnlyList<FireballAbilityUpgradeLevel> levels)
+        {
+            if (levels == null || levels.Count == 0)
+            {
+                return default;
+            }
+
+            FireballAbilityUpgradeLevel baseLevel = levels[0];
+
+            return new FireballAbilityUpgradeLevel
+            {
+                Radius = baseLevel.Radius,
+                Damage = baseLevel.Damage,
+                CastingTime = baseLevel.CastingTime,
+                RadiusIncreasePercent = CalculateAverageIncreasePercent(levels, level => level.Radius),
+                DamageIncreasePercent = CalculateAverageIncreasePercent(levels, level => level.Damage),
+                CastingTimeIncreasePercent = CalculateAverageIncreasePercent(levels, level => level.CastingTime),
+            };
+        }
     }
 }
