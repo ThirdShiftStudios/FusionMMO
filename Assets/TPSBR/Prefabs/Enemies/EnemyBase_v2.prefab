@@ -97,11 +97,11 @@ MonoBehaviour:
   _attackOrigin: {fileID: 5764807487565212158}
   _attackRadius: 2
   _damagePerHit: 10
-  _attackCooldown: 1
   _targetMask:
     serializedVersion: 2
     m_Bits: 256
   _hitType: 6
+  _attackTime: 0.5
 --- !u!1 &2354112968911597270
 GameObject:
   m_ObjectHideFlags: 0
@@ -343,6 +343,9 @@ MeshRenderer:
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 2
   m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -388,6 +391,7 @@ GameObject:
   - component: {fileID: 243891210694590397}
   - component: {fileID: 5165296287603800587}
   - component: {fileID: 2406405750017403177}
+  - component: {fileID: 1540903653591304328}
   m_Layer: 0
   m_Name: EnemyBase_v2
   m_TagString: Untagged
@@ -509,6 +513,7 @@ MonoBehaviour:
   - {fileID: 3951969274851935300}
   - {fileID: 3959667394915307258}
   - {fileID: 891824599059123374}
+  - {fileID: 1540903653591304328}
   - {fileID: 6708704019569896724}
   - {fileID: 2950180794830614404}
   - {fileID: 6207061802682301860}
@@ -697,6 +702,18 @@ MonoBehaviour:
   _Animator: {fileID: 5303615004328377041}
   _Transitions: {fileID: 0}
   _ActionOnDisable: 0
+--- !u!114 &1540903653591304328
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4434025654594137658}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0857d7aeb3f4ebf4faf73ece4390a7b0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &4823237390333467735
 GameObject:
   m_ObjectHideFlags: 0
