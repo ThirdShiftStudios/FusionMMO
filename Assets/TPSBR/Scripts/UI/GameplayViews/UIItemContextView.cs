@@ -183,9 +183,13 @@ namespace TPSBR.UI
 
             if (options != null)
             {
-                for (int i = 0; i < options.Count; ++i)
+                IReadOnlyList<ArcaneConduit.AbilityOption> orderedOptions = options
+                    .OrderBy(option => option.Index)
+                    .ToList();
+
+                for (int i = 0; i < orderedOptions.Count; ++i)
                 {
-                    ArcaneConduit.AbilityOption option = options[i];
+                    ArcaneConduit.AbilityOption option = orderedOptions[i];
                     _allAbilityOptions.Add(option);
                     _abilityOptionLookup[option.Index] = option;
 
