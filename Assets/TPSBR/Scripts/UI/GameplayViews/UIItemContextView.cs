@@ -631,11 +631,7 @@ namespace TPSBR.UI
 
         private AbilityTreeNode BuildAbilityTree()
         {
-            ArcaneConduit.AbilityOption? startingOption = _unlockedAbilityOptions.Count > 0 ? _unlockedAbilityOptions[0] : (ArcaneConduit.AbilityOption?)null;
-            if (startingOption.HasValue == false && _allAbilityOptions.Count > 0)
-            {
-                startingOption = _allAbilityOptions[0];
-            }
+            ArcaneConduit.AbilityOption? startingOption = GetDeterministicRootOption();
 
             if (startingOption.HasValue == false)
                 return null;
@@ -643,14 +639,17 @@ namespace TPSBR.UI
             ArcaneConduit.AbilityOption rootOption = startingOption.Value;
             AbilityTreeNode root = CreateNode(rootOption, 0, null);
 
-            List<ArcaneConduit.AbilityOption> remainingOptions = _allAbilityOptions.Where(option => option.Index != rootOption.Index).ToList();
+            List<ArcaneConduit.AbilityOption> remainingOptions = _allAbilityOptions
+                .Where(option => option.Index != rootOption.Index)
+                .OrderBy(option => option.Index)
+                .ToList();
 
             if (remainingOptions.Count == 0)
             {
                 return root;
             }
 
-            int seed = string.IsNullOrEmpty(_currentConfigurationHash) == false ? _currentConfigurationHash.GetHashCode() : Environment.TickCount;
+            int seed = GetDeterministicSeed();
             System.Random random = new System.Random(seed);
 
             if (remainingOptions.Count == 1)
@@ -679,6 +678,50 @@ namespace TPSBR.UI
             }
 
             return root;
+        }
+
+        private ArcaneConduit.AbilityOption? GetDeterministicRootOption()
+        {
+            if (_allAbilityOptions.Count == 0)
+            {
+                return null;
+            }
+
+            ArcaneConduit.AbilityOption? firstUnlocked = _unlockedAbilityOptions
+                .OrderBy(option => option.Index)
+                .Cast<ArcaneConduit.AbilityOption?>()
+                .FirstOrDefault();
+
+            if (firstUnlocked.HasValue == true)
+            {
+                return firstUnlocked;
+            }
+
+            ArcaneConduit.AbilityOption? firstByIndex = _allAbilityOptions
+                .OrderBy(option => option.Index)
+                .Cast<ArcaneConduit.AbilityOption?>()
+                .FirstOrDefault();
+
+            return firstByIndex;
+        }
+
+        private int GetDeterministicSeed()
+        {
+            if (string.IsNullOrEmpty(_currentConfigurationHash) == false)
+            {
+                return _currentConfigurationHash.GetHashCode();
+            }
+
+            unchecked
+            {
+                int seed = 17;
+                for (int i = 0; i < _allAbilityOptions.Count; ++i)
+                {
+                    seed = (seed * 31) + _allAbilityOptions[i].Index;
+                }
+
+                return seed;
+            }
         }
 
         private AbilityTreeNode CreateNode(ArcaneConduit.AbilityOption option, int depth, AbilityTreeNode parent)
