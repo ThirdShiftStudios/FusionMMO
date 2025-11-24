@@ -632,10 +632,7 @@ namespace TPSBR.UI
             List<AbilityTreeNode> orderedNodes = new List<AbilityTreeNode>();
             CollectNodes(rootNode, orderedNodes);
 
-            foreach (AbilityTreeNode node in orderedNodes)
-            {
-                PositionNode(node);
-            }
+            PositionAbilityTree(orderedNodes);
 
             DrawConnections(orderedNodes);
             UpdateDependencyAvailability(orderedNodes);
@@ -671,7 +668,7 @@ namespace TPSBR.UI
             {
                 AbilityTreeNode parent = SelectParentNode(createdNodes, random);
                 int depth = parent != null ? parent.Depth + 1 : 0;
-                AbilityTreeNode next = CreateNode(remainingOptions[i], depth, parent, GenerateNodeOffset(random));
+                AbilityTreeNode next = CreateNode(remainingOptions[i], depth, parent, Vector2.zero);
 
                 if (parent != null)
                 {
@@ -774,50 +771,49 @@ namespace TPSBR.UI
             }
         }
 
-        private void PositionNode(AbilityTreeNode node)
+        private void PositionAbilityTree(List<AbilityTreeNode> nodes)
         {
-            if (node?.Slot == null)
+            if (nodes == null || nodes.Count == 0)
                 return;
 
-            RectTransform rectTransform = node.Slot.transform as RectTransform;
-            if (rectTransform == null)
-                return;
+            var tiers = nodes
+                .Where(node => node != null)
+                .GroupBy(node => node.Depth)
+                .OrderBy(group => group.Key);
 
-            Vector2 position = Vector2.zero;
-            if (node.Parent == null)
+            foreach (IGrouping<int, AbilityTreeNode> tier in tiers)
             {
-                position = new Vector2(0f, -_abilityTreeTopOffset);
+                PositionTier(tier.Key, tier.OrderBy(node => node.Option.Index));
             }
-            else if (node.Parent.Children.Count == 1)
-            {
-                position = node.Parent.Position + new Vector2(0f, -_abilityTreeSpacing.y);
-            }
-            else
-            {
-                int index = node.Parent.Children.IndexOf(node);
-                int siblingCount = node.Parent.Children.Count;
-                float horizontalOffset = _abilityTreeSpacing.x * (index - (siblingCount - 1) * 0.5f);
-                position = node.Parent.Position + new Vector2(horizontalOffset, -_abilityTreeSpacing.y);
-            }
-
-            position += node.Offset;
-
-            rectTransform.anchoredPosition = position;
-            node.Position = position;
         }
 
-        private Vector2 GenerateNodeOffset(System.Random random)
+        private void PositionTier(int depth, IEnumerable<AbilityTreeNode> tierNodes)
         {
-            if (random == null)
-                return Vector2.zero;
+            if (tierNodes == null)
+                return;
 
-            float maxHorizontalJitter = _abilityTreeSpacing.x * 0.3f;
-            float maxVerticalJitter = _abilityTreeSpacing.y * 0.15f;
+            List<AbilityTreeNode> nodes = tierNodes
+                .Where(node => node?.Slot != null)
+                .ToList();
 
-            float x = Mathf.Lerp(-maxHorizontalJitter, maxHorizontalJitter, (float)random.NextDouble());
-            float y = Mathf.Lerp(-maxVerticalJitter, maxVerticalJitter, (float)random.NextDouble());
+            if (nodes.Count == 0)
+                return;
 
-            return new Vector2(x, y);
+            float y = -_abilityTreeTopOffset - (depth * _abilityTreeSpacing.y);
+            float totalWidth = _abilityTreeSpacing.x * Mathf.Max(0, nodes.Count - 1);
+            float startX = -totalWidth * 0.5f;
+
+            for (int i = 0; i < nodes.Count; ++i)
+            {
+                AbilityTreeNode node = nodes[i];
+                RectTransform rectTransform = node.Slot.transform as RectTransform;
+                if (rectTransform == null)
+                    continue;
+
+                Vector2 position = new Vector2(startX + (i * _abilityTreeSpacing.x), y);
+                rectTransform.anchoredPosition = position;
+                node.Position = position;
+            }
         }
 
         private void UpdateLayoutDeterminism()
