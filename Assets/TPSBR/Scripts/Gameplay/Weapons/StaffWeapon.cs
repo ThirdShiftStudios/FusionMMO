@@ -101,6 +101,11 @@ namespace TPSBR
         private readonly int[] _assignedAbilityIndexes = CreateDefaultSlotAssignments();
         private readonly StaffAbilityDefinition[] _assignedAbilities = new StaffAbilityDefinition[AbilityControlSlotCount];
         private readonly Dictionary<StaffAbilityDefinition, int> _abilityLevels = new Dictionary<StaffAbilityDefinition, int>();
+        private StaffAbilityDefinition _activeSelectCastAbility;
+        private AbilityControlSlot _activeSelectCastSlot = AbilityControlSlot.Primary;
+        private GameObject _activeCastIndicator;
+        private Vector3? _selectedCastPosition;
+        private const float _selectCastMaxDistance = 40f;
 
         public float BaseDamage => _baseDamage;
         public float HealthRegen => _healthRegen;
@@ -109,6 +114,7 @@ namespace TPSBR
         public IReadOnlyList<int> StatBonuses => _statBonuses;
         public IReadOnlyList<StaffAbilityDefinition> ConfiguredAbilities => _configuredAbilities;
         public IReadOnlyList<int> AssignedAbilityIndexes => _assignedAbilityIndexes;
+        public bool IsSelectCastActive => _activeSelectCastAbility != null;
 
         public static int GetAbilityControlSlotCount() => AbilityControlSlotCount;
 
@@ -138,6 +144,19 @@ namespace TPSBR
             return _assignedAbilities[index];
         }
 
+        public bool TryConsumeSelectedCastPosition(out Vector3 position)
+        {
+            if (_selectedCastPosition.HasValue == true)
+            {
+                position = _selectedCastPosition.Value;
+                _selectedCastPosition = null;
+                return true;
+            }
+
+            position = default;
+            return false;
+        }
+
         public bool HasAssignedAbility(AbilityControlSlot slot)
         {
             return GetAssignedAbility(slot) != null;
@@ -146,9 +165,26 @@ namespace TPSBR
         public bool TryExecuteAssignedAbility(AbilityControlSlot slot)
         {
             StaffAbilityDefinition ability = GetAssignedAbility(slot);
+            return TryExecuteAbility(slot, ability, false);
+        }
+
+        private bool TryExecuteAbility(AbilityControlSlot slot, StaffAbilityDefinition ability, bool bypassSelectCast)
+        {
             if (ability == null)
             {
                 return false;
+            }
+
+            if (bypassSelectCast == false && ability is ISelectBeforeCast selectBeforeCast)
+            {
+                if (_activeSelectCastAbility == ability)
+                {
+                    CancelSelectCast();
+                    return true;
+                }
+
+                BeginSelectCast(slot, ability, selectBeforeCast);
+                return true;
             }
 
             WeaponUseAnimation animation = ResolveAnimationForAbility(slot, ability);
@@ -190,7 +226,121 @@ namespace TPSBR
             _lightAttackActive = animation == WeaponUseAnimation.LightAttack;
 
             OnUseStarted(request);
+            CancelSelectCastIndicator();
+            _activeSelectCastAbility = null;
             return true;
+        }
+
+        public bool TryResolveSelectCastPosition(out Vector3 position)
+        {
+            position = default;
+
+            var character = Character;
+
+            if (character == null || character.ThirdPersonView == null)
+            {
+                return false;
+            }
+
+            Transform cameraTransform = character.ThirdPersonView.DefaultCameraTransform;
+
+            if (cameraTransform == null)
+            {
+                return false;
+            }
+
+            Vector3 origin = cameraTransform.position;
+            Vector3 direction = cameraTransform.forward;
+
+            if (Runner != null && Runner.GetPhysicsScene().Raycast(origin, direction, out RaycastHit hitInfo, _selectCastMaxDistance, ~0, QueryTriggerInteraction.Ignore) == true)
+            {
+                position = hitInfo.point;
+                return true;
+            }
+
+            position = origin + direction * _selectCastMaxDistance;
+            return true;
+        }
+
+        public bool TryConfirmSelectCast(Vector3 targetPosition)
+        {
+            if (_activeSelectCastAbility == null)
+            {
+                return false;
+            }
+
+            _selectedCastPosition = targetPosition;
+
+            StaffAbilityDefinition ability = _activeSelectCastAbility;
+            AbilityControlSlot slot = _activeSelectCastSlot;
+
+            CancelSelectCastIndicator();
+            _activeSelectCastAbility = null;
+
+            return TryExecuteAbility(slot, ability, true);
+        }
+
+        public void CancelSelectCast()
+        {
+            _activeSelectCastAbility = null;
+            _selectedCastPosition = null;
+            CancelSelectCastIndicator();
+        }
+
+        private void BeginSelectCast(AbilityControlSlot slot, StaffAbilityDefinition ability, ISelectBeforeCast selectBeforeCast)
+        {
+            _activeSelectCastAbility = ability;
+            _activeSelectCastSlot = slot;
+            _selectedCastPosition = null;
+
+            CancelSelectCastIndicator();
+
+            if (selectBeforeCast.CastIndicatorGraphic != null)
+            {
+                _activeCastIndicator = Instantiate(selectBeforeCast.CastIndicatorGraphic);
+            }
+        }
+
+        private void CancelSelectCastIndicator()
+        {
+            if (_activeCastIndicator == null)
+            {
+                return;
+            }
+
+            if (Application.isPlaying == true)
+            {
+                Destroy(_activeCastIndicator);
+            }
+            else
+            {
+                DestroyImmediate(_activeCastIndicator);
+            }
+
+            _activeCastIndicator = null;
+        }
+
+        private void UpdateSelectCastIndicator()
+        {
+            if (_activeCastIndicator == null)
+            {
+                return;
+            }
+
+            if (TryResolveSelectCastPosition(out Vector3 position) == false)
+            {
+                _activeCastIndicator.SetActive(false);
+                return;
+            }
+
+            _activeCastIndicator.SetActive(true);
+            _activeCastIndicator.transform.SetPositionAndRotation(position, Quaternion.identity);
+        }
+
+        public override void Render()
+        {
+            base.Render();
+            UpdateSelectCastIndicator();
         }
 
         public bool TryGetStatBonuses(NetworkString<_64> configurationHash, out IReadOnlyList<int> statBonuses)

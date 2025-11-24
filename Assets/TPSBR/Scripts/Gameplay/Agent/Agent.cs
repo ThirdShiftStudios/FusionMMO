@@ -435,7 +435,24 @@ namespace TPSBR
                 {
                     bool abilityInputConsumed = false;
 
-                    if (attack == true && staffWeapon.HasAssignedAbility(StaffWeapon.AbilityControlSlot.Primary) == true)
+                    if (staffWeapon.IsSelectCastActive == true)
+                    {
+                        if (attack == true && staffWeapon.TryResolveSelectCastPosition(out Vector3 targetPosition) == true)
+                        {
+                            abilityInputConsumed = staffWeapon.TryConfirmSelectCast(targetPosition);
+                        }
+                        else if (heavyAttackActivated == true || blockActivated == true)
+                        {
+                            staffWeapon.CancelSelectCast();
+                            abilityInputConsumed = true;
+                        }
+
+                        attack = false;
+                        hold = false;
+                        heavyAttackActivated = false;
+                        blockHeld = false;
+                    }
+                    else if (attack == true && staffWeapon.HasAssignedAbility(StaffWeapon.AbilityControlSlot.Primary) == true)
                     {
                         abilityInputConsumed = true;
                         staffWeapon.TryExecuteAssignedAbility(StaffWeapon.AbilityControlSlot.Primary);
