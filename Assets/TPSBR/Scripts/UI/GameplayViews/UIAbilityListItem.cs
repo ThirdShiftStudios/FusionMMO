@@ -85,11 +85,11 @@ namespace TPSBR.UI
             {
                 int maxLevel = Mathf.Max(1, option.MaxLevel);
                 int currentLevel = Mathf.Clamp(option.CurrentLevel, 1, maxLevel);
-                _levelImageDisplay.SetData(currentLevel);
+                _levelImageDisplay?.SetData(currentLevel);
             }
             else
             {
-                _levelImageDisplay.SetData(-1);
+                _levelImageDisplay?.SetData(-1);
             }
 
             UpdateButtonVisibility(option);
