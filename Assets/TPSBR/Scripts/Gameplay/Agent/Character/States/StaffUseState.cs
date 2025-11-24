@@ -301,6 +301,7 @@ namespace TPSBR
                         if (ability != null)
                         {
                                 _activeWeapon.ExecuteAbility(ability);
+                                _activeWeapon.NotifyAbilityCastTriggered(ability, _activeAbilitySlot);
                                 return;
                         }
 

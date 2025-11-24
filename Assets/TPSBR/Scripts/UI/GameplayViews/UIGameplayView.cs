@@ -18,6 +18,7 @@ namespace TPSBR.UI
         [SerializeField] private UIGoldFeed _goldFeed;
         [SerializeField] private UIInventoryFeed _inventoryFeed;
         [SerializeField] private UIProfessionExperienceFeed _professionExperienceFeed;
+        [SerializeField] private UIAbilityView _abilityView;
         [SerializeField] private UIBehaviour _spectatingGroup;
         [SerializeField] private TextMeshProUGUI _spectatingText;
         [SerializeField] private UIHitDamageIndicator _hitDamage;
@@ -166,6 +167,7 @@ namespace TPSBR.UI
             _effects.UpdateEffects(_localAgent);
             _buffs?.UpdateBuffs(_localAgent);
             _interactions.UpdateInteractions(Context, _localAgent);
+            _abilityView?.UpdateAbilities(_localAgent);
             _teamPlayerPanels.UpdateTeamPlayerPanels(Context, _localAgent);
         }
 
@@ -345,6 +347,7 @@ namespace TPSBR.UI
             _interactions.SetActive(false);
             _effects.SetActive(false);
             _buffs?.Clear();
+            _abilityView?.Clear();
             _spectatingGroup.SetActive(false);
 
             _inventoryFeed?.Bind(null);

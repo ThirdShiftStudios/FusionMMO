@@ -103,6 +103,10 @@ namespace TPSBR
         private readonly Dictionary<StaffAbilityDefinition, int> _abilityLevels = new Dictionary<StaffAbilityDefinition, int>();
         private StaffAbilityDefinition _activeSelectCastAbility;
         private AbilityControlSlot _activeSelectCastSlot = AbilityControlSlot.Primary;
+        private StaffAbilityDefinition _activeCastingAbility;
+        private AbilityControlSlot _activeCastingSlot = AbilityControlSlot.Primary;
+        private float _activeCastDuration;
+        private float _activeCastElapsed;
         private GameObject _activeCastIndicator;
         private Vector3? _selectedCastPosition;
         private const float _selectCastMaxDistance = 40f;
@@ -115,8 +119,12 @@ namespace TPSBR
         public IReadOnlyList<StaffAbilityDefinition> ConfiguredAbilities => _configuredAbilities;
         public IReadOnlyList<int> AssignedAbilityIndexes => _assignedAbilityIndexes;
         public bool IsSelectCastActive => _activeSelectCastAbility != null;
+        public StaffAbilityDefinition ActiveSelectCastAbility => _activeSelectCastAbility;
 
         public static int GetAbilityControlSlotCount() => AbilityControlSlotCount;
+
+        public event Action<StaffAbilityDefinition, AbilityControlSlot, float> AbilityCastStarted;
+        public event Action<StaffAbilityDefinition, AbilityControlSlot> AbilityCastCompleted;
 
         public int GetAbilityLevel(StaffAbilityDefinition ability)
         {
@@ -224,6 +232,11 @@ namespace TPSBR
             }
 
             _lightAttackActive = animation == WeaponUseAnimation.LightAttack;
+
+            if (ability != null)
+            {
+                BeginAbilityCast(slot, ability);
+            }
 
             OnUseStarted(request);
             CancelSelectCastIndicator();
@@ -347,6 +360,7 @@ namespace TPSBR
         {
             base.Render();
             UpdateSelectCastIndicator();
+            UpdateAbilityCast(Time.deltaTime);
         }
 
         public bool TryGetStatBonuses(NetworkString<_64> configurationHash, out IReadOnlyList<int> statBonuses)
@@ -1188,6 +1202,7 @@ namespace TPSBR
         {
             _pendingLightAttack = false;
             _lightAttackActive = false;
+            CompleteAbilityCast();
 
             if (clearHeavy == true)
             {
@@ -1228,9 +1243,74 @@ namespace TPSBR
             }
         }
 
+        public bool TryGetActiveCast(out StaffAbilityDefinition ability, out AbilityControlSlot slot, out float normalizedProgress)
+        {
+            ability = _activeCastingAbility;
+            slot = _activeCastingSlot;
+
+            if (_activeCastingAbility == null || _activeCastDuration <= 0f)
+            {
+                normalizedProgress = 0f;
+                return false;
+            }
+
+            normalizedProgress = Mathf.Clamp01(_activeCastElapsed / _activeCastDuration);
+            return true;
+        }
+
+        internal void NotifyAbilityCastTriggered(AbilityDefinition ability, AbilityControlSlot slot)
+        {
+            if (_activeCastingAbility == null || ability != _activeCastingAbility || slot != _activeCastingSlot)
+            {
+                return;
+            }
+
+            _activeCastElapsed = Mathf.Max(_activeCastElapsed, _activeCastDuration);
+            CompleteAbilityCast();
+        }
+
         private UseLayer GetAttackLayer()
         {
             return Character != null ? Character.AnimationController?.AttackLayer : null;
+        }
+
+        private void BeginAbilityCast(AbilityControlSlot slot, StaffAbilityDefinition ability)
+        {
+            CompleteAbilityCast();
+
+            _activeCastingAbility = ability;
+            _activeCastingSlot = slot;
+            _activeCastElapsed = 0f;
+            _activeCastDuration = Mathf.Max(ability != null ? ability.BaseCastTime : 0f, 0f);
+
+            AbilityCastStarted?.Invoke(ability, slot, _activeCastDuration);
+        }
+
+        private void CompleteAbilityCast()
+        {
+            if (_activeCastingAbility != null)
+            {
+                AbilityCastCompleted?.Invoke(_activeCastingAbility, _activeCastingSlot);
+            }
+
+            _activeCastingAbility = null;
+            _activeCastDuration = 0f;
+            _activeCastElapsed = 0f;
+        }
+
+        private void UpdateAbilityCast(float deltaTime)
+        {
+            if (_activeCastingAbility == null)
+            {
+                return;
+            }
+
+            _activeCastElapsed += Mathf.Max(0f, deltaTime);
+
+            if (_activeCastDuration <= 0f || _activeCastElapsed >= _activeCastDuration)
+            {
+                CompleteAbilityCast();
+            }
         }
 
         public override string GetDescription()
