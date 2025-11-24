@@ -872,13 +872,26 @@ namespace TPSBR
                 return false;
             }
 
-            var random = new System.Random(seed);
-            PopulatePrimaryStats(random, out _, out _, out _, out _);
+            // Always unlock the first available staff ability so newly spawned weapons
+            // start with a predictable default ability in the tree.
+            int abilityIndex = -1;
 
-            int[] statBonuses = new int[Stats.Count];
-            PopulateStatBonuses(random, statBonuses);
+            IReadOnlyList<AbilityDefinition> availableAbilities = definition.AvailableAbilities;
+            if (availableAbilities == null || availableAbilities.Count == 0)
+            {
+                return false;
+            }
 
-            if (TrySelectDefaultAbilityIndex(random, definition, out int abilityIndex) == false)
+            for (int i = 0; i < availableAbilities.Count; ++i)
+            {
+                if (availableAbilities[i] is StaffAbilityDefinition)
+                {
+                    abilityIndex = i;
+                    break;
+                }
+            }
+
+            if (abilityIndex < 0)
             {
                 return false;
             }

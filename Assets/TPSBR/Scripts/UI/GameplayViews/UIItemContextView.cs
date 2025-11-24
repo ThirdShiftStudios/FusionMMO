@@ -96,6 +96,7 @@ namespace TPSBR.UI
             public readonly List<AbilityTreeNode> Children = new List<AbilityTreeNode>();
             public Vector2 Position;
             public int Depth;
+            public Vector2 Offset;
         }
 
         public event Action<UpgradeStation.ItemData> ItemSelected;
@@ -648,7 +649,10 @@ namespace TPSBR.UI
                 return null;
 
             ArcaneConduit.AbilityOption rootOption = startingOption.Value;
-            AbilityTreeNode root = CreateNode(rootOption, 0, null);
+            int seed = GetDeterministicSeed();
+            System.Random random = new System.Random(seed);
+
+            AbilityTreeNode root = CreateNode(rootOption, 0, null, Vector2.zero);
 
             List<ArcaneConduit.AbilityOption> remainingOptions = _allAbilityOptions
                 .Where(option => option.Index != rootOption.Index)
@@ -659,42 +663,42 @@ namespace TPSBR.UI
                 return root;
             }
 
-            int seed = GetDeterministicSeed();
-            System.Random random = new System.Random(seed);
-
             ShuffleOptions(remainingOptions, random);
 
-            if (remainingOptions.Count == 1)
-            {
-                AbilityTreeNode child = CreateNode(remainingOptions[0], 1, root);
-                root.Children.Add(child);
-                return root;
-            }
+            List<AbilityTreeNode> createdNodes = new List<AbilityTreeNode> { root };
 
-            bool createBranch = random.Next(0, 100) % 2 == 0;
-            if (createBranch == true)
+            for (int i = 0; i < remainingOptions.Count; ++i)
             {
-                for (int i = 0; i < remainingOptions.Count; ++i)
-                {
-                    AbilityTreeNode child = CreateNode(remainingOptions[i], 1, root);
-                    root.Children.Add(child);
-                }
-            }
-            else
-            {
-                AbilityTreeNode current = root;
-                int depth = 1;
+                AbilityTreeNode parent = SelectParentNode(createdNodes, random);
+                int depth = parent != null ? parent.Depth + 1 : 0;
+                AbilityTreeNode next = CreateNode(remainingOptions[i], depth, parent, GenerateNodeOffset(random));
 
-                for (int i = 0; i < remainingOptions.Count; ++i)
+                if (parent != null)
                 {
-                    AbilityTreeNode next = CreateNode(remainingOptions[i], depth, current);
-                    current.Children.Add(next);
-                    current = next;
-                    depth++;
+                    parent.Children.Add(next);
                 }
+
+                createdNodes.Add(next);
             }
 
             return root;
+        }
+
+        private AbilityTreeNode SelectParentNode(List<AbilityTreeNode> createdNodes, System.Random random)
+        {
+            if (createdNodes == null || createdNodes.Count == 0)
+                return null;
+
+            // Prefer the root half of the time to keep a visible cluster while still
+            // allowing deeper chains.
+            bool attachToRoot = random.NextDouble() < 0.5;
+            if (attachToRoot == true)
+            {
+                return createdNodes[0];
+            }
+
+            int index = random.Next(createdNodes.Count);
+            return createdNodes[Mathf.Clamp(index, 0, createdNodes.Count - 1)];
         }
 
         private void ShuffleOptions(List<ArcaneConduit.AbilityOption> options, System.Random random)
@@ -744,7 +748,7 @@ namespace TPSBR.UI
                 : CalculateFallbackSeed();
         }
 
-        private AbilityTreeNode CreateNode(ArcaneConduit.AbilityOption option, int depth, AbilityTreeNode parent)
+        private AbilityTreeNode CreateNode(ArcaneConduit.AbilityOption option, int depth, AbilityTreeNode parent, Vector2 offset)
         {
             _abilitySlotLookup.TryGetValue(option.Index, out UIListItem slot);
 
@@ -754,6 +758,7 @@ namespace TPSBR.UI
                 Slot = slot,
                 Parent = parent,
                 Depth = depth,
+                Offset = offset,
             };
         }
 
@@ -795,8 +800,24 @@ namespace TPSBR.UI
                 position = node.Parent.Position + new Vector2(horizontalOffset, -_abilityTreeSpacing.y);
             }
 
+            position += node.Offset;
+
             rectTransform.anchoredPosition = position;
             node.Position = position;
+        }
+
+        private Vector2 GenerateNodeOffset(System.Random random)
+        {
+            if (random == null)
+                return Vector2.zero;
+
+            float maxHorizontalJitter = _abilityTreeSpacing.x * 0.3f;
+            float maxVerticalJitter = _abilityTreeSpacing.y * 0.15f;
+
+            float x = Mathf.Lerp(-maxHorizontalJitter, maxHorizontalJitter, (float)random.NextDouble());
+            float y = Mathf.Lerp(-maxVerticalJitter, maxVerticalJitter, (float)random.NextDouble());
+
+            return new Vector2(x, y);
         }
 
         private void UpdateLayoutDeterminism()
