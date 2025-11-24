@@ -854,6 +854,11 @@ namespace TPSBR.UI
 
         private int DetermineRootAbilityIndex()
         {
+            if (TryResolveDefaultAbilityIndex(out int defaultIndex) == true)
+            {
+                return defaultIndex;
+            }
+
             ArcaneConduit.AbilityOption? firstUnlocked = _unlockedAbilityOptions
                 .OrderBy(option => option.Index)
                 .Cast<ArcaneConduit.AbilityOption?>()
@@ -868,6 +873,24 @@ namespace TPSBR.UI
                 .FirstOrDefault();
 
             return firstByIndex.HasValue ? firstByIndex.Value.Index : 0;
+        }
+
+        private bool TryResolveDefaultAbilityIndex(out int abilityIndex)
+        {
+            abilityIndex = -1;
+
+            if (string.IsNullOrEmpty(_currentConfigurationHash) == true)
+                return false;
+
+            if (StaffWeapon.TryGetAbilityConfiguration(_currentConfigurationHash, out StaffWeapon.AbilityConfiguration configur
+ation) == false)
+                return false;
+
+            if (configuration.UnlockedIndexes == null || configuration.UnlockedIndexes.Count == 0)
+                return false;
+
+            abilityIndex = configuration.UnlockedIndexes[0];
+            return true;
         }
 
         private int CalculateSeedFromHash(string configurationHash, string signature)

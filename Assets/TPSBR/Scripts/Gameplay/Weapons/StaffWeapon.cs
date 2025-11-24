@@ -872,9 +872,13 @@ namespace TPSBR
                 return false;
             }
 
-            // Always unlock the first available staff ability so newly spawned weapons
-            // start with a predictable default ability in the tree.
-            int abilityIndex = -1;
+            System.Random random = new System.Random(seed);
+
+            // Advance the RNG in the same order used during generation so the default
+            // unlocked ability aligns with the original roll for this configuration.
+            PopulatePrimaryStats(random, out _, out _, out _, out _);
+            int[] statBonuses = new int[Stats.Count];
+            PopulateStatBonuses(random, statBonuses);
 
             IReadOnlyList<AbilityDefinition> availableAbilities = definition.AvailableAbilities;
             if (availableAbilities == null || availableAbilities.Count == 0)
@@ -882,16 +886,7 @@ namespace TPSBR
                 return false;
             }
 
-            for (int i = 0; i < availableAbilities.Count; ++i)
-            {
-                if (availableAbilities[i] is StaffAbilityDefinition)
-                {
-                    abilityIndex = i;
-                    break;
-                }
-            }
-
-            if (abilityIndex < 0)
+            if (TrySelectDefaultAbilityIndex(random, definition, out int abilityIndex) == false)
             {
                 return false;
             }
@@ -2050,7 +2045,6 @@ namespace TPSBR
                 sanitized.Add(index);
             }
 
-            sanitized.Sort();
             return sanitized.Count > 0 ? sanitized.ToArray() : Array.Empty<int>();
         }
 
