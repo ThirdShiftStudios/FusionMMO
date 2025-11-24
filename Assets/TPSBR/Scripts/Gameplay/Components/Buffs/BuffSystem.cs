@@ -29,6 +29,7 @@ namespace TPSBR
 
         private Agent       _agent;
         private AgentSenses _senses;
+        private readonly GameObject[] _activeTickGraphics = new GameObject[MaxBuffSlots];
 
         public Agent Agent => _agent;
         public AgentSenses Senses => _senses;
@@ -121,6 +122,7 @@ namespace TPSBR
             BuffData data = _activeBuffs.Get(index);
             if (data.DefinitionId != definition.ID)
             {
+                ClearTickGraphic(index);
                 data.DefinitionId = definition.ID;
                 data.Stacks = 0;
                 data.RemainingTime = 0f;
@@ -160,6 +162,8 @@ namespace TPSBR
             }
 
             _activeBuffs.Set(index, data);
+
+            SpawnTickGraphic(definition, index);
         }
 
         public void RemoveBuff(BuffDefinition definition)
@@ -312,8 +316,46 @@ namespace TPSBR
         private void RemoveBuffInternal(int index, BuffDefinition definition, ref BuffData data)
         {
             definition?.OnRemove(this, ref data);
+            ClearTickGraphic(index);
             data.Clear();
             _activeBuffs.Set(index, data);
+        }
+
+        private void SpawnTickGraphic(BuffDefinition definition, int index)
+        {
+            if (definition == null || definition.OnTickGraphic == null)
+            {
+                return;
+            }
+
+            if (index < 0 || index >= MaxBuffSlots || _activeTickGraphics[index] != null)
+            {
+                return;
+            }
+
+            IHitTarget hitTarget = GetComponent<IHitTarget>();
+            Transform parent = hitTarget?.AbilityHitPivot;
+            if (parent == null)
+            {
+                return;
+            }
+
+            _activeTickGraphics[index] = Instantiate(definition.OnTickGraphic, parent);
+        }
+
+        private void ClearTickGraphic(int index)
+        {
+            if (index < 0 || index >= MaxBuffSlots)
+            {
+                return;
+            }
+
+            GameObject graphic = _activeTickGraphics[index];
+            if (graphic != null)
+            {
+                Destroy(graphic);
+                _activeTickGraphics[index] = null;
+            }
         }
     }
 }
