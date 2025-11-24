@@ -56,7 +56,7 @@ namespace TPSBR
             if (agent == null)
                 return false;
 
-            if (Object == null || Object.IsSpawned == false)
+            if (Object == null || Object.IsValid == false)
                 return false;
 
             if (_activeAgent != null)

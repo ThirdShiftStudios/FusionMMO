@@ -303,7 +303,7 @@
             if (ActiveResourceNode == null)
                 return;
 
-            if (ActiveResourceNode.Object == null || ActiveResourceNode.Object.IsSpawned == false)
+            if (ActiveResourceNode.Object == null || ActiveResourceNode.Object.IsValid == false)
             {
                 ActiveResourceNode = null;
                 return;
