@@ -269,9 +269,15 @@ namespace TPSBR
                 return false;
             }
 
-            _selectedCastPosition = targetPosition;
+            StaffAbilityDefinition ability = GetAssignedAbility(_activeSelectCastSlot);
 
-            StaffAbilityDefinition ability = _activeSelectCastAbility;
+            if (ability == null)
+            {
+                CancelSelectCast();
+                return false;
+            }
+
+            _selectedCastPosition = targetPosition;
             AbilityControlSlot slot = _activeSelectCastSlot;
 
             CancelSelectCastIndicator();
