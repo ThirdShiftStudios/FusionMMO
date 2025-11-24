@@ -616,6 +616,7 @@ namespace TPSBR.UI
             if (_allWeaponAbilityRoot == null)
                 return;
 
+            EnsureAbilityConnectionLayering();
             ClearAbilityConnections();
 
             if (_allAbilityOptions.Count == 0)
@@ -872,6 +873,14 @@ namespace TPSBR.UI
 
                 return seed;
             }
+        }
+
+        private void EnsureAbilityConnectionLayering()
+        {
+            if (_abilityConnectionRoot == null)
+                return;
+
+            _abilityConnectionRoot.SetAsFirstSibling();
         }
 
         private void DrawConnections(List<AbilityTreeNode> nodes)
