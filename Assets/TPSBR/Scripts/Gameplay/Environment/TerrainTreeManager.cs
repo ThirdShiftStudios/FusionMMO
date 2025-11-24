@@ -50,7 +50,12 @@ namespace TPSBR
         [SerializeField, Tooltip("Hide the Terrain tree instance whenever a networked TreeNode is active or harvested.")]
         private bool _hideTerrainTreeWhenNetworked = true;
 
+        [Header("Regrowth")]
+        [SerializeField, Tooltip("Seconds before a harvested tree regrows and becomes available again. Set to 0 to disable regrowth.")]
+        private float _regrowDuration = 120f;
+
         [Networked, Capacity(MAX_TREES_PER_TILE)] private NetworkArray<TreeState> _treeStates { get; }
+        [Networked, Capacity(MAX_TREES_PER_TILE)] private NetworkArray<float> _regrowCompletionTimes { get; }
         [Networked] private int _managedTreeCount { get; set; }
 
         private readonly Dictionary<int, TreeNode> _activeTreeNodes = new Dictionary<int, TreeNode>();
@@ -74,6 +79,7 @@ namespace TPSBR
             {
                 _managedTreeCount = _managedTrees.Length;
                 ResetTreeStates();
+                ResetRegrowTimers();
             }
         }
 
@@ -103,6 +109,7 @@ namespace TPSBR
             _nextEvaluationTime = (float)Runner.SimulationTime + _evaluationInterval;
 
             CleanupInvalidNodes();
+            UpdateRegrowth();
             EvaluateActiveTrees();
         }
 
@@ -160,6 +167,14 @@ namespace TPSBR
             for (int i = 0; i < _managedTreeCount; ++i)
             {
                 SetTreeState(i, false, false);
+            }
+        }
+
+        private void ResetRegrowTimers()
+        {
+            for (int i = 0; i < _managedTreeCount; ++i)
+            {
+                _regrowCompletionTimes.Set(i, 0f);
             }
         }
 
@@ -259,6 +274,24 @@ namespace TPSBR
             }
 
             ListPool.Return(toRemove);
+        }
+
+        private void UpdateRegrowth()
+        {
+            double now = Runner.SimulationTime;
+
+            for (int i = 0; i < _managedTreeCount; ++i)
+            {
+                if (_treeStates[i].IsHarvested == false)
+                    continue;
+
+                float completionTime = _regrowCompletionTimes[i];
+                if (completionTime <= 0f || now < completionTime)
+                    continue;
+
+                SetTreeState(i, false, false);
+                _regrowCompletionTimes.Set(i, 0f);
+            }
         }
 
         private int FindClosestAvailableTree(Vector3 position)
@@ -364,6 +397,8 @@ namespace TPSBR
 
         private void MarkTreeHarvested(int treeIndex, TreeNode node)
         {
+            float regrowTime = _regrowDuration > 0f ? (float)Runner.SimulationTime + _regrowDuration : 0f;
+            _regrowCompletionTimes.Set(treeIndex, regrowTime);
             SetTreeState(treeIndex, false, true);
             DespawnTreeNode(treeIndex, node);
         }
