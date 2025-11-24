@@ -59,10 +59,12 @@ namespace TPSBR
 
 		private float            _maxBounceVolume;
 
-		private EHitType         _hitType;
-		private LayerMask        _hitMask;
-		private int              _ownerObjectInstanceID;
-		private List<LagCompensatedHit> _validHits = new(16);
+                private EHitType         _hitType;
+                private LayerMask        _hitMask;
+                private int              _ownerObjectInstanceID;
+                private List<LagCompensatedHit> _validHits = new(16);
+
+                private BuffDefinition   _buffDefinition;
 
 		private TrailRenderer    _trailRenderer;
 		private bool             _hasImpactedVisual;
@@ -126,6 +128,11 @@ namespace TPSBR
                         _spawnImpactOnStaticHitOnly = false;
                 }
 
+                public void ConfigureBuff(BuffDefinition buffDefinition)
+                {
+                        _buffDefinition = buffDefinition;
+                }
+
 		public void SetDespawnCooldown(float cooldown)
 		{
 			// Guard against post-despawn or pre-spawn access
@@ -172,15 +179,17 @@ namespace TPSBR
 			}
 		}
 
-		public override void Despawned(NetworkRunner runner, bool hasState)
-		{
-			_despawning = true;
+                public override void Despawned(NetworkRunner runner, bool hasState)
+                {
+                        _despawning = true;
 
-			if (_dummyRotationTarget != null)
-			{
-				_dummyRotationTarget.rotation = Quaternion.identity;
-			}
-		}
+                        if (_dummyRotationTarget != null)
+                        {
+                                _dummyRotationTarget.rotation = Quaternion.identity;
+                        }
+
+                        _buffDefinition = null;
+                }
 
 		public override void FixedUpdateNetwork()
 		{
@@ -460,8 +469,20 @@ namespace TPSBR
 			public int         ImpactTagHash;
 		}
 
-		protected virtual void OnImpact(in LagCompensatedHit hit)
-		{
-		}
-	}
+                protected virtual void OnImpact(in LagCompensatedHit hit)
+                {
+                        if (HasStateAuthority == false || _buffDefinition == null)
+                        {
+                                return;
+                        }
+
+                        if (hit.Hitbox == null)
+                        {
+                                return;
+                        }
+
+                        var buffSystem = hit.Hitbox.Root != null ? hit.Hitbox.Root.GetComponent<BuffSystem>() : null;
+                        buffSystem?.ApplyBuff(_buffDefinition);
+                }
+        }
 }

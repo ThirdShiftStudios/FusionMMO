@@ -108,6 +108,7 @@ public class IceShardAbilityDefinition: StaffAbilityDefinition, IAbilityImpact
             }
 
             projectile.ConfigureImpactGraphic(_impactGraphic);
+            projectile.ConfigureBuff(BuffDefinition);
             projectile.ConfigureDamage(levelData.Damage);
             projectile.Fire(owner, firePosition, initialVelocity, hitMask, staffWeapon.HitType);
         });
