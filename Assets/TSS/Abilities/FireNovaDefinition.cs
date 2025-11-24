@@ -79,7 +79,7 @@ namespace TPSBR.Abilities
                 return;
             }
 
-            FireNovaAbilityUpgradeLevel levelData = ResolveUpgradeLevel(staffWeapon);
+            FireNovaAbilityLevelData levelData = ResolveUpgradeLevel(staffWeapon);
 
             runner.Spawn(_fireNovaPrefab, firePosition, default, owner.InputAuthority, (spawnRunner, spawnedObject) =>
             {
@@ -96,13 +96,13 @@ namespace TPSBR.Abilities
             });
         }
 
-        private FireNovaAbilityUpgradeLevel ResolveUpgradeLevel(StaffWeapon staffWeapon)
+        private FireNovaAbilityLevelData ResolveUpgradeLevel(StaffWeapon staffWeapon)
         {
             FireNovaAbilityUpgradeData upgradeData = FireNovaUpgradeData;
 
-            if (upgradeData == null || upgradeData.LevelCount == 0)
+            if (upgradeData == null)
             {
-                return new FireNovaAbilityUpgradeLevel
+                return new FireNovaAbilityLevelData
                 {
                     CastingTime = BaseCastTime
                 };

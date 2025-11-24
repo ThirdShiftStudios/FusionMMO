@@ -92,7 +92,7 @@ namespace TPSBR.Abilities
                 return;
             }
 
-            FireballAbilityUpgradeLevel levelData = ResolveUpgradeLevel(staffWeapon);
+            FireballAbilityLevelData levelData = ResolveUpgradeLevel(staffWeapon);
 
             runner.Spawn(_projectilePrefab, firePosition, Quaternion.LookRotation(direction), owner.InputAuthority, (spawnRunner, spawnedObject) =>
             {
@@ -108,13 +108,13 @@ namespace TPSBR.Abilities
             });
         }
 
-        private FireballAbilityUpgradeLevel ResolveUpgradeLevel(StaffWeapon staffWeapon)
+        private FireballAbilityLevelData ResolveUpgradeLevel(StaffWeapon staffWeapon)
         {
             FireballAbilityUpgradeData upgradeData = FireballUpgradeData;
 
-            if (upgradeData == null || upgradeData.LevelCount == 0)
+            if (upgradeData == null)
             {
-                return new FireballAbilityUpgradeLevel
+                return new FireballAbilityLevelData
                 {
                     CastingTime = BaseCastTime
                 };

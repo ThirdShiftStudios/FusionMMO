@@ -1,11 +1,23 @@
 using System;
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace TPSBR.Abilities
 {
     [Serializable]
     public struct IceShardAbilityUpgradeLevel
+    {
+        [Header("Base Values")]
+        public float NumberOfShards;
+        public float Damage;
+        public float CastingTime;
+
+        [Header("Per Level Increase (%)")]
+        public float NumberOfShardsIncreasePercent;
+        public float DamageIncreasePercent;
+        public float CastingTimeIncreasePercent;
+    }
+
+    public struct IceShardAbilityLevelData
     {
         public float NumberOfShards;
         public float Damage;
@@ -16,28 +28,22 @@ namespace TPSBR.Abilities
     public sealed class IceShardAbilityUpgradeData : AbilityUpgradeData
     {
         [SerializeField]
-        private IceShardAbilityUpgradeLevel[] _levels = Array.Empty<IceShardAbilityUpgradeLevel>();
+        private IceShardAbilityUpgradeLevel _level;
 
-        public IReadOnlyList<IceShardAbilityUpgradeLevel> Levels => _levels ?? Array.Empty<IceShardAbilityUpgradeLevel>();
-        public override int LevelCount => Levels.Count;
+        public IceShardAbilityUpgradeLevel Level => _level;
+        public override int LevelCount => MaxLevel;
 
-        public IceShardAbilityUpgradeLevel GetLevelData(int level)
+        public IceShardAbilityLevelData GetLevelData(int level)
         {
-            if (Levels.Count == 0)
+            int clampedLevel = ClampLevel(level);
+            IceShardAbilityUpgradeLevel resolvedLevel = _level;
+
+            return new IceShardAbilityLevelData
             {
-                return default;
-            }
-
-            int index = Mathf.Clamp(level - 1, 0, Levels.Count - 1);
-            return _levels[index];
+                NumberOfShards = ApplyPerLevelIncrease(resolvedLevel.NumberOfShards, resolvedLevel.NumberOfShardsIncreasePercent, clampedLevel),
+                Damage = ApplyPerLevelIncrease(resolvedLevel.Damage, resolvedLevel.DamageIncreasePercent, clampedLevel),
+                CastingTime = ApplyPerLevelIncrease(resolvedLevel.CastingTime, resolvedLevel.CastingTimeIncreasePercent, clampedLevel)
+            };
         }
-
-#if UNITY_EDITOR
-        public override void OnValidate()
-        {
-            base.OnValidate();
-            _levels ??= Array.Empty<IceShardAbilityUpgradeLevel>();
-        }
-#endif
     }
 }

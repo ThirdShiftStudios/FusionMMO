@@ -104,7 +104,7 @@ namespace TPSBR.Abilities
                 return;
             }
 
-            FireStormAbilityUpgradeLevel levelData = ResolveUpgradeLevel(staffWeapon);
+            FireStormAbilityLevelData levelData = ResolveUpgradeLevel(staffWeapon);
 
             runner.Spawn(_fireStormPrefab, targetPosition, Quaternion.identity, owner.InputAuthority, (spawnRunner, spawnedObject) =>
             {
@@ -119,13 +119,13 @@ namespace TPSBR.Abilities
             });
         }
 
-        private FireStormAbilityUpgradeLevel ResolveUpgradeLevel(StaffWeapon staffWeapon)
+        private FireStormAbilityLevelData ResolveUpgradeLevel(StaffWeapon staffWeapon)
         {
             FireStormAbilityUpgradeData upgradeData = FireStormUpgradeData;
 
-            if (upgradeData == null || upgradeData.LevelCount == 0)
+            if (upgradeData == null)
             {
-                return new FireStormAbilityUpgradeLevel
+                return new FireStormAbilityLevelData
                 {
                     CastingTime = BaseCastTime
                 };

@@ -1,11 +1,27 @@
 using System;
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace TPSBR.Abilities
 {
     [Serializable]
     public struct FireNovaAbilityUpgradeLevel
+    {
+        [Header("Base Values")]
+        public float Radius;
+        public float Damage;
+        public float BurnDuration;
+        public float BurnDamage;
+        public float CastingTime;
+
+        [Header("Per Level Increase (%)")]
+        public float RadiusIncreasePercent;
+        public float DamageIncreasePercent;
+        public float BurnDurationIncreasePercent;
+        public float BurnDamageIncreasePercent;
+        public float CastingTimeIncreasePercent;
+    }
+
+    public struct FireNovaAbilityLevelData
     {
         public float Radius;
         public float Damage;
@@ -18,28 +34,24 @@ namespace TPSBR.Abilities
     public sealed class FireNovaAbilityUpgradeData : AbilityUpgradeData
     {
         [SerializeField]
-        private FireNovaAbilityUpgradeLevel[] _levels = Array.Empty<FireNovaAbilityUpgradeLevel>();
+        private FireNovaAbilityUpgradeLevel _level;
 
-        public IReadOnlyList<FireNovaAbilityUpgradeLevel> Levels => _levels ?? Array.Empty<FireNovaAbilityUpgradeLevel>();
-        public override int LevelCount => Levels.Count;
+        public FireNovaAbilityUpgradeLevel Level => _level;
+        public override int LevelCount => MaxLevel;
 
-        public FireNovaAbilityUpgradeLevel GetLevelData(int level)
+        public FireNovaAbilityLevelData GetLevelData(int level)
         {
-            if (Levels.Count == 0)
+            int clampedLevel = ClampLevel(level);
+            FireNovaAbilityUpgradeLevel resolvedLevel = _level;
+
+            return new FireNovaAbilityLevelData
             {
-                return default;
-            }
-
-            int index = Mathf.Clamp(level - 1, 0, Levels.Count - 1);
-            return _levels[index];
+                Radius = ApplyPerLevelIncrease(resolvedLevel.Radius, resolvedLevel.RadiusIncreasePercent, clampedLevel),
+                Damage = ApplyPerLevelIncrease(resolvedLevel.Damage, resolvedLevel.DamageIncreasePercent, clampedLevel),
+                BurnDuration = ApplyPerLevelIncrease(resolvedLevel.BurnDuration, resolvedLevel.BurnDurationIncreasePercent, clampedLevel),
+                BurnDamage = ApplyPerLevelIncrease(resolvedLevel.BurnDamage, resolvedLevel.BurnDamageIncreasePercent, clampedLevel),
+                CastingTime = ApplyPerLevelIncrease(resolvedLevel.CastingTime, resolvedLevel.CastingTimeIncreasePercent, clampedLevel)
+            };
         }
-
-#if UNITY_EDITOR
-        public override void OnValidate()
-        {
-            base.OnValidate();
-            _levels ??= Array.Empty<FireNovaAbilityUpgradeLevel>();
-        }
-#endif
     }
 }

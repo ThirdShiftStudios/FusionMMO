@@ -872,11 +872,19 @@ namespace TPSBR
                 return false;
             }
 
-            var random = new System.Random(seed);
-            PopulatePrimaryStats(random, out _, out _, out _, out _);
+            System.Random random = new System.Random(seed);
 
+            // Advance the RNG in the same order used during generation so the default
+            // unlocked ability aligns with the original roll for this configuration.
+            PopulatePrimaryStats(random, out _, out _, out _, out _);
             int[] statBonuses = new int[Stats.Count];
             PopulateStatBonuses(random, statBonuses);
+
+            IReadOnlyList<AbilityDefinition> availableAbilities = definition.AvailableAbilities;
+            if (availableAbilities == null || availableAbilities.Count == 0)
+            {
+                return false;
+            }
 
             if (TrySelectDefaultAbilityIndex(random, definition, out int abilityIndex) == false)
             {
@@ -2037,7 +2045,6 @@ namespace TPSBR
                 sanitized.Add(index);
             }
 
-            sanitized.Sort();
             return sanitized.Count > 0 ? sanitized.ToArray() : Array.Empty<int>();
         }
 
@@ -2128,7 +2135,7 @@ namespace TPSBR
                     continue;
                 }
 
-                int clampedLevel = Mathf.Clamp(pair.Value, 1, byte.MaxValue);
+                int clampedLevel = Mathf.Clamp(pair.Value, 1, AbilityUpgradeData.MaxLevel);
                 sanitized[pair.Key] = clampedLevel;
             }
 
