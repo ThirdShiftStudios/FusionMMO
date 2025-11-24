@@ -4,7 +4,7 @@ using TPSBR.Abilities;
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "IceShardAbilityDefinition", menuName = "TSS/Abilities/Ice Shard Ability")]
-public class IceShardAbilityDefinition: StaffAbilityDefinition
+public class IceShardAbilityDefinition: StaffAbilityDefinition, IAbilityImpact
 {
     public const string AbilityCode = "ICESHARD";
 
@@ -18,7 +18,13 @@ public class IceShardAbilityDefinition: StaffAbilityDefinition
     [SerializeField]
     private float _targetDistance = 40f;
 
+    [Header("Impact")]
+    [SerializeField]
+    private GameObject _impactGraphic;
+
     public IceShardAbilityUpgradeData IceShardUpgradeData => GetUpgradeData<IceShardAbilityUpgradeData>();
+
+    public GameObject ImpactGraphic => _impactGraphic;
 
 #if UNITY_EDITOR
     protected override void OnValidate()
@@ -101,6 +107,7 @@ public class IceShardAbilityDefinition: StaffAbilityDefinition
                 return;
             }
 
+            projectile.ConfigureImpactGraphic(_impactGraphic);
             projectile.ConfigureDamage(levelData.Damage);
             projectile.Fire(owner, firePosition, initialVelocity, hitMask, staffWeapon.HitType);
         });

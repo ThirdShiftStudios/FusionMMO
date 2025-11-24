@@ -6,7 +6,7 @@ using UnityEngine.Serialization;
 namespace TPSBR.Abilities
 {
     [CreateAssetMenu(fileName = "IceShardAbilityDefinition", menuName = "TSS/Abilities/Fireball Ability")]
-    public class FireballAbilityDefinition : StaffAbilityDefinition
+    public class FireballAbilityDefinition : StaffAbilityDefinition, IAbilityImpact
     {
         public const string AbilityCode = "FIREBALL";
 
@@ -20,7 +20,13 @@ namespace TPSBR.Abilities
         [SerializeField]
         private float _targetDistance = 40f;
 
+        [Header("Impact")]
+        [SerializeField]
+        private GameObject _impactGraphic;
+
         public FireballAbilityUpgradeData FireballUpgradeData => GetUpgradeData<FireballAbilityUpgradeData>();
+
+        public GameObject ImpactGraphic => _impactGraphic;
 
 #if UNITY_EDITOR
         protected override void OnValidate()
@@ -103,6 +109,7 @@ namespace TPSBR.Abilities
                     return;
                 }
 
+                projectile.ConfigureImpactGraphic(_impactGraphic);
                 projectile.ConfigureDamage(levelData.Damage);
                 projectile.Fire(owner, firePosition, initialVelocity, hitMask, staffWeapon.HitType);
             });

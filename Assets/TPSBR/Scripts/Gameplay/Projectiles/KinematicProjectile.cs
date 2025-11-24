@@ -120,6 +120,12 @@ namespace TPSBR
                         _damage.Damage = Mathf.Max(0f, damage);
                 }
 
+                public void ConfigureImpactGraphic(GameObject impactGraphic)
+                {
+                        _impactEffect = impactGraphic;
+                        _spawnImpactOnStaticHitOnly = false;
+                }
+
 		public void SetDespawnCooldown(float cooldown)
 		{
 			// Guard against post-despawn or pre-spawn access

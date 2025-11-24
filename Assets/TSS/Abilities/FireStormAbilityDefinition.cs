@@ -6,7 +6,7 @@ using UnityEngine;
 namespace TPSBR.Abilities
 {
     [CreateAssetMenu(fileName = "FireStormAbilityDefinition", menuName = "TSS/Abilities/Fire Storm Ability")]
-    public class FireStormAbilityDefinition : StaffAbilityDefinition, ISelectBeforeCast
+    public class FireStormAbilityDefinition : StaffAbilityDefinition, ISelectBeforeCast, IAbilityImpact
     {
         public const string AbilityCode = "FIRESTORM";
 
@@ -24,8 +24,14 @@ namespace TPSBR.Abilities
         [SerializeField]
         private NetworkPrefabRef _fireStormPrefab;
 
+        [Header("Impact")]
+        [SerializeField]
+        private GameObject _impactGraphic;
+
         public GameObject CastIndicatorGraphic => _castIndicatorGraphic;
         public FireStormAbilityUpgradeData FireStormUpgradeData => GetUpgradeData<FireStormAbilityUpgradeData>();
+
+        public GameObject ImpactGraphic => _impactGraphic;
 
 #if UNITY_EDITOR
         protected override void OnValidate()

@@ -4,7 +4,7 @@ using UnityEngine;
 namespace TPSBR.Abilities
 {
     [CreateAssetMenu(fileName = "FireNovaAbilityDefinition", menuName = "TSS/Abilities/Fire Nova Ability")]
-    public class FireNovaDefinition : StaffAbilityDefinition
+    public class FireNovaDefinition : StaffAbilityDefinition, IAbilityImpact
     {
         public const string AbilityCode = "FIRENOVA";
 
@@ -18,7 +18,13 @@ namespace TPSBR.Abilities
         [SerializeField]
         private float _targetDistance = 40f;
 
+        [Header("Impact")]
+        [SerializeField]
+        private GameObject _impactGraphic;
+
         public FireNovaAbilityUpgradeData FireNovaUpgradeData => GetUpgradeData<FireNovaAbilityUpgradeData>();
+
+        public GameObject ImpactGraphic => _impactGraphic;
 
 #if UNITY_EDITOR
         protected override void OnValidate()
