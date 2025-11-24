@@ -41,7 +41,18 @@ namespace TPSBR.Abilities
         public FireballAbilityLevelData GetLevelData(int level)
         {
             int clampedLevel = ClampLevel(level);
+
+            if (TryGetLegacyLevelData(clampedLevel, out FireballAbilityLevelData legacyLevelData) == true)
+            {
+                return legacyLevelData;
+            }
+
             FireballAbilityUpgradeLevel resolvedLevel = ResolveLevel();
+
+            if (IsLevelConfigured(resolvedLevel) == false)
+            {
+                resolvedLevel = GetDefaultLevel();
+            }
 
             return new FireballAbilityLevelData
             {
@@ -88,6 +99,43 @@ namespace TPSBR.Abilities
         private static bool TryPopulateLevelFromLegacy(IReadOnlyList<FireballAbilityUpgradeLevel> levels)
         {
             return levels != null && levels.Count > 0;
+        }
+
+        private bool TryGetLegacyLevelData(int level, out FireballAbilityLevelData legacyLevelData)
+        {
+            if (TryPopulateLevelFromLegacy(LegacyLevels) == true)
+            {
+                int index = Mathf.Clamp(level - 1, 0, LegacyLevels.Count - 1);
+                FireballAbilityUpgradeLevel legacyLevel = LegacyLevels[index];
+
+                if (IsLevelConfigured(legacyLevel) == true)
+                {
+                    legacyLevelData = new FireballAbilityLevelData
+                    {
+                        Radius = legacyLevel.Radius,
+                        Damage = legacyLevel.Damage,
+                        CastingTime = legacyLevel.CastingTime,
+                    };
+
+                    return true;
+                }
+            }
+
+            legacyLevelData = default;
+            return false;
+        }
+
+        private static FireballAbilityUpgradeLevel GetDefaultLevel()
+        {
+            return new FireballAbilityUpgradeLevel
+            {
+                Radius = 2f,
+                Damage = 25f,
+                CastingTime = 0.75f,
+                RadiusIncreasePercent = 2.5f,
+                DamageIncreasePercent = 7.5f,
+                CastingTimeIncreasePercent = -1.5f,
+            };
         }
 
         private static FireballAbilityUpgradeLevel PopulateLevelFromLegacy(IReadOnlyList<FireballAbilityUpgradeLevel> levels)
