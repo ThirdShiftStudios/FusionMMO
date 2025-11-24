@@ -278,10 +278,8 @@ namespace TPSBR.UI
 
         public void RequestAbilityUnlockByOptionIndex(int optionIndex)
         {
-            if (optionIndex < 0 || optionIndex >= _allAbilityOptions.Count)
+            if (_abilityOptionLookup.TryGetValue(optionIndex, out ArcaneConduit.AbilityOption option) == false)
                 return;
-
-            ArcaneConduit.AbilityOption option = _allAbilityOptions[optionIndex];
 
             if (option.IsUnlocked == true)
                 return;
