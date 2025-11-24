@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -83,6 +84,9 @@ namespace TPSBR.UI
         private CanvasGroup _dragCanvasGroup;
         private UIListItem _activeAbilityTooltipSlot;
         private string _currentConfigurationHash;
+        private string _layoutSignature;
+        private int _layoutSeed;
+        private int? _layoutRootAbilityIndex;
 
         private sealed class AbilityTreeNode
         {
@@ -201,6 +205,7 @@ namespace TPSBR.UI
                 _selectedLockedAbilityIndex = -1;
             }
 
+            UpdateLayoutDeterminism();
             RefreshAbilityLists();
             RefreshAbilityAssignmentsView();
         }
@@ -214,6 +219,9 @@ namespace TPSBR.UI
             _abilityOptionLookup.Clear();
             _abilitySlotLookup.Clear();
             _currentConfigurationHash = null;
+            _layoutSignature = null;
+            _layoutSeed = 0;
+            _layoutRootAbilityIndex = null;
 
             HideAbilityTooltip();
 
@@ -687,41 +695,32 @@ namespace TPSBR.UI
                 return null;
             }
 
-            ArcaneConduit.AbilityOption? firstUnlocked = _unlockedAbilityOptions
-                .OrderBy(option => option.Index)
-                .Cast<ArcaneConduit.AbilityOption?>()
-                .FirstOrDefault();
+            ArcaneConduit.AbilityOption? preferred = null;
 
-            if (firstUnlocked.HasValue == true)
+            if (_layoutRootAbilityIndex.HasValue == true)
             {
-                return firstUnlocked;
+                preferred = _allAbilityOptions
+                    .Where(option => option.Index == _layoutRootAbilityIndex.Value)
+                    .Cast<ArcaneConduit.AbilityOption?>()
+                    .FirstOrDefault();
             }
 
-            ArcaneConduit.AbilityOption? firstByIndex = _allAbilityOptions
+            if (preferred.HasValue == true)
+            {
+                return preferred;
+            }
+
+            return _allAbilityOptions
                 .OrderBy(option => option.Index)
                 .Cast<ArcaneConduit.AbilityOption?>()
                 .FirstOrDefault();
-
-            return firstByIndex;
         }
 
         private int GetDeterministicSeed()
         {
-            if (string.IsNullOrEmpty(_currentConfigurationHash) == false)
-            {
-                return _currentConfigurationHash.GetHashCode();
-            }
-
-            unchecked
-            {
-                int seed = 17;
-                for (int i = 0; i < _allAbilityOptions.Count; ++i)
-                {
-                    seed = (seed * 31) + _allAbilityOptions[i].Index;
-                }
-
-                return seed;
-            }
+            return _layoutSeed != 0 || string.IsNullOrEmpty(_layoutSignature) == false
+                ? _layoutSeed
+                : CalculateFallbackSeed();
         }
 
         private AbilityTreeNode CreateNode(ArcaneConduit.AbilityOption option, int depth, AbilityTreeNode parent)
@@ -776,6 +775,103 @@ namespace TPSBR.UI
 
             rectTransform.anchoredPosition = position;
             node.Position = position;
+        }
+
+        private void UpdateLayoutDeterminism()
+        {
+            string signature = BuildLayoutSignature();
+
+            if (string.Equals(signature, _layoutSignature, StringComparison.Ordinal) == true)
+                return;
+
+            _layoutSignature = signature;
+            _layoutSeed = CalculateSeedFromHash(_currentConfigurationHash, signature);
+            _layoutRootAbilityIndex = DetermineRootAbilityIndex();
+        }
+
+        private string BuildLayoutSignature()
+        {
+            if (_allAbilityOptions.Count == 0)
+                return string.Empty;
+
+            System.Text.StringBuilder builder = new System.Text.StringBuilder();
+            builder.Append(_allAbilityOptions.Count);
+
+            for (int i = 0; i < _allAbilityOptions.Count; ++i)
+            {
+                ArcaneConduit.AbilityOption option = _allAbilityOptions[i];
+                builder.Append('|');
+                builder.Append(option.Index);
+                builder.Append(':');
+                builder.Append(option.Definition != null ? option.Definition.name : "?");
+            }
+
+            return builder.ToString();
+        }
+
+        private int DetermineRootAbilityIndex()
+        {
+            ArcaneConduit.AbilityOption? firstUnlocked = _unlockedAbilityOptions
+                .OrderBy(option => option.Index)
+                .Cast<ArcaneConduit.AbilityOption?>()
+                .FirstOrDefault();
+
+            if (firstUnlocked.HasValue == true)
+                return firstUnlocked.Value.Index;
+
+            ArcaneConduit.AbilityOption? firstByIndex = _allAbilityOptions
+                .OrderBy(option => option.Index)
+                .Cast<ArcaneConduit.AbilityOption?>()
+                .FirstOrDefault();
+
+            return firstByIndex.HasValue ? firstByIndex.Value.Index : 0;
+        }
+
+        private int CalculateSeedFromHash(string configurationHash, string signature)
+        {
+            if (string.IsNullOrEmpty(configurationHash) == false)
+            {
+                unchecked
+                {
+                    int seed = 17;
+                    for (int i = 0; i < configurationHash.Length; ++i)
+                    {
+                        seed = (seed * 31) + configurationHash[i];
+                    }
+
+                    return seed;
+                }
+            }
+
+            if (string.IsNullOrEmpty(signature) == false)
+            {
+                unchecked
+                {
+                    int seed = 23;
+                    for (int i = 0; i < signature.Length; ++i)
+                    {
+                        seed = (seed * 37) + signature[i];
+                    }
+
+                    return seed;
+                }
+            }
+
+            return CalculateFallbackSeed();
+        }
+
+        private int CalculateFallbackSeed()
+        {
+            unchecked
+            {
+                int seed = 17;
+                for (int i = 0; i < _allAbilityOptions.Count; ++i)
+                {
+                    seed = (seed * 31) + _allAbilityOptions[i].Index;
+                }
+
+                return seed;
+            }
         }
 
         private void DrawConnections(List<AbilityTreeNode> nodes)
