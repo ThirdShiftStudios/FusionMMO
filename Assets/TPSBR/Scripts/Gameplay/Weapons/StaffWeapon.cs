@@ -107,6 +107,22 @@ namespace TPSBR
         private Vector3? _selectedCastPosition;
         private const float _selectCastMaxDistance = 40f;
 
+        public readonly struct AbilityCastState
+        {
+            public AbilityCastState(StaffWeapon weapon, AbilityDefinition ability, AbilityControlSlot slot, float castTime)
+            {
+                Weapon = weapon;
+                Ability = ability;
+                Slot = slot;
+                CastTime = castTime;
+            }
+
+            public StaffWeapon Weapon { get; }
+            public AbilityDefinition Ability { get; }
+            public AbilityControlSlot Slot { get; }
+            public float CastTime { get; }
+        }
+
         public float BaseDamage => _baseDamage;
         public float HealthRegen => _healthRegen;
         public float ManaRegen => _manaRegen;
@@ -115,8 +131,11 @@ namespace TPSBR
         public IReadOnlyList<StaffAbilityDefinition> ConfiguredAbilities => _configuredAbilities;
         public IReadOnlyList<int> AssignedAbilityIndexes => _assignedAbilityIndexes;
         public bool IsSelectCastActive => _activeSelectCastAbility != null;
+        public AbilityDefinition ActiveSelectCastAbility => _activeSelectCastAbility;
 
         public static int GetAbilityControlSlotCount() => AbilityControlSlotCount;
+
+        public event Action<AbilityCastState> AbilityCastStarted;
 
         public int GetAbilityLevel(StaffAbilityDefinition ability)
         {
@@ -142,6 +161,17 @@ namespace TPSBR
             }
 
             return _assignedAbilities[index];
+        }
+
+        internal void NotifyAbilityCastStarted(AbilityDefinition ability, AbilityControlSlot slot)
+        {
+            if (ability == null)
+            {
+                return;
+            }
+
+            float castTime = Mathf.Max(Mathf.Epsilon, ability.BaseCastTime);
+            AbilityCastStarted?.Invoke(new AbilityCastState(this, ability, slot, castTime));
         }
 
         public bool TryConsumeSelectedCastPosition(out Vector3 position)

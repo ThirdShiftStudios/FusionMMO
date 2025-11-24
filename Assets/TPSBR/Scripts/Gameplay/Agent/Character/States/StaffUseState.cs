@@ -252,6 +252,11 @@ namespace TPSBR
                                 weapon?.NotifyLightAttackAnimationStarted();
                         }
 
+                        if (_activeAbilityDefinition != null)
+                        {
+                                weapon?.NotifyAbilityCastStarted(_activeAbilityDefinition, slot);
+                        }
+
                         Activate(_blendInDuration);
 
                         return true;

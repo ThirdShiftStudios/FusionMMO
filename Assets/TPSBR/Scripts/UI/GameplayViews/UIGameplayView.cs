@@ -23,6 +23,7 @@ namespace TPSBR.UI
         [SerializeField] private UIHitDamageIndicator _hitDamage;
         [SerializeField] private UIExperienceNumberIndicator _experienceIndicator;
         [SerializeField] private UIButton _menuButton;
+        [SerializeField] private UIAbilityView _abilityView;
 
         [Header("Events Setup")] [SerializeField]
         private Color _enemyKilledColor = Color.red;
@@ -122,6 +123,7 @@ namespace TPSBR.UI
             UnsubscribeExperienceEvents();
 
             _fishingView = null;
+            _abilityView?.BindAgent(null);
         }
 
         protected override void OnTick()
@@ -156,7 +158,12 @@ namespace TPSBR.UI
             }
 
             if (_localAgent == null)
+            {
+                _abilityView?.BindAgent(null);
                 return;
+            }
+
+            _abilityView?.BindAgent(_localAgent);
 
             CheckLevelUpEvent();
 
@@ -297,6 +304,7 @@ namespace TPSBR.UI
             _effects.SetActive(true);
             _buffs?.SetAgent(agent);
             _spectatingGroup.SetActive(isLocalPlayer == false);
+            _abilityView?.BindAgent(agent);
 
             _player.SetData(Context, player);
             
@@ -350,6 +358,7 @@ namespace TPSBR.UI
             _inventoryFeed?.Bind(null);
             _goldFeed?.Bind(null);
             _professionExperienceFeed?.Bind(null);
+            _abilityView?.BindAgent(null);
 
             GetFishingView()?.Bind(null);
 
