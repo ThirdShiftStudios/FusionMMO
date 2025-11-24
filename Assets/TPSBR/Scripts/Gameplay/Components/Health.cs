@@ -129,6 +129,8 @@ namespace TPSBR
 
                 Transform IHitTarget.HitPivot => _hitIndicatorPivot != null ? _hitIndicatorPivot : transform;
 
+                Transform IHitTarget.AbilityHitPivot => _hitIndicatorPivot != null ? _hitIndicatorPivot : transform;
+
                 void IHitTarget.ProcessHit(ref HitData hitData)
                 {
                         if (IsAlive == false)

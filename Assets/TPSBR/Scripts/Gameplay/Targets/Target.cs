@@ -75,12 +75,14 @@ namespace TPSBR
 				transform.position = position;
 			}
 
-		}
+                }
 
-		Transform IHitTarget.HitPivot => _hitIndicatorPivot != null ? _hitIndicatorPivot : transform;
+                Transform IHitTarget.HitPivot => _hitIndicatorPivot != null ? _hitIndicatorPivot : transform;
 
-		void IHitTarget.ProcessHit(ref HitData hitData)
-		{
+                Transform IHitTarget.AbilityHitPivot => _hitIndicatorPivot != null ? _hitIndicatorPivot : transform;
+
+                void IHitTarget.ProcessHit(ref HitData hitData)
+                {
 			if (CooldownActive.ExpiredOrNotRunning(Runner) == false)
 			{
 				hitData.Amount = 0;

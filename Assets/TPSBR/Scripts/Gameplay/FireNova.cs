@@ -31,6 +31,7 @@ namespace TPSBR
         private float _burnDuration;
         private float _burnDamage;
         private FireNovaStats _lastAppliedStats;
+        private GameObject _impactGraphic;
 
         public override void Spawned()
         {
@@ -113,6 +114,7 @@ namespace TPSBR
             _burnDuration = 0f;
             _burnDamage = 0f;
             _lastAppliedStats = default;
+            _impactGraphic = null;
 
             if (_scalarRoot != null)
             {
@@ -177,6 +179,11 @@ namespace TPSBR
             {
                 ApplyDamage();
             }
+        }
+
+        public void ConfigureImpactGraphic(GameObject impactGraphic)
+        {
+            _impactGraphic = impactGraphic;
         }
 
         private void ApplyDamage()
@@ -257,6 +264,8 @@ namespace TPSBR
                     continue;
                 }
 
+                SpawnImpact(target);
+
                 Vector3 point = hit.Point;
                 if (point == default)
                 {
@@ -284,6 +293,26 @@ namespace TPSBR
             }
 
             ListPool.Return(hits);
+        }
+
+        private void SpawnImpact(IHitTarget target)
+        {
+            if (_impactGraphic == null || target == null || Context == null || Context.ObjectCache == null)
+            {
+                return;
+            }
+
+            Transform parent = target.AbilityHitPivot != null ? target.AbilityHitPivot : target.HitPivot;
+            if (parent == null)
+            {
+                return;
+            }
+
+            var impactInstance = Context.ObjectCache.Get(_impactGraphic);
+            impactInstance.transform.SetParent(parent, false);
+            impactInstance.transform.localPosition = Vector3.zero;
+            impactInstance.transform.localRotation = Quaternion.identity;
+            Context.ObjectCache.ReturnDeferred(impactInstance, 5f);
         }
 
         private void AdvanceVisualTimer(bool clampToNetworkTime)

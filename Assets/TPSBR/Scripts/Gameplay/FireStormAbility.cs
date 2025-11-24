@@ -27,14 +27,16 @@ namespace TPSBR
         private float _radius;
         private float _damage;
         private float _tickInterval;
+        private GameObject _impactGraphic;
         private readonly HashSet<IHitTarget> _processedTargets = new HashSet<IHitTarget>();
 
-        public void Configure(NetworkObject owner, LayerMask hitMask, EHitType hitType, float damage, float duration, float radius, float tickInterval)
+        public void Configure(NetworkObject owner, LayerMask hitMask, EHitType hitType, float damage, float duration, float radius, float tickInterval, GameObject impactGraphic)
         {
             _owner = owner;
             _hitMask = hitMask;
             _hitType = hitType;
 
+            _impactGraphic = impactGraphic;
             _damage = damage > 0f ? damage : _defaultDamage;
             _radius = radius > 0f ? radius : _defaultRadius;
             _tickInterval = tickInterval > 0f ? tickInterval : _defaultTickInterval;
@@ -84,6 +86,7 @@ namespace TPSBR
             _radius = _defaultRadius;
             _damage = _defaultDamage;
             _tickInterval = _defaultTickInterval;
+            _impactGraphic = null;
             _lifeTimer = default;
             _tickTimer = default;
             _processedTargets.Clear();
@@ -160,6 +163,8 @@ namespace TPSBR
                     continue;
                 }
 
+                SpawnImpact(target);
+
                 Vector3 point = hit.Point;
                 if (point == default)
                 {
@@ -195,6 +200,26 @@ namespace TPSBR
             {
                 _tickTimer = TickTimer.CreateFromSeconds(Runner, _tickInterval);
             }
+        }
+
+        private void SpawnImpact(IHitTarget target)
+        {
+            if (_impactGraphic == null || target == null || Context == null || Context.ObjectCache == null)
+            {
+                return;
+            }
+
+            Transform parent = target.AbilityHitPivot != null ? target.AbilityHitPivot : target.HitPivot;
+            if (parent == null)
+            {
+                return;
+            }
+
+            var impactInstance = Context.ObjectCache.Get(_impactGraphic);
+            impactInstance.transform.SetParent(parent, false);
+            impactInstance.transform.localPosition = Vector3.zero;
+            impactInstance.transform.localRotation = Quaternion.identity;
+            Context.ObjectCache.ReturnDeferred(impactInstance, 5f);
         }
     }
 }

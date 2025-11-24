@@ -121,7 +121,7 @@ namespace TPSBR.Abilities
                     return;
                 }
 
-                fireStorm.Configure(owner, hitMask, staffWeapon.HitType, levelData.Damage, levelData.Duration, levelData.Radius, _tickInterval);
+                fireStorm.Configure(owner, hitMask, staffWeapon.HitType, levelData.Damage, levelData.Duration, levelData.Radius, _tickInterval, _impactGraphic);
             });
         }
 

@@ -40,11 +40,12 @@ namespace TPSBR
 		ShrinkingArea,
 	}
 
-	public interface IHitTarget
-	{
-		Transform HitPivot { get; }
-		void ProcessHit(ref HitData hit);
-	}
+        public interface IHitTarget
+        {
+                Transform HitPivot { get; }
+                Transform AbilityHitPivot { get; }
+                void ProcessHit(ref HitData hit);
+        }
 
 	public interface IHitInstigator
 	{
