@@ -652,7 +652,6 @@ namespace TPSBR.UI
 
             List<ArcaneConduit.AbilityOption> remainingOptions = _allAbilityOptions
                 .Where(option => option.Index != rootOption.Index)
-                .OrderBy(option => option.Index)
                 .ToList();
 
             if (remainingOptions.Count == 0)
@@ -662,6 +661,8 @@ namespace TPSBR.UI
 
             int seed = GetDeterministicSeed();
             System.Random random = new System.Random(seed);
+
+            ShuffleOptions(remainingOptions, random);
 
             if (remainingOptions.Count == 1)
             {
@@ -681,14 +682,31 @@ namespace TPSBR.UI
             }
             else
             {
-                AbilityTreeNode second = CreateNode(remainingOptions[0], 1, root);
-                root.Children.Add(second);
+                AbilityTreeNode current = root;
+                int depth = 1;
 
-                AbilityTreeNode third = CreateNode(remainingOptions[1], 2, second);
-                second.Children.Add(third);
+                for (int i = 0; i < remainingOptions.Count; ++i)
+                {
+                    AbilityTreeNode next = CreateNode(remainingOptions[i], depth, current);
+                    current.Children.Add(next);
+                    current = next;
+                    depth++;
+                }
             }
 
             return root;
+        }
+
+        private void ShuffleOptions(List<ArcaneConduit.AbilityOption> options, System.Random random)
+        {
+            if (options == null || options.Count <= 1 || random == null)
+                return;
+
+            for (int i = options.Count - 1; i > 0; --i)
+            {
+                int swapIndex = random.Next(i + 1);
+                (options[i], options[swapIndex]) = (options[swapIndex], options[i]);
+            }
         }
 
         private ArcaneConduit.AbilityOption? GetDeterministicRootOption()
@@ -772,7 +790,8 @@ namespace TPSBR.UI
             else
             {
                 int index = node.Parent.Children.IndexOf(node);
-                float horizontalOffset = _abilityTreeSpacing.x * (index == 0 ? -0.5f : 0.5f);
+                int siblingCount = node.Parent.Children.Count;
+                float horizontalOffset = _abilityTreeSpacing.x * (index - (siblingCount - 1) * 0.5f);
                 position = node.Parent.Position + new Vector2(horizontalOffset, -_abilityTreeSpacing.y);
             }
 

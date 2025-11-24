@@ -11,7 +11,7 @@ namespace TPSBR
     {
         private const string HASH_PREFIX = "STF";
         private const int MaxConfigurationHashLength = 64;
-        public const int MaxConfiguredAbilities = 3;
+        public const int MaxConfiguredAbilities = 4;
         private const string LogPrefix = "[<color=#FFA500>StaffWeapon</color>]";
         private const int AbilityControlSlotCount = 3;
 
