@@ -168,7 +168,7 @@ namespace TPSBR
             TreeState state = _treeStates[index];
             state.SetNetworked(isNetworked);
             state.SetHarvested(isHarvested);
-            _treeStates[index] = state;
+            _treeStates.Set(index, state);
         }
 
         private void EvaluateActiveTrees()
@@ -255,7 +255,7 @@ namespace TPSBR
                 _harvestCallbacks.Remove(index);
                 TreeState state = _treeStates[index];
                 state.SetNetworked(false);
-                _treeStates[index] = state;
+                _treeStates.Set(index, state);
             }
 
             ListPool.Return(toRemove);
