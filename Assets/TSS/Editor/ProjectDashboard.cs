@@ -29,6 +29,7 @@ namespace TSS.Tools
 
         private Editor _activeInspector;
         private UnityEngine.Object _activeSelection;
+        private Vector2 _inspectorScroll;
 
         private void OnEnable()
         {
@@ -121,7 +122,11 @@ namespace TSS.Tools
 
             if (_activeInspector != null)
             {
-                _activeInspector.OnInspectorGUI();
+                using (var scrollScope = new EditorGUILayout.ScrollViewScope(_inspectorScroll))
+                {
+                    _inspectorScroll = scrollScope.scrollPosition;
+                    _activeInspector.OnInspectorGUI();
+                }
             }
         }
 
@@ -133,6 +138,7 @@ namespace TSS.Tools
             _activeSelection = obj;
             DestroyImmediate(_activeInspector);
             _activeInspector = null;
+            _inspectorScroll = Vector2.zero;
 
             Repaint();
         }
