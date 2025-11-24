@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -22,6 +23,16 @@ namespace TPSBR.UI
         [Header("Abilities")]
         [SerializeField]
         private RectTransform _allWeaponAbilityRoot;
+        [SerializeField]
+        private RectTransform _abilityConnectionRoot;
+        [SerializeField]
+        private Image _abilityConnectionPrefab;
+        [SerializeField]
+        private Vector2 _abilityTreeSpacing = new Vector2(220f, 150f);
+        [SerializeField]
+        private float _abilityTreeTopOffset = 30f;
+        [SerializeField]
+        private float _abilityConnectionThickness = 6f;
         [SerializeField]
         private UIListItem _abilitySlotPrefab;
         [SerializeField]
@@ -59,6 +70,8 @@ namespace TPSBR.UI
         private readonly List<ArcaneConduit.AbilityOption> _unlockedAbilityOptions = new List<ArcaneConduit.AbilityOption>();
         private readonly Dictionary<int, ArcaneConduit.AbilityOption> _abilityOptionLookup = new Dictionary<int, ArcaneConduit.AbilityOption>();
         private readonly Dictionary<UIListItem, UIAbilityControlSlot> _abilityControlSlotLookup = new Dictionary<UIListItem, UIAbilityControlSlot>();
+        private readonly Dictionary<int, UIListItem> _abilitySlotLookup = new Dictionary<int, UIListItem>();
+        private readonly List<Image> _abilityConnections = new List<Image>();
         private Func<List<UpgradeStation.ItemData>, UpgradeStation.ItemStatus> _itemProvider;
         private UpgradeStation.ItemStatus _lastStatus = UpgradeStation.ItemStatus.NoAgent;
         private int _selectedIndex = -1;
@@ -69,6 +82,17 @@ namespace TPSBR.UI
         private Image _dragImage;
         private CanvasGroup _dragCanvasGroup;
         private UIListItem _activeAbilityTooltipSlot;
+        private string _currentConfigurationHash;
+
+        private sealed class AbilityTreeNode
+        {
+            public ArcaneConduit.AbilityOption Option;
+            public UIListItem Slot;
+            public AbilityTreeNode Parent;
+            public readonly List<AbilityTreeNode> Children = new List<AbilityTreeNode>();
+            public Vector2 Position;
+            public int Depth;
+        }
 
         public event Action<UpgradeStation.ItemData> ItemSelected;
         protected event Action<int> AbilityUnlockRequested;
@@ -145,12 +169,13 @@ namespace TPSBR.UI
             RefreshItemSlots(false);
         }
 
-        public void SetAbilityOptions(IReadOnlyList<ArcaneConduit.AbilityOption> options)
+        public void SetAbilityOptions(IReadOnlyList<ArcaneConduit.AbilityOption> options, string configurationHash = null)
         {
             _allAbilityOptions.Clear();
             _lockedAbilityOptions.Clear();
             _unlockedAbilityOptions.Clear();
             _abilityOptionLookup.Clear();
+            _currentConfigurationHash = configurationHash;
 
             if (options != null)
             {
@@ -187,6 +212,8 @@ namespace TPSBR.UI
             _unlockedAbilityOptions.Clear();
             _selectedLockedAbilityIndex = -1;
             _abilityOptionLookup.Clear();
+            _abilitySlotLookup.Clear();
+            _currentConfigurationHash = null;
 
             HideAbilityTooltip();
 
@@ -344,6 +371,7 @@ namespace TPSBR.UI
         private void RefreshAbilityLists()
         {
             int siblingIndex = 0;
+            _abilitySlotLookup.Clear();
             siblingIndex = RefreshAbilitySection(_unlockedAbilityOptions, _unlockedAbilitySlots, siblingIndex, false, true);
             siblingIndex = RefreshAbilitySection(_lockedAbilityOptions, _lockedAbilitySlots, siblingIndex, true, false);
 
@@ -362,6 +390,7 @@ namespace TPSBR.UI
 
             UpdateLockedAbilitySelectionVisuals();
             UpdateUnlockButtonState();
+            ArrangeAbilityTree();
         }
 
         private int RefreshAbilitySection(List<ArcaneConduit.AbilityOption> options, List<UIListItem> slots, int siblingIndex, bool allowSelection, bool isUnlockedSection)
@@ -398,6 +427,9 @@ namespace TPSBR.UI
                 if (slotTransform != null)
                 {
                     slotTransform.SetSiblingIndex(siblingIndex++);
+                    slotTransform.anchorMin = new Vector2(0.5f, 1f);
+                    slotTransform.anchorMax = new Vector2(0.5f, 1f);
+                    slotTransform.pivot = new Vector2(0.5f, 0.5f);
                 }
 
                 slot.InitializeSlot(this, i);
@@ -420,6 +452,8 @@ namespace TPSBR.UI
 
                 UIAbilityListItem abilityListItem = slot.GetComponent<UIAbilityListItem>();
                 abilityListItem?.SetAbilityDetails(option);
+
+                _abilitySlotLookup[option.Index] = slot;
             }
 
             for (int i = options.Count; i < slots.Count; ++i)
@@ -567,6 +601,221 @@ namespace TPSBR.UI
                 return;
 
             RequestAbilityUnlockByAbilityIndex(option.Index);
+        }
+
+        private void ArrangeAbilityTree()
+        {
+            if (_allWeaponAbilityRoot == null)
+                return;
+
+            ClearAbilityConnections();
+
+            if (_allAbilityOptions.Count == 0)
+                return;
+
+            AbilityTreeNode rootNode = BuildAbilityTree();
+            if (rootNode == null)
+                return;
+
+            List<AbilityTreeNode> orderedNodes = new List<AbilityTreeNode>();
+            CollectNodes(rootNode, orderedNodes);
+
+            foreach (AbilityTreeNode node in orderedNodes)
+            {
+                PositionNode(node);
+            }
+
+            DrawConnections(orderedNodes);
+            UpdateDependencyAvailability(orderedNodes);
+        }
+
+        private AbilityTreeNode BuildAbilityTree()
+        {
+            ArcaneConduit.AbilityOption? startingOption = _unlockedAbilityOptions.Count > 0 ? _unlockedAbilityOptions[0] : (ArcaneConduit.AbilityOption?)null;
+            if (startingOption.HasValue == false && _allAbilityOptions.Count > 0)
+            {
+                startingOption = _allAbilityOptions[0];
+            }
+
+            if (startingOption.HasValue == false)
+                return null;
+
+            ArcaneConduit.AbilityOption rootOption = startingOption.Value;
+            AbilityTreeNode root = CreateNode(rootOption, 0, null);
+
+            List<ArcaneConduit.AbilityOption> remainingOptions = _allAbilityOptions.Where(option => option.Index != rootOption.Index).ToList();
+
+            if (remainingOptions.Count == 0)
+            {
+                return root;
+            }
+
+            int seed = string.IsNullOrEmpty(_currentConfigurationHash) == false ? _currentConfigurationHash.GetHashCode() : Environment.TickCount;
+            System.Random random = new System.Random(seed);
+
+            if (remainingOptions.Count == 1)
+            {
+                AbilityTreeNode child = CreateNode(remainingOptions[0], 1, root);
+                root.Children.Add(child);
+                return root;
+            }
+
+            bool createBranch = random.Next(0, 100) % 2 == 0;
+            if (createBranch == true)
+            {
+                for (int i = 0; i < remainingOptions.Count; ++i)
+                {
+                    AbilityTreeNode child = CreateNode(remainingOptions[i], 1, root);
+                    root.Children.Add(child);
+                }
+            }
+            else
+            {
+                AbilityTreeNode second = CreateNode(remainingOptions[0], 1, root);
+                root.Children.Add(second);
+
+                AbilityTreeNode third = CreateNode(remainingOptions[1], 2, second);
+                second.Children.Add(third);
+            }
+
+            return root;
+        }
+
+        private AbilityTreeNode CreateNode(ArcaneConduit.AbilityOption option, int depth, AbilityTreeNode parent)
+        {
+            _abilitySlotLookup.TryGetValue(option.Index, out UIListItem slot);
+
+            return new AbilityTreeNode
+            {
+                Option = option,
+                Slot = slot,
+                Parent = parent,
+                Depth = depth,
+            };
+        }
+
+        private void CollectNodes(AbilityTreeNode node, List<AbilityTreeNode> orderedNodes)
+        {
+            if (node == null)
+                return;
+
+            orderedNodes.Add(node);
+            for (int i = 0; i < node.Children.Count; ++i)
+            {
+                CollectNodes(node.Children[i], orderedNodes);
+            }
+        }
+
+        private void PositionNode(AbilityTreeNode node)
+        {
+            if (node?.Slot == null)
+                return;
+
+            RectTransform rectTransform = node.Slot.transform as RectTransform;
+            if (rectTransform == null)
+                return;
+
+            Vector2 position = Vector2.zero;
+            if (node.Parent == null)
+            {
+                position = new Vector2(0f, -_abilityTreeTopOffset);
+            }
+            else if (node.Parent.Children.Count == 1)
+            {
+                position = node.Parent.Position + new Vector2(0f, -_abilityTreeSpacing.y);
+            }
+            else
+            {
+                int index = node.Parent.Children.IndexOf(node);
+                float horizontalOffset = _abilityTreeSpacing.x * (index == 0 ? -0.5f : 0.5f);
+                position = node.Parent.Position + new Vector2(horizontalOffset, -_abilityTreeSpacing.y);
+            }
+
+            rectTransform.anchoredPosition = position;
+            node.Position = position;
+        }
+
+        private void DrawConnections(List<AbilityTreeNode> nodes)
+        {
+            if (_abilityConnectionRoot == null || _abilityConnectionPrefab == null)
+                return;
+
+            int connectionIndex = 0;
+
+            foreach (AbilityTreeNode node in nodes)
+            {
+                if (node.Parent == null)
+                    continue;
+
+                Image connector = GetOrCreateConnector(connectionIndex++);
+                RectTransform connectionTransform = connector.rectTransform;
+
+                Vector2 start = node.Parent.Position;
+                Vector2 end = node.Position;
+                Vector2 delta = end - start;
+                float length = delta.magnitude;
+
+                connectionTransform.anchorMin = new Vector2(0.5f, 1f);
+                connectionTransform.anchorMax = new Vector2(0.5f, 1f);
+                connectionTransform.pivot = new Vector2(0.5f, 0.5f);
+                connectionTransform.sizeDelta = new Vector2(_abilityConnectionThickness, length);
+                connectionTransform.anchoredPosition = start + delta * 0.5f;
+                float angle = Mathf.Atan2(delta.y, delta.x) * Mathf.Rad2Deg - 90f;
+                connectionTransform.localRotation = Quaternion.Euler(0f, 0f, angle);
+
+                connector.gameObject.SetActive(true);
+            }
+
+            for (int i = connectionIndex; i < _abilityConnections.Count; ++i)
+            {
+                if (_abilityConnections[i] != null)
+                {
+                    _abilityConnections[i].gameObject.SetActive(false);
+                }
+            }
+        }
+
+        private void UpdateDependencyAvailability(List<AbilityTreeNode> nodes)
+        {
+            foreach (AbilityTreeNode node in nodes)
+            {
+                if (node.Slot == null)
+                    continue;
+
+                UIAbilityListItem listItem = node.Slot.GetComponent<UIAbilityListItem>();
+                if (listItem == null)
+                    continue;
+
+                bool parentUnlocked = node.Parent == null || node.Parent.Option.IsUnlocked;
+                bool canPurchase = parentUnlocked && node.Option.CanPurchase;
+
+                listItem.SetDependencyState(parentUnlocked, canPurchase);
+            }
+        }
+
+        private Image GetOrCreateConnector(int index)
+        {
+            while (_abilityConnections.Count <= index)
+            {
+                Image connector = Instantiate(_abilityConnectionPrefab, _abilityConnectionRoot);
+                connector.raycastTarget = false;
+                connector.gameObject.SetActive(false);
+                _abilityConnections.Add(connector);
+            }
+
+            return _abilityConnections[index];
+        }
+
+        private void ClearAbilityConnections()
+        {
+            for (int i = 0; i < _abilityConnections.Count; ++i)
+            {
+                Image connector = _abilityConnections[i];
+                if (connector != null)
+                {
+                    connector.gameObject.SetActive(false);
+                }
+            }
         }
 
         private void HandleEmptyState(UpgradeStation.ItemStatus status)

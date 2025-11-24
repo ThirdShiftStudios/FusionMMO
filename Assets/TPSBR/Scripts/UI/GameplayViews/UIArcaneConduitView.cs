@@ -30,9 +30,9 @@ namespace TPSBR.UI
             _ = conduit;
         }
 
-        internal void SetAbilityOptions(IReadOnlyList<ArcaneConduit.AbilityOption> options)
+        internal void SetAbilityOptions(IReadOnlyList<ArcaneConduit.AbilityOption> options, string configurationHash)
         {
-            base.SetAbilityOptions(options);
+            base.SetAbilityOptions(options, configurationHash);
         }
 
         internal void SetAbilityAssignments(IReadOnlyList<int> assignments)

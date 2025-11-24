@@ -18,6 +18,8 @@ namespace TPSBR.UI
         private ArcaneConduit.AbilityOption _currentOption;
         private bool _hasOption;
         private LevelImageDisplay _levelImageDisplay;
+        private bool _dependencyMet = true;
+        private bool _dependencyAllowsPurchase = true;
 
         public UIListItem Slot
         {
@@ -65,6 +67,8 @@ namespace TPSBR.UI
             _currentOption = option;
             _hasOption = true;
             bool unlockedState = option.IsUnlocked;
+            _dependencyMet = true;
+            _dependencyAllowsPurchase = option.CanPurchase;
 
             Sprite abilityIcon = option.Definition != null ? option.Definition.Icon : null;
 
@@ -102,7 +106,7 @@ namespace TPSBR.UI
             if (_unlockButton != null)
             {
                 _unlockButton.gameObject.SetActive(isUnlocked == false);
-                _unlockButton.interactable = option.CanPurchase;
+                _unlockButton.interactable = option.CanPurchase && _dependencyAllowsPurchase && _dependencyMet;
             }
 
             if (_levelUpButton != null)
@@ -138,6 +142,17 @@ namespace TPSBR.UI
             }
 
             return _inventorySlot?.Owner as UIItemContextView;
+        }
+
+        public void SetDependencyState(bool dependencyMet, bool dependencyAllowsPurchase)
+        {
+            _dependencyMet = dependencyMet;
+            _dependencyAllowsPurchase = dependencyAllowsPurchase;
+
+            if (_hasOption == true)
+            {
+                UpdateButtonVisibility(_currentOption);
+            }
         }
     }
 }

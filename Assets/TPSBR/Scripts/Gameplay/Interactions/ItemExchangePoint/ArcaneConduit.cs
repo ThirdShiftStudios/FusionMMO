@@ -614,7 +614,7 @@ namespace TPSBR
                 _abilityOptions.Add(new AbilityOption(i, ability, isUnlocked, canPurchase, _abilityCost, currentLevel, maxLevel, canLevelUp, levelUpCost));
             }
 
-            _arcaneView.SetAbilityOptions(_abilityOptions);
+            _arcaneView.SetAbilityOptions(_abilityOptions, configurationHash.ToString());
             _arcaneView.SetAbilityAssignments(CopyAssignments(abilityConfiguration.SlotAssignments));
         }
 
