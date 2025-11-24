@@ -278,7 +278,7 @@ namespace TPSBR.UI
 
         public void RequestAbilityUnlockByOptionIndex(int optionIndex)
         {
-            if (_abilityOptionLookup.TryGetValue(optionIndex, out ArcaneConduit.AbilityOption option) == false)
+            if (TryResolveAbilityOption(optionIndex, out ArcaneConduit.AbilityOption option) == false)
                 return;
 
             if (option.IsUnlocked == true)
@@ -1091,6 +1091,24 @@ namespace TPSBR.UI
             }
 
             return null;
+        }
+
+        private bool TryResolveAbilityOption(int optionIndex, out ArcaneConduit.AbilityOption option)
+        {
+            if (_abilityOptionLookup.TryGetValue(optionIndex, out option) == true)
+            {
+                return true;
+            }
+
+            if (optionIndex >= 0 && optionIndex < _allAbilityOptions.Count)
+            {
+                option = _allAbilityOptions[optionIndex];
+                _abilityOptionLookup[option.Index] = option;
+                return true;
+            }
+
+            option = default;
+            return false;
         }
 
         private bool TryGetControlSlot(UIListItem slot, out UIAbilityControlSlot controlSlot)
