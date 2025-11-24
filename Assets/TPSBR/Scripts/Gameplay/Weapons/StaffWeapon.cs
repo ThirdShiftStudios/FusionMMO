@@ -2128,7 +2128,7 @@ namespace TPSBR
                     continue;
                 }
 
-                int clampedLevel = Mathf.Clamp(pair.Value, 1, byte.MaxValue);
+                int clampedLevel = Mathf.Clamp(pair.Value, 1, AbilityUpgradeData.MaxLevel);
                 sanitized[pair.Key] = clampedLevel;
             }
 

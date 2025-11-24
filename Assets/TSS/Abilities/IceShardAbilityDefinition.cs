@@ -90,7 +90,7 @@ public class IceShardAbilityDefinition: StaffAbilityDefinition
             return;
         }
 
-        IceShardAbilityUpgradeLevel levelData = ResolveUpgradeLevel(staffWeapon);
+        IceShardAbilityLevelData levelData = ResolveUpgradeLevel(staffWeapon);
 
         runner.Spawn(_projectilePrefab, firePosition, Quaternion.LookRotation(direction), owner.InputAuthority, (spawnRunner, spawnedObject) =>
         {
@@ -106,13 +106,13 @@ public class IceShardAbilityDefinition: StaffAbilityDefinition
         });
     }
 
-    private IceShardAbilityUpgradeLevel ResolveUpgradeLevel(StaffWeapon staffWeapon)
+    private IceShardAbilityLevelData ResolveUpgradeLevel(StaffWeapon staffWeapon)
     {
         IceShardAbilityUpgradeData upgradeData = IceShardUpgradeData;
 
-        if (upgradeData == null || upgradeData.LevelCount == 0)
+        if (upgradeData == null)
         {
-            return new IceShardAbilityUpgradeLevel
+            return new IceShardAbilityLevelData
             {
                 CastingTime = BaseCastTime
             };
