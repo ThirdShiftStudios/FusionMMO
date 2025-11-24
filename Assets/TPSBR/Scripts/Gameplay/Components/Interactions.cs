@@ -303,6 +303,12 @@
             if (ActiveResourceNode == null)
                 return;
 
+            if (ActiveResourceNode.Object == null || ActiveResourceNode.Object.IsSpawned == false)
+            {
+                ActiveResourceNode = null;
+                return;
+            }
+
             Agent agent = _character != null ? _character.Agent : null;
             if (agent == null || ActiveResourceNode.IsInteracting(agent) == false)
             {
