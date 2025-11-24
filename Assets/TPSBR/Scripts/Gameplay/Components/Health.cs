@@ -40,6 +40,8 @@ namespace TPSBR
                 protected float _startShield;
                 [SerializeField]
                 protected Transform _hitIndicatorPivot;
+        [SerializeField]
+        protected Transform _abilityHitIndicatorPivot;
 
                 [Header("Regeneration")]
                 [SerializeField]
@@ -129,7 +131,7 @@ namespace TPSBR
 
                 Transform IHitTarget.HitPivot => _hitIndicatorPivot != null ? _hitIndicatorPivot : transform;
 
-                Transform IHitTarget.AbilityHitPivot => _hitIndicatorPivot != null ? _hitIndicatorPivot : transform;
+                Transform IHitTarget.AbilityHitPivot => _abilityHitIndicatorPivot != null ? _abilityHitIndicatorPivot : transform;
 
                 void IHitTarget.ProcessHit(ref HitData hitData)
                 {

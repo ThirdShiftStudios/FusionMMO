@@ -416,6 +416,8 @@ Transform:
   - {fileID: 4116664214541334342}
   - {fileID: 1756349103188485763}
   - {fileID: 5764807487565212158}
+  - {fileID: 4354874920511513482}
+  - {fileID: 190892837590273267}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1169918439725769244
@@ -445,10 +447,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _CurrentHealth: 0
   _CurrentShield: 0
-  _maxHealth: 10
+  _maxHealth: 1000
   _maxShield: 0
   _startShield: 0
-  _hitIndicatorPivot: {fileID: 0}
+  _hitIndicatorPivot: {fileID: 190892837590273267}
+  _abilityHitIndicatorPivot: {fileID: 4354874920511513482}
   _healthRegenPerSecond: 0
   _maxHealthFromRegen: 0
   _regenTickPerSecond: 0
@@ -763,6 +766,37 @@ MonoBehaviour:
   _enterAnimation: {fileID: 1827226128182048838, guid: 5b3961fa3f37e44489b2d85e6b0a5934, type: 3}
   _patrolRadius: 10
   _patrolStoppingDistance: 0.5
+--- !u!1 &6411080132023978495
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4354874920511513482}
+  m_Layer: 0
+  m_Name: AbilityHitPivot
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4354874920511513482
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6411080132023978495}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 1.22, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 9081381414143331161}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &6590854322678965273
 GameObject:
   m_ObjectHideFlags: 0
@@ -975,6 +1009,37 @@ MonoBehaviour:
   _priority: 0
   _checkPriorityOnExit: 1
   _enterAnimation: {fileID: 1827226128182048838, guid: 2bc13446177dc1e489fb05ce6709641b, type: 3}
+--- !u!1 &8672932065610043444
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 190892837590273267}
+  m_Layer: 0
+  m_Name: HitIndicatorPivot
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &190892837590273267
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8672932065610043444}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 1.996, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 9081381414143331161}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &5303615004337888775
 PrefabInstance:
   m_ObjectHideFlags: 0
