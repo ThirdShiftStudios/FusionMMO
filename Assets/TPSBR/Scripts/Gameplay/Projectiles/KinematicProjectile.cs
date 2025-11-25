@@ -1,7 +1,6 @@
 using UnityEngine;
 using Fusion;
 using System.Collections.Generic;
-using TPSBR.Abilities;
 
 namespace TPSBR
 {
@@ -15,10 +14,8 @@ namespace TPSBR
 
                 [Networked]
                 protected ProjectileData _data { get; private set; }
-                [Networked]
-                private NetworkString<_32> _impactGraphicKey { get; set; }
-		[Networked][OnChangedRender(nameof(OnBounceCountChanged))]
-		protected int            _bounceCount { get; private set; }
+                [Networked][OnChangedRender(nameof(OnBounceCountChanged))]
+                protected int            _bounceCount { get; private set; }
 
 		// PRIVATE MEMBERS
 
@@ -31,7 +28,7 @@ namespace TPSBR
 		[SerializeField]
 		private float            _gravity = 20f;
 		[SerializeField]
-		private GameObject       _impactEffect;
+                protected GameObject     _impactEffect;
 		[SerializeField]
 		private ImpactSetup      _impactSetup;
 		[SerializeField]
@@ -129,9 +126,6 @@ namespace TPSBR
                 {
                         _impactEffect = impactGraphic;
                         _spawnImpactOnStaticHitOnly = false;
-
-                        _impactGraphicKey = impactGraphic != null ? impactGraphic.name : default;
-                        AbilityImpactRegistry.Register(impactGraphic);
                 }
 
                 public void ConfigureBuff(BuffDefinition buffDefinition)
@@ -156,8 +150,6 @@ namespace TPSBR
                         _despawning = false;
 
                         _projectileVisual.SetActiveSafe(_showProjectileVisualAfterDistance <= 0f);
-
-                        ResolveImpactGraphicFromKey();
 
                         _hasImpactedVisual = false;
 
@@ -218,8 +210,6 @@ namespace TPSBR
                 {
                         // Guard against render after despawn and pre-spawn
                         if (_despawning || Object == null || !Object.IsValid) return;
-
-                        ResolveImpactGraphicFromKey();
 
                         RenderProjectile(_data);
                 }
@@ -474,19 +464,7 @@ namespace TPSBR
                [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
                private void RPC_SpawnImpactVisual(Vector3 position, Vector3 normal, int impactTagHash)
                {
-                       ResolveImpactGraphicFromKey();
                        SpawnImpactVisuals(position, normal, impactTagHash);
-               }
-
-               private void ResolveImpactGraphicFromKey()
-               {
-                       if (_impactEffect != null || _impactGraphicKey.IsEmpty == true)
-                               return;
-
-                       if (AbilityImpactRegistry.TryGet(_impactGraphicKey.ToString(), out var impactGraphic) == true)
-                       {
-                               _impactEffect = impactGraphic;
-                       }
                }
 
 		private Vector3 GetProjectilePosition(ref ProjectileData data, float tick)

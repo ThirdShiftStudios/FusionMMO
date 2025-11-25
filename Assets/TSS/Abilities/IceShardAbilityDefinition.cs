@@ -1,6 +1,5 @@
 using Fusion;
 using TPSBR;
-using TPSBR.Abilities;
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "IceShardAbilityDefinition", menuName = "TSS/Abilities/Ice Shard Ability")]
@@ -26,19 +25,14 @@ public class IceShardAbilityDefinition: StaffAbilityDefinition, IAbilityImpact
 
     public GameObject ImpactGraphic => _impactGraphic;
 
-#if UNITY_EDITOR
+    #if UNITY_EDITOR
     protected override void OnValidate()
     {
         base.OnValidate();
         SetStringCode(AbilityCode);
         EnsureUpgradeData<IceShardAbilityUpgradeData>();
     }
-#endif
-
-    private void OnEnable()
-    {
-        AbilityImpactRegistry.Register(_impactGraphic);
-    }
+    #endif
 
     public override void Execute(StaffWeapon staffWeapon)
     {
