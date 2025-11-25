@@ -1,6 +1,7 @@
 using UnityEngine;
 using Fusion;
 using System.Collections.Generic;
+using TPSBR.Abilities;
 
 namespace TPSBR
 {
@@ -12,8 +13,10 @@ namespace TPSBR
 
 		// PROTECTED MEMBERS
 
-		[Networked]
-		protected ProjectileData _data { get; private set; }
+                [Networked]
+                protected ProjectileData _data { get; private set; }
+                [Networked]
+                private NetworkString<_32> _impactGraphicKey { get; set; }
 		[Networked][OnChangedRender(nameof(OnBounceCountChanged))]
 		protected int            _bounceCount { get; private set; }
 
@@ -126,6 +129,9 @@ namespace TPSBR
                 {
                         _impactEffect = impactGraphic;
                         _spawnImpactOnStaticHitOnly = false;
+
+                        _impactGraphicKey = impactGraphic != null ? impactGraphic.name : default;
+                        AbilityImpactRegistry.Register(impactGraphic);
                 }
 
                 public void ConfigureBuff(BuffDefinition buffDefinition)
@@ -145,13 +151,15 @@ namespace TPSBR
 
 		// NetworkBehaviour INTERFACE
 
-		public override void Spawned()
-		{
-			_despawning = false;
+                public override void Spawned()
+                {
+                        _despawning = false;
 
-			_projectileVisual.SetActiveSafe(_showProjectileVisualAfterDistance <= 0f);
+                        _projectileVisual.SetActiveSafe(_showProjectileVisualAfterDistance <= 0f);
 
-			_hasImpactedVisual = false;
+                        ResolveImpactGraphicFromKey();
+
+                        _hasImpactedVisual = false;
 
 			if (_trailRenderer != null)
 			{
@@ -206,13 +214,15 @@ namespace TPSBR
 			}
 		}
 
-		public override void Render()
-		{
-			// Guard against render after despawn and pre-spawn
-			if (_despawning || Object == null || !Object.IsValid) return;
+                public override void Render()
+                {
+                        // Guard against render after despawn and pre-spawn
+                        if (_despawning || Object == null || !Object.IsValid) return;
 
-			RenderProjectile(_data);
-		}
+                        ResolveImpactGraphicFromKey();
+
+                        RenderProjectile(_data);
+                }
 
 		// MONOBEHAVIOUR
 
@@ -401,8 +411,8 @@ namespace TPSBR
 
 		private void SpawnImpact(ref ProjectileData data, Vector3 position, Vector3 normal, int impactTagHash)
 		{
-			if (position == Vector3.zero)
-				return;
+                       if (position == Vector3.zero)
+                               return;
 
                        data.ImpactPosition = position;
                        data.ImpactNormal   = normal;
@@ -464,7 +474,19 @@ namespace TPSBR
                [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
                private void RPC_SpawnImpactVisual(Vector3 position, Vector3 normal, int impactTagHash)
                {
+                       ResolveImpactGraphicFromKey();
                        SpawnImpactVisuals(position, normal, impactTagHash);
+               }
+
+               private void ResolveImpactGraphicFromKey()
+               {
+                       if (_impactEffect != null || _impactGraphicKey.IsEmpty == true)
+                               return;
+
+                       if (AbilityImpactRegistry.TryGet(_impactGraphicKey.ToString(), out var impactGraphic) == true)
+                       {
+                               _impactEffect = impactGraphic;
+                       }
                }
 
 		private Vector3 GetProjectilePosition(ref ProjectileData data, float tick)

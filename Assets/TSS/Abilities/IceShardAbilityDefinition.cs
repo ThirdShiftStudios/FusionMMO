@@ -35,6 +35,11 @@ public class IceShardAbilityDefinition: StaffAbilityDefinition, IAbilityImpact
     }
 #endif
 
+    private void OnEnable()
+    {
+        AbilityImpactRegistry.Register(_impactGraphic);
+    }
+
     public override void Execute(StaffWeapon staffWeapon)
     {
         if (staffWeapon == null)
