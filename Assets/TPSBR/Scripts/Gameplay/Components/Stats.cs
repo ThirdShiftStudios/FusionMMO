@@ -56,6 +56,8 @@ namespace TPSBR
         [Networked, Capacity(Count)]
         private NetworkArray<byte> _stats { get; }
 
+        private bool CanAccessNetworkedStats => Object != null && Object.IsValid == true && IsSpawned == true;
+
         public event Action<StatIndex, int, int> StatChanged;
 
         public int Intelligence => GetStat(StatIndex.Intelligence);
@@ -98,6 +100,11 @@ namespace TPSBR
             if (index < 0 || index >= Count)
             {
                 throw new ArgumentOutOfRangeException(nameof(index));
+            }
+
+            if (CanAccessNetworkedStats == false)
+            {
+                return GetInitialStatValue(index);
             }
 
             return _stats.Get(index);
@@ -306,7 +313,7 @@ namespace TPSBR
                 _cacheInitialized = false;
             }
 
-            if (_cacheInitialized == true)
+            if (_cacheInitialized == true || CanAccessNetworkedStats == false)
             {
                 return;
             }
@@ -321,7 +328,7 @@ namespace TPSBR
 
         private void CheckForStatUpdates()
         {
-            if (Object == null || Object.IsValid == false)
+            if (CanAccessNetworkedStats == false)
             {
                 return;
             }
@@ -346,6 +353,16 @@ namespace TPSBR
         private void OnStatChanged(StatIndex stat, int previousValue, int newValue)
         {
             StatChanged?.Invoke(stat, previousValue, newValue);
+        }
+
+        private int GetInitialStatValue(int index)
+        {
+            if (_initialValues != null && index < _initialValues.Length)
+            {
+                return Mathf.Clamp(_initialValues[index], byte.MinValue, byte.MaxValue);
+            }
+
+            return 0;
         }
 
         public void OnSpawned(Agent agent)
