@@ -15,6 +15,37 @@ namespace TSS.Tools
         private const float LeftPaneMin = 220f;
         private const float LeftPaneMax = 480f;
 
+        private enum DashboardView
+        {
+            Data,
+            Tasks
+        }
+
+        private enum TaskStatus
+        {
+            NotStarted,
+            InProgress,
+            Blocked,
+            Done
+        }
+
+        private enum TaskPriority
+        {
+            Low,
+            Medium,
+            High,
+            Critical
+        }
+
+        [Serializable]
+        private sealed class DashboardTask
+        {
+            public string name;
+            public TaskStatus status;
+            public TaskPriority priority;
+            public string description;
+        }
+
         [MenuItem("TSS/Tools/Project Dashboard")]
         public static void Open()
         {
@@ -30,6 +61,13 @@ namespace TSS.Tools
         private Editor _activeInspector;
         private UnityEngine.Object _activeSelection;
         private Vector2 _inspectorScroll;
+
+        private DashboardView _activeView = DashboardView.Data;
+
+        private List<DashboardTask> _tasks;
+        private int _selectedTaskIndex;
+        private Vector2 _taskListScroll;
+        private Vector2 _taskDetailScroll;
 
         private void OnEnable()
         {
@@ -50,7 +88,39 @@ namespace TSS.Tools
         private void OnGUI()
         {
             EnsureTreeInitialized();
+            EnsureTasksInitialized();
 
+            DrawViewTabs();
+            GUILayout.Space(4f);
+
+            if (_activeView == DashboardView.Data)
+            {
+                DrawDataView();
+            }
+            else
+            {
+                DrawTasksView();
+            }
+        }
+
+        private void DrawViewTabs()
+        {
+            using (new EditorGUILayout.HorizontalScope(EditorStyles.toolbar))
+            {
+                if (GUILayout.Toggle(_activeView == DashboardView.Data, "Data", EditorStyles.toolbarButton))
+                {
+                    _activeView = DashboardView.Data;
+                }
+
+                if (GUILayout.Toggle(_activeView == DashboardView.Tasks, "Tasks", EditorStyles.toolbarButton))
+                {
+                    _activeView = DashboardView.Tasks;
+                }
+            }
+        }
+
+        private void DrawDataView()
+        {
             using (new EditorGUILayout.HorizontalScope())
             {
                 using (new EditorGUILayout.VerticalScope(GUILayout.Width(Mathf.Clamp(position.width * 0.35f, LeftPaneMin, LeftPaneMax))))
@@ -152,6 +222,148 @@ namespace TSS.Tools
             {
                 _treeView = new DashboardTreeView(_treeState);
                 _treeView.onSelectionChanged += OnTreeSelectionChanged;
+            }
+        }
+
+        private void EnsureTasksInitialized()
+        {
+            if (_tasks != null)
+                return;
+
+            _tasks = new List<DashboardTask>
+            {
+                new DashboardTask
+                {
+                    name = "Review data definitions",
+                    status = TaskStatus.InProgress,
+                    priority = TaskPriority.High,
+                    description = "Validate that all data definition assets are configured and have unique IDs."
+                },
+                new DashboardTask
+                {
+                    name = "Add new quest entries",
+                    status = TaskStatus.NotStarted,
+                    priority = TaskPriority.Medium,
+                    description = "Create quest data entries for the upcoming content drop."
+                },
+                new DashboardTask
+                {
+                    name = "Cleanup unused assets",
+                    status = TaskStatus.Blocked,
+                    priority = TaskPriority.Low,
+                    description = "Remove obsolete prototypes after confirming they are no longer referenced."
+                }
+            };
+
+            _selectedTaskIndex = Mathf.Clamp(_selectedTaskIndex, 0, _tasks.Count - 1);
+        }
+
+        private void DrawTasksView()
+        {
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                using (new EditorGUILayout.VerticalScope(GUILayout.Width(Mathf.Clamp(position.width * 0.35f, LeftPaneMin, LeftPaneMax))))
+                {
+                    DrawTaskList();
+                }
+
+                GUILayout.Box(GUIContent.none, GUILayout.ExpandHeight(true), GUILayout.Width(1));
+
+                using (new EditorGUILayout.VerticalScope())
+                {
+                    DrawTaskDetails();
+                }
+            }
+        }
+
+        private void DrawTaskList()
+        {
+            GUILayout.Label("Tasks", EditorStyles.boldLabel);
+
+            using (var scrollScope = new EditorGUILayout.ScrollViewScope(_taskListScroll))
+            {
+                _taskListScroll = scrollScope.scrollPosition;
+
+                for (int i = 0; i < _tasks.Count; i++)
+                {
+                    var task = _tasks[i];
+                    bool isSelected = i == _selectedTaskIndex;
+
+                    var style = new GUIStyle(EditorStyles.helpBox)
+                    {
+                        alignment = TextAnchor.MiddleLeft,
+                        padding = new RectOffset(8, 8, 6, 6)
+                    };
+
+                    if (isSelected)
+                    {
+                        style.normal.background = EditorGUIUtility.isProSkin
+                            ? Texture2D.grayTexture
+                            : Texture2D.whiteTexture;
+                        style.normal.textColor = EditorStyles.boldLabel.normal.textColor;
+                    }
+
+                    var rowRect = GUILayoutUtility.GetRect(GUIContent.none, style, GUILayout.ExpandWidth(true));
+
+                    if (GUI.Button(rowRect, GUIContent.none, style))
+                    {
+                        _selectedTaskIndex = i;
+                        GUI.FocusControl(null);
+                    }
+
+                    var content = new GUIContent(
+                        $"{task.name}\nStatus: {task.status}   Priority: {task.priority}");
+                    GUI.Label(rowRect, content, style);
+
+                    using (new GUILayout.HorizontalScope())
+                    {
+                        GUILayout.Space(1); // maintain layout spacing after custom rect
+                    }
+
+                    GUILayout.Space(6f);
+                }
+            }
+        }
+
+        private void DrawTaskDetails()
+        {
+            using (new EditorGUILayout.HorizontalScope(EditorStyles.toolbar))
+            {
+                GUILayout.Label(_tasks.Count > 0 && _selectedTaskIndex >= 0 && _selectedTaskIndex < _tasks.Count
+                    ? _tasks[_selectedTaskIndex].name
+                    : "No Task Selected", EditorStyles.boldLabel);
+                GUILayout.FlexibleSpace();
+            }
+
+            if (_tasks.Count == 0)
+            {
+                GUILayout.FlexibleSpace();
+                GUILayout.Label("No tasks available.", EditorStyles.centeredGreyMiniLabel);
+                GUILayout.FlexibleSpace();
+                return;
+            }
+
+            _selectedTaskIndex = Mathf.Clamp(_selectedTaskIndex, 0, _tasks.Count - 1);
+            var task = _tasks[_selectedTaskIndex];
+
+            using (var scrollScope = new EditorGUILayout.ScrollViewScope(_taskDetailScroll))
+            {
+                _taskDetailScroll = scrollScope.scrollPosition;
+
+                EditorGUI.BeginChangeCheck();
+
+                task.name = EditorGUILayout.TextField("Name", task.name);
+                task.status = (TaskStatus)EditorGUILayout.EnumPopup("Status", task.status);
+                task.priority = (TaskPriority)EditorGUILayout.EnumPopup("Priority", task.priority);
+
+                GUILayout.Label("Description");
+                task.description = EditorGUILayout.TextArea(task.description, GUILayout.MinHeight(80));
+
+                if (EditorGUI.EndChangeCheck())
+                {
+                    _tasks[_selectedTaskIndex] = task;
+                    Repaint();
+                }
             }
         }
 
