@@ -382,6 +382,7 @@ GameObject:
   - component: {fileID: 9081381414143331161}
   - component: {fileID: 1169918439725769244}
   - component: {fileID: 1886859733454764849}
+  - component: {fileID: 7205106442879999999}
   - component: {fileID: 5356062012588805393}
   - component: {fileID: 3951969274851935300}
   - component: {fileID: 1766633980400252794}
@@ -456,6 +457,18 @@ MonoBehaviour:
   _maxHealthFromRegen: 0
   _regenTickPerSecond: 0
   _regenCombatDelay: 0
+--- !u!114 &7205106442879999999
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4434025654594137658}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0857d7aeb3f4ebf4faf73ece4390a7b0, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
 --- !u!114 &5356062012588805393
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -512,6 +525,7 @@ MonoBehaviour:
   NetworkedBehaviours:
   - {fileID: 1169918439725769244}
   - {fileID: 1886859733454764849}
+  - {fileID: 7205106442879999999}
   - {fileID: 5356062012588805393}
   - {fileID: 3951969274851935300}
   - {fileID: 3959667394915307258}

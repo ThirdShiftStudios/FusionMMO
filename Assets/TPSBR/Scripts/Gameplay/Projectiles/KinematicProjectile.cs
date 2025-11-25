@@ -482,7 +482,8 @@ namespace TPSBR
                         }
 
                         var buffSystem = hit.Hitbox.Root != null ? hit.Hitbox.Root.GetComponent<BuffSystem>() : null;
-                        buffSystem?.ApplyBuff(_buffDefinition);
+                        var source = Object != null ? Object.InputAuthority : PlayerRef.None;
+                        buffSystem?.ApplyBuff(_buffDefinition, 1, source);
                 }
         }
 }

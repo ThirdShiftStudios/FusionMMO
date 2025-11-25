@@ -45,7 +45,7 @@ namespace TPSBR
 
             if (timer <= 0f)
             {
-                ApplyDamage(buffSystem);
+                ApplyDamage(buffSystem, data.Source);
                 timer += TickInterval;
             }
 
@@ -62,7 +62,7 @@ namespace TPSBR
             _tickTimers.Remove(buffSystem);
         }
 
-        private void ApplyDamage(BuffSystem buffSystem)
+        private void ApplyDamage(BuffSystem buffSystem, PlayerRef source)
         {
             if (_damagePerTick <= 0f || buffSystem.HasStateAuthority == false)
             {
@@ -70,7 +70,7 @@ namespace TPSBR
             }
 
             Agent agent = buffSystem.Agent;
-            Health health = agent != null ? agent.Health : null;
+            Health health = agent != null ? agent.Health : buffSystem.GetComponent<Health>();
 
             if (health == null)
             {
@@ -86,7 +86,9 @@ namespace TPSBR
                 Position = position,
                 Normal = Vector3.up,
                 Direction = Vector3.zero,
-                InstigatorRef = buffSystem.Object != null ? buffSystem.Object.InputAuthority : PlayerRef.None,
+                InstigatorRef = source != PlayerRef.None
+                    ? source
+                    : (buffSystem.Object != null ? buffSystem.Object.InputAuthority : PlayerRef.None),
                 Target = health,
                 HitType = EHitType.Suicide,
             };

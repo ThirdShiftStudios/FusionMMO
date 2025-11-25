@@ -333,7 +333,8 @@ namespace TPSBR
             if (target is Component component)
             {
                 var buffSystem = component.GetComponent<BuffSystem>();
-                buffSystem?.ApplyBuff(_buffDefinition);
+                var source = _owner != null ? _owner.InputAuthority : PlayerRef.None;
+                buffSystem?.ApplyBuff(_buffDefinition, 1, source);
             }
         }
 

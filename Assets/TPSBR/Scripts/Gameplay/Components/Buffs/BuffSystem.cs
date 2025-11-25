@@ -9,6 +9,7 @@ namespace TPSBR
         public int   DefinitionId;
         public byte  Stacks;
         public float RemainingTime;
+        public PlayerRef Source;
 
         public bool IsValid => DefinitionId != 0 && Stacks > 0;
 
@@ -17,6 +18,7 @@ namespace TPSBR
             DefinitionId = 0;
             Stacks = 0;
             RemainingTime = 0f;
+            Source = PlayerRef.None;
         }
     }
 
@@ -88,7 +90,7 @@ namespace TPSBR
             }
         }
 
-        public void ApplyBuff(BuffDefinition definition, int stacks = 1)
+        public void ApplyBuff(BuffDefinition definition, int stacks = 1, PlayerRef source = default)
         {
             if (definition == null || stacks <= 0)
             {
@@ -97,27 +99,13 @@ namespace TPSBR
 
             if (HasStateAuthority == false)
             {
-                RPC_ApplyBuff(definition.ID, stacks);
                 return;
             }
 
-            ApplyBuffInternal(definition, stacks);
+            ApplyBuffInternal(definition, stacks, source);
         }
 
-        [Rpc(RpcSources.All, RpcTargets.StateAuthority)]
-        private void RPC_ApplyBuff(int definitionId, int stacks)
-        {
-            BuffDefinition definition = BuffDefinition.Get(definitionId);
-
-            if (definition == null || stacks <= 0)
-            {
-                return;
-            }
-
-            ApplyBuffInternal(definition, stacks);
-        }
-
-        private void ApplyBuffInternal(BuffDefinition definition, int stacks)
+        private void ApplyBuffInternal(BuffDefinition definition, int stacks, PlayerRef source)
         {
             int index = FindBuffIndex(definition.ID);
             if (index < 0)
@@ -133,6 +121,7 @@ namespace TPSBR
                     DefinitionId = definition.ID,
                     Stacks = 0,
                     RemainingTime = 0f,
+                    Source = PlayerRef.None,
                 };
 
                 _activeBuffs.Set(index, newData);
@@ -145,6 +134,7 @@ namespace TPSBR
                 data.DefinitionId = definition.ID;
                 data.Stacks = 0;
                 data.RemainingTime = 0f;
+                data.Source = PlayerRef.None;
             }
 
             stacks = Mathf.Max(1, stacks);
@@ -178,6 +168,11 @@ namespace TPSBR
             if (data.Stacks == 0)
             {
                 data.Stacks = (byte)1;
+            }
+
+            if (source != PlayerRef.None)
+            {
+                data.Source = source;
             }
 
             _activeBuffs.Set(index, data);
