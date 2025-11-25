@@ -308,10 +308,13 @@ namespace TSS.Tools
                     var task = _tasks[i];
                     bool isSelected = i == _selectedTaskIndex;
 
+                    var content = new GUIContent(
+                        $"{task.name}\nStatus: {task.status}   Priority: {task.priority}");
+
                     var style = new GUIStyle(EditorStyles.helpBox)
                     {
                         alignment = TextAnchor.MiddleLeft,
-                        padding = new RectOffset(8, 8, 6, 6)
+                        padding = new RectOffset(8, 8, 8, 8)
                     };
 
                     if (isSelected)
@@ -322,7 +325,8 @@ namespace TSS.Tools
                         style.normal.textColor = EditorStyles.boldLabel.normal.textColor;
                     }
 
-                    var rowRect = GUILayoutUtility.GetRect(GUIContent.none, style, GUILayout.ExpandWidth(true));
+                    float rowHeight = (EditorGUIUtility.singleLineHeight * 2f + style.padding.vertical + 4f) * 1.3f;
+                    var rowRect = GUILayoutUtility.GetRect(GUIContent.none, style, GUILayout.ExpandWidth(true), GUILayout.Height(rowHeight));
 
                     if (GUI.Button(rowRect, GUIContent.none, style))
                     {
@@ -330,8 +334,6 @@ namespace TSS.Tools
                         GUI.FocusControl(null);
                     }
 
-                    var content = new GUIContent(
-                        $"{task.name}\nStatus: {task.status}   Priority: {task.priority}");
                     GUI.Label(rowRect, content, style);
 
                     using (new GUILayout.HorizontalScope())
