@@ -36,5 +36,10 @@ namespace TPSBR
                                 Runner.Despawn(Object);
                         }
                 }
+
+                protected override GameObject ResolveImpactGraphic()
+                {
+                        return _abilityDefinition != null ? _abilityDefinition.ImpactGraphic : base.ResolveImpactGraphic();
+                }
         }
 }

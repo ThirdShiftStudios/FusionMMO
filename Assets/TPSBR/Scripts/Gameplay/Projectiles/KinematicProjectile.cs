@@ -417,10 +417,22 @@ namespace TPSBR
                        SpawnImpactVisuals(position, normal, impactTagHash);
                }
 
-               private void SpawnImpactVisuals(Vector3 position, Vector3 normal, int impactTagHash)
+                private void SpawnImpactVisuals(Vector3 position, Vector3 normal, int impactTagHash)
                {
                        if (_hasImpactedVisual == true)
                                return;
+
+                       // Late-resolve impact graphic so proxies can pull from serialized ability data
+                       if (_impactEffect == null)
+                       {
+                               _impactEffect = ResolveImpactGraphic();
+                               if (_impactEffect != null)
+                               {
+                                       _spawnImpactOnStaticHitOnly = false;
+                               }
+                       }
+
+                       bool spawnedVisual = false;
 
                        if (_impactEffect != null)
                        {
@@ -440,6 +452,8 @@ namespace TPSBR
                                {
                                        SpawnLocalImpactEffect(position, normal);
                                }
+
+                               spawnedVisual = true;
                        }
 
                        if (_impactSetup != null && impactTagHash != 0)
@@ -450,9 +464,14 @@ namespace TPSBR
 
                                impactParticle.transform.position = position;
                                impactParticle.transform.rotation = Quaternion.LookRotation(normal);
+
+                               spawnedVisual = true;
                        }
 
-                       _hasImpactedVisual = true;
+                       if (spawnedVisual == true)
+                       {
+                               _hasImpactedVisual = true;
+                       }
                }
 
                private void SpawnLocalImpactEffect(Vector3 position, Vector3 normal)
@@ -460,6 +479,11 @@ namespace TPSBR
                        var effect = Context.ObjectCache.Get(_impactEffect);
                        effect.transform.SetPositionAndRotation(position, Quaternion.LookRotation(normal));
                }
+
+                protected virtual GameObject ResolveImpactGraphic()
+                {
+                        return _impactEffect;
+                }
 
                [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
                private void RPC_SpawnImpactVisual(Vector3 position, Vector3 normal, int impactTagHash)
