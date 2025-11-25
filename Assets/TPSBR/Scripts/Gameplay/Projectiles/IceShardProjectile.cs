@@ -30,11 +30,6 @@ namespace TPSBR
 
                         string hitObjectName = hit.GameObject != null ? hit.GameObject.name : "<null>";
                         Debug.Log($"[IceShardProjectile] Impacted {hitObjectName}.");
-
-                        if (Runner != null && Object != null && Object.IsValid == true)
-                        {
-                                Runner.Despawn(Object);
-                        }
                 }
 
                 protected override GameObject ResolveImpactGraphic()

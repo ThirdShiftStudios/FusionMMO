@@ -24,7 +24,7 @@ namespace TPSBR
 		[SerializeField]
 		private float            _fireDespawnTime = 3f;
 		[SerializeField]
-		private float            _impactDespawnTime = 1f;
+                private float            _impactDespawnTime = 2f;
 		[SerializeField]
 		private float            _gravity = 20f;
 		[SerializeField]
@@ -241,11 +241,10 @@ namespace TPSBR
 		private void RenderProjectile(ProjectileData data)
 		{
                        // Spawn impact if not shown yet
-                       if (data.HasImpacted == true && _hasImpactedVisual == false)
-                       {
-                               SpawnImpactVisuals(data.ImpactPosition, data.ImpactNormal, data.ImpactTagHash);
-                               _projectileVisual.SetActiveSafe(false);
-                       }
+                        if (data.HasImpacted == true && _hasImpactedVisual == false)
+                        {
+                                SpawnImpactVisuals(data.ImpactPosition, data.ImpactNormal, data.ImpactTagHash);
+                        }
 
 			if (_trailRenderer != null)
 			{
@@ -367,7 +366,7 @@ namespace TPSBR
                         }
 
 			data.HasStopped = true;
-			data.DespawnCooldown = TickTimer.CreateFromSeconds(Runner, isDynamicTarget == false ? _impactDespawnTime : 0.1f);
+                        data.DespawnCooldown = TickTimer.CreateFromSeconds(Runner, _impactDespawnTime);
 
 			OnImpact(in hit);
 		}
@@ -399,86 +398,88 @@ namespace TPSBR
 			_bounceCount++;
 		}
 
-		private void SpawnImpact(ref ProjectileData data, Vector3 position, Vector3 normal, int impactTagHash)
-		{
-                       if (position == Vector3.zero)
-                               return;
+                private void SpawnImpact(ref ProjectileData data, Vector3 position, Vector3 normal, int impactTagHash)
+                {
+                        if (position == Vector3.zero)
+                                return;
 
-                       data.ImpactPosition = position;
-                       data.ImpactNormal   = normal;
-                       data.ImpactTagHash  = impactTagHash;
-                       data.HasImpacted    = true;
+                        data.ImpactPosition = position;
+                        data.ImpactNormal   = normal;
+                        data.ImpactTagHash  = impactTagHash;
+                        data.HasImpacted    = true;
 
-                       if (HasStateAuthority == true)
-                       {
-                               RPC_SpawnImpactVisual(position, normal, impactTagHash);
-                       }
+                        if (HasStateAuthority == true)
+                        {
+                                RPC_SpawnImpactVisual(position, normal, impactTagHash);
+                        }
 
-                       SpawnImpactVisuals(position, normal, impactTagHash);
-               }
+                        SpawnImpactVisuals(position, normal, impactTagHash);
+                }
 
                 private void SpawnImpactVisuals(Vector3 position, Vector3 normal, int impactTagHash)
-               {
-                       if (_hasImpactedVisual == true)
-                               return;
+                {
+                        if (_hasImpactedVisual == true)
+                                return;
 
-                       // Late-resolve impact graphic so proxies can pull from serialized ability data
-                       if (_impactEffect == null)
-                       {
-                               _impactEffect = ResolveImpactGraphic();
-                               if (_impactEffect != null)
-                               {
-                                       _spawnImpactOnStaticHitOnly = false;
-                               }
-                       }
+                        _projectileVisual.SetActiveSafe(false);
 
-                       bool spawnedVisual = false;
+                        // Late-resolve impact graphic so proxies can pull from serialized ability data
+                        if (_impactEffect == null)
+                        {
+                                _impactEffect = ResolveImpactGraphic();
+                                if (_impactEffect != null)
+                                {
+                                        _spawnImpactOnStaticHitOnly = false;
+                                }
+                        }
 
-                       if (_impactEffect != null)
-                       {
-                               var networkBehaviour = _impactEffect.GetComponent<NetworkBehaviour>();
-                               if (networkBehaviour != null)
-                               {
-                                       if (HasStateAuthority == true)
-                                       {
-                                               Runner.Spawn(networkBehaviour, position, Quaternion.LookRotation(normal), Object.InputAuthority);
-                                       }
-                                       else
-                                       {
-                                               SpawnLocalImpactEffect(position, normal);
-                                       }
-                               }
-                               else
-                               {
-                                       SpawnLocalImpactEffect(position, normal);
-                               }
+                        bool spawnedVisual = false;
 
-                               spawnedVisual = true;
-                       }
+                        if (_impactEffect != null)
+                        {
+                                var networkBehaviour = _impactEffect.GetComponent<NetworkBehaviour>();
+                                if (networkBehaviour != null)
+                                {
+                                        if (HasStateAuthority == true)
+                                        {
+                                                Runner.Spawn(networkBehaviour, position, Quaternion.LookRotation(normal), Object.InputAuthority);
+                                        }
+                                        else
+                                        {
+                                                SpawnLocalImpactEffect(position, normal);
+                                        }
+                                }
+                                else
+                                {
+                                        SpawnLocalImpactEffect(position, normal);
+                                }
 
-                       if (_impactSetup != null && impactTagHash != 0)
-                       {
-                               var impactParticle = Context.ObjectCache.Get(_impactSetup.GetImpact(impactTagHash));
-                               Context.ObjectCache.ReturnDeferred(impactParticle, 5f);
-                               Runner.MoveToRunnerSceneExtended(impactParticle);
+                                spawnedVisual = true;
+                        }
 
-                               impactParticle.transform.position = position;
-                               impactParticle.transform.rotation = Quaternion.LookRotation(normal);
+                        if (_impactSetup != null && impactTagHash != 0)
+                        {
+                                var impactParticle = Context.ObjectCache.Get(_impactSetup.GetImpact(impactTagHash));
+                                Context.ObjectCache.ReturnDeferred(impactParticle, 5f);
+                                Runner.MoveToRunnerSceneExtended(impactParticle);
 
-                               spawnedVisual = true;
-                       }
+                                impactParticle.transform.position = position;
+                                impactParticle.transform.rotation = Quaternion.LookRotation(normal);
 
-                       if (spawnedVisual == true)
-                       {
-                               _hasImpactedVisual = true;
-                       }
-               }
+                                spawnedVisual = true;
+                        }
 
-               private void SpawnLocalImpactEffect(Vector3 position, Vector3 normal)
-               {
-                       var effect = Context.ObjectCache.Get(_impactEffect);
-                       effect.transform.SetPositionAndRotation(position, Quaternion.LookRotation(normal));
-               }
+                        if (spawnedVisual == true)
+                        {
+                                _hasImpactedVisual = true;
+                        }
+                }
+
+                private void SpawnLocalImpactEffect(Vector3 position, Vector3 normal)
+                {
+                        var effect = Context.ObjectCache.Get(_impactEffect);
+                        effect.transform.SetPositionAndRotation(position, Quaternion.LookRotation(normal));
+                }
 
                 protected virtual GameObject ResolveImpactGraphic()
                 {
