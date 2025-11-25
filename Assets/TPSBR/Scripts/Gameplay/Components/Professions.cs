@@ -108,9 +108,10 @@ namespace TPSBR
         private int[] _cachedLevels;
         private int[] _cachedExperience;
         private bool _cacheInitialized;
+        private bool _isSpawned;
         private Agent _agent;
 
-        private bool CanReadNetworkedData => Object != null && Object.IsValid == true && Object.IsSpawned == true;
+        private bool CanReadNetworkedData => Object != null && Object.IsValid == true && _isSpawned == true;
 
 
         public static string GetCode(ProfessionIndex profession)
@@ -462,6 +463,7 @@ namespace TPSBR
         {
             base.Spawned();
 
+            _isSpawned = true;
             _cacheInitialized = false;
             EnsureCacheInitialized();
 
@@ -487,6 +489,7 @@ namespace TPSBR
 
         public override void Despawned(NetworkRunner runner, bool hasState)
         {
+            _isSpawned = false;
             Global.PlayerCloudSaveService?.UnregisterProfessions(this);
 
             base.Despawned(runner, hasState);
