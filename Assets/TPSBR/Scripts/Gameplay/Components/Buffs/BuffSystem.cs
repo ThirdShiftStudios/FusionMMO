@@ -42,6 +42,52 @@ namespace TPSBR
             _senses = GetComponent<AgentSenses>();
         }
 
+        public override void Render()
+        {
+            base.Render();
+
+            for (int i = 0; i < MaxBuffSlots; ++i)
+            {
+                BuffData data = _activeBuffs.Get(i);
+
+                if (data.IsValid == false)
+                {
+                    if (_activeTickGraphics[i] != null)
+                    {
+                        ClearTickGraphic(i);
+                    }
+
+                    continue;
+                }
+
+                BuffDefinition definition = BuffDefinition.Get(data.DefinitionId);
+                if (definition == null)
+                {
+                    if (_activeTickGraphics[i] != null)
+                    {
+                        ClearTickGraphic(i);
+                    }
+
+                    continue;
+                }
+
+                if (definition.OnTickGraphic == null)
+                {
+                    if (_activeTickGraphics[i] != null)
+                    {
+                        ClearTickGraphic(i);
+                    }
+
+                    continue;
+                }
+
+                if (_activeTickGraphics[i] == null)
+                {
+                    SpawnTickGraphic(definition, i);
+                }
+            }
+        }
+
         public override void FixedUpdateNetwork()
         {
             if (HasStateAuthority == false)
