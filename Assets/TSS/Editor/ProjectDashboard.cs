@@ -14,6 +14,7 @@ namespace TSS.Tools
     {
         private const float LeftPaneMin = 220f;
         private const float LeftPaneMax = 480f;
+        private const string EditorPrefsKey = "TSS_ProjectDashboard_Tasks";
 
         private enum DashboardView
         {
@@ -72,6 +73,7 @@ namespace TSS.Tools
         private void OnEnable()
         {
             EnsureTreeInitialized();
+            EnsureTasksInitialized();
         }
 
         private void OnDisable()
@@ -83,6 +85,8 @@ namespace TSS.Tools
             DestroyImmediate(_activeInspector);
             _activeInspector = null;
             _activeSelection = null;
+
+            SaveTasks();
         }
 
         private void OnGUI()
@@ -230,32 +234,39 @@ namespace TSS.Tools
             if (_tasks != null)
                 return;
 
-            _tasks = new List<DashboardTask>
-            {
-                new DashboardTask
-                {
-                    name = "Review data definitions",
-                    status = TaskStatus.InProgress,
-                    priority = TaskPriority.High,
-                    description = "Validate that all data definition assets are configured and have unique IDs."
-                },
-                new DashboardTask
-                {
-                    name = "Add new quest entries",
-                    status = TaskStatus.NotStarted,
-                    priority = TaskPriority.Medium,
-                    description = "Create quest data entries for the upcoming content drop."
-                },
-                new DashboardTask
-                {
-                    name = "Cleanup unused assets",
-                    status = TaskStatus.Blocked,
-                    priority = TaskPriority.Low,
-                    description = "Remove obsolete prototypes after confirming they are no longer referenced."
-                }
-            };
+            _tasks = LoadTasks();
 
-            _selectedTaskIndex = Mathf.Clamp(_selectedTaskIndex, 0, _tasks.Count - 1);
+            if (_tasks.Count == 0)
+            {
+                _tasks = new List<DashboardTask>
+                {
+                    new DashboardTask
+                    {
+                        name = "Review data definitions",
+                        status = TaskStatus.InProgress,
+                        priority = TaskPriority.High,
+                        description = "Validate that all data definition assets are configured and have unique IDs."
+                    },
+                    new DashboardTask
+                    {
+                        name = "Add new quest entries",
+                        status = TaskStatus.NotStarted,
+                        priority = TaskPriority.Medium,
+                        description = "Create quest data entries for the upcoming content drop."
+                    },
+                    new DashboardTask
+                    {
+                        name = "Cleanup unused assets",
+                        status = TaskStatus.Blocked,
+                        priority = TaskPriority.Low,
+                        description = "Remove obsolete prototypes after confirming they are no longer referenced."
+                    }
+                };
+            }
+
+            _selectedTaskIndex = _tasks.Count > 0
+                ? Mathf.Clamp(_selectedTaskIndex, 0, _tasks.Count - 1)
+                : -1;
         }
 
         private void DrawTasksView()
@@ -278,7 +289,15 @@ namespace TSS.Tools
 
         private void DrawTaskList()
         {
-            GUILayout.Label("Tasks", EditorStyles.boldLabel);
+            using (new EditorGUILayout.HorizontalScope(EditorStyles.toolbar))
+            {
+                GUILayout.Label("Tasks", EditorStyles.boldLabel);
+                GUILayout.FlexibleSpace();
+                if (GUILayout.Button("New Task", EditorStyles.toolbarButton, GUILayout.Width(80)))
+                {
+                    CreateNewTask();
+                }
+            }
 
             using (var scrollScope = new EditorGUILayout.ScrollViewScope(_taskListScroll))
             {
@@ -362,9 +381,64 @@ namespace TSS.Tools
                 if (EditorGUI.EndChangeCheck())
                 {
                     _tasks[_selectedTaskIndex] = task;
+                    SaveTasks();
                     Repaint();
                 }
             }
+        }
+
+        private void CreateNewTask()
+        {
+            var newTask = new DashboardTask
+            {
+                name = $"New Task {_tasks.Count + 1}",
+                status = TaskStatus.NotStarted,
+                priority = TaskPriority.Medium,
+                description = string.Empty
+            };
+
+            _tasks.Add(newTask);
+            _selectedTaskIndex = _tasks.Count - 1;
+            SaveTasks();
+            Repaint();
+        }
+
+        private List<DashboardTask> LoadTasks()
+        {
+            if (!EditorPrefs.HasKey(EditorPrefsKey))
+                return new List<DashboardTask>();
+
+            try
+            {
+                var raw = EditorPrefs.GetString(EditorPrefsKey, string.Empty);
+                var wrapper = JsonUtility.FromJson<TaskCollection>(raw);
+                if (wrapper?.tasks != null)
+                {
+                    return wrapper.tasks;
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning($"ProjectDashboard: Failed to load tasks, using defaults. {e.Message}");
+            }
+
+            return new List<DashboardTask>();
+        }
+
+        private void SaveTasks()
+        {
+            if (_tasks == null)
+                return;
+
+            var wrapper = new TaskCollection { tasks = _tasks };
+            var json = JsonUtility.ToJson(wrapper);
+            EditorPrefs.SetString(EditorPrefsKey, json);
+        }
+
+        [Serializable]
+        private sealed class TaskCollection
+        {
+            public List<DashboardTask> tasks;
         }
 
         // ---------------- TreeView ----------------
