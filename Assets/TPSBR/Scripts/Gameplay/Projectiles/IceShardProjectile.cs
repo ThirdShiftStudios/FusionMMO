@@ -16,7 +16,7 @@ namespace TPSBR
 
                 public override void Spawned()
                 {
-                        if (_impactEffect == null && _abilityDefinition != null)
+                        if (_abilityDefinition != null)
                         {
                                 ConfigureImpactGraphic(_abilityDefinition.ImpactGraphic);
                         }
