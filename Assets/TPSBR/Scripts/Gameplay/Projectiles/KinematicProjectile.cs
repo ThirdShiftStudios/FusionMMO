@@ -360,10 +360,11 @@ namespace TPSBR
 
 			bool isDynamicTarget = hit.GameObject.layer == ObjectLayer.Agent || hit.GameObject.layer == ObjectLayer.Target;
 
-			if (_spawnImpactOnStaticHitOnly == false || isDynamicTarget == false)
-			{
-				SpawnImpact(ref data, hit.Point, (hit.Normal + -direction) * 0.5f, hit.GameObject.tag.GetHashCode());
-			}
+                        if (_spawnImpactOnStaticHitOnly == false || isDynamicTarget == false)
+                        {
+                                int impactTagHash = Animator.StringToHash(hit.GameObject.tag);
+                                SpawnImpact(ref data, hit.Point, (hit.Normal + -direction) * 0.5f, impactTagHash);
+                        }
 
 			data.HasStopped = true;
 			data.DespawnCooldown = TickTimer.CreateFromSeconds(Runner, isDynamicTarget == false ? _impactDespawnTime : 0.1f);
