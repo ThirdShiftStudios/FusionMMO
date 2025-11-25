@@ -408,22 +408,25 @@ namespace TPSBR
 			data.ImpactTagHash  = impactTagHash;
 			data.HasImpacted    = true;
 
-			if (_impactEffect != null)
-			{
-				var networkBehaviour = _impactEffect.GetComponent<NetworkBehaviour>();
-				if (networkBehaviour != null)
-				{
-					if (HasStateAuthority == true)
-					{
-						Runner.Spawn(networkBehaviour, position, Quaternion.LookRotation(normal), Object.InputAuthority);
-					}
-				}
-				else
-				{
-					var effect = Context.ObjectCache.Get(_impactEffect);
-					effect.transform.SetPositionAndRotation(position, Quaternion.LookRotation(normal));
-				}
-			}
+                        if (_impactEffect != null)
+                        {
+                                var networkBehaviour = _impactEffect.GetComponent<NetworkBehaviour>();
+                                if (networkBehaviour != null)
+                                {
+                                        if (HasStateAuthority == true)
+                                        {
+                                                Runner.Spawn(networkBehaviour, position, Quaternion.LookRotation(normal), Object.InputAuthority);
+                                        }
+                                        else
+                                        {
+                                                SpawnLocalImpactEffect(position, normal);
+                                        }
+                                }
+                                else
+                                {
+                                        SpawnLocalImpactEffect(position, normal);
+                                }
+                        }
 
 			if (_impactSetup != null && impactTagHash != 0)
 			{
@@ -435,8 +438,14 @@ namespace TPSBR
 				impactParticle.transform.rotation = Quaternion.LookRotation(normal);
 			}
 
-			_hasImpactedVisual = true;
-		}
+                        _hasImpactedVisual = true;
+                }
+
+                private void SpawnLocalImpactEffect(Vector3 position, Vector3 normal)
+                {
+                        var effect = Context.ObjectCache.Get(_impactEffect);
+                        effect.transform.SetPositionAndRotation(position, Quaternion.LookRotation(normal));
+                }
 
 		private Vector3 GetProjectilePosition(ref ProjectileData data, float tick)
 		{
