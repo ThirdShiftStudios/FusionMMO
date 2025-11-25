@@ -12,10 +12,10 @@ namespace TPSBR
 
 		// PROTECTED MEMBERS
 
-		[Networked]
-		protected ProjectileData _data { get; private set; }
-		[Networked][OnChangedRender(nameof(OnBounceCountChanged))]
-		protected int            _bounceCount { get; private set; }
+                [Networked]
+                protected ProjectileData _data { get; private set; }
+                [Networked][OnChangedRender(nameof(OnBounceCountChanged))]
+                protected int            _bounceCount { get; private set; }
 
 		// PRIVATE MEMBERS
 
@@ -24,11 +24,11 @@ namespace TPSBR
 		[SerializeField]
 		private float            _fireDespawnTime = 3f;
 		[SerializeField]
-		private float            _impactDespawnTime = 1f;
+                private float            _impactDespawnTime = 2f;
 		[SerializeField]
 		private float            _gravity = 20f;
 		[SerializeField]
-		private GameObject       _impactEffect;
+                protected GameObject     _impactEffect;
 		[SerializeField]
 		private ImpactSetup      _impactSetup;
 		[SerializeField]
@@ -145,13 +145,13 @@ namespace TPSBR
 
 		// NetworkBehaviour INTERFACE
 
-		public override void Spawned()
-		{
-			_despawning = false;
+                public override void Spawned()
+                {
+                        _despawning = false;
 
-			_projectileVisual.SetActiveSafe(_showProjectileVisualAfterDistance <= 0f);
+                        _projectileVisual.SetActiveSafe(_showProjectileVisualAfterDistance <= 0f);
 
-			_hasImpactedVisual = false;
+                        _hasImpactedVisual = false;
 
 			if (_trailRenderer != null)
 			{
@@ -206,13 +206,13 @@ namespace TPSBR
 			}
 		}
 
-		public override void Render()
-		{
-			// Guard against render after despawn and pre-spawn
-			if (_despawning || Object == null || !Object.IsValid) return;
+                public override void Render()
+                {
+                        // Guard against render after despawn and pre-spawn
+                        if (_despawning || Object == null || !Object.IsValid) return;
 
-			RenderProjectile(_data);
-		}
+                        RenderProjectile(_data);
+                }
 
 		// MONOBEHAVIOUR
 
@@ -240,12 +240,11 @@ namespace TPSBR
 
 		private void RenderProjectile(ProjectileData data)
 		{
-			// Spawn impact if not shown yet
-			if (data.HasImpacted == true && _hasImpactedVisual == false)
-			{
-				SpawnImpact(ref data, data.ImpactPosition, data.ImpactNormal, data.ImpactTagHash);
-				_projectileVisual.SetActiveSafe(false);
-			}
+                       // Spawn impact if not shown yet
+                        if (data.HasImpacted == true && _hasImpactedVisual == false)
+                        {
+                                SpawnImpactVisuals(data.ImpactPosition, data.ImpactNormal, data.ImpactTagHash);
+                        }
 
 			if (_trailRenderer != null)
 			{
@@ -294,10 +293,10 @@ namespace TPSBR
 					data.HasStopped = true;
 				}
 
-				if (_spawnImpactEffectOnTimeout == true && data.HasImpacted == false)
-				{
-					SpawnImpact(ref data, data.FinishedPosition, Vector3.up, 0);
-				}
+                        if (_spawnImpactEffectOnTimeout == true && data.HasImpacted == false)
+                        {
+                                SpawnImpact(ref data, data.FinishedPosition, Vector3.up, 0);
+                        }
 
 				// Mark despawning BEFORE requesting despawn to avoid the "one extra tick" touching _data
 				_despawning = true;
@@ -360,13 +359,14 @@ namespace TPSBR
 
 			bool isDynamicTarget = hit.GameObject.layer == ObjectLayer.Agent || hit.GameObject.layer == ObjectLayer.Target;
 
-			if (_spawnImpactOnStaticHitOnly == false || isDynamicTarget == false)
-			{
-				SpawnImpact(ref data, hit.Point, (hit.Normal + -direction) * 0.5f, hit.GameObject.tag.GetHashCode());
-			}
+                        if (_spawnImpactOnStaticHitOnly == false || isDynamicTarget == false)
+                        {
+                                int impactTagHash = Animator.StringToHash(hit.GameObject.tag);
+                                SpawnImpact(ref data, hit.Point, (hit.Normal + -direction) * 0.5f, impactTagHash);
+                        }
 
 			data.HasStopped = true;
-			data.DespawnCooldown = TickTimer.CreateFromSeconds(Runner, isDynamicTarget == false ? _impactDespawnTime : 0.1f);
+                        data.DespawnCooldown = TickTimer.CreateFromSeconds(Runner, _impactDespawnTime);
 
 			OnImpact(in hit);
 		}
@@ -398,45 +398,99 @@ namespace TPSBR
 			_bounceCount++;
 		}
 
-		private void SpawnImpact(ref ProjectileData data, Vector3 position, Vector3 normal, int impactTagHash)
-		{
-			if (position == Vector3.zero)
-				return;
+                private void SpawnImpact(ref ProjectileData data, Vector3 position, Vector3 normal, int impactTagHash)
+                {
+                        if (position == Vector3.zero)
+                                return;
 
-			data.ImpactPosition = position;
-			data.ImpactNormal   = normal;
-			data.ImpactTagHash  = impactTagHash;
-			data.HasImpacted    = true;
+                        data.ImpactPosition = position;
+                        data.ImpactNormal   = normal;
+                        data.ImpactTagHash  = impactTagHash;
+                        data.HasImpacted    = true;
 
-			if (_impactEffect != null)
-			{
-				var networkBehaviour = _impactEffect.GetComponent<NetworkBehaviour>();
-				if (networkBehaviour != null)
-				{
-					if (HasStateAuthority == true)
-					{
-						Runner.Spawn(networkBehaviour, position, Quaternion.LookRotation(normal), Object.InputAuthority);
-					}
-				}
-				else
-				{
-					var effect = Context.ObjectCache.Get(_impactEffect);
-					effect.transform.SetPositionAndRotation(position, Quaternion.LookRotation(normal));
-				}
-			}
+                        if (HasStateAuthority == true)
+                        {
+                                RPC_SpawnImpactVisual(position, normal, impactTagHash);
+                        }
 
-			if (_impactSetup != null && impactTagHash != 0)
-			{
-				var impactParticle = Context.ObjectCache.Get(_impactSetup.GetImpact(impactTagHash));
-				Context.ObjectCache.ReturnDeferred(impactParticle, 5f);
-				Runner.MoveToRunnerSceneExtended(impactParticle);
+                        SpawnImpactVisuals(position, normal, impactTagHash);
+                }
 
-				impactParticle.transform.position = position;
-				impactParticle.transform.rotation = Quaternion.LookRotation(normal);
-			}
+                private void SpawnImpactVisuals(Vector3 position, Vector3 normal, int impactTagHash)
+                {
+                        if (_hasImpactedVisual == true)
+                                return;
 
-			_hasImpactedVisual = true;
-		}
+                        _projectileVisual.SetActiveSafe(false);
+
+                        // Late-resolve impact graphic so proxies can pull from serialized ability data
+                        if (_impactEffect == null)
+                        {
+                                _impactEffect = ResolveImpactGraphic();
+                                if (_impactEffect != null)
+                                {
+                                        _spawnImpactOnStaticHitOnly = false;
+                                }
+                        }
+
+                        bool spawnedVisual = false;
+
+                        if (_impactEffect != null)
+                        {
+                                var networkBehaviour = _impactEffect.GetComponent<NetworkBehaviour>();
+                                if (networkBehaviour != null)
+                                {
+                                        if (HasStateAuthority == true)
+                                        {
+                                                Runner.Spawn(networkBehaviour, position, Quaternion.LookRotation(normal), Object.InputAuthority);
+                                        }
+                                        else
+                                        {
+                                                SpawnLocalImpactEffect(position, normal);
+                                        }
+                                }
+                                else
+                                {
+                                        SpawnLocalImpactEffect(position, normal);
+                                }
+
+                                spawnedVisual = true;
+                        }
+
+                        if (_impactSetup != null && impactTagHash != 0)
+                        {
+                                var impactParticle = Context.ObjectCache.Get(_impactSetup.GetImpact(impactTagHash));
+                                Context.ObjectCache.ReturnDeferred(impactParticle, 5f);
+                                Runner.MoveToRunnerSceneExtended(impactParticle);
+
+                                impactParticle.transform.position = position;
+                                impactParticle.transform.rotation = Quaternion.LookRotation(normal);
+
+                                spawnedVisual = true;
+                        }
+
+                        if (spawnedVisual == true)
+                        {
+                                _hasImpactedVisual = true;
+                        }
+                }
+
+                private void SpawnLocalImpactEffect(Vector3 position, Vector3 normal)
+                {
+                        var effect = Context.ObjectCache.Get(_impactEffect);
+                        effect.transform.SetPositionAndRotation(position, Quaternion.LookRotation(normal));
+                }
+
+                protected virtual GameObject ResolveImpactGraphic()
+                {
+                        return _impactEffect;
+                }
+
+               [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+               private void RPC_SpawnImpactVisual(Vector3 position, Vector3 normal, int impactTagHash)
+               {
+                       SpawnImpactVisuals(position, normal, impactTagHash);
+               }
 
 		private Vector3 GetProjectilePosition(ref ProjectileData data, float tick)
 		{

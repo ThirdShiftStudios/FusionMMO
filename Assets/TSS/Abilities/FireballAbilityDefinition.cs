@@ -1,6 +1,5 @@
 using Fusion;
 using TPSBR;
-using TPSBR.Abilities;
 using UnityEngine;
 using UnityEngine.Serialization;
 namespace TPSBR.Abilities
@@ -28,14 +27,14 @@ namespace TPSBR.Abilities
 
         public GameObject ImpactGraphic => _impactGraphic;
 
-#if UNITY_EDITOR
+        #if UNITY_EDITOR
         protected override void OnValidate()
         {
             base.OnValidate();
             SetStringCode(AbilityCode);
             EnsureUpgradeData<FireballAbilityUpgradeData>();
         }
-#endif
+        #endif
 
         public override void Execute(StaffWeapon staffWeapon)
         {

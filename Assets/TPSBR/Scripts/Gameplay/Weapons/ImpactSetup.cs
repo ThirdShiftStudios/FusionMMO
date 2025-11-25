@@ -25,17 +25,17 @@ namespace TPSBR
 			if (tagHash == 0 || tagHash == _untaggedHash)
 				return _fallbackImpact;
 
-			if (_initialized == false)
-			{
-				_untaggedHash = "Untagged".GetHashCode();
+                        if (_initialized == false)
+                        {
+                                _untaggedHash = Animator.StringToHash("Untagged");
 
-				for (int i = 0; i < _impacts.Length; i++)
-				{
-					_impacts[i].TagHash = _impacts[i].Tag.GetHashCode();
-				}
+                                for (int i = 0; i < _impacts.Length; i++)
+                                {
+                                        _impacts[i].TagHash = Animator.StringToHash(_impacts[i].Tag);
+                                }
 
-				_initialized = true;
-			}
+                                _initialized = true;
+                        }
 
 			for (int i = 0; i < _impacts.Length; i++)
 			{
