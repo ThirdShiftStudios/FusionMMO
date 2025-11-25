@@ -97,9 +97,28 @@ namespace TPSBR
 
             if (HasStateAuthority == false)
             {
+                RPC_ApplyBuff(definition.ID, stacks);
                 return;
             }
 
+            ApplyBuffInternal(definition, stacks);
+        }
+
+        [Rpc(RpcSources.All, RpcTargets.StateAuthority)]
+        private void RPC_ApplyBuff(int definitionId, int stacks)
+        {
+            BuffDefinition definition = BuffDefinition.Get(definitionId);
+
+            if (definition == null || stacks <= 0)
+            {
+                return;
+            }
+
+            ApplyBuffInternal(definition, stacks);
+        }
+
+        private void ApplyBuffInternal(BuffDefinition definition, int stacks)
+        {
             int index = FindBuffIndex(definition.ID);
             if (index < 0)
             {
