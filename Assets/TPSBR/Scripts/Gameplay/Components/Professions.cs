@@ -110,6 +110,8 @@ namespace TPSBR
         private bool _cacheInitialized;
         private Agent _agent;
 
+        private bool CanReadNetworkedData => Object != null && Object.IsValid == true && Object.IsSpawned == true;
+
 
         public static string GetCode(ProfessionIndex profession)
         {
@@ -159,8 +161,10 @@ namespace TPSBR
                 throw new ArgumentOutOfRangeException(nameof(index));
             }
 
-            int level = _levels.Get(index);
-            int experience = _experience.Get(index);
+            EnsureCacheInitialized();
+
+            int level = _cachedLevels[index];
+            int experience = _cachedExperience[index];
 
             return CreateSnapshot(level, experience);
         }
@@ -177,7 +181,9 @@ namespace TPSBR
                 throw new ArgumentOutOfRangeException(nameof(index));
             }
 
-            return _levels.Get(index);
+            EnsureCacheInitialized();
+
+            return _cachedLevels[index];
         }
 
         public int GetProfession(ProfessionIndex profession)
@@ -207,7 +213,9 @@ namespace TPSBR
                 throw new ArgumentOutOfRangeException(nameof(index));
             }
 
-            return _experience.Get(index);
+            EnsureCacheInitialized();
+
+            return _cachedExperience[index];
         }
 
         public void SetProfession(ProfessionIndex profession, int level)
@@ -233,6 +241,11 @@ namespace TPSBR
             }
 
             if (HasStateAuthority == false)
+            {
+                return;
+            }
+
+            if (CanReadNetworkedData == false)
             {
                 return;
             }
@@ -285,6 +298,11 @@ namespace TPSBR
             }
 
             if (HasStateAuthority == false)
+            {
+                return;
+            }
+
+            if (CanReadNetworkedData == false)
             {
                 return;
             }
@@ -377,8 +395,8 @@ namespace TPSBR
                 records[i] = new PlayerProfessionSaveData
                 {
                     ProfessionCode = GetCode(i),
-                    Level = (byte)Mathf.Clamp(_levels.Get(i), 0, byte.MaxValue),
-                    Experience = _experience.Get(i),
+                    Level = (byte)Mathf.Clamp(_cachedLevels[i], 0, byte.MaxValue),
+                    Experience = _cachedExperience[i],
                 };
             }
 
@@ -444,6 +462,7 @@ namespace TPSBR
         {
             base.Spawned();
 
+            _cacheInitialized = false;
             EnsureCacheInitialized();
 
             Global.PlayerCloudSaveService?.RegisterProfessionsAndRestore(this);
@@ -596,8 +615,20 @@ namespace TPSBR
 
             for (int i = 0; i < Count; ++i)
             {
-                _cachedLevels[i] = _levels.Get(i);
-                _cachedExperience[i] = _experience.Get(i);
+                if (CanReadNetworkedData == true)
+                {
+                    _cachedLevels[i] = _levels.Get(i);
+                    _cachedExperience[i] = _experience.Get(i);
+                }
+                else
+                {
+                    int level = _initialLevels != null && i < _initialLevels.Length
+                        ? Mathf.Clamp(_initialLevels[i], MinLevel, MaxLevel)
+                        : MinLevel;
+
+                    _cachedLevels[i] = level;
+                    _cachedExperience[i] = 0;
+                }
             }
 
             _cacheInitialized = true;
@@ -606,6 +637,11 @@ namespace TPSBR
         private void CheckForProfessionUpdates()
         {
             if (Object == null || Object.IsValid == false)
+            {
+                return;
+            }
+
+            if (CanReadNetworkedData == false)
             {
                 return;
             }
