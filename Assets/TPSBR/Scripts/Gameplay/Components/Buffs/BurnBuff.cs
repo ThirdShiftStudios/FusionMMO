@@ -46,6 +46,7 @@ namespace TPSBR
             if (timer <= 0f)
             {
                 ApplyDamage(buffSystem, data.Source);
+                buffSystem.RegisterTick(this);
                 timer += TickInterval;
             }
 

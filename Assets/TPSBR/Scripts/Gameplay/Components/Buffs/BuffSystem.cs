@@ -32,6 +32,10 @@ namespace TPSBR
         private Agent       _agent;
         private AgentSenses _senses;
         private readonly GameObject[] _activeTickGraphics = new GameObject[MaxBuffSlots];
+        private readonly ushort[] _renderedTickCounters = new ushort[MaxBuffSlots];
+
+        [Networked, Capacity(MaxBuffSlots)]
+        private NetworkArray<ushort> _tickCounters { get; }
 
         public Agent Agent => _agent;
         public AgentSenses Senses => _senses;
@@ -50,12 +54,16 @@ namespace TPSBR
             {
                 BuffData data = _activeBuffs.Get(i);
 
+                ushort tickCounter = _tickCounters.Get(i);
+
                 if (data.IsValid == false)
                 {
                     if (_activeTickGraphics[i] != null)
                     {
                         ClearTickGraphic(i);
                     }
+
+                    _renderedTickCounters[i] = 0;
 
                     continue;
                 }
@@ -78,10 +86,18 @@ namespace TPSBR
                         ClearTickGraphic(i);
                     }
 
+                    _renderedTickCounters[i] = tickCounter;
+
                     continue;
                 }
 
-                if (_activeTickGraphics[i] == null)
+                if (_renderedTickCounters[i] != tickCounter)
+                {
+                    ClearTickGraphic(i);
+                    SpawnTickGraphic(definition, i);
+                    _renderedTickCounters[i] = tickCounter;
+                }
+                else if (_activeTickGraphics[i] == null && tickCounter > 0)
                 {
                     SpawnTickGraphic(definition, i);
                 }
@@ -223,7 +239,23 @@ namespace TPSBR
 
             _activeBuffs.Set(index, data);
 
-            SpawnTickGraphic(definition, index);
+            IncrementTickCounter(index);
+        }
+
+        public void RegisterTick(BuffDefinition definition)
+        {
+            if (HasStateAuthority == false || definition == null)
+            {
+                return;
+            }
+
+            int index = FindBuffIndex(definition.ID);
+            if (index < 0)
+            {
+                return;
+            }
+
+            IncrementTickCounter(index);
         }
 
         public void RemoveBuff(BuffDefinition definition)
@@ -377,8 +409,21 @@ namespace TPSBR
         {
             definition?.OnRemove(this, ref data);
             ClearTickGraphic(index);
+            _tickCounters.Set(index, 0);
+            _renderedTickCounters[index] = 0;
             data.Clear();
             _activeBuffs.Set(index, data);
+        }
+
+        private void IncrementTickCounter(int index)
+        {
+            if (index < 0 || index >= MaxBuffSlots)
+            {
+                return;
+            }
+
+            ushort nextValue = (ushort)(_tickCounters.Get(index) + 1);
+            _tickCounters.Set(index, nextValue);
         }
 
         private void SpawnTickGraphic(BuffDefinition definition, int index)
