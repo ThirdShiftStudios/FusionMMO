@@ -56,7 +56,7 @@ namespace TPSBR
         [Networked, Capacity(Count)]
         private NetworkArray<byte> _stats { get; }
 
-        private bool CanAccessNetworkedStats => Object != null && Object.IsValid == true && Object.IsSpawned == true;
+        private bool CanAccessNetworkedStats => Runner != null && Object != null && Object.IsValid == true;
 
         public event Action<StatIndex, int, int> StatChanged;
 
