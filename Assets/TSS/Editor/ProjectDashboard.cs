@@ -2,6 +2,7 @@
 #if UNITY_EDITOR
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using UnityEditor;
 using UnityEditor.IMGUI.Controls;
@@ -15,6 +16,7 @@ namespace TSS.Tools
         private const float LeftPaneMin = 220f;
         private const float LeftPaneMax = 480f;
         private const string EditorPrefsKey = "TSS_ProjectDashboard_Tasks";
+        private const string TaskStoragePath = "Assets/TSS/Editor/ProjectDashboardTasks.json";
 
         private enum DashboardView
         {
@@ -262,6 +264,8 @@ namespace TSS.Tools
                         description = "Remove obsolete prototypes after confirming they are no longer referenced."
                     }
                 };
+
+                SaveTasks();
             }
 
             _selectedTaskIndex = _tasks.Count > 0
@@ -314,7 +318,7 @@ namespace TSS.Tools
                     var style = new GUIStyle(EditorStyles.helpBox)
                     {
                         alignment = TextAnchor.MiddleLeft,
-                        padding = new RectOffset(8, 8, 8, 8)
+                        padding = new RectOffset(8, 8, 6, 6)
                     };
 
                     if (isSelected)
@@ -325,7 +329,7 @@ namespace TSS.Tools
                         style.normal.textColor = EditorStyles.boldLabel.normal.textColor;
                     }
 
-                    float rowHeight = (EditorGUIUtility.singleLineHeight * 2f + style.padding.vertical + 4f) * 1.3f;
+                    float rowHeight = (EditorGUIUtility.singleLineHeight * 2f + style.padding.vertical + 2f) * 1.05f;
                     var rowRect = GUILayoutUtility.GetRect(GUIContent.none, style, GUILayout.ExpandWidth(true), GUILayout.Height(rowHeight));
 
                     if (GUI.Button(rowRect, GUIContent.none, style))
@@ -407,21 +411,39 @@ namespace TSS.Tools
 
         private List<DashboardTask> LoadTasks()
         {
-            if (!EditorPrefs.HasKey(EditorPrefsKey))
-                return new List<DashboardTask>();
-
-            try
+            if (File.Exists(TaskStoragePath))
             {
-                var raw = EditorPrefs.GetString(EditorPrefsKey, string.Empty);
-                var wrapper = JsonUtility.FromJson<TaskCollection>(raw);
-                if (wrapper?.tasks != null)
+                try
                 {
-                    return wrapper.tasks;
+                    var raw = File.ReadAllText(TaskStoragePath);
+                    var wrapper = JsonUtility.FromJson<TaskCollection>(raw);
+                    if (wrapper?.tasks != null)
+                    {
+                        return wrapper.tasks;
+                    }
+                }
+                catch (Exception e)
+                {
+                    Debug.LogWarning($"ProjectDashboard: Failed to load tasks from file, using defaults. {e.Message}");
                 }
             }
-            catch (Exception e)
+
+            if (EditorPrefs.HasKey(EditorPrefsKey))
             {
-                Debug.LogWarning($"ProjectDashboard: Failed to load tasks, using defaults. {e.Message}");
+                try
+                {
+                    var raw = EditorPrefs.GetString(EditorPrefsKey, string.Empty);
+                    var wrapper = JsonUtility.FromJson<TaskCollection>(raw);
+                    if (wrapper?.tasks != null)
+                    {
+                        SaveTasks(wrapper.tasks);
+                        return wrapper.tasks;
+                    }
+                }
+                catch (Exception e)
+                {
+                    Debug.LogWarning($"ProjectDashboard: Failed to migrate tasks from EditorPrefs. {e.Message}");
+                }
             }
 
             return new List<DashboardTask>();
@@ -432,9 +454,25 @@ namespace TSS.Tools
             if (_tasks == null)
                 return;
 
-            var wrapper = new TaskCollection { tasks = _tasks };
-            var json = JsonUtility.ToJson(wrapper);
-            EditorPrefs.SetString(EditorPrefsKey, json);
+            SaveTasks(_tasks);
+        }
+
+        private static void SaveTasks(List<DashboardTask> tasks)
+        {
+            if (tasks == null)
+                return;
+
+            var wrapper = new TaskCollection { tasks = tasks };
+            var json = JsonUtility.ToJson(wrapper, true);
+
+            var directory = Path.GetDirectoryName(TaskStoragePath);
+            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
+
+            File.WriteAllText(TaskStoragePath, json);
+            AssetDatabase.Refresh();
         }
 
         [Serializable]
