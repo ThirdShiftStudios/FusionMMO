@@ -9,6 +9,7 @@ namespace TPSBR
         public int   DefinitionId;
         public byte  Stacks;
         public float RemainingTime;
+        public PlayerRef Source;
 
         public bool IsValid => DefinitionId != 0 && Stacks > 0;
 
@@ -17,6 +18,7 @@ namespace TPSBR
             DefinitionId = 0;
             Stacks = 0;
             RemainingTime = 0f;
+            Source = PlayerRef.None;
         }
     }
 
@@ -29,6 +31,11 @@ namespace TPSBR
 
         private Agent       _agent;
         private AgentSenses _senses;
+        private readonly GameObject[] _activeTickGraphics = new GameObject[MaxBuffSlots];
+        private readonly ushort[] _renderedTickCounters = new ushort[MaxBuffSlots];
+
+        [Networked, Capacity(MaxBuffSlots)]
+        private NetworkArray<ushort> _tickCounters { get; }
 
         public Agent Agent => _agent;
         public AgentSenses Senses => _senses;
@@ -37,6 +44,64 @@ namespace TPSBR
         {
             _agent = GetComponent<Agent>();
             _senses = GetComponent<AgentSenses>();
+        }
+
+        public override void Render()
+        {
+            base.Render();
+
+            for (int i = 0; i < MaxBuffSlots; ++i)
+            {
+                BuffData data = _activeBuffs.Get(i);
+
+                ushort tickCounter = _tickCounters.Get(i);
+
+                if (data.IsValid == false)
+                {
+                    if (_activeTickGraphics[i] != null)
+                    {
+                        ClearTickGraphic(i);
+                    }
+
+                    _renderedTickCounters[i] = 0;
+
+                    continue;
+                }
+
+                BuffDefinition definition = BuffDefinition.Get(data.DefinitionId);
+                if (definition == null)
+                {
+                    if (_activeTickGraphics[i] != null)
+                    {
+                        ClearTickGraphic(i);
+                    }
+
+                    continue;
+                }
+
+                if (definition.OnTickGraphic == null)
+                {
+                    if (_activeTickGraphics[i] != null)
+                    {
+                        ClearTickGraphic(i);
+                    }
+
+                    _renderedTickCounters[i] = tickCounter;
+
+                    continue;
+                }
+
+                if (_renderedTickCounters[i] != tickCounter)
+                {
+                    ClearTickGraphic(i);
+                    SpawnTickGraphic(definition, i);
+                    _renderedTickCounters[i] = tickCounter;
+                }
+                else if (_activeTickGraphics[i] == null && tickCounter > 0)
+                {
+                    SpawnTickGraphic(definition, i);
+                }
+            }
         }
 
         public override void FixedUpdateNetwork()
@@ -87,7 +152,7 @@ namespace TPSBR
             }
         }
 
-        public void ApplyBuff(BuffDefinition definition, int stacks = 1)
+        public void ApplyBuff(BuffDefinition definition, int stacks = 1, PlayerRef source = default)
         {
             if (definition == null || stacks <= 0)
             {
@@ -99,6 +164,11 @@ namespace TPSBR
                 return;
             }
 
+            ApplyBuffInternal(definition, stacks, source);
+        }
+
+        private void ApplyBuffInternal(BuffDefinition definition, int stacks, PlayerRef source)
+        {
             int index = FindBuffIndex(definition.ID);
             if (index < 0)
             {
@@ -113,6 +183,7 @@ namespace TPSBR
                     DefinitionId = definition.ID,
                     Stacks = 0,
                     RemainingTime = 0f,
+                    Source = PlayerRef.None,
                 };
 
                 _activeBuffs.Set(index, newData);
@@ -121,9 +192,11 @@ namespace TPSBR
             BuffData data = _activeBuffs.Get(index);
             if (data.DefinitionId != definition.ID)
             {
+                ClearTickGraphic(index);
                 data.DefinitionId = definition.ID;
                 data.Stacks = 0;
                 data.RemainingTime = 0f;
+                data.Source = PlayerRef.None;
             }
 
             stacks = Mathf.Max(1, stacks);
@@ -159,7 +232,30 @@ namespace TPSBR
                 data.Stacks = (byte)1;
             }
 
+            if (source != PlayerRef.None)
+            {
+                data.Source = source;
+            }
+
             _activeBuffs.Set(index, data);
+
+            IncrementTickCounter(index);
+        }
+
+        public void RegisterTick(BuffDefinition definition)
+        {
+            if (HasStateAuthority == false || definition == null)
+            {
+                return;
+            }
+
+            int index = FindBuffIndex(definition.ID);
+            if (index < 0)
+            {
+                return;
+            }
+
+            IncrementTickCounter(index);
         }
 
         public void RemoveBuff(BuffDefinition definition)
@@ -312,8 +408,59 @@ namespace TPSBR
         private void RemoveBuffInternal(int index, BuffDefinition definition, ref BuffData data)
         {
             definition?.OnRemove(this, ref data);
+            ClearTickGraphic(index);
+            _tickCounters.Set(index, 0);
+            _renderedTickCounters[index] = 0;
             data.Clear();
             _activeBuffs.Set(index, data);
+        }
+
+        private void IncrementTickCounter(int index)
+        {
+            if (index < 0 || index >= MaxBuffSlots)
+            {
+                return;
+            }
+
+            ushort nextValue = (ushort)(_tickCounters.Get(index) + 1);
+            _tickCounters.Set(index, nextValue);
+        }
+
+        private void SpawnTickGraphic(BuffDefinition definition, int index)
+        {
+            if (definition == null || definition.OnTickGraphic == null)
+            {
+                return;
+            }
+
+            if (index < 0 || index >= MaxBuffSlots || _activeTickGraphics[index] != null)
+            {
+                return;
+            }
+
+            IHitTarget hitTarget = GetComponent<IHitTarget>();
+            Transform parent = hitTarget?.AbilityHitPivot;
+            if (parent == null)
+            {
+                return;
+            }
+
+            _activeTickGraphics[index] = Instantiate(definition.OnTickGraphic, parent);
+        }
+
+        private void ClearTickGraphic(int index)
+        {
+            if (index < 0 || index >= MaxBuffSlots)
+            {
+                return;
+            }
+
+            GameObject graphic = _activeTickGraphics[index];
+            if (graphic != null)
+            {
+                Destroy(graphic);
+                _activeTickGraphics[index] = null;
+            }
         }
     }
 }

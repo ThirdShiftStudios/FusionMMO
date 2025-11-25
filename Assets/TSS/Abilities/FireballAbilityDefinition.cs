@@ -100,7 +100,7 @@ namespace TPSBR.Abilities
 
             FireballAbilityLevelData levelData = ResolveUpgradeLevel(staffWeapon);
 
-            runner.Spawn(_projectilePrefab, firePosition, Quaternion.LookRotation(direction), owner.InputAuthority, (spawnRunner, spawnedObject) =>
+                runner.Spawn(_projectilePrefab, firePosition, Quaternion.LookRotation(direction), owner.InputAuthority, (spawnRunner, spawnedObject) =>
             {
                 FireballProjectile projectile = spawnedObject.GetComponent<FireballProjectile>();
 
@@ -110,6 +110,7 @@ namespace TPSBR.Abilities
                 }
 
                 projectile.ConfigureImpactGraphic(_impactGraphic);
+                projectile.ConfigureBuff(BuffDefinition);
                 projectile.ConfigureDamage(levelData.Damage);
                 projectile.Fire(owner, firePosition, initialVelocity, hitMask, staffWeapon.HitType);
             });

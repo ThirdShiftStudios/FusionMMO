@@ -21,6 +21,7 @@ namespace TPSBR
         [SerializeField] private bool _isStackable = true;
         [SerializeField, Min(1)] private int _maxStacks = 1;
         [SerializeField, Min(0f)] private float _duration = 0f;
+        [SerializeField] private GameObject _onTickGraphic;
 
         private static Dictionary<int, BuffDefinition> _definitions;
 
@@ -30,6 +31,7 @@ namespace TPSBR
         public bool IsStackable => _isStackable;
         public int MaxStacks => Mathf.Max(1, _maxStacks);
         public float Duration => Mathf.Max(0f, _duration);
+        public GameObject OnTickGraphic => _onTickGraphic;
 
         public abstract void OnAdd(BuffSystem buffSystem, ref BuffData data, int previousStacks);
         public abstract void OnTick(BuffSystem buffSystem, ref BuffData data, float deltaTime);

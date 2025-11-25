@@ -28,6 +28,7 @@ namespace TPSBR
         private float _damage;
         private float _tickInterval;
         private GameObject _impactGraphic;
+        private BuffDefinition _buffDefinition;
         private readonly HashSet<IHitTarget> _processedTargets = new HashSet<IHitTarget>();
 
         public void Configure(NetworkObject owner, LayerMask hitMask, EHitType hitType, float damage, float duration, float radius, float tickInterval, GameObject impactGraphic)
@@ -48,6 +49,11 @@ namespace TPSBR
                 _lifeTimer = TickTimer.CreateFromSeconds(Runner, resolvedDuration);
                 ResetTickTimer();
             }
+        }
+
+        public void ConfigureBuff(BuffDefinition buffDefinition)
+        {
+            _buffDefinition = buffDefinition;
         }
 
         public override void FixedUpdateNetwork()
@@ -87,6 +93,7 @@ namespace TPSBR
             _damage = _defaultDamage;
             _tickInterval = _defaultTickInterval;
             _impactGraphic = null;
+            _buffDefinition = null;
             _lifeTimer = default;
             _tickTimer = default;
             _processedTargets.Clear();
@@ -163,6 +170,7 @@ namespace TPSBR
                     continue;
                 }
 
+                ApplyBuff(target);
                 SpawnImpact(target);
 
                 Vector3 point = hit.Point;
@@ -220,6 +228,21 @@ namespace TPSBR
             impactInstance.transform.localPosition = Vector3.zero;
             impactInstance.transform.localRotation = Quaternion.identity;
             Context.ObjectCache.ReturnDeferred(impactInstance, 5f);
+        }
+
+        private void ApplyBuff(IHitTarget target)
+        {
+            if (_buffDefinition == null || target == null)
+            {
+                return;
+            }
+
+            if (target is Component component)
+            {
+                var buffSystem = component.GetComponent<BuffSystem>();
+                var source = _owner != null ? _owner.InputAuthority : PlayerRef.None;
+                buffSystem?.ApplyBuff(_buffDefinition, 1, source);
+            }
         }
     }
 }

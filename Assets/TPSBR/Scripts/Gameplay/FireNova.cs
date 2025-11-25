@@ -32,6 +32,7 @@ namespace TPSBR
         private float _burnDamage;
         private FireNovaStats _lastAppliedStats;
         private GameObject _impactGraphic;
+        private BuffDefinition _buffDefinition;
 
         public override void Spawned()
         {
@@ -115,6 +116,7 @@ namespace TPSBR
             _burnDamage = 0f;
             _lastAppliedStats = default;
             _impactGraphic = null;
+            _buffDefinition = null;
 
             if (_scalarRoot != null)
             {
@@ -184,6 +186,11 @@ namespace TPSBR
         public void ConfigureImpactGraphic(GameObject impactGraphic)
         {
             _impactGraphic = impactGraphic;
+        }
+
+        public void ConfigureBuff(BuffDefinition buffDefinition)
+        {
+            _buffDefinition = buffDefinition;
         }
 
         private void ApplyDamage()
@@ -264,6 +271,7 @@ namespace TPSBR
                     continue;
                 }
 
+                ApplyBuff(target);
                 SpawnImpact(target);
 
                 Vector3 point = hit.Point;
@@ -313,6 +321,21 @@ namespace TPSBR
             impactInstance.transform.localPosition = Vector3.zero;
             impactInstance.transform.localRotation = Quaternion.identity;
             Context.ObjectCache.ReturnDeferred(impactInstance, 5f);
+        }
+
+        private void ApplyBuff(IHitTarget target)
+        {
+            if (_buffDefinition == null || target == null)
+            {
+                return;
+            }
+
+            if (target is Component component)
+            {
+                var buffSystem = component.GetComponent<BuffSystem>();
+                var source = _owner != null ? _owner.InputAuthority : PlayerRef.None;
+                buffSystem?.ApplyBuff(_buffDefinition, 1, source);
+            }
         }
 
         private void AdvanceVisualTimer(bool clampToNetworkTime)
