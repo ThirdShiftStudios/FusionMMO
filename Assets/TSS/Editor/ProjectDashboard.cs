@@ -312,9 +312,6 @@ namespace TSS.Tools
                     var task = _tasks[i];
                     bool isSelected = i == _selectedTaskIndex;
 
-                    var content = new GUIContent(
-                        $"{task.name}\nStatus: {task.status}   Priority: {task.priority}");
-
                     var style = new GUIStyle(EditorStyles.helpBox)
                     {
                         alignment = TextAnchor.MiddleLeft,
@@ -329,7 +326,7 @@ namespace TSS.Tools
                         style.normal.textColor = EditorStyles.boldLabel.normal.textColor;
                     }
 
-                    float rowHeight = (EditorGUIUtility.singleLineHeight * 2f + style.padding.vertical + 2f) * 1.05f;
+                    float rowHeight = (EditorGUIUtility.singleLineHeight * 2.4f + style.padding.vertical + 6f);
                     var rowRect = GUILayoutUtility.GetRect(GUIContent.none, style, GUILayout.ExpandWidth(true), GUILayout.Height(rowHeight));
 
                     if (GUI.Button(rowRect, GUIContent.none, style))
@@ -338,7 +335,7 @@ namespace TSS.Tools
                         GUI.FocusControl(null);
                     }
 
-                    GUI.Label(rowRect, content, style);
+                    DrawTaskListRow(rowRect, style, task);
 
                     using (new GUILayout.HorizontalScope())
                     {
@@ -348,6 +345,117 @@ namespace TSS.Tools
                     GUILayout.Space(6f);
                 }
             }
+        }
+
+        private void DrawTaskListRow(Rect rowRect, GUIStyle rowStyle, DashboardTask task)
+        {
+            var innerRect = new Rect(
+                rowRect.x + rowStyle.padding.left,
+                rowRect.y + rowStyle.padding.top,
+                rowRect.width - rowStyle.padding.horizontal,
+                rowRect.height - rowStyle.padding.vertical);
+
+            var iconSize = EditorGUIUtility.singleLineHeight * 1.2f;
+            var iconRect = new Rect(
+                innerRect.x,
+                innerRect.y + (innerRect.height - iconSize) * 0.5f,
+                iconSize,
+                iconSize);
+
+            DrawPriorityIcon(iconRect, task.priority);
+
+            float textStartX = iconRect.xMax + 8f;
+            float availableWidth = innerRect.xMax - textStartX;
+
+            var titleStyle = new GUIStyle(EditorStyles.boldLabel)
+            {
+                fontSize = 13,
+                fontStyle = FontStyle.Bold,
+                wordWrap = false
+            };
+
+            var infoStyle = new GUIStyle(EditorStyles.miniLabel)
+            {
+                fontSize = 11
+            };
+
+            var titleRect = new Rect(textStartX, innerRect.y, availableWidth, EditorGUIUtility.singleLineHeight * 1.3f);
+            GUI.Label(titleRect, task.name, titleStyle);
+
+            var infoRect = new Rect(textStartX, titleRect.yMax + 2f, availableWidth, EditorGUIUtility.singleLineHeight * 1.2f);
+
+            var statusColor = GetStatusColor(task.status);
+            var priorityColor = GetPriorityColor(task.priority);
+
+            var statusContent = new GUIContent($"Status: {task.status}");
+            var priorityContent = new GUIContent($"Priority: {task.priority}");
+
+            float statusWidth = infoStyle.CalcSize(statusContent).x;
+
+            var statusRect = new Rect(infoRect.x, infoRect.y, statusWidth, infoRect.height);
+            var priorityRect = new Rect(statusRect.xMax + 12f, infoRect.y, infoRect.width - statusWidth - 12f, infoRect.height);
+
+            var previousColor = GUI.color;
+            GUI.color = statusColor;
+            GUI.Label(statusRect, statusContent, infoStyle);
+            GUI.color = priorityColor;
+            GUI.Label(priorityRect, priorityContent, infoStyle);
+            GUI.color = previousColor;
+        }
+
+        private void DrawPriorityIcon(Rect rect, TaskPriority priority)
+        {
+            var backgroundColor = GetPriorityColor(priority);
+
+            var previousColor = GUI.color;
+            GUI.color = backgroundColor;
+            GUI.Box(rect, GUIContent.none, EditorStyles.helpBox);
+            GUI.color = previousColor;
+
+            var labelStyle = new GUIStyle(EditorStyles.boldLabel)
+            {
+                alignment = TextAnchor.MiddleCenter,
+                normal = { textColor = Color.white },
+                fontSize = 12,
+            };
+
+            GUI.Label(rect, GetPriorityAbbreviation(priority), labelStyle);
+        }
+
+        private static string GetPriorityAbbreviation(TaskPriority priority)
+        {
+            return priority switch
+            {
+                TaskPriority.Low => "L",
+                TaskPriority.Medium => "M",
+                TaskPriority.High => "H",
+                TaskPriority.Critical => "C",
+                _ => "?"
+            };
+        }
+
+        private static Color GetPriorityColor(TaskPriority priority)
+        {
+            return priority switch
+            {
+                TaskPriority.Low => new Color(0.38f, 0.67f, 0.92f),
+                TaskPriority.Medium => new Color(0.98f, 0.78f, 0.29f),
+                TaskPriority.High => new Color(0.97f, 0.51f, 0.30f),
+                TaskPriority.Critical => new Color(0.86f, 0.19f, 0.22f),
+                _ => Color.gray
+            };
+        }
+
+        private static Color GetStatusColor(TaskStatus status)
+        {
+            return status switch
+            {
+                TaskStatus.NotStarted => new Color(0.63f, 0.63f, 0.63f),
+                TaskStatus.InProgress => new Color(0.36f, 0.70f, 0.96f),
+                TaskStatus.Blocked => new Color(0.89f, 0.34f, 0.34f),
+                TaskStatus.Done => new Color(0.36f, 0.73f, 0.45f),
+                _ => Color.gray
+            };
         }
 
         private void DrawTaskDetails()
