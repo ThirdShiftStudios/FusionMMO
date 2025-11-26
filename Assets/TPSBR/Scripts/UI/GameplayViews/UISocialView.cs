@@ -7,6 +7,12 @@ namespace TPSBR.UI
 {
     public class UISocialView : UIView
     {
+        // PUBLIC MEMBERS
+
+        public override bool NeedsCursor => _menuVisible;
+
+        public bool MenuVisible => _menuVisible;
+
         // PRIVATE MEMBERS
 
         [SerializeField]
@@ -16,9 +22,34 @@ namespace TPSBR.UI
         [SerializeField]
         private TextMeshProUGUI _statusLabel;
 
+        private bool _menuVisible;
+
         private readonly List<UISocialFriendEntry> _spawnedEntries = new List<UISocialFriendEntry>();
         private Callback<GameRichPresenceJoinRequested_t> _richPresenceInviteCallback;
         private Callback<GameLobbyJoinRequested_t> _lobbyInviteCallback;
+
+        // PUBLIC METHODS
+
+        public void Show(bool value, bool force = false)
+        {
+            if (_menuVisible == value && force == false)
+                return;
+
+            _menuVisible = value;
+            CanvasGroup.interactable = value;
+
+            (SceneUI as GameplayUI).RefreshCursorVisibility();
+
+            if (value == true)
+            {
+                RefreshFriends();
+                Animation.PlayForward();
+            }
+            else
+            {
+                Animation.PlayBackward();
+            }
+        }
 
         // UIView INTERFACE
 
@@ -42,7 +73,9 @@ namespace TPSBR.UI
         {
             base.OnOpen();
 
-            RefreshFriends();
+            Animation.SampleStart();
+            _menuVisible = false;
+            CanvasGroup.interactable = false;
         }
 
         // PRIVATE METHODS

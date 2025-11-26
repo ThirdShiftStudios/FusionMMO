@@ -61,14 +61,18 @@ namespace TPSBR.UI
                         _adminConsoleView = Get<UIAdminConsoleView>();
                 }
 
-		protected override void OnActivate()
-		{
-			base.OnActivate();
+                protected override void OnActivate()
+                {
+                        base.OnActivate();
 
-			if (Context.Runner.Mode == Fusion.SimulationModes.Server)
-			{
-				Open<UIDedicatedServerView>();
-			}
+                        if (Context.Runner.Mode == Fusion.SimulationModes.Server)
+                        {
+                                Open<UIDedicatedServerView>();
+                        }
+                        if (_socialView != null && _socialView.IsOpen == false)
+                        {
+                                _socialView.Open();
+                        }
                         _adminConsoleView.Close();
                 }
 
@@ -112,14 +116,7 @@ namespace TPSBR.UI
 
                         if (_socialView != null && Keyboard.current.oKey.wasPressedThisFrame)
                         {
-                                if (_socialView.IsOpen == true)
-                                {
-                                        _socialView.Close();
-                                }
-                                else
-                                {
-                                        _socialView.Open();
-                                }
+                                _socialView.Show(!_socialView.MenuVisible);
                         }
 
                         bool toggleConsole = Keyboard.current.backquoteKey.wasPressedThisFrame;
