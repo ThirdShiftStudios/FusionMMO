@@ -17,7 +17,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &8811413916048197962
 Transform:
   m_ObjectHideFlags: 0
@@ -58,6 +58,9 @@ MeshRenderer:
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 2
   m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -100,7 +103,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &5900183647909001477
 Transform:
   m_ObjectHideFlags: 0
@@ -141,10 +144,13 @@ MeshRenderer:
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 2
   m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 99236eb9f5fc49244ba41699aad416a0, type: 2}
+  - {fileID: 2100000, guid: 1dd004e93ed293746ad91ee2a0f27991, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -197,5 +203,68 @@ Transform:
   m_Children:
   - {fileID: 5900183647909001477}
   - {fileID: 8811413916048197962}
+  - {fileID: 5009424444450152639}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1001 &5308947668047685630
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 4929002099607598798}
+    m_Modifications:
+    - target: {fileID: 875993262173898561, guid: 713bd0af3e7ec9c43801cfd42ddeb095, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -0.1216432
+      objectReference: {fileID: 0}
+    - target: {fileID: 875993262173898561, guid: 713bd0af3e7ec9c43801cfd42ddeb095, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.110203594
+      objectReference: {fileID: 0}
+    - target: {fileID: 875993262173898561, guid: 713bd0af3e7ec9c43801cfd42ddeb095, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -1.0815048
+      objectReference: {fileID: 0}
+    - target: {fileID: 875993262173898561, guid: 713bd0af3e7ec9c43801cfd42ddeb095, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.99742556
+      objectReference: {fileID: 0}
+    - target: {fileID: 875993262173898561, guid: 713bd0af3e7ec9c43801cfd42ddeb095, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0.04449285
+      objectReference: {fileID: 0}
+    - target: {fileID: 875993262173898561, guid: 713bd0af3e7ec9c43801cfd42ddeb095, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0.011919093
+      objectReference: {fileID: 0}
+    - target: {fileID: 875993262173898561, guid: 713bd0af3e7ec9c43801cfd42ddeb095, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0.054960873
+      objectReference: {fileID: 0}
+    - target: {fileID: 875993262173898561, guid: 713bd0af3e7ec9c43801cfd42ddeb095, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 7.516
+      objectReference: {fileID: 0}
+    - target: {fileID: 875993262173898561, guid: 713bd0af3e7ec9c43801cfd42ddeb095, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 16.344
+      objectReference: {fileID: 0}
+    - target: {fileID: 875993262173898561, guid: 713bd0af3e7ec9c43801cfd42ddeb095, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 75.451
+      objectReference: {fileID: 0}
+    - target: {fileID: 1474932997377018614, guid: 713bd0af3e7ec9c43801cfd42ddeb095, type: 3}
+      propertyPath: m_Name
+      value: Fishing Rod Model
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 713bd0af3e7ec9c43801cfd42ddeb095, type: 3}
+--- !u!4 &5009424444450152639 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 875993262173898561, guid: 713bd0af3e7ec9c43801cfd42ddeb095, type: 3}
+  m_PrefabInstance: {fileID: 5308947668047685630}
+  m_PrefabAsset: {fileID: 0}

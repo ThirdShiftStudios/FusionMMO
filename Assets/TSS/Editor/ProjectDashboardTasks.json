@@ -1,22 +1,58 @@
 {
     "tasks": [
         {
-            "name": "Review data definitions",
-            "status": 1,
+            "name": "Add Fishing",
+            "status": 0,
             "priority": 2,
-            "description": "Validate that all data definition assets are configured and have unique IDs."
+            "description": "1. import new animation asset\nhttps://assetstore.unity.com/packages/templates/systems/fishing-for-animal-controller-336542\n\n"
         },
         {
-            "name": "Add new quest entries",
+            "name": "Add Gambling",
+            "status": 0,
+            "priority": 2,
+            "description": "1. Get graphic\n2. Get slot game with ui - use world view"
+        },
+        {
+            "name": "Add new spell idicator",
+            "status": 0,
+            "priority": 2,
+            "description": "1. Import spell indicator pack\nhttps://assetstore.unity.com/packages/vfx/shaders/aim-indicators-with-hit-detection-242438\n\n2. Add for fire storm & for fishing casting"
+        },
+        {
+            "name": "Add new enemies",
+            "status": 0,
+            "priority": 2,
+            "description": "1. Add new enemies from this publisher\nhttps://assetstore.unity.com/publishers/316"
+        },
+        {
+            "name": "Add world events",
+            "status": 0,
+            "priority": 2,
+            "description": "1. Add world events\n1.1 Wyvern\nhttps://assetstore.unity.com/packages/3d/characters/creatures/fantasy-horde-wyverns-15194"
+        },
+        {
+            "name": "Begin dungeon treasure hunt quest",
+            "status": 0,
+            "priority": 3,
+            "description": "In each dungeon run, you will need to find a hidden prop, make it to the boss, kill the boss, \nand exit the dungeon in the alloted time. loot what you can - need to pick locks - itll be a rush"
+        },
+        {
+            "name": "Alchemy - potions n shit",
+            "status": 0,
+            "priority": 3,
+            "description": "Allow people to make their own potions"
+        },
+        {
+            "name": "Mounts",
+            "status": 0,
+            "priority": 2,
+            "description": "Mounts... magic carpet skateboard"
+        },
+        {
+            "name": "Carrier piegeon party invite",
             "status": 0,
             "priority": 1,
-            "description": "Create quest data entries for the upcoming content drop."
-        },
-        {
-            "name": "Cleanup unused assets",
-            "status": 2,
-            "priority": 0,
-            "description": "Remove obsolete prototypes after confirming they are no longer referenced."
+            "description": "player sends a carrier pigeon when an invite to a friend is sent"
         }
     ]
 }
