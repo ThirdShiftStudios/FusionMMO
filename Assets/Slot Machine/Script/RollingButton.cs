@@ -25,20 +25,56 @@ public class RollingButton : MonoBehaviour
         print(matchScore);
     }
 
-    void OnMouseDown()
+    private void Update()
+    {
+        if (Input.GetMouseButtonDown(0) == true)
+        {
+            TryProcessClickFromRaycast();
+        }
+    }
+
+    private void OnMouseDown()
     {
         Debug.Log($"[RollingButton] OnMouseDown on {name}: handlerAssigned={(ExternalPressHandler != null)}, canRoll={(smh != null && smh.canRoll())}, position={transform.position}");
 
-        if (ExternalPressHandler != null && ExternalPressHandler.Invoke() == true)
-            return;
-
-        if (smh != null && smh.canRoll())
-            RollLocal();
+        ProcessPress();
     }
 
     public void PlayRollAnimation()
     {
         RollAnimation();
+    }
+
+    private void TryProcessClickFromRaycast()
+    {
+        var mainCamera = Camera.main;
+
+        if (mainCamera == null)
+            return;
+
+        var ray = mainCamera.ScreenPointToRay(Input.mousePosition);
+
+        if (Physics.Raycast(ray, out var hit, float.MaxValue) == false)
+            return;
+
+        if (hit.collider == null)
+            return;
+
+        if (hit.collider.transform != transform && hit.collider.transform.IsChildOf(transform) == false)
+            return;
+
+        Debug.Log($"[RollingButton] Raycast click on {name}: handlerAssigned={(ExternalPressHandler != null)}, canRoll={(smh != null && smh.canRoll())}, position={hit.point}");
+
+        ProcessPress();
+    }
+
+    private void ProcessPress()
+    {
+        if (ExternalPressHandler != null && ExternalPressHandler.Invoke() == true)
+            return;
+
+        if (smh != null && smh.canRoll())
+            RollLocal();
     }
 
     private void RollLocal()
