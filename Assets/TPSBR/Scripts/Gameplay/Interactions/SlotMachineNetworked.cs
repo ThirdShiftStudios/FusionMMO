@@ -1,11 +1,13 @@
 using TPSBR.UI;
-
+using UnityEngine;
+using UnityEditor;
 namespace TPSBR
 {
-    public sealed class SlotMachine : GamblingMachine
+    public sealed class SlotMachineNetworked : GamblingMachine
     {
         private UISlotMachineView _slotMachineView;
-
+        [SerializeField]
+        private SlotMachine _slotMachine;
         protected override UIGamblingView ResolveView()
         {
             if (_slotMachineView == null && Context != null && Context.UI != null)

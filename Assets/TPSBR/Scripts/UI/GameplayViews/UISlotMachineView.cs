@@ -6,13 +6,13 @@ namespace TPSBR.UI
     {
         public const string ResourcePath = "UI/GameplayViews/UISlotMachineView";
 
-        public SlotMachine SlotMachine { get; private set; }
+        public SlotMachineNetworked SlotMachine { get; private set; }
 
         protected override void OnConfigured(GamblingMachine machine, Agent agent)
         {
             base.OnConfigured(machine, agent);
 
-            SlotMachine = machine as SlotMachine;
+            SlotMachine = machine as SlotMachineNetworked;
         }
 
         protected override void OnCleared(GamblingMachine machine, Agent agent)
