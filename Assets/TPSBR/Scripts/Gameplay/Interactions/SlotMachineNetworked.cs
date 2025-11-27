@@ -79,6 +79,8 @@ namespace TPSBR
         {
             var agent = _activeAgent ?? Context?.ObservedAgent;
 
+            Debug.Log($"[SlotMachineNetworked] RollingButton pressed: button={_rollingButton?.name ?? "<missing>"}, agent={agent?.name ?? "<none>"}, runner={(Runner != null ? Runner.name : "<none>")}, stateAuthority={HasStateAuthority}");
+
             if (agent == null)
                 return false;
 
