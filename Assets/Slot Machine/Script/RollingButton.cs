@@ -27,6 +27,8 @@ public class RollingButton : MonoBehaviour
 
     void OnMouseDown()
     {
+        Debug.Log($"[RollingButton] OnMouseDown on {name}: handlerAssigned={(ExternalPressHandler != null)}, canRoll={(smh != null && smh.canRoll())}, position={transform.position}");
+
         if (ExternalPressHandler != null && ExternalPressHandler.Invoke() == true)
             return;
 
