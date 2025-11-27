@@ -1,21 +1,24 @@
 ﻿using System;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class RollingButton : MonoBehaviour
 {
     public SlotMachine smh;
 
+    public Func<bool> ExternalPressHandler { get; set; }
+
+    private Animator _animator;
+
     private void Start()
     {
         smh.onRollComplete += RollComplete;
+        _animator = GetComponent<Animator>();
     }
 
     private void RollComplete(int[] score, int matchScore)
     {
         string[] objectName = new string[4] { "Cherry", "Pineapple", "Banana", "Orange" };
-        for (int i = 0; i <score.Length; i++)
+        for (int i = 0; i < score.Length; i++)
         {
             print(objectName[i] + " Score : " + score[i]);
         }
@@ -24,10 +27,27 @@ public class RollingButton : MonoBehaviour
 
     void OnMouseDown()
     {
-        if (smh.canRoll())
-        {
-            smh.Roll();
-            GetComponent<Animator>().Play("Rolling");
-        }
+        if (ExternalPressHandler != null && ExternalPressHandler.Invoke() == true)
+            return;
+
+        if (smh != null && smh.canRoll())
+            RollLocal();
+    }
+
+    public void PlayRollAnimation()
+    {
+        RollAnimation();
+    }
+
+    private void RollLocal()
+    {
+        smh.Roll();
+        RollAnimation();
+    }
+
+    private void RollAnimation()
+    {
+        if (_animator != null)
+            _animator.Play("Rolling");
     }
 }
