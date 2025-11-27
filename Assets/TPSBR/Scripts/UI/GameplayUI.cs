@@ -12,8 +12,9 @@ namespace TPSBR.UI
 		private float _gameOverScreenDelay = 3f;
 
 		
-		private UIDeathView _deathView;
-		private UIGameplayInventoryView _inventoryView;
+                private UIDeathView _deathView;
+                private UIGameplayInventoryView _inventoryView;
+                private UISocialView _socialView;
 		
 		private bool _gameOverShown;
 		private Coroutine _gameOverCoroutine;
@@ -55,20 +56,25 @@ namespace TPSBR.UI
 
                         _deathView = Get<UIDeathView>();
                         _inventoryView = Get<UIGameplayInventoryView>();
+                        _socialView = Get<UISocialView>();
                         Get<UIFishingView>();
-            _adminConsoleView = Get<UIAdminConsoleView>();
-        }
+                        _adminConsoleView = Get<UIAdminConsoleView>();
+                }
 
-		protected override void OnActivate()
-		{
-			base.OnActivate();
+                protected override void OnActivate()
+                {
+                        base.OnActivate();
 
-			if (Context.Runner.Mode == Fusion.SimulationModes.Server)
-			{
-				Open<UIDedicatedServerView>();
-			}
-            _adminConsoleView.Close();
-        }
+                        if (Context.Runner.Mode == Fusion.SimulationModes.Server)
+                        {
+                                Open<UIDedicatedServerView>();
+                        }
+                        if (_socialView != null && _socialView.IsOpen == false)
+                        {
+                                _socialView.Open();
+                        }
+                        _adminConsoleView.Close();
+                }
 
 		protected override void OnDeactivate()
 		{
@@ -83,57 +89,62 @@ namespace TPSBR.UI
 			_gameOverShown = false;
 		}
 
-		protected override void OnTickInternal()
-		{
-			base.OnTickInternal();
+                protected override void OnTickInternal()
+                {
+                        base.OnTickInternal();
 
-			if (_gameOverShown == true)
-				return;
-			if (Context.Runner == null || Context.Runner.Exists(Context.GameplayMode.Object) == false)
-				return;
+                        if (_gameOverShown == true)
+                                return;
+                        if (Context.Runner == null || Context.Runner.Exists(Context.GameplayMode.Object) == false)
+                                return;
 
-			var player = Context.NetworkGame.GetPlayer(Context.LocalPlayerRef);
-			if (player == null || player.Statistics.IsAlive == true)
-			{
-				_deathView.Close();
-			}
-			else
-			{
-				_deathView.Open();
-			}
+                        var player = Context.NetworkGame.GetPlayer(Context.LocalPlayerRef);
+                        if (player == null || player.Statistics.IsAlive == true)
+                        {
+                                _deathView.Close();
+                        }
+                        else
+                        {
+                                _deathView.Open();
+                        }
 
-			bool toggleInventory = Keyboard.current.tabKey.wasPressedThisFrame;
-			if (toggleInventory)
-			{
-				_inventoryView.Show(!_inventoryView.MenuVisible);
-			}
+                        bool toggleInventory = Keyboard.current.tabKey.wasPressedThisFrame;
+                        if (toggleInventory)
+                        {
+                                _inventoryView.Show(!_inventoryView.MenuVisible);
+                        }
 
-            bool toggleConsole = Keyboard.current.backquoteKey.wasPressedThisFrame;
-            if (toggleConsole)
-            {
-				if (_adminConsoleView.IsOpen)
-					_adminConsoleView.Close();
-				else
-					_adminConsoleView.Open();
+                        if (_socialView != null && Keyboard.current.oKey.wasPressedThisFrame)
+                        {
+                                _socialView.Show(!_socialView.MenuVisible);
+                        }
 
-            }
+                        bool toggleConsole = Keyboard.current.backquoteKey.wasPressedThisFrame;
+                        if (toggleConsole)
+                        {
+                                if (_adminConsoleView.IsOpen)
+                                        _adminConsoleView.Close();
+                                else
+                                        _adminConsoleView.Open();
 
-            if (Context.GameplayMode.State == GameplayMode.EState.Finished && _gameOverCoroutine == null)
-			{
-				_gameOverCoroutine = StartCoroutine(ShowGameOver_Coroutine(_gameOverScreenDelay));
-			}
-		}
+                        }
 
-		protected override void OnViewOpened(UIView view)
-		{
-			RefreshCursorVisibility();
-		}
+                        if (Context.GameplayMode.State == GameplayMode.EState.Finished && _gameOverCoroutine == null)
+                        {
+                                _gameOverCoroutine = StartCoroutine(ShowGameOver_Coroutine(_gameOverScreenDelay));
+                        }
+                }
 
-		protected override void OnViewClosed(UIView view)
-		{
-			RefreshCursorVisibility();
-		}
-		
+                protected override void OnViewOpened(UIView view)
+                {
+                        RefreshCursorVisibility();
+                }
+
+                protected override void OnViewClosed(UIView view)
+                {
+                        RefreshCursorVisibility();
+                }
+
 		// PRIVATE METHODS
 
                 private void EnsureCraftingStationView()
