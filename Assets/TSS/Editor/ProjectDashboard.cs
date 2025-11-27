@@ -71,6 +71,7 @@ namespace TSS.Tools
         private int _selectedTaskIndex;
         private Vector2 _taskListScroll;
         private Vector2 _taskDetailScroll;
+        private bool _showCompletedTasks = true;
 
         private void OnEnable()
         {
@@ -296,6 +297,7 @@ namespace TSS.Tools
             using (new EditorGUILayout.HorizontalScope(EditorStyles.toolbar))
             {
                 GUILayout.Label("Tasks", EditorStyles.boldLabel);
+                _showCompletedTasks = GUILayout.Toggle(_showCompletedTasks, "Show Completed", EditorStyles.toolbarButton, GUILayout.Width(120));
                 GUILayout.FlexibleSpace();
                 if (GUILayout.Button("New Task", EditorStyles.toolbarButton, GUILayout.Width(80)))
                 {
@@ -303,14 +305,18 @@ namespace TSS.Tools
                 }
             }
 
+            var visibleTasks = GetVisibleTasks().ToList();
+            EnsureValidTaskSelection(visibleTasks);
+
             using (var scrollScope = new EditorGUILayout.ScrollViewScope(_taskListScroll))
             {
                 _taskListScroll = scrollScope.scrollPosition;
 
-                for (int i = 0; i < _tasks.Count; i++)
+                for (int i = 0; i < visibleTasks.Count; i++)
                 {
-                    var task = _tasks[i];
-                    bool isSelected = i == _selectedTaskIndex;
+                    var taskInfo = visibleTasks[i];
+                    var task = taskInfo.task;
+                    bool isSelected = taskInfo.index == _selectedTaskIndex;
 
                     var style = new GUIStyle(EditorStyles.helpBox)
                     {
@@ -331,7 +337,7 @@ namespace TSS.Tools
 
                     if (GUI.Button(rowRect, GUIContent.none, style))
                     {
-                        _selectedTaskIndex = i;
+                        _selectedTaskIndex = taskInfo.index;
                         GUI.FocusControl(null);
                     }
 
@@ -403,6 +409,36 @@ namespace TSS.Tools
             GUI.color = previousColor;
         }
 
+        private IEnumerable<(DashboardTask task, int index)> GetVisibleTasks()
+        {
+            if (_tasks == null)
+                yield break;
+
+            var ordered = _tasks
+                .Select((task, index) => (task, index))
+                .OrderBy(t => t.task.status == TaskStatus.Done ? 1 : 0)
+                .ThenByDescending(t => t.task.priority);
+
+            foreach (var taskInfo in ordered)
+            {
+                if (!_showCompletedTasks && taskInfo.task.status == TaskStatus.Done)
+                    continue;
+
+                yield return taskInfo;
+            }
+        }
+
+        private void EnsureValidTaskSelection(List<(DashboardTask task, int index)> visibleTasks)
+        {
+            if (_tasks == null)
+                return;
+
+            if (_selectedTaskIndex >= 0 && _selectedTaskIndex < _tasks.Count && visibleTasks.Any(t => t.index == _selectedTaskIndex))
+                return;
+
+            _selectedTaskIndex = visibleTasks.Count > 0 ? visibleTasks[0].index : -1;
+        }
+
         private void DrawPriorityIcon(Rect rect, TaskPriority priority)
         {
             var backgroundColor = GetPriorityColor(priority);
@@ -468,15 +504,17 @@ namespace TSS.Tools
                 GUILayout.FlexibleSpace();
             }
 
-            if (_tasks.Count == 0)
+            var visibleTasks = GetVisibleTasks().ToList();
+            EnsureValidTaskSelection(visibleTasks);
+
+            if (_tasks.Count == 0 || visibleTasks.Count == 0)
             {
                 GUILayout.FlexibleSpace();
-                GUILayout.Label("No tasks available.", EditorStyles.centeredGreyMiniLabel);
+                GUILayout.Label(_tasks.Count == 0 ? "No tasks available." : "No tasks to display.", EditorStyles.centeredGreyMiniLabel);
                 GUILayout.FlexibleSpace();
                 return;
             }
 
-            _selectedTaskIndex = Mathf.Clamp(_selectedTaskIndex, 0, _tasks.Count - 1);
             var task = _tasks[_selectedTaskIndex];
 
             using (var scrollScope = new EditorGUILayout.ScrollViewScope(_taskDetailScroll))
