@@ -32,6 +32,7 @@ namespace TPSBR
                         _renderInput.HeavyAttack   |= gamepad.leftShoulder.isPressed;
                         _renderInput.Block         |= gamepad.rightShoulder.isPressed;
                         _renderInput.Interact      |= gamepad.aButton.isPressed;
-		}
-	}
+                        _renderInput.Mount         |= gamepad.yButton.isPressed;
+                }
+        }
 }
