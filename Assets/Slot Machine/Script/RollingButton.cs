@@ -1,5 +1,8 @@
 ﻿using System;
 using UnityEngine;
+#if ENABLE_INPUT_SYSTEM
+using UnityEngine.InputSystem;
+#endif
 
 public class RollingButton : MonoBehaviour
 {
@@ -27,10 +30,14 @@ public class RollingButton : MonoBehaviour
 
     private void Update()
     {
-        if (Input.GetMouseButtonDown(0) == true)
+#if ENABLE_INPUT_SYSTEM
+        var mouse = Mouse.current;
+
+        if (mouse != null && mouse.leftButton.wasPressedThisFrame)
         {
-            TryProcessClickFromRaycast();
+            TryProcessClickFromRaycast(mouse.position.ReadValue());
         }
+#endif
     }
 
     private void OnMouseDown()
@@ -45,14 +52,14 @@ public class RollingButton : MonoBehaviour
         RollAnimation();
     }
 
-    private void TryProcessClickFromRaycast()
+    private void TryProcessClickFromRaycast(Vector2 screenPosition)
     {
         var mainCamera = Camera.main;
 
         if (mainCamera == null)
             return;
 
-        var ray = mainCamera.ScreenPointToRay(Input.mousePosition);
+        var ray = mainCamera.ScreenPointToRay(screenPosition);
 
         if (Physics.Raycast(ray, out var hit, float.MaxValue) == false)
             return;
