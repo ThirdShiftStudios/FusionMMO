@@ -6,12 +6,24 @@ namespace TPSBR
 {
     public sealed class SlotMachineNetworked : GamblingMachine
     {
+        public const int MinWager = 5;
+        public const int MaxWager = 100;
+        public const int WagerStep = 5;
+
+        [Header("Payouts")]
+        [SerializeField]
+        private int _pairMatchPayout = 10;
+        [SerializeField]
+        private int _jackpotPayout = 50;
+
         private UISlotMachineView _slotMachineView;
         [SerializeField]
         private SlotMachine _slotMachine;
 
         private RollingButton _rollingButton;
         private Agent _activeAgent;
+        private NetworkId _activeAgentId;
+        private int _activeWager;
 
         protected override UIGamblingView ResolveView()
         {
@@ -45,11 +57,13 @@ namespace TPSBR
         private void OnEnable()
         {
             AttachRollingButtonHandler();
+            AttachSlotMachineHandlers();
         }
 
         private void OnDisable()
         {
             DetachRollingButtonHandler();
+            DetachSlotMachineHandlers();
         }
 
         private void CacheRollingButton()
@@ -75,47 +89,110 @@ namespace TPSBR
                 _rollingButton.ExternalPressHandler = null;
         }
 
+        private void AttachSlotMachineHandlers()
+        {
+            if (_slotMachine != null)
+            {
+                _slotMachine.onRollComplete -= HandleRollComplete;
+                _slotMachine.onRollComplete += HandleRollComplete;
+            }
+        }
+
+        private void DetachSlotMachineHandlers()
+        {
+            if (_slotMachine != null)
+            {
+                _slotMachine.onRollComplete -= HandleRollComplete;
+            }
+        }
+
         private bool HandleRollingButtonPressed()
         {
             var agent = _activeAgent ?? Context?.ObservedAgent;
 
             Debug.Log($"[SlotMachineNetworked] RollingButton pressed: button={_rollingButton?.name ?? "<missing>"}, agent={agent?.name ?? "<none>"}, runner={(Runner != null ? Runner.name : "<none>")}, stateAuthority={HasStateAuthority}");
 
+            int wager = _slotMachineView != null ? _slotMachineView.CurrentWager : MinWager;
+            return TryRequestRoll(agent, wager);
+        }
+
+        public bool TryStartRoll(Agent agent, int wager)
+        {
+            return TryRequestRoll(agent, wager);
+        }
+
+        public bool CanRoll()
+        {
+            return _slotMachine != null && _slotMachine.canRoll();
+        }
+
+        private bool TryRequestRoll(Agent agent, int wager)
+        {
             if (agent == null)
                 return false;
 
             if (Runner == null)
                 return false;
 
+            if (CanRoll() == false)
+                return false;
+
+            int clampedWager = ClampWager(wager);
+
+            Inventory inventory = agent.Inventory;
+            if (inventory == null)
+                return false;
+
+            if (HasStateAuthority == false && inventory.Gold < clampedWager)
+                return false;
+
             if (HasStateAuthority == true)
             {
-                StartRoll();
+                return StartRoll(agent, clampedWager);
             }
-            else
-            {
-                RPC_RequestRoll(agent.Object.InputAuthority, agent.Object.Id);
-            }
+
+            RPC_RequestRoll(agent.Object.InputAuthority, agent.Object.Id, clampedWager);
+            return true;
+        }
+
+        private bool StartRoll(Agent agent, int wager)
+        {
+            _activeAgentId = default;
+            _activeWager = 0;
+
+            if (_slotMachine == null)
+                return false;
+
+            if (_slotMachine.canRoll() == false)
+                return false;
+
+            Inventory inventory = agent != null ? agent.Inventory : null;
+            if (inventory == null)
+                return false;
+
+            if (inventory.TrySpendGold(wager) == false)
+                return false;
+
+            _activeAgentId = agent.Object != null ? agent.Object.Id : default;
+            _activeWager = wager;
+
+            int seed = UnityEngine.Random.Range(int.MinValue + 1, int.MaxValue);
+
+            RPC_StartRoll(seed, _activeAgentId, wager);
+            _slotMachineView?.RefreshWagerDisplay();
 
             return true;
         }
 
-        private void StartRoll()
-        {
-            if (_slotMachine == null)
-                return;
-
-            if (_slotMachine.canRoll() == false)
-                return;
-
-            int seed = UnityEngine.Random.Range(int.MinValue + 1, int.MaxValue);
-
-            RPC_StartRoll(seed);
-        }
-
         [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority, Channel = RpcChannel.Reliable)]
-        private void RPC_RequestRoll(PlayerRef playerRef, NetworkId agentId)
+        private void RPC_RequestRoll(PlayerRef playerRef, NetworkId agentId, int wager)
         {
+            _ = playerRef;
+
             if (Runner == null)
+                return;
+
+            if (Runner.LocalPlayer != playerRef)
                 return;
 
             Agent agent = null;
@@ -125,22 +202,20 @@ namespace TPSBR
                 agent = agentObject.GetComponent<Agent>();
             }
 
-            if (agent == null && Context != null)
-            {
-                agent = Context.ObservedAgent;
-            }
-
             if (agent == null)
                 return;
 
-            StartRoll();
+            StartRoll(agent, wager);
         }
 
         [Rpc(RpcSources.StateAuthority, RpcTargets.All, Channel = RpcChannel.Reliable)]
-        private void RPC_StartRoll(int randomSeed)
+        private void RPC_StartRoll(int randomSeed, NetworkId agentId, int wager)
         {
             if (_slotMachine == null)
                 return;
+
+            _activeAgentId = agentId;
+            _activeWager = wager;
 
             var previousState = UnityEngine.Random.state;
 
@@ -150,6 +225,65 @@ namespace TPSBR
             _rollingButton?.PlayRollAnimation();
 
             UnityEngine.Random.state = previousState;
+        }
+
+        private void HandleRollComplete(int[] scores, int matchScore)
+        {
+            _ = scores;
+
+            if (HasStateAuthority == false)
+                return;
+
+            if (_activeAgentId == default || _activeWager <= 0)
+                return;
+
+            int payout = CalculatePayout(matchScore, _activeWager);
+            if (payout <= 0)
+            {
+                ResetActiveRoll();
+                return;
+            }
+
+            if (Runner != null && Runner.TryFindObject(_activeAgentId, out NetworkObject agentObject) == true)
+            {
+                var agent = agentObject.GetComponent<Agent>();
+                if (agent != null && agent.Inventory != null)
+                {
+                    agent.Inventory.AddGold(payout);
+                }
+            }
+
+            ResetActiveRoll();
+            _slotMachineView?.RefreshWagerDisplay();
+        }
+
+        private int CalculatePayout(int matchScore, int wager)
+        {
+            if (matchScore < 2)
+                return 0;
+
+            int basePayout = matchScore >= 3 ? _jackpotPayout : _pairMatchPayout;
+            float scale = Mathf.Max(1f, wager / (float)MinWager);
+
+            return Mathf.RoundToInt(basePayout * scale);
+        }
+
+        private int ClampWager(int wager)
+        {
+            int clamped = Mathf.Clamp(wager, MinWager, MaxWager);
+            int remainder = clamped % WagerStep;
+            if (remainder != 0)
+            {
+                clamped -= remainder;
+            }
+
+            return Mathf.Max(MinWager, clamped);
+        }
+
+        private void ResetActiveRoll()
+        {
+            _activeAgentId = default;
+            _activeWager = 0;
         }
     }
 }
