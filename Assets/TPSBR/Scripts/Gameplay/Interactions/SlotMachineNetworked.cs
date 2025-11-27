@@ -77,8 +77,13 @@ namespace TPSBR
 
         private bool HandleRollingButtonPressed()
         {
-            if (_activeAgent == null || Runner == null)
-                return true;
+            var agent = _activeAgent ?? Context?.ObservedAgent;
+
+            if (agent == null)
+                return false;
+
+            if (Runner == null)
+                return false;
 
             if (HasStateAuthority == true)
             {
@@ -86,7 +91,7 @@ namespace TPSBR
             }
             else
             {
-                RPC_RequestRoll(_activeAgent.Object.InputAuthority, _activeAgent.Object.Id);
+                RPC_RequestRoll(agent.Object.InputAuthority, agent.Object.Id);
             }
 
             return true;
@@ -108,7 +113,7 @@ namespace TPSBR
         [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority, Channel = RpcChannel.Reliable)]
         private void RPC_RequestRoll(PlayerRef playerRef, NetworkId agentId)
         {
-            if (Runner == null || Runner.LocalPlayer != playerRef)
+            if (Runner == null)
                 return;
 
             Agent agent = null;
