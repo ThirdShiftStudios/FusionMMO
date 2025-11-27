@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace TPSBR
+namespace FusionMMO.Dungeons
 {
     public class TavernSpawnPoint : MonoBehaviour
     {
