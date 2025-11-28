@@ -22,6 +22,7 @@ namespace TPSBR
         public string MountCode => _definition != null ? _definition.Code : string.Empty;
         public Transform MountCamera => _cameraTransform;
         public Transform RiderAnchor => _riderAnchor;
+        public MountDefinition Definition => _definition;
 
         public bool Interact(in InteractionContext context, out string message)
         {

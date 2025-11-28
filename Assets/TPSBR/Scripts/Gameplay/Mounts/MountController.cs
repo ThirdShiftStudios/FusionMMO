@@ -33,15 +33,8 @@ namespace TPSBR
             _activeMount = mount;
             _activeMount.BeginRide(this);
 
-            if (mount.RiderAnchor != null)
-            {
-                _riderAnchor = mount.RiderAnchor;
-            }
-
-            if (_riderAnchor == null)
-            {
-                _riderAnchor = _defaultRiderAnchor;
-            }
+            Transform preferredAnchor = mount.RiderAnchor != null ? mount.RiderAnchor : _defaultRiderAnchor;
+            _riderAnchor = preferredAnchor != null ? preferredAnchor : mount.transform;
 
             _kccEnabled = _character.CharacterController.enabled;
             _character.CharacterController.enabled = false;
@@ -56,6 +49,8 @@ namespace TPSBR
             {
                 _interactions?.SetInteractionCameraAuthority(_activeMount.MountCamera);
             }
+
+            _character.AnimationController?.SetMounted(true, mount.Definition);
         }
 
         public void Dismount()
@@ -73,6 +68,8 @@ namespace TPSBR
 
             _character.CharacterController.enabled = _kccEnabled;
             _interactions?.ClearInteractionCameraAuthority();
+
+            _character.AnimationController?.SetMounted(false, null);
 
             _riderAnchor = _defaultRiderAnchor;
         }
@@ -111,7 +108,7 @@ namespace TPSBR
             _character = GetComponent<Character>();
             _interactions = GetComponent<Interactions>();
             _mountCollection = GetComponent<MountCollection>();
-            _defaultRiderAnchor = _riderAnchor;
+            _defaultRiderAnchor = _riderAnchor != null ? _riderAnchor : transform;
         }
     }
 }
