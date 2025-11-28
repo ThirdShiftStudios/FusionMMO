@@ -22,7 +22,7 @@ namespace TPSBR.UI
 
         private readonly List<UIAlchemyStationView.InventoryEntry> _items = new List<UIAlchemyStationView.InventoryEntry>();
 
-        public void Initialize(IUIListItemOwner owner, int dropIndex)
+        internal void Initialize(IUIListItemOwner owner, int dropIndex)
         {
             if (_dropSlot != null)
             {
