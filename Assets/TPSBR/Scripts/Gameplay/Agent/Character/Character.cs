@@ -258,6 +258,9 @@ namespace TPSBR
 
         public void OnRender()
         {
+            if (_characterController.IsInFixedUpdate == true)
+                return;
+
             _characterController.ManualRenderUpdate();
             _animationController.ManualRenderUpdate();
 

@@ -2,9 +2,9 @@ namespace TPSBR
 {
     using System;
     using UnityEngine;
-
+    using TSS.Data;
     [CreateAssetMenu(fileName = "MountDefinition", menuName = "TPSBR/Mount Definition", order = 1000)]
-    public sealed class MountDefinition : ScriptableObject
+    public sealed class MountDefinition : ItemDefinition
     {
         [SerializeField] private string _code;
         [SerializeField] private string _displayName;

@@ -31,7 +31,6 @@ namespace TPSBR
         protected override void OnActivate()
         {
             base.OnActivate();
-            SetAnimationCategory(AnimationCategory.FullBody);
         }
 
         protected override void OnInitialize()

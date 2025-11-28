@@ -124,11 +124,11 @@ namespace Fusion.Addons.KCC
 			}
 		}
 
-		/// <summary>
-		/// Returns fixed data for specific tick in history. Default history size is 60 ticks.
-		/// </summary>
-		public KCCData GetHistoryData(int tick)
-		{
+                /// <summary>
+                /// Returns fixed data for specific tick in history. Default history size is 60 ticks.
+                /// </summary>
+                public KCCData GetHistoryData(int tick)
+                {
 			if (tick < 0)
 				return null;
 
@@ -136,14 +136,14 @@ namespace Fusion.Addons.KCC
 			if (data != null && data.Tick == tick)
 				return data;
 
-			return null;
-		}
+                        return null;
+                }
 
-		/// <summary>
-		/// Controls whether update methods are driven by default Fusion methods or called manually using <c>ManualFixedUpdate()</c> and <c>ManualRenderUpdate()</c>.
-		/// </summary>
-		public void SetManualUpdate(bool hasManualUpdate)
-		{
+                /// <summary>
+                /// Controls whether update methods are driven by default Fusion methods or called manually using <c>ManualFixedUpdate()</c> and <c>ManualRenderUpdate()</c>.
+                /// </summary>
+                public void SetManualUpdate(bool hasManualUpdate)
+                {
 			_hasManualUpdate = hasManualUpdate;
 		}
 
