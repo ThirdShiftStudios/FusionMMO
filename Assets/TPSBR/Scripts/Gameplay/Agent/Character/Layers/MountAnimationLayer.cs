@@ -8,14 +8,17 @@ namespace TPSBR
         private RideMountState _ride;
 
         private bool _isMounted;
+        private MountDefinition _definition;
 
         public void SetMounted(bool isMounted, MountDefinition mountDefinition)
         {
-            _ = mountDefinition;
+            _definition = mountDefinition;
             _isMounted = isMounted;
 
             if (_ride == null)
                 return;
+
+            _ride.ApplyDefinition(_definition);
 
             if (isMounted == true)
             {
@@ -32,6 +35,7 @@ namespace TPSBR
             if (_ride != null)
             {
                 _ride.SetAnimationCategory(AnimationCategory.FullBody);
+                _ride.ApplyDefinition(_definition);
             }
         }
 

@@ -11,6 +11,7 @@ namespace TPSBR
         [SerializeField] private Transform _cameraTransform;
         [SerializeField] private Transform _riderAnchor;
         [SerializeField] private LayerMask _blockedLayers;
+        [SerializeField] private MountAnimator _animator;
 
         private MountController _rider;
         private float _currentSpeed;
@@ -23,6 +24,14 @@ namespace TPSBR
         public Transform MountCamera => _cameraTransform;
         public Transform RiderAnchor => _riderAnchor;
         public MountDefinition Definition => _definition;
+
+        private void Awake()
+        {
+            if (_animator == null)
+            {
+                _animator = GetComponent<MountAnimator>();
+            }
+        }
 
         public bool Interact(in InteractionContext context, out string message)
         {
@@ -63,12 +72,25 @@ namespace TPSBR
         {
             _rider = rider;
             _currentSpeed = 0f;
+
+            if (_animator != null)
+            {
+                _animator.ApplyDefinition(_definition);
+                _animator.SetMoveInput(0f);
+                _animator.SetMounted(true);
+            }
         }
 
         public void EndRide()
         {
             _rider = null;
             _currentSpeed = 0f;
+
+            if (_animator != null)
+            {
+                _animator.SetMoveInput(0f);
+                _animator.SetMounted(false);
+            }
         }
 
         public void SimulateMovement(Vector2 move, Vector2 lookDelta, float deltaTime)
@@ -97,6 +119,9 @@ namespace TPSBR
             }
 
             transform.position = nextPosition;
+
+            float normalizedSpeed = _definition.MoveSpeed > 0f ? _currentSpeed / _definition.MoveSpeed : 0f;
+            _animator?.SetMoveInput(normalizedSpeed);
         }
     }
 }
