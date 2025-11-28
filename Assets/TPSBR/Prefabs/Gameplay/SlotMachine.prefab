@@ -123,6 +123,8 @@ MonoBehaviour:
   _hudPivot: {fileID: 981836553}
   _interactionCollider: {fileID: 492655486}
   _cameraTransform: {fileID: 162275869}
+  _pairMatchPayout: 10
+  _jackpotPayout: 50
   _slotMachine: {fileID: 1119322559603345785}
 --- !u!1 &675398922
 GameObject:
@@ -201,13 +203,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 725763863}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.08715578, y: 0, z: 0, w: 0.9961947}
-  m_LocalPosition: {x: 0, y: 1.65, z: -2.1}
+  m_LocalRotation: {x: 0.1827993, y: 0.000000059604638, z: 0.00000006705522, w: 0.98315024}
+  m_LocalPosition: {x: -0, y: 1.678, z: -1.182}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 261973069}
-  m_LocalEulerAnglesHint: {x: -10, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 21.066, y: 0, z: 0}
 --- !u!1001 &4436267781994858658
 PrefabInstance:
   m_ObjectHideFlags: 0
