@@ -94,6 +94,13 @@ namespace TPSBR.UI
             RefreshInventoryItems();
         }
 
+        protected override void OnClose()
+        {
+            base.OnClose();
+
+            TryRestoreSuppressedViews();
+        }
+
         public void BeginSlotDrag(UIListItem slot, PointerEventData eventData)
         {
             _ = eventData;
