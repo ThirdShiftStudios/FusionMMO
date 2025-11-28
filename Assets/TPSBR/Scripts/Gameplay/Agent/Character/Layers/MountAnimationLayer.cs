@@ -1,6 +1,7 @@
 namespace TPSBR
 {
     using Fusion.Addons.AnimationController;
+    using UnityEngine;
 
     public sealed class MountAnimationLayer : AnimationLayer
     {
