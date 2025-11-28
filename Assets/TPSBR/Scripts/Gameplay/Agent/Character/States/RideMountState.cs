@@ -8,11 +8,14 @@ namespace TPSBR
         private AnimationClip _defaultClip;
         private float _defaultSpeed;
         private bool _defaultLooping;
+        private MountDefinition _mountDefinition;
 
         public void ApplyDefinition(MountDefinition definition)
         {
             if (Node == null)
                 return;
+
+            _mountDefinition = definition;
 
             if (definition != null && definition.RiderRideClip != null)
             {
@@ -31,6 +34,8 @@ namespace TPSBR
         protected override void OnActivate()
         {
             base.OnActivate();
+
+            ApplyDefinition(_mountDefinition);
         }
 
         protected override void OnInitialize()
