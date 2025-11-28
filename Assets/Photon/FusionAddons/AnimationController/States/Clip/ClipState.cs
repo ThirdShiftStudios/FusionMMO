@@ -13,9 +13,9 @@ namespace Fusion.Addons.AnimationController
 		public float AnimationTime             => _animationTime;
 		public float InterpolatedAnimationTime => _interpolatedAnimationTime;
 
-		// PROTECTED MEMBERS
+                // PROTECTED MEMBERS
 
-		protected ClipNode Node => _node;
+                public ClipNode Node => _node;
 
 		// PRIVATE MEMBERS
 

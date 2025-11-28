@@ -35,7 +35,6 @@ namespace TPSBR
         {
             if (_ride != null)
             {
-                _ride.SetAnimationCategory(AnimationCategory.FullBody);
                 _ride.ApplyDefinition(_definition);
             }
         }
