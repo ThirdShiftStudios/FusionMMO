@@ -140,15 +140,10 @@ namespace Fusion.Addons.KCC
                 }
 
                 /// <summary>
-                /// Indicates whether the controller is currently executing fixed update logic.
+                /// Controls whether update methods are driven by default Fusion methods or called manually using <c>ManualFixedUpdate()</c> and <c>ManualRenderUpdate()</c>.
                 /// </summary>
-                public bool IsInFixedUpdate => _isInFixedUpdate;
-
-		/// <summary>
-		/// Controls whether update methods are driven by default Fusion methods or called manually using <c>ManualFixedUpdate()</c> and <c>ManualRenderUpdate()</c>.
-		/// </summary>
-		public void SetManualUpdate(bool hasManualUpdate)
-		{
+                public void SetManualUpdate(bool hasManualUpdate)
+                {
 			_hasManualUpdate = hasManualUpdate;
 		}
 
