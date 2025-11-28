@@ -221,11 +221,11 @@ namespace TPSBR.UI
             if (_inventorySlotPrefab == null || _inventorySlotContainer == null)
                 return;
 
-            int existing = _inventorySlots.Count;
-            for (int i = existing; i < required; ++i)
+            while (_inventorySlots.Count < required)
             {
-                UIListItem newSlot = i == 0 ? _inventorySlotPrefab : Instantiate(_inventorySlotPrefab, _inventorySlotContainer);
-                newSlot.InitializeSlot(this, i);
+                UIListItem newSlot = Instantiate(_inventorySlotPrefab, _inventorySlotContainer);
+                newSlot.InitializeSlot(this, _inventorySlots.Count);
+                newSlot.gameObject.SetActive(false);
                 _inventorySlots.Add(newSlot);
             }
         }
