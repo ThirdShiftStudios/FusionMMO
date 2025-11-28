@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Fusion;
 using UnityEngine;
+using TPSBR;
 
 namespace FusionMMO.Dungeons
 {
@@ -20,17 +21,20 @@ namespace FusionMMO.Dungeons
         private NetworkArray<LoadingSceneRequest> _loadingSceneRequests { get; }
 
         private TavernSpawnPoint _spawnPoint;
+        private TavernExit _tavernExit;
         private readonly List<PlayerRef> _pendingTeleportPlayers = new List<PlayerRef>(REQUEST_CAPACITY);
 
         private void Awake()
         {
             CacheSpawnPoint();
+            EnsureExitExists();
         }
 
         public override void Spawned()
         {
             base.Spawned();
             CacheSpawnPoint();
+            EnsureExitExists();
         }
 
         public override void FixedUpdateNetwork()
@@ -88,6 +92,30 @@ namespace FusionMMO.Dungeons
 
             _spawnPoint = GetComponentInChildren<TavernSpawnPoint>();
             return _spawnPoint != null;
+        }
+
+        private bool CacheExit()
+        {
+            if (_tavernExit != null)
+            {
+                return true;
+            }
+
+            _tavernExit = GetComponentInChildren<TavernExit>();
+            return _tavernExit != null;
+        }
+
+        private void EnsureExitExists()
+        {
+            if (CacheExit())
+            {
+                return;
+            }
+
+            var exitObject = new GameObject("TavernExit");
+            exitObject.transform.SetParent(transform, false);
+
+            _tavernExit = exitObject.AddComponent<TavernExit>();
         }
 
         private void TryScheduleTeleport()
