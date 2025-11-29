@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using Fusion;
 using TMPro;
@@ -45,6 +46,7 @@ namespace TPSBR.UI
         private bool _localAgentIsLocalPlayer;
         private int _lastKnownPlayerLevel = -1;
         private bool _isExperienceSubscribed;
+        private readonly List<UIGamblingView> _gamblingViews = new List<UIGamblingView>();
 
         // UIView INTERFACE
 
@@ -166,7 +168,12 @@ namespace TPSBR.UI
             _stamina?.UpdateStamina(_localAgent.Stamina);
             _effects.UpdateEffects(_localAgent);
             _buffs?.UpdateBuffs(_localAgent);
-            _interactions.UpdateInteractions(Context, _localAgent);
+            bool interactionsAreVisible = RefreshInteractionVisibility();
+
+            if (interactionsAreVisible == true)
+            {
+                _interactions.UpdateInteractions(Context, _localAgent);
+            }
             _abilityView?.UpdateAbilities(_localAgent);
             _teamPlayerPanels.UpdateTeamPlayerPanels(Context, _localAgent);
         }
@@ -295,7 +302,7 @@ namespace TPSBR.UI
             _health.SetActive(true);
             _mana?.SetActive(true);
             _stamina?.SetActive(true);
-            _interactions.SetActive(true);
+            RefreshInteractionVisibility();
             _effects.SetActive(true);
             _buffs?.SetAgent(agent);
             _spectatingGroup.SetActive(isLocalPlayer == false);
@@ -454,6 +461,39 @@ namespace TPSBR.UI
             }
 
             _experienceIndicator.ExperienceAdded(amount, provider);
+        }
+
+        private bool RefreshInteractionVisibility()
+        {
+            if (_interactions == null)
+                return false;
+
+            bool shouldShowInteractions = _localAgent != null && HasOpenGamblingView() == false;
+
+            _interactions.SetActive(shouldShowInteractions);
+
+            return shouldShowInteractions;
+        }
+
+        private bool HasOpenGamblingView()
+        {
+            if (SceneUI == null)
+                return false;
+
+            _gamblingViews.Clear();
+            SceneUI.GetAll(_gamblingViews);
+
+            for (int i = 0, count = _gamblingViews.Count; i < count; i++)
+            {
+                UIGamblingView gamblingView = _gamblingViews[i];
+
+                if (gamblingView != null && gamblingView.IsOpen == true)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private void CheckLevelUpEvent()
