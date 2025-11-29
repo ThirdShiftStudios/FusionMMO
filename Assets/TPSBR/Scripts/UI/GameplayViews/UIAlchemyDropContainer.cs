@@ -56,6 +56,9 @@ namespace TPSBR.UI
 
         public void AddItem(UIAlchemyStationView.InventoryEntry entry)
         {
+            if (HasReachedInventoryLimit(entry))
+                return;
+
             _items.Add(entry);
             UpdateDropSlot();
             RefreshList();
@@ -101,6 +104,21 @@ namespace TPSBR.UI
 
             UIListItem listItem = _itemList != null ? _itemList.GetItem(index) : null;
             listItem?.SetItem(entry.Icon, entry.Quantity);
+        }
+
+        private bool HasReachedInventoryLimit(UIAlchemyStationView.InventoryEntry entry)
+        {
+            int usedQuantity = 0;
+
+            for (int i = 0; i < _items.Count; ++i)
+            {
+                if (_items[i].SlotIndex == entry.SlotIndex)
+                {
+                    ++usedQuantity;
+                }
+            }
+
+            return usedQuantity >= entry.Quantity;
         }
     }
 }
