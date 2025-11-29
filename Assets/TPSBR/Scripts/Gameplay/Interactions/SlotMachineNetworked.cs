@@ -24,6 +24,7 @@ namespace TPSBR
         private Agent _activeAgent;
         private NetworkId _activeAgentId;
         private int _activeWager;
+        private Agent _hiddenVisualRootAgent;
 
         protected override UIGamblingView ResolveView()
         {
@@ -40,11 +41,15 @@ namespace TPSBR
             base.OnViewOpened(view, agent);
 
             _activeAgent = agent;
+
+            HideLocalAgentVisuals(agent);
         }
 
         protected override void OnViewClosed(UIGamblingView view)
         {
             base.OnViewClosed(view);
+
+            ShowHiddenAgentVisuals();
 
             _activeAgent = null;
         }
@@ -114,6 +119,33 @@ namespace TPSBR
 
             int wager = _slotMachineView != null ? _slotMachineView.CurrentWager : MinWager;
             return TryRequestRoll(agent, wager);
+        }
+
+        private void HideLocalAgentVisuals(Agent agent)
+        {
+            if (agent == null || agent.HasInputAuthority == false)
+                return;
+
+            if (agent.VisualRoot != null)
+            {
+                ShowHiddenAgentVisuals();
+
+                _hiddenVisualRootAgent = agent;
+                agent.VisualRoot.SetActive(false);
+            }
+        }
+
+        private void ShowHiddenAgentVisuals()
+        {
+            if (_hiddenVisualRootAgent == null)
+                return;
+
+            if (_hiddenVisualRootAgent.VisualRoot != null)
+            {
+                _hiddenVisualRootAgent.VisualRoot.SetActive(true);
+            }
+
+            _hiddenVisualRootAgent = null;
         }
 
         public bool TryStartRoll(Agent agent, int wager)

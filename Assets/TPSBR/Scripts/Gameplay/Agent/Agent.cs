@@ -27,6 +27,7 @@ namespace TPSBR
         public Stats Stats => _stats;
         public Professions Professions => _professions;
         public BuffSystem BuffSystem => _buffSystem;
+        public GameObject VisualRoot => _visualRoot;
         public event Action<SceneRef, SceneSwitchMode, bool, string> SceneSwitchRequestProcessed;
 
         // PRIVATE MEMBERS
