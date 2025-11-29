@@ -105,7 +105,7 @@ namespace TPSBR.UI
             UIAlchemyStationView.InventoryEntry entry = _items[index];
 
             UIListItem listItem = _itemList != null ? _itemList.GetItem(index) : null;
-            listItem?.SetItem(entry.Icon, entry.Quantity);
+            listItem?.SetItem(entry.Icon, 1);
         }
 
         private bool HasReachedInventoryLimit(UIAlchemyStationView.InventoryEntry entry)

@@ -159,7 +159,7 @@ namespace TPSBR.UI
 
             if (container.AddItem(entry))
             {
-                UpdateInventorySlotQuantity(source, container, entry);
+                RefreshInventoryItems();
             }
             UpdateAlchemizeButtonState();
         }
@@ -262,6 +262,11 @@ namespace TPSBR.UI
                         continue;
 
                     if (IsAlchemyRelevant(definition) == false)
+                        continue;
+
+                    int usedQuantity = GetTotalUsedQuantity(i);
+                    int remainingQuantity = slot.Quantity - usedQuantity;
+                    if (remainingQuantity <= 0)
                         continue;
 
                     _inventoryItems.Add(new InventoryEntry
@@ -378,16 +383,6 @@ namespace TPSBR.UI
                 bool highlight = _activeDragCategory != null && container.Category == _activeDragCategory.Value;
                 container.SetHighlight(highlight);
             }
-        }
-
-        private void UpdateInventorySlotQuantity(UIListItem slot, UIAlchemyDropContainer container, InventoryEntry entry)
-        {
-            if (slot == null || container == null)
-                return;
-
-            int remainingQuantity = GetRemainingQuantity(entry);
-
-            slot.SetItem(entry.Icon, remainingQuantity);
         }
 
         private int GetRemainingQuantity(InventoryEntry entry)
