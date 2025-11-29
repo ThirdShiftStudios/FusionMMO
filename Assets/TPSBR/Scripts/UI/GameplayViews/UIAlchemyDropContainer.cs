@@ -54,14 +54,16 @@ namespace TPSBR.UI
             };
         }
 
-        public void AddItem(UIAlchemyStationView.InventoryEntry entry)
+        public bool AddItem(UIAlchemyStationView.InventoryEntry entry)
         {
             if (HasReachedInventoryLimit(entry))
-                return;
+                return false;
 
             _items.Add(entry);
             UpdateDropSlot();
             RefreshList();
+
+            return true;
         }
 
         public void ClearItems()
@@ -119,6 +121,21 @@ namespace TPSBR.UI
             }
 
             return usedQuantity >= entry.Quantity;
+        }
+
+        internal int GetUsedQuantityForSlot(int slotIndex)
+        {
+            int usedQuantity = 0;
+
+            for (int i = 0; i < _items.Count; ++i)
+            {
+                if (_items[i].SlotIndex == slotIndex)
+                {
+                    ++usedQuantity;
+                }
+            }
+
+            return usedQuantity;
         }
     }
 }
