@@ -5,19 +5,27 @@ namespace TPSBR
 {
     public class RideMountState : ClipState
     {
+        [SerializeField]
+        private MountDefinition _mountDefinition;
+
         private AnimationClip _defaultClip;
         private float _defaultSpeed;
         private bool _defaultLooping;
+        private MountDefinition _appliedDefinition;
+
+        public MountDefinition MountDefinition => _mountDefinition;
 
         public void ApplyDefinition(MountDefinition definition)
         {
             if (Node == null)
                 return;
 
-            if (definition != null && definition.RiderRideClip != null)
+            _appliedDefinition = definition != null ? definition : _mountDefinition;
+
+            if (_appliedDefinition != null && _appliedDefinition.RiderRideClip != null)
             {
-                Node.Clip = definition.RiderRideClip;
-                Node.Speed = definition.RiderRideClipSpeed;
+                Node.Clip = _appliedDefinition.RiderRideClip;
+                Node.Speed = _appliedDefinition.RiderRideClipSpeed;
                 Node.IsLooping = true;
             }
             else
@@ -31,6 +39,8 @@ namespace TPSBR
         protected override void OnActivate()
         {
             base.OnActivate();
+
+            ApplyDefinition(_appliedDefinition != null ? _appliedDefinition : _mountDefinition);
         }
 
         protected override void OnInitialize()
@@ -43,6 +53,8 @@ namespace TPSBR
                 _defaultSpeed = Node.Speed;
                 _defaultLooping = Node.IsLooping;
             }
+
+            _appliedDefinition = _mountDefinition;
         }
     }
 }

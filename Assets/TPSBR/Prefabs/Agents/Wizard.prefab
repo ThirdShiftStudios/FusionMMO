@@ -1402,7 +1402,8 @@ MonoBehaviour:
   _avatarMask: {fileID: 0}
   _isAdditive: 0
   _initialWeight: 1
-  _ride: {fileID: 5038939970251048745}
+  _rideStates:
+  - {fileID: 5038939970251048745}
 --- !u!1 &4445815982237870121
 GameObject:
   m_ObjectHideFlags: 0
@@ -1681,7 +1682,8 @@ MonoBehaviour:
   _node:
     Clip: {fileID: 8338263342487987538, guid: 674be5bd2e9a1174a8941d06dad5d2dc, type: 3}
     Speed: 1
-    IsLooping: 0
+    IsLooping: 1
+  _mountDefinition: {fileID: 11400000, guid: 1bee5d2195867bb499df0bab3ab51a6d, type: 2}
 --- !u!1 &6239261266472993028
 GameObject:
   m_ObjectHideFlags: 0
