@@ -77,8 +77,7 @@ namespace TPSBR.UI
         {
             _agent = agent;
             _station = station;
-            ClearContainers();
-            InitializeContainers();
+            ClearContainerItems();
             RefreshInventoryItems();
             UpdateAlchemizeButtonState();
         }
@@ -111,6 +110,7 @@ namespace TPSBR.UI
         {
             EnsureExclusiveOpen();
             base.OnOpen();
+            ClearContainerItems();
             RefreshInventoryItems();
         }
 
@@ -118,7 +118,17 @@ namespace TPSBR.UI
         {
             base.OnClose();
 
+            ClearContainerItems();
+            ResetDragState();
             TryRestoreSuppressedViews();
+        }
+
+        protected new void OnDisable()
+        {
+            ClearContainerItems();
+            ResetDragState();
+
+            base.OnDisable();
         }
 
         public void BeginSlotDrag(UIListItem slot, PointerEventData eventData)
@@ -180,6 +190,7 @@ namespace TPSBR.UI
             if (container.AddItem(entry, entry.Quantity))
             {
                 RefreshInventoryItems();
+                ResetDragState();
             }
             UpdateAlchemizeButtonState();
         }
@@ -188,6 +199,8 @@ namespace TPSBR.UI
         {
             _ = slot;
             _ = eventData;
+
+            ResetDragState();
         }
 
         public void HandleSlotSelected(UIListItem slot)
@@ -222,7 +235,7 @@ namespace TPSBR.UI
 
             _station.RequestAlchemize(_agent, selection.Items);
 
-            ClearContainers();
+            ClearContainerItems();
             RefreshInventoryItems();
             UpdateAlchemizeButtonState();
         }
@@ -394,13 +407,39 @@ namespace TPSBR.UI
 
         private void ClearContainers()
         {
+            ClearContainerItems();
+
+            _allContainers.Clear();
+            _dropSlotLookup.Clear();
+        }
+
+        private void ClearContainerItems()
+        {
+            HashSet<UIAlchemyDropContainer> visited = new HashSet<UIAlchemyDropContainer>();
+            CollectContainer(_floraContainer, visited);
+            CollectContainer(_essenceContainer, visited);
+            CollectContainer(_oreContainer, visited);
+            CollectContainer(_liquidContainer, visited);
+
             foreach (UIAlchemyDropContainer container in _allContainers)
+            {
+                CollectContainer(container, visited);
+            }
+
+            foreach (UIAlchemyDropContainer container in visited)
             {
                 container?.ClearItems();
             }
 
-            _allContainers.Clear();
-            _dropSlotLookup.Clear();
+            UpdateAlchemizeButtonState();
+        }
+
+        private static void CollectContainer(UIAlchemyDropContainer container, HashSet<UIAlchemyDropContainer> visited)
+        {
+            if (container != null)
+            {
+                visited.Add(container);
+            }
         }
 
         private void UpdateContainerHighlights()
@@ -410,6 +449,16 @@ namespace TPSBR.UI
                 bool highlight = _activeDragCategory != null && container.Category == _activeDragCategory.Value;
                 container.SetHighlight(highlight);
             }
+        }
+
+        private void ResetDragState()
+        {
+            _dragSource = null;
+            _activeDragCategory = null;
+
+            SetDragVisible(false);
+            UpdateContainerHighlights();
+            UIInventorySlotListItem.ResetAllDragStates();
         }
 
         private void EnsureDragVisual()
