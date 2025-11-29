@@ -188,6 +188,7 @@ namespace TPSBR.UI
             if (container.AddItem(entry, entry.Quantity))
             {
                 RefreshInventoryItems();
+                ResetDragState();
             }
             UpdateAlchemizeButtonState();
         }
@@ -196,6 +197,8 @@ namespace TPSBR.UI
         {
             _ = slot;
             _ = eventData;
+
+            ResetDragState();
         }
 
         public void HandleSlotSelected(UIListItem slot)
@@ -403,12 +406,31 @@ namespace TPSBR.UI
 
         private void ClearContainerItems()
         {
+            HashSet<UIAlchemyDropContainer> visited = new HashSet<UIAlchemyDropContainer>();
+            CollectContainer(_floraContainer, visited);
+            CollectContainer(_essenceContainer, visited);
+            CollectContainer(_oreContainer, visited);
+            CollectContainer(_liquidContainer, visited);
+
             foreach (UIAlchemyDropContainer container in _allContainers)
+            {
+                CollectContainer(container, visited);
+            }
+
+            foreach (UIAlchemyDropContainer container in visited)
             {
                 container?.ClearItems();
             }
 
             UpdateAlchemizeButtonState();
+        }
+
+        private static void CollectContainer(UIAlchemyDropContainer container, HashSet<UIAlchemyDropContainer> visited)
+        {
+            if (container != null)
+            {
+                visited.Add(container);
+            }
         }
 
         private void UpdateContainerHighlights()
