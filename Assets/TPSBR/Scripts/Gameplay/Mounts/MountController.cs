@@ -15,6 +15,10 @@ namespace TPSBR
         private HorseMount _activeMount;
         private bool _kccEnabled;
         private Transform _defaultRiderAnchor;
+        [SerializeField]
+        [Tooltip("How long to ignore dismount inputs right after mounting.")]
+        private float _dismountInputBlockDuration = 0.25f;
+        private float _dismountInputBlockedUntil;
 
         public bool IsMounted => _activeMount != null;
         public HorseMount ActiveMount => _activeMount;
@@ -32,6 +36,8 @@ namespace TPSBR
 
             _activeMount = mount;
             _activeMount.BeginRide(this);
+
+            _dismountInputBlockedUntil = Time.time + _dismountInputBlockDuration;
 
             Transform preferredAnchor = mount.RiderAnchor != null ? mount.RiderAnchor : _defaultRiderAnchor;
             _riderAnchor = preferredAnchor != null ? preferredAnchor : mount.transform;
@@ -88,12 +94,13 @@ namespace TPSBR
             if (HasStateAuthority == false)
                 return true;
 
-            bool dismountRequested =
+            bool canProcessDismountInput = Time.time >= _dismountInputBlockedUntil;
+            bool dismountRequested = canProcessDismountInput && (
                 _agent.AgentInput.WasActivated(EGameplayInputAction.Mount, input) == true ||
                 _agent.AgentInput.WasActivated(EGameplayInputAction.Interact, input) == true ||
-                _agent.AgentInput.WasActivated(EGameplayInputAction.Jump, input) == true;
+                _agent.AgentInput.WasActivated(EGameplayInputAction.Jump, input) == true);
 
-            if (dismountRequested == false)
+            if (dismountRequested == false && canProcessDismountInput == true)
             {
                 dismountRequested = EGameplayInputAction.Mount.IsActive(input) ||
                                      EGameplayInputAction.Interact.IsActive(input) ||
