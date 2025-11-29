@@ -83,8 +83,7 @@ namespace TPSBR.UI
         {
             _agent = agent;
             _station = station;
-            ClearContainers();
-            InitializeContainers();
+            ClearContainerItems();
             RefreshInventoryItems();
             UpdateAlchemizeButtonState();
         }
@@ -117,6 +116,7 @@ namespace TPSBR.UI
         {
             EnsureExclusiveOpen();
             base.OnOpen();
+            ClearContainerItems();
             RefreshInventoryItems();
         }
 
@@ -124,7 +124,7 @@ namespace TPSBR.UI
         {
             base.OnClose();
 
-            ClearContainers();
+            ClearContainerItems();
             ResetDragState();
             TryRestoreSuppressedViews();
         }
@@ -230,7 +230,7 @@ namespace TPSBR.UI
 
             _station.RequestAlchemize(_agent, selection.FloraSlotIndex, selection.EssenceSlotIndex, selection.OreSlotIndex, selection.LiquidSlotIndex);
 
-            ClearContainers();
+            ClearContainerItems();
             RefreshInventoryItems();
             UpdateAlchemizeButtonState();
         }
@@ -395,13 +395,20 @@ namespace TPSBR.UI
 
         private void ClearContainers()
         {
+            ClearContainerItems();
+
+            _allContainers.Clear();
+            _dropSlotLookup.Clear();
+        }
+
+        private void ClearContainerItems()
+        {
             foreach (UIAlchemyDropContainer container in _allContainers)
             {
                 container?.ClearItems();
             }
 
-            _allContainers.Clear();
-            _dropSlotLookup.Clear();
+            UpdateAlchemizeButtonState();
         }
 
         private void UpdateContainerHighlights()
