@@ -153,6 +153,10 @@ namespace TPSBR.UI
             if (container.Accepts(entry.Definition) == false)
                 return;
 
+            int totalUsedQuantity = GetTotalUsedQuantity(entry.SlotIndex);
+            if (totalUsedQuantity >= entry.Quantity)
+                return;
+
             if (container.AddItem(entry))
             {
                 UpdateInventorySlotQuantity(source, container, entry);
@@ -278,7 +282,8 @@ namespace TPSBR.UI
                 InventoryEntry entry = _inventoryItems[i];
 
                 slot.InitializeSlot(this, i);
-                slot.SetItem(entry.Icon, entry.Quantity);
+                int remainingQuantity = GetRemainingQuantity(entry);
+                slot.SetItem(entry.Icon, remainingQuantity);
                 slot.gameObject.SetActive(true);
                 _slotToItem[slot] = entry;
             }
@@ -380,10 +385,27 @@ namespace TPSBR.UI
             if (slot == null || container == null)
                 return;
 
-            int usedQuantity = container.GetUsedQuantityForSlot(entry.SlotIndex);
-            int remainingQuantity = Mathf.Max(0, entry.Quantity - usedQuantity);
+            int remainingQuantity = GetRemainingQuantity(entry);
 
             slot.SetItem(entry.Icon, remainingQuantity);
+        }
+
+        private int GetRemainingQuantity(InventoryEntry entry)
+        {
+            int totalUsed = GetTotalUsedQuantity(entry.SlotIndex);
+            return Mathf.Max(0, entry.Quantity - totalUsed);
+        }
+
+        private int GetTotalUsedQuantity(int slotIndex)
+        {
+            int usedQuantity = 0;
+
+            for (int i = 0; i < _allContainers.Count; ++i)
+            {
+                usedQuantity += _allContainers[i].GetUsedQuantityForSlot(slotIndex);
+            }
+
+            return usedQuantity;
         }
 
         private void UpdateAlchemizeButtonState()
