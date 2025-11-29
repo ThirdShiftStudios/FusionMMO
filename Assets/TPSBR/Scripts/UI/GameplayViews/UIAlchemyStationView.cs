@@ -48,17 +48,11 @@ namespace TPSBR.UI
 
         private readonly struct AlchemySelection
         {
-            public int FloraSlotIndex { get; }
-            public int EssenceSlotIndex { get; }
-            public int OreSlotIndex { get; }
-            public int LiquidSlotIndex { get; }
+            public IReadOnlyList<InventoryEntry> Items { get; }
 
-            public AlchemySelection(int floraSlotIndex, int essenceSlotIndex, int oreSlotIndex, int liquidSlotIndex)
+            public AlchemySelection(IReadOnlyList<InventoryEntry> items)
             {
-                FloraSlotIndex = floraSlotIndex;
-                EssenceSlotIndex = essenceSlotIndex;
-                OreSlotIndex = oreSlotIndex;
-                LiquidSlotIndex = liquidSlotIndex;
+                Items = items;
             }
         }
 
@@ -226,7 +220,7 @@ namespace TPSBR.UI
             if (TryResolveSelection(out AlchemySelection selection) == false)
                 return;
 
-            _station.RequestAlchemize(_agent, selection.FloraSlotIndex, selection.EssenceSlotIndex, selection.OreSlotIndex, selection.LiquidSlotIndex);
+            _station.RequestAlchemize(_agent, selection.Items);
 
             ClearContainers();
             RefreshInventoryItems();
@@ -237,34 +231,41 @@ namespace TPSBR.UI
         {
             selection = default;
 
-            if (TryGetFirstItem(_floraContainer, out InventoryEntry flora) == false)
+            if (TryCollectContainerItems(_floraContainer, out List<InventoryEntry> flora) == false)
                 return false;
 
-            if (TryGetFirstItem(_essenceContainer, out InventoryEntry essence) == false)
+            if (TryCollectContainerItems(_essenceContainer, out List<InventoryEntry> essence) == false)
                 return false;
 
-            if (TryGetFirstItem(_oreContainer, out InventoryEntry ore) == false)
+            if (TryCollectContainerItems(_oreContainer, out List<InventoryEntry> ore) == false)
                 return false;
 
-            if (TryGetFirstItem(_liquidContainer, out InventoryEntry liquid) == false)
+            if (TryCollectContainerItems(_liquidContainer, out List<InventoryEntry> liquid) == false)
                 return false;
 
-            selection = new AlchemySelection(flora.SlotIndex, essence.SlotIndex, ore.SlotIndex, liquid.SlotIndex);
+            List<InventoryEntry> allItems = new List<InventoryEntry>(flora.Count + essence.Count + ore.Count + liquid.Count);
+            allItems.AddRange(flora);
+            allItems.AddRange(essence);
+            allItems.AddRange(ore);
+            allItems.AddRange(liquid);
+
+            selection = new AlchemySelection(allItems);
             return true;
         }
 
-        private bool TryGetFirstItem(UIAlchemyDropContainer container, out InventoryEntry entry)
+        private bool TryCollectContainerItems(UIAlchemyDropContainer container, out List<InventoryEntry> items)
         {
-            entry = default;
+            items = null;
 
             if (container == null)
                 return false;
 
-            IReadOnlyList<InventoryEntry> items = container.Items;
-            if (items == null || items.Count == 0)
+            IReadOnlyList<InventoryEntry> containerItems = container.Items;
+            if (containerItems == null || containerItems.Count == 0)
                 return false;
 
-            entry = items[0];
+            items = new List<InventoryEntry>(containerItems.Count);
+            items.AddRange(containerItems);
             return true;
         }
 

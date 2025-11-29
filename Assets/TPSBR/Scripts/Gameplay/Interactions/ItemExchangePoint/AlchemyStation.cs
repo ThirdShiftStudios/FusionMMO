@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using Fusion;
 using TPSBR.UI;
 using TSS.Data;
@@ -13,6 +14,20 @@ namespace TPSBR
         private AlchemyDefinition _alchemyDefinition;
 
         private UIAlchemyStationView _alchemyView;
+
+        private readonly struct AlchemyIngredient
+        {
+            public ItemDefinition Definition { get; }
+            public NetworkString<_64> ConfigurationHash { get; }
+            public int Quantity { get; }
+
+            public AlchemyIngredient(ItemDefinition definition, NetworkString<_64> configurationHash, int quantity)
+            {
+                Definition = definition;
+                ConfigurationHash = configurationHash;
+                Quantity = quantity;
+            }
+        }
 
         protected override UIView _uiView => GetAlchemyView();
 
@@ -76,31 +91,40 @@ namespace TPSBR
             return _alchemyView;
         }
 
-        public void RequestAlchemize(Agent agent, int floraSlotIndex, int essenceSlotIndex, int oreSlotIndex, int liquidSlotIndex)
+        public void RequestAlchemize(Agent agent, IReadOnlyList<UIAlchemyStationView.InventoryEntry> items)
         {
             if (agent == null)
                 return;
 
+            if (items == null || items.Count == 0)
+                return;
+
+            List<int> slotIndices = new List<int>(items.Count);
+            for (int i = 0; i < items.Count; ++i)
+            {
+                slotIndices.Add(items[i].SlotIndex);
+            }
+
             if (HasStateAuthority == true)
             {
-                ProcessAlchemy(agent, floraSlotIndex, essenceSlotIndex, oreSlotIndex, liquidSlotIndex);
+                ProcessAlchemy(agent, slotIndices);
             }
             else
             {
-                RPC_RequestAlchemize(agent.Object.InputAuthority, agent.Object.Id, floraSlotIndex, essenceSlotIndex, oreSlotIndex, liquidSlotIndex);
+                RPC_RequestAlchemize(agent.Object.InputAuthority, agent.Object.Id, slotIndices.ToArray());
             }
         }
 
         [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority, Channel = RpcChannel.Reliable)]
-        private void RPC_RequestAlchemize(PlayerRef playerRef, NetworkId agentId, int floraSlotIndex, int essenceSlotIndex, int oreSlotIndex, int liquidSlotIndex)
+        private void RPC_RequestAlchemize(PlayerRef playerRef, NetworkId agentId, int[] slotIndices)
         {
             if (TryResolveAgent(playerRef, agentId, out Agent agent) == false)
                 return;
 
-            ProcessAlchemy(agent, floraSlotIndex, essenceSlotIndex, oreSlotIndex, liquidSlotIndex);
+            ProcessAlchemy(agent, slotIndices);
         }
 
-        private void ProcessAlchemy(Agent agent, int floraSlotIndex, int essenceSlotIndex, int oreSlotIndex, int liquidSlotIndex)
+        private void ProcessAlchemy(Agent agent, IReadOnlyList<int> slotIndices)
         {
             if (HasStateAuthority == false || _alchemyDefinition == null)
                 return;
@@ -109,44 +133,73 @@ namespace TPSBR
             if (inventory == null)
                 return;
 
-            if (TryGetIngredient(inventory, floraSlotIndex, typeof(FloraResource), out InventorySlot floraSlot, out ItemDefinition floraDefinition) == false)
+            if (slotIndices == null || slotIndices.Count == 0)
                 return;
 
-            if (TryGetIngredient(inventory, essenceSlotIndex, typeof(EssenceResource), out InventorySlot essenceSlot, out ItemDefinition essenceDefinition) == false)
-                return;
-
-            if (TryGetIngredient(inventory, oreSlotIndex, typeof(OreResource), out InventorySlot oreSlot, out ItemDefinition oreDefinition) == false)
-                return;
-
-            if (TryGetIngredient(inventory, liquidSlotIndex, typeof(BaseLiquid), out InventorySlot liquidSlot, out ItemDefinition liquidDefinition) == false)
-                return;
-
-            List<InventorySlot> consumed = new List<InventorySlot>(4);
-
-            if (TryConsumeIngredient(inventory, floraSlotIndex, floraDefinition, consumed) == false)
-                return;
-
-            if (TryConsumeIngredient(inventory, essenceSlotIndex, essenceDefinition, consumed) == false)
+            Dictionary<int, int> slotQuantities = new Dictionary<int, int>();
+            for (int i = 0; i < slotIndices.Count; ++i)
             {
-                RestoreConsumed(inventory, consumed);
-                return;
+                int slotIndex = slotIndices[i];
+                if (slotQuantities.ContainsKey(slotIndex) == true)
+                {
+                    ++slotQuantities[slotIndex];
+                }
+                else
+                {
+                    slotQuantities[slotIndex] = 1;
+                }
             }
 
-            if (TryConsumeIngredient(inventory, oreSlotIndex, oreDefinition, consumed) == false)
+            Dictionary<int, AlchemyIngredient> slotIngredients = new Dictionary<int, AlchemyIngredient>(slotQuantities.Count);
+            List<AlchemyIngredient> ingredients = new List<AlchemyIngredient>(slotQuantities.Count);
+            int floraCount = 0;
+            int essenceCount = 0;
+            int oreCount = 0;
+            int liquidCount = 0;
+
+            foreach (KeyValuePair<int, int> slotQuantity in slotQuantities)
             {
-                RestoreConsumed(inventory, consumed);
-                return;
+                if (TryGetIngredient(inventory, slotQuantity.Key, out InventorySlot slot, out ItemDefinition definition, out AlchemyCategory category) == false)
+                    return;
+
+                int quantity = slotQuantity.Value;
+
+                switch (category)
+                {
+                    case AlchemyCategory.Flora:
+                        floraCount += quantity;
+                        break;
+                    case AlchemyCategory.Essence:
+                        essenceCount += quantity;
+                        break;
+                    case AlchemyCategory.Ore:
+                        oreCount += quantity;
+                        break;
+                    case AlchemyCategory.BaseLiquid:
+                        liquidCount += quantity;
+                        break;
+                }
+
+                AlchemyIngredient ingredient = new AlchemyIngredient(definition, slot.ConfigurationHash, quantity);
+                ingredients.Add(ingredient);
+                slotIngredients[slotQuantity.Key] = ingredient;
             }
 
-            if (TryConsumeIngredient(inventory, liquidSlotIndex, liquidDefinition, consumed) == false)
-            {
-                RestoreConsumed(inventory, consumed);
+            if (floraCount == 0 || essenceCount == 0 || oreCount == 0 || liquidCount == 0)
                 return;
+
+            List<InventorySlot> consumed = new List<InventorySlot>(ingredients.Count);
+
+            foreach (KeyValuePair<int, AlchemyIngredient> slotIngredient in slotIngredients)
+            {
+                if (TryConsumeIngredient(inventory, slotIngredient.Key, slotIngredient.Value, consumed) == false)
+                {
+                    RestoreConsumed(inventory, consumed);
+                    return;
+                }
             }
 
-            string configurationHash = GenerateConfigurationHash(floraDefinition, floraSlot.ConfigurationHash,
-                essenceDefinition, essenceSlot.ConfigurationHash, oreDefinition, oreSlot.ConfigurationHash,
-                liquidDefinition, liquidSlot.ConfigurationHash);
+            string configurationHash = GenerateConfigurationHash(ingredients);
 
             NetworkString<_64> networkHash = default;
             if (string.IsNullOrWhiteSpace(configurationHash) == false)
@@ -162,10 +215,11 @@ namespace TPSBR
             }
         }
 
-        private static bool TryGetIngredient(Inventory inventory, int slotIndex, System.Type expectedType, out InventorySlot slot, out ItemDefinition definition)
+        private static bool TryGetIngredient(Inventory inventory, int slotIndex, out InventorySlot slot, out ItemDefinition definition, out AlchemyCategory category)
         {
             slot = default;
             definition = null;
+            category = default;
 
             if (slotIndex < 0 || slotIndex >= inventory.InventorySize)
                 return false;
@@ -175,35 +229,63 @@ namespace TPSBR
                 return false;
 
             definition = ItemDefinition.Get(slot.ItemDefinitionId);
-            if (definition == null || expectedType.IsInstanceOfType(definition) == false)
+            if (definition == null)
                 return false;
+
+            if (definition is FloraResource)
+            {
+                category = AlchemyCategory.Flora;
+            }
+            else if (definition is EssenceResource)
+            {
+                category = AlchemyCategory.Essence;
+            }
+            else if (definition is OreResource)
+            {
+                category = AlchemyCategory.Ore;
+            }
+            else if (definition is BaseLiquid)
+            {
+                category = AlchemyCategory.BaseLiquid;
+            }
+            else
+            {
+                return false;
+            }
 
             return true;
         }
 
-        private static bool TryConsumeIngredient(Inventory inventory, int slotIndex, ItemDefinition expectedDefinition, List<InventorySlot> consumed)
+        private static bool TryConsumeIngredient(Inventory inventory, int slotIndex, AlchemyIngredient ingredient, List<InventorySlot> consumed)
         {
-            if (expectedDefinition == null)
+            if (ingredient.Quantity <= 0)
                 return false;
 
-            if (inventory.TryExtractInventoryItem(slotIndex, 1, out InventorySlot removedSlot) == false)
-                return false;
-
-            if (removedSlot.Quantity == 0)
-                return false;
-
-            if (removedSlot.ItemDefinitionId != expectedDefinition.ID)
+            int remaining = ingredient.Quantity;
+            while (remaining > 0)
             {
-                ItemDefinition removedDefinition = ItemDefinition.Get(removedSlot.ItemDefinitionId);
-                if (removedDefinition != null)
+                byte removeQuantity = (byte)Mathf.Min(byte.MaxValue, remaining);
+                if (inventory.TryExtractInventoryItem(slotIndex, removeQuantity, out InventorySlot removedSlot) == false)
+                    return false;
+
+                if (removedSlot.Quantity == 0)
+                    return false;
+
+                if (removedSlot.ItemDefinitionId != (ingredient.Definition != null ? ingredient.Definition.ID : 0))
                 {
-                    inventory.AddItem(removedDefinition, removedSlot.Quantity, removedSlot.ConfigurationHash);
+                    ItemDefinition removedDefinition = ItemDefinition.Get(removedSlot.ItemDefinitionId);
+                    if (removedDefinition != null)
+                    {
+                        inventory.AddItem(removedDefinition, removedSlot.Quantity, removedSlot.ConfigurationHash);
+                    }
+
+                    return false;
                 }
 
-                return false;
-            }
+                consumed?.Add(removedSlot);
 
-            consumed?.Add(removedSlot);
+                remaining -= removeQuantity;
+            }
             return true;
         }
 
@@ -223,28 +305,38 @@ namespace TPSBR
             }
         }
 
-        private static string GenerateConfigurationHash(ItemDefinition flora, NetworkString<_64> floraConfig,
-            ItemDefinition essence, NetworkString<_64> essenceConfig, ItemDefinition ore, NetworkString<_64> oreConfig,
-            ItemDefinition liquid, NetworkString<_64> liquidConfig)
+        private static string GenerateConfigurationHash(List<AlchemyIngredient> ingredients)
         {
-            string floraPart = BuildPart(flora, floraConfig);
-            string essencePart = BuildPart(essence, essenceConfig);
-            string orePart = BuildPart(ore, oreConfig);
-            string liquidPart = BuildPart(liquid, liquidConfig);
+            if (ingredients == null || ingredients.Count == 0)
+                return string.Empty;
 
-            string combined = string.Join("|", floraPart, essencePart, orePart, liquidPart);
+            var parts = ingredients
+                .Where(ingredient => ingredient.Quantity > 0)
+                .GroupBy(ingredient => new
+                {
+                    ingredient.Definition,
+                    Configuration = ingredient.ConfigurationHash.ToString(),
+                })
+                .Select(group => BuildPart(group.Key.Definition, group.Key.Configuration, group.Sum(ingredient => ingredient.Quantity)))
+                .Where(part => string.IsNullOrWhiteSpace(part) == false)
+                .OrderBy(part => part, System.StringComparer.Ordinal)
+                .ToArray();
+
+            string combined = string.Join("|", parts);
             return Hash128.Compute(combined).ToString();
         }
 
-        private static string BuildPart(ItemDefinition definition, NetworkString<_64> configurationHash)
+        private static string BuildPart(ItemDefinition definition, string configurationHash, int quantity)
         {
-            string config = configurationHash.ToString();
+            if (quantity <= 0)
+                return string.Empty;
+
             string idPart = definition != null ? definition.ID.ToString() : "0";
 
-            if (string.IsNullOrWhiteSpace(config) == true)
-                return idPart;
+            if (string.IsNullOrWhiteSpace(configurationHash) == true)
+                return $"{idPart}x{quantity}";
 
-            return $"{idPart}:{config}";
+            return $"{idPart}:{configurationHash}x{quantity}";
         }
 
         private bool TryResolveAgent(PlayerRef playerRef, NetworkId agentId, out Agent agent)
