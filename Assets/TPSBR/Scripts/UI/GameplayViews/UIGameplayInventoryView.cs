@@ -1084,7 +1084,17 @@ namespace TPSBR.UI
                 if (string.IsNullOrEmpty(title))
                     return false;
 
-                _view.ShowItemTooltip(definition, title, string.Empty, screenPosition);
+                string description = string.Empty;
+                if (definition is AlchemyDefinition)
+                {
+                    string configurationHash = slot.ConfigurationHash.ToString();
+                    if (string.IsNullOrWhiteSpace(configurationHash) == false)
+                    {
+                        description = $"Configuration: {configurationHash}";
+                    }
+                }
+
+                _view.ShowItemTooltip(definition, title, description, screenPosition);
                 return true;
             }
 

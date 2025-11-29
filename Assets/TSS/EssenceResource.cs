@@ -1,6 +1,6 @@
 namespace TPSBR
 {
-    public abstract class EssenceResource : ResourceDefinition
+    public class EssenceResource : ResourceDefinition
     {
         /*
             Umbra Essence – condensed shadow that swirls like smoke inside a crystal vial.

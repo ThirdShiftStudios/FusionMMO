@@ -1,6 +1,6 @@
 namespace TPSBR
 {
-    public abstract class FloraResource : ResourceDefinition
+    public class FloraResource : ResourceDefinition
     {
         /*
             Widow's Bloom – a midnight-blue flower that only opens under a blood moon, its petals humming with latent magic.

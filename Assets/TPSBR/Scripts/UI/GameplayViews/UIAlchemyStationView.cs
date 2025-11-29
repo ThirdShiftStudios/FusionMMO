@@ -45,6 +45,22 @@ namespace TPSBR.UI
             public int SlotIndex;
         }
 
+        private readonly struct AlchemySelection
+        {
+            public int FloraSlotIndex { get; }
+            public int EssenceSlotIndex { get; }
+            public int OreSlotIndex { get; }
+            public int LiquidSlotIndex { get; }
+
+            public AlchemySelection(int floraSlotIndex, int essenceSlotIndex, int oreSlotIndex, int liquidSlotIndex)
+            {
+                FloraSlotIndex = floraSlotIndex;
+                EssenceSlotIndex = essenceSlotIndex;
+                OreSlotIndex = oreSlotIndex;
+                LiquidSlotIndex = liquidSlotIndex;
+            }
+        }
+
         private readonly List<UIListItem> _inventorySlots = new List<UIListItem>();
         private readonly List<InventoryEntry> _inventoryItems = new List<InventoryEntry>();
         private readonly Dictionary<UIListItem, InventoryEntry> _slotToItem = new Dictionary<UIListItem, InventoryEntry>();
@@ -52,11 +68,13 @@ namespace TPSBR.UI
         private readonly List<UIAlchemyDropContainer> _allContainers = new List<UIAlchemyDropContainer>();
 
         private Agent _agent;
+        private AlchemyStation _station;
         private AlchemyCategory? _activeDragCategory;
 
-        public void Configure(Agent agent)
+        public void Configure(Agent agent, AlchemyStation station)
         {
             _agent = agent;
+            _station = station;
             ClearContainers();
             InitializeContainers();
             RefreshInventoryItems();
@@ -169,7 +187,52 @@ namespace TPSBR.UI
 
         private void HandleAlchemizeClicked()
         {
-            Debug.Log("Alchemizatize activated!");
+            if (_agent == null || _station == null)
+                return;
+
+            if (TryResolveSelection(out AlchemySelection selection) == false)
+                return;
+
+            _station.RequestAlchemize(_agent, selection.FloraSlotIndex, selection.EssenceSlotIndex, selection.OreSlotIndex, selection.LiquidSlotIndex);
+
+            ClearContainers();
+            RefreshInventoryItems();
+            UpdateAlchemizeButtonState();
+        }
+
+        private bool TryResolveSelection(out AlchemySelection selection)
+        {
+            selection = default;
+
+            if (TryGetFirstItem(_floraContainer, out InventoryEntry flora) == false)
+                return false;
+
+            if (TryGetFirstItem(_essenceContainer, out InventoryEntry essence) == false)
+                return false;
+
+            if (TryGetFirstItem(_oreContainer, out InventoryEntry ore) == false)
+                return false;
+
+            if (TryGetFirstItem(_liquidContainer, out InventoryEntry liquid) == false)
+                return false;
+
+            selection = new AlchemySelection(flora.SlotIndex, essence.SlotIndex, ore.SlotIndex, liquid.SlotIndex);
+            return true;
+        }
+
+        private bool TryGetFirstItem(UIAlchemyDropContainer container, out InventoryEntry entry)
+        {
+            entry = default;
+
+            if (container == null)
+                return false;
+
+            IReadOnlyList<InventoryEntry> items = container.Items;
+            if (items == null || items.Count == 0)
+                return false;
+
+            entry = items[0];
+            return true;
         }
 
         private void RefreshInventoryItems()
