@@ -89,15 +89,7 @@ namespace TPSBR.UI
             if (_dropSlot == null)
                 return;
 
-            if (_items.Count > 0)
-            {
-                UIAlchemyStationView.InventoryEntry entry = _items[0];
-                _dropSlot.SetItem(entry.Icon, entry.Quantity);
-            }
-            else
-            {
-                _dropSlot.Clear();
-            }
+            _dropSlot.Clear();
         }
 
         private void HandleUpdateItemContent(int index, MonoBehaviour content)
