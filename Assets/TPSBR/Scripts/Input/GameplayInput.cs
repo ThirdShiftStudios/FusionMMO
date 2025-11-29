@@ -12,6 +12,7 @@ namespace TPSBR
                 HeavyAttack       = 4,
                 Block             = 5,
                 FishingPoleToggle = 6,
+                Mount             = 7,
         }
 
 	public struct GameplayInput : INetworkInput
@@ -33,6 +34,7 @@ namespace TPSBR
                 public bool HeavyAttack   { get { return Actions.IsSet(EGameplayInputAction.HeavyAttack);   } set { Actions.Set(EGameplayInputAction.HeavyAttack,   value); } }
                 public bool Block               { get { return Actions.IsSet(EGameplayInputAction.Block);               } set { Actions.Set(EGameplayInputAction.Block,               value); } }
                 public bool FishingPoleToggle    { get { return Actions.IsSet(EGameplayInputAction.FishingPoleToggle);    } set { Actions.Set(EGameplayInputAction.FishingPoleToggle,    value); } }
+                public bool Mount               { get { return Actions.IsSet(EGameplayInputAction.Mount);               } set { Actions.Set(EGameplayInputAction.Mount,               value); } }
         }
 
 	public static class GameplayInputActionExtensions

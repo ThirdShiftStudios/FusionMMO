@@ -29,6 +29,7 @@ namespace TPSBR
         private UpperBodyLayer _upperBody;
         private UseLayer _use;
         private InteractionsAnimationLayer _interactionsLayer;
+        private MountAnimationLayer _mountLayer;
 
         private IInteraction _activeInteraction;
         private ItemBox _activeItemBox;
@@ -72,6 +73,11 @@ namespace TPSBR
             }
 
             return true;
+        }
+
+        public void SetMounted(bool isMounted, MountDefinition mountDefinition)
+        {
+            _mountLayer?.SetMounted(isMounted, mountDefinition);
         }
 
         public bool CanSwitchWeapons(bool force)
@@ -469,6 +475,7 @@ namespace TPSBR
             _upperBody = FindLayer<UpperBodyLayer>();
             _use = FindLayer<UseLayer>();
             _interactionsLayer = FindLayer<InteractionsAnimationLayer>();
+            _mountLayer = FindLayer<MountAnimationLayer>();
 
             _kcc.MoveState = _locomotion.FindState<MoveState>();
         }

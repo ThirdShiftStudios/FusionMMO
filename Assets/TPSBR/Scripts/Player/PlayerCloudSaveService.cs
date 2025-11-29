@@ -31,6 +31,7 @@ namespace TPSBR
         public PlayerCharacterInventorySaveData[] CharacterInventories;
         public PlayerCharacterProfessionSaveData[] CharacterProfessions;
         public PlayerCharacterStatsSaveData[] CharacterStats;
+        public PlayerCharacterMountSaveData[] CharacterMounts;
 
         [FormerlySerializedAs("Stats")] public PlayerStatSaveData[] LegacyStats;
     }
@@ -95,6 +96,14 @@ namespace TPSBR
     }
 
     [Serializable]
+    public class PlayerCharacterMountSaveData
+    {
+        public string CharacterId;
+        public string ActiveMountCode;
+        public string[] OwnedMounts;
+    }
+
+    [Serializable]
     public struct PlayerProfessionSaveData
     {
         public string ProfessionCode;
@@ -119,6 +128,9 @@ namespace TPSBR
         private Stats _trackedStats;
         private Stats _pendingStatsRegistration;
         private Stats _pendingRestoreStats;
+        private MountCollection _trackedMounts;
+        private MountCollection _pendingMountRegistration;
+        private MountCollection _pendingRestoreMounts;
         private PlayerInventorySaveData _cachedData;
         private string _storageKey;
         private bool _isInitialized;
@@ -131,6 +143,7 @@ namespace TPSBR
         private readonly List<PlayerCharacterInventorySaveData> _characterInventories = new List<PlayerCharacterInventorySaveData>();
         private readonly List<PlayerCharacterProfessionSaveData> _characterProfessions = new List<PlayerCharacterProfessionSaveData>();
         private readonly List<PlayerCharacterStatsSaveData> _characterStats = new List<PlayerCharacterStatsSaveData>();
+        private readonly List<PlayerCharacterMountSaveData> _characterMounts = new List<PlayerCharacterMountSaveData>();
         private string _activeCharacterId;
 
         // PUBLIC PROPERTIES
@@ -149,6 +162,7 @@ namespace TPSBR
             var pendingInventory = _pendingRegistration;
             var pendingProfessions = _pendingProfessionsRegistration;
             var pendingStats = _pendingStatsRegistration;
+            var pendingMounts = _pendingMountRegistration;
 
             _trackedInventory = null;
             _pendingRestoreInventory = null;
@@ -156,6 +170,8 @@ namespace TPSBR
             _pendingRestoreProfessions = null;
             _trackedStats = null;
             _pendingRestoreStats = null;
+            _trackedMounts = null;
+            _pendingRestoreMounts = null;
             _pendingSave = false;
             _suppressTracking = false;
             _cachedData = null;
@@ -167,6 +183,7 @@ namespace TPSBR
             _characterInventories.Clear();
             _characterProfessions.Clear();
             _characterStats.Clear();
+            _characterMounts.Clear();
             _activeCharacterId = null;
             _isInitialized = false;
 
@@ -176,6 +193,8 @@ namespace TPSBR
             _pendingRestoreProfessions = pendingProfessions;
             _pendingStatsRegistration = pendingStats;
             _pendingRestoreStats = pendingStats;
+            _pendingMountRegistration = pendingMounts;
+            _pendingRestoreMounts = pendingMounts;
 
             SubscribePlayerDataEvents();
             _ = InitializeAsync();
@@ -217,6 +236,7 @@ namespace TPSBR
             DetachInventory();
             DetachProfessions();
             DetachStats();
+            DetachMounts();
 
             _storageKey = null;
             _cachedData = null;
@@ -226,6 +246,8 @@ namespace TPSBR
             _pendingRestoreProfessions = null;
             _pendingStatsRegistration = null;
             _pendingRestoreStats = null;
+            _pendingMountRegistration = null;
+            _pendingRestoreMounts = null;
             _saveTask = null;
             _isInitialized = false;
             _pendingSave = false;
@@ -392,6 +414,44 @@ namespace TPSBR
             return restored;
         }
 
+        public void RegisterMountCollection(MountCollection mountCollection)
+        {
+            if (IsMountCollectionEligible(mountCollection) == false)
+                return;
+
+            if (_isInitialized == false)
+            {
+                _pendingMountRegistration = mountCollection;
+                return;
+            }
+
+            AttachMounts(mountCollection);
+        }
+
+        public bool RegisterMountCollectionAndRestore(MountCollection mountCollection)
+        {
+            if (IsMountCollectionEligible(mountCollection) == false)
+                return false;
+
+            if (_isInitialized == false)
+            {
+                _pendingMountRegistration = mountCollection;
+                _pendingRestoreMounts = mountCollection;
+                return false;
+            }
+
+            AttachMounts(mountCollection);
+
+            bool restored = TryRestoreMounts(mountCollection);
+
+            if (restored == true && ReferenceEquals(_pendingRestoreMounts, mountCollection) == true)
+            {
+                _pendingRestoreMounts = null;
+            }
+
+            return restored;
+        }
+
         public void UnregisterStats(Stats stats)
         {
             if (_pendingStatsRegistration == stats)
@@ -408,6 +468,24 @@ namespace TPSBR
                 return;
 
             DetachStats();
+        }
+
+        public void UnregisterMountCollection(MountCollection mountCollection)
+        {
+            if (_pendingMountRegistration == mountCollection)
+            {
+                _pendingMountRegistration = null;
+            }
+
+            if (_pendingRestoreMounts == mountCollection)
+            {
+                _pendingRestoreMounts = null;
+            }
+
+            if (_trackedMounts != mountCollection)
+                return;
+
+            DetachMounts();
         }
 
         public IReadOnlyList<PlayerCharacterSaveData> GetCharacters()
@@ -635,6 +713,41 @@ namespace TPSBR
             return hasStatData;
         }
 
+        private bool TryRestoreMounts(MountCollection mountCollection)
+        {
+            if (mountCollection == null || mountCollection.HasStateAuthority == false)
+                return false;
+
+            string characterId = _activeCharacterId;
+            PlayerCharacterMountSaveData mountData = null;
+
+            if (characterId.HasValue() == true)
+            {
+                mountData = GetCharacterMountData(characterId);
+
+                if (mountData == null)
+                {
+                    EnsureCharacterMountData(characterId);
+                }
+            }
+
+            bool hasMountData = mountData != null && mountData.OwnedMounts != null && mountData.OwnedMounts.Length > 0;
+
+            if (hasMountData == true)
+            {
+                _suppressTracking = true;
+                mountCollection.ApplySaveData(mountData);
+                _suppressTracking = false;
+            }
+
+            if (ReferenceEquals(_pendingRestoreMounts, mountCollection) == true)
+            {
+                _pendingRestoreMounts = null;
+            }
+
+            return hasMountData;
+        }
+
         // PRIVATE METHODS
 
         private bool IsInventoryEligible(Inventory inventory)
@@ -693,6 +806,21 @@ namespace TPSBR
             return runner.LocalPlayer == stats.Object.InputAuthority;
         }
 
+        private bool IsMountCollectionEligible(MountCollection mountCollection)
+        {
+            if (mountCollection == null)
+                return false;
+
+            if (mountCollection.Object == null)
+                return false;
+
+            var runner = mountCollection.Runner;
+            if (runner == null)
+                return false;
+
+            return runner.LocalPlayer == mountCollection.Object.InputAuthority;
+        }
+
         private void AttachInventory(Inventory inventory)
         {
             if (_trackedInventory == inventory)
@@ -741,6 +869,29 @@ namespace TPSBR
 
             _trackedProfessions.ProfessionChanged -= OnProfessionChanged;
             _trackedProfessions = null;
+        }
+
+        private void AttachMounts(MountCollection mountCollection)
+        {
+            if (_trackedMounts == mountCollection)
+                return;
+
+            DetachMounts();
+
+            _trackedMounts = mountCollection;
+            if (_trackedMounts != null)
+            {
+                _trackedMounts.MountsChanged += OnMountsChanged;
+            }
+        }
+
+        private void DetachMounts()
+        {
+            if (_trackedMounts == null)
+                return;
+
+            _trackedMounts.MountsChanged -= OnMountsChanged;
+            _trackedMounts = null;
         }
 
         private void AttachStats(Stats stats)
@@ -957,6 +1108,69 @@ namespace TPSBR
             }
 
             _characterStats.Add(snapshot);
+        }
+
+        private PlayerCharacterMountSaveData GetCharacterMountData(string characterId)
+        {
+            if (string.IsNullOrEmpty(characterId) == true)
+                return null;
+
+            for (int i = 0; i < _characterMounts.Count; i++)
+            {
+                var mounts = _characterMounts[i];
+                if (mounts == null)
+                    continue;
+
+                if (string.Equals(mounts.CharacterId, characterId, StringComparison.Ordinal) == true)
+                {
+                    return mounts;
+                }
+            }
+
+            return null;
+        }
+
+        private PlayerCharacterMountSaveData EnsureCharacterMountData(string characterId, bool markDirty = true)
+        {
+            if (string.IsNullOrEmpty(characterId) == true)
+                return null;
+
+            var mounts = GetCharacterMountData(characterId);
+            if (mounts != null)
+                return mounts;
+
+            mounts = new PlayerCharacterMountSaveData
+            {
+                CharacterId = characterId,
+                ActiveMountCode = null,
+                OwnedMounts = Array.Empty<string>(),
+            };
+
+            _characterMounts.Add(mounts);
+            if (markDirty == true)
+            {
+                MarkDirty();
+            }
+
+            return mounts;
+        }
+
+        private void StoreCharacterMountSnapshot(PlayerCharacterMountSaveData snapshot)
+        {
+            if (snapshot == null || snapshot.CharacterId.HasValue() == false)
+                return;
+
+            for (int i = 0; i < _characterMounts.Count; i++)
+            {
+                var mounts = _characterMounts[i];
+                if (mounts != null && string.Equals(mounts.CharacterId, snapshot.CharacterId, StringComparison.Ordinal) == true)
+                {
+                    _characterMounts[i] = snapshot;
+                    return;
+                }
+            }
+
+            _characterMounts.Add(snapshot);
         }
 
         private void ResolveStorageKey()
@@ -1279,6 +1493,50 @@ namespace TPSBR
                     }
                 }
             }
+
+            if (_pendingMountRegistration != null)
+            {
+                var mountCollection = _pendingMountRegistration;
+                _pendingMountRegistration = null;
+
+                if (IsMountCollectionEligible(mountCollection) == true)
+                {
+                    AttachMounts(mountCollection);
+
+                    if (_cachedData != null)
+                    {
+                        bool restored = TryRestoreMounts(mountCollection);
+                        if (restored == false)
+                        {
+                            _pendingRestoreMounts = mountCollection;
+                        }
+                    }
+                }
+            }
+
+            if (_pendingRestoreMounts != null)
+            {
+                var mountCollection = _pendingRestoreMounts;
+
+                if (IsMountCollectionEligible(mountCollection) == false)
+                {
+                    _pendingRestoreMounts = null;
+                }
+                else if (_cachedData == null)
+                {
+                    if (_initialLoadComplete == true)
+                    {
+                        _pendingRestoreMounts = null;
+                    }
+                }
+                else if (mountCollection.HasStateAuthority == true)
+                {
+                    if (TryRestoreMounts(mountCollection) == true)
+                    {
+                        _pendingRestoreMounts = null;
+                    }
+                }
+            }
         }
 
         private void OnItemSlotChanged(int index, InventorySlot slot)
@@ -1318,6 +1576,20 @@ namespace TPSBR
                 return;
 
             if (ReferenceEquals(_pendingRestoreInventory, _trackedInventory) == true)
+                return;
+
+            _pendingSave = true;
+        }
+
+        private void OnMountsChanged()
+        {
+            if (_suppressTracking == true)
+                return;
+
+            if (_trackedMounts == null)
+                return;
+
+            if (ReferenceEquals(_pendingRestoreMounts, _trackedMounts) == true)
                 return;
 
             _pendingSave = true;
@@ -1408,6 +1680,12 @@ namespace TPSBR
                 }
             }
 
+            PlayerCharacterMountSaveData mountSnapshot = null;
+            if (_trackedMounts != null && _trackedMounts.HasStateAuthority == true && _activeCharacterId.HasValue() == true)
+            {
+                mountSnapshot = _trackedMounts.CreateSaveData(_activeCharacterId);
+            }
+
             if (inventorySnapshot != null && inventorySnapshot.CharacterId.HasValue() == true)
             {
                 StoreCharacterInventorySnapshot(inventorySnapshot);
@@ -1423,11 +1701,17 @@ namespace TPSBR
                 StoreCharacterStatsSnapshot(statsSnapshot);
             }
 
+            if (mountSnapshot != null)
+            {
+                StoreCharacterMountSnapshot(mountSnapshot);
+            }
+
             if (_activeCharacterId.HasValue() == true)
             {
                 EnsureCharacterInventoryData(_activeCharacterId, false);
                 EnsureCharacterProfessionData(_activeCharacterId, false);
                 EnsureCharacterStatsData(_activeCharacterId, false);
+                EnsureCharacterMountData(_activeCharacterId, false);
             }
 
             ApplyCharacterDataToCachedData();
@@ -1517,6 +1801,15 @@ namespace TPSBR
             else
             {
                 _cachedData.CharacterStats = null;
+            }
+
+            if (_characterMounts.Count > 0)
+            {
+                _cachedData.CharacterMounts = _characterMounts.ToArray();
+            }
+            else
+            {
+                _cachedData.CharacterMounts = null;
             }
 
             _cachedData.LegacyStats = null;
@@ -1660,6 +1953,7 @@ namespace TPSBR
             _characterInventories.Clear();
             _characterProfessions.Clear();
             _characterStats.Clear();
+            _characterMounts.Clear();
             _activeCharacterId = null;
 
             if (_cachedData != null)
@@ -1692,6 +1986,20 @@ namespace TPSBR
                             continue;
 
                         _characterInventories.Add(inventory);
+                    }
+                }
+                if (_cachedData.CharacterMounts != null && _cachedData.CharacterMounts.Length > 0)
+                {
+                    for (int i = 0; i < _cachedData.CharacterMounts.Length; i++)
+                    {
+                        var mounts = _cachedData.CharacterMounts[i];
+                        if (mounts == null)
+                            continue;
+
+                        if (string.IsNullOrEmpty(mounts.CharacterId) == true)
+                            continue;
+
+                        _characterMounts.Add(mounts);
                     }
                 }
                 else if ((_cachedData.InventorySlots != null && _cachedData.InventorySlots.Length > 0) ||

@@ -62,6 +62,7 @@ namespace TPSBR
         private EquipmentVisualsManager _equipmentVisuals;
         private AgentNameplate _agentNameplate;
         private BuffSystem _buffSystem;
+        private MountController _mountController;
 
         // NetworkBehaviour INTERFACE
 
@@ -117,6 +118,8 @@ namespace TPSBR
 
         public override void Despawned(NetworkRunner runner, bool hasState)
         {
+            _mountController?.Dismount();
+
             if (_inventory != null) _inventory.OnDespawned();
             if (_health != null) _health.OnDespawned();
             if (_mana != null)  _mana.OnDespawned();
@@ -188,6 +191,11 @@ namespace TPSBR
             }
 
             _character.OnRender();
+
+            if (_mountController != null && _mountController.IsMounted == true)
+            {
+                _mountController.SyncRiderTransform();
+            }
         }
 
         public bool RequestSceneSwitch(SceneRef sceneRef, SceneSwitchMode mode, LocalPhysicsMode localPhysicsMode, bool setActiveOnLoad)
@@ -334,6 +342,7 @@ namespace TPSBR
             _stats = GetComponent<Stats>();
             _professions = GetComponent<Professions>();
             _buffSystem = GetComponent<BuffSystem>();
+            _mountController = GetComponent<MountController>();
 
             _equipmentVisuals = GetComponentInChildren<EquipmentVisualsManager>();
             _agentNameplate = GetComponentInChildren<AgentNameplate>();
@@ -353,6 +362,12 @@ namespace TPSBR
                 input = _agentInput.FixedInput;
             }
 
+
+            if (_mountController != null && _mountController.ProcessFixedInput(input, Runner.DeltaTime) == true)
+            {
+                _agentInput.SetFixedInput(input, false);
+                return;
+            }
 
             if (_agentInput.WasActivated(EGameplayInputAction.Jump, input) == true &&
                 _character.AnimationController.CanJump() == true)

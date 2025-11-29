@@ -36,9 +36,10 @@ namespace TPSBR
 
 			_renderInput.MoveDirection     = moveDirection;
 			_renderInput.LookRotationDelta = lookRotationDelta;
-			_renderInput.Jump              = _mobileInputView.Jump;
-			_renderInput.Attack            = _mobileInputView.Fire;
-			_renderInput.Interact          = _mobileInputView.Interact;
-		}
-	}
+                        _renderInput.Jump              = _mobileInputView.Jump;
+                        _renderInput.Attack            = _mobileInputView.Fire;
+                        _renderInput.Interact          = _mobileInputView.Interact;
+                        _renderInput.Mount             = false;
+                }
+        }
 }
