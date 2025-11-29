@@ -85,9 +85,22 @@ namespace TPSBR
             if (_activeMount == null)
                 return false;
 
-            if (_agent.AgentInput.WasActivated(EGameplayInputAction.Mount, input) == true ||
+            if (HasStateAuthority == false)
+                return true;
+
+            bool dismountRequested =
+                _agent.AgentInput.WasActivated(EGameplayInputAction.Mount, input) == true ||
                 _agent.AgentInput.WasActivated(EGameplayInputAction.Interact, input) == true ||
-                _agent.AgentInput.WasActivated(EGameplayInputAction.Jump, input) == true)
+                _agent.AgentInput.WasActivated(EGameplayInputAction.Jump, input) == true;
+
+            if (dismountRequested == false)
+            {
+                dismountRequested = EGameplayInputAction.Mount.IsActive(input) ||
+                                     EGameplayInputAction.Interact.IsActive(input) ||
+                                     EGameplayInputAction.Jump.IsActive(input);
+            }
+
+            if (dismountRequested == true)
             {
                 Dismount();
                 return true;
