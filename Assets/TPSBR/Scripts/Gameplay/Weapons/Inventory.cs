@@ -119,6 +119,7 @@ namespace TPSBR
         public const int BAG_SLOT_3_INDEX = byte.MaxValue - 9;
         public const int BAG_SLOT_4_INDEX = byte.MaxValue - 10;
         public const int BAG_SLOT_5_INDEX = byte.MaxValue - 11;
+        public const int MOUNT_SLOT_INDEX = byte.MaxValue - 12;
         public const int HOTBAR_CAPACITY = 7;
         public const int HOTBAR_VISIBLE_SLOTS = HOTBAR_CAPACITY - 1;
         public const int HOTBAR_UNARMED_SLOT = 0;
@@ -160,6 +161,7 @@ namespace TPSBR
         [Networked] private InventorySlot _upperBodySlot { get; set; }
         [Networked] private InventorySlot _lowerBodySlot { get; set; }
         [Networked] private InventorySlot _pipeSlot { get; set; }
+        [Networked] private InventorySlot _mountSlot { get; set; }
         [Networked] private byte _currentWeaponSlot { get; set; }
 
         [Networked]
@@ -194,6 +196,7 @@ namespace TPSBR
         private InventorySlot _localUpperBodySlot;
         private InventorySlot _localLowerBodySlot;
         private InventorySlot _localPipeSlot;
+        private InventorySlot _localMountSlot;
         private Pickaxe _localPickaxe;
         private bool _localPickaxeEquipped;
         private byte _weaponSlotBeforePickaxe = byte.MaxValue;
@@ -219,6 +222,7 @@ namespace TPSBR
             UpperBody,
             LowerBody,
             Pipe,
+            Mount,
         }
         private FishingLifecycleState _fishingLifecycleState = FishingLifecycleState.Inactive;
         private bool _isHookSetSuccessZoneActive;
@@ -439,6 +443,14 @@ namespace TPSBR
                 ConfigurationHash = string.IsNullOrEmpty(pipeConfigurationHash) == false ? pipeConfigurationHash : null
             };
 
+            string mountConfigurationHash = _mountSlot.ConfigurationHash.ToString();
+            data.MountSlot = new PlayerInventoryItemData
+            {
+                ItemDefinitionId = _mountSlot.ItemDefinitionId,
+                Quantity = _mountSlot.Quantity,
+                ConfigurationHash = string.IsNullOrEmpty(mountConfigurationHash) == false ? mountConfigurationHash : null,
+            };
+
             data.BagSlots = new PlayerInventoryItemData[BAG_SLOT_COUNT];
             for (int i = 0; i < BAG_SLOT_COUNT; i++)
             {
@@ -621,6 +633,18 @@ namespace TPSBR
                 RefreshPipeSlot();
             }
 
+            if (data.MountSlot.ItemDefinitionId != 0 && data.MountSlot.Quantity != 0)
+            {
+                NetworkString<_64> mountHash = default;
+                if (string.IsNullOrEmpty(data.MountSlot.ConfigurationHash) == false)
+                {
+                    mountHash = data.MountSlot.ConfigurationHash;
+                }
+
+                _mountSlot = new InventorySlot(data.MountSlot.ItemDefinitionId, data.MountSlot.Quantity, mountHash);
+                RefreshMountSlot();
+            }
+
             if (data.HotbarSlots != null)
             {
                 int count = Mathf.Min(data.HotbarSlots.Length, _hotbar.Length);
@@ -755,6 +779,7 @@ namespace TPSBR
             SendSpecialSlot(SpecialRestoreSlot.UpperBody, data.UpperBodySlot);
             SendSpecialSlot(SpecialRestoreSlot.LowerBody, data.LowerBodySlot);
             SendSpecialSlot(SpecialRestoreSlot.Pipe, data.PipeSlot);
+            SendSpecialSlot(SpecialRestoreSlot.Mount, data.MountSlot);
 
             var hotbarSlots = data.HotbarSlots;
             if (hotbarSlots != null)
@@ -824,6 +849,9 @@ namespace TPSBR
             if (index == PIPE_SLOT_INDEX)
                 return _pipeSlot;
 
+            if (index == MOUNT_SLOT_INDEX)
+                return _mountSlot;
+
             if (TryGetHotbarSlotFromInventoryIndex(index, out int hotbarSlot) == true)
                 return _hotbarItems[hotbarSlot];
 
@@ -850,6 +878,13 @@ namespace TPSBR
             {
                 index = PIPE_SLOT_INDEX;
                 slot = _pipeSlot;
+                return true;
+            }
+
+            if (_mountSlot.IsEmpty == false && _mountSlot.ItemDefinitionId == definition.ID && _mountSlot.Quantity > 0)
+            {
+                index = MOUNT_SLOT_INDEX;
+                slot = _mountSlot;
                 return true;
             }
 
@@ -1025,6 +1060,7 @@ namespace TPSBR
                 ESlotCategory.UpperBody => _upperBodySlot,
                 ESlotCategory.LowerBody => _lowerBodySlot,
                 ESlotCategory.Pipe => _pipeSlot,
+                ESlotCategory.Mount => _mountSlot,
                 ESlotCategory.Pickaxe => _pickaxeSlot,
                 ESlotCategory.WoodAxe => _woodAxeSlot,
                 ESlotCategory.FishingPole => _fishingPoleSlot,
@@ -2294,6 +2330,7 @@ namespace TPSBR
                 UpperBodySlot = default,
                 LowerBodySlot = default,
                 PipeSlot = default,
+                MountSlot = default,
                 Gold = 0,
                 CurrentWeaponSlot = 0,
             };
@@ -2385,6 +2422,9 @@ namespace TPSBR
                     break;
                 case SpecialRestoreSlot.Pipe:
                     _pendingRestoreData.PipeSlot = slotData;
+                    break;
+                case SpecialRestoreSlot.Mount:
+                    _pendingRestoreData.MountSlot = slotData;
                     break;
             }
         }
@@ -2510,6 +2550,7 @@ namespace TPSBR
             bool isLowerBody = slotCategory == ESlotCategory.LowerBody;
             bool isPipe = slotCategory == ESlotCategory.Pipe;
             bool isBag = slotCategory == ESlotCategory.Bag;
+            bool isMount = slotCategory == ESlotCategory.Mount;
 
             ushort maxStack = ItemDefinition.GetMaxStack(definition.ID);
             if (maxStack == 0)
@@ -2562,7 +2603,17 @@ namespace TPSBR
                 remaining = AddToBagSlots(definition, remaining, configurationHash);
             }
 
+            if (isMount == true && remaining > 0)
+            {
+                remaining = AddToMountSlot(definition, remaining, configurationHash);
+            }
+
             int generalCapacity = Mathf.Clamp(_generalInventorySize, 0, _items.Length);
+
+            if (isMount == true)
+            {
+                return remaining;
+            }
 
             for (int i = 0; i < generalCapacity && remaining > 0; i++)
             {
@@ -2629,10 +2680,12 @@ namespace TPSBR
             bool toLowerBody = toIndex == LOWER_BODY_SLOT_INDEX;
             bool fromPipe = fromIndex == PIPE_SLOT_INDEX;
             bool toPipe = toIndex == PIPE_SLOT_INDEX;
+            bool fromMount = fromIndex == MOUNT_SLOT_INDEX;
+            bool toMount = toIndex == MOUNT_SLOT_INDEX;
             bool fromBag = IsBagSlotIndex(fromIndex);
             bool toBag = IsBagSlotIndex(toIndex);
-            bool fromSpecial = fromPickaxe || fromWoodAxe || fromFishingPole || fromHead || fromUpperBody || fromLowerBody || fromPipe || fromBag;
-            bool toSpecial = toPickaxe || toWoodAxe || toFishingPole || toHead || toUpperBody || toLowerBody || toPipe || toBag;
+            bool fromSpecial = fromPickaxe || fromWoodAxe || fromFishingPole || fromHead || fromUpperBody || fromLowerBody || fromPipe || fromBag || fromMount;
+            bool toSpecial = toPickaxe || toWoodAxe || toFishingPole || toHead || toUpperBody || toLowerBody || toPipe || toBag || toMount;
             bool generalToGeneralTransfer = fromSpecial == false && toSpecial == false;
 
             if (fromSpecial == false && fromIndex >= _generalInventorySize)
@@ -3007,6 +3060,33 @@ namespace TPSBR
                 return;
             }
 
+            if (fromMount == true)
+            {
+                var mountSourceSlot = _mountSlot;
+                if (mountSourceSlot.IsEmpty == true)
+                    return;
+                if (toMount == true)
+                    return;
+                var targetSlot = _items[toIndex];
+                if (targetSlot.IsEmpty == false && IsMountSlotItem(targetSlot) == false)
+                    return;
+                _items.Set(toIndex, mountSourceSlot);
+                UpdateWeaponDefinitionMapping(toIndex, mountSourceSlot);
+
+                if (targetSlot.IsEmpty == false && IsMountSlotItem(targetSlot) == true)
+                {
+                    _mountSlot = targetSlot;
+                }
+                else
+                {
+                    _mountSlot = default;
+                }
+
+                RefreshMountSlot();
+                RefreshItems();
+                return;
+            }
+
             if (toPipe == true)
             {
                 var sourceSlot = _items[fromIndex];
@@ -3027,6 +3107,32 @@ namespace TPSBR
                 {
                     _items.Set(fromIndex, previousPipe);
                     UpdateWeaponDefinitionMapping(fromIndex, previousPipe);
+                }
+
+                RefreshItems();
+                return;
+            }
+
+            if (toMount == true)
+            {
+                var sourceSlot = _items[fromIndex];
+                if (sourceSlot.IsEmpty == true)
+                    return;
+                if (IsMountSlotItem(sourceSlot) == false)
+                    return;
+                var previousMount = _mountSlot;
+                _mountSlot = sourceSlot;
+                RefreshMountSlot();
+
+                if (previousMount.IsEmpty == true)
+                {
+                    _items.Set(fromIndex, default);
+                    UpdateWeaponDefinitionMapping(fromIndex, default);
+                }
+                else
+                {
+                    _items.Set(fromIndex, previousMount);
+                    UpdateWeaponDefinitionMapping(fromIndex, previousMount);
                 }
 
                 RefreshItems();
@@ -4807,6 +4913,56 @@ namespace TPSBR
             return (byte)(quantity - space);
         }
 
+        private byte AddToMountSlot(ItemDefinition definition, byte quantity, NetworkString<_64> configurationHash)
+        {
+            if (quantity == 0)
+                return 0;
+
+            var slot = _mountSlot;
+
+            if (slot.IsEmpty == false && IsMountSlotItem(slot) == false)
+            {
+                _mountSlot = default;
+                RefreshMountSlot();
+                slot = default;
+            }
+
+            int clampedMaxStack = 1;
+
+            if (slot.IsEmpty == true)
+            {
+                byte addAmount = (byte)Mathf.Min(quantity, clampedMaxStack);
+                if (addAmount > 0)
+                {
+                    slot = new InventorySlot(definition.ID, addAmount, configurationHash);
+                    _mountSlot = slot;
+                    RefreshMountSlot();
+                    quantity -= addAmount;
+                }
+
+                return quantity;
+            }
+
+            if (slot.ItemDefinitionId != definition.ID)
+                return quantity;
+
+            if (slot.ConfigurationHash != configurationHash)
+                return quantity;
+
+            if (slot.Quantity >= clampedMaxStack)
+                return quantity;
+
+            byte space = (byte)Mathf.Min(clampedMaxStack - slot.Quantity, quantity);
+            if (space == 0)
+                return quantity;
+
+            slot.Add(space);
+            _mountSlot = slot;
+            RefreshMountSlot();
+
+            return (byte)(quantity - space);
+        }
+
         private byte AddToBagSlots(ItemDefinition definition, byte quantity, NetworkString<_64> configurationHash)
         {
             if (quantity == 0)
@@ -4876,6 +5032,16 @@ namespace TPSBR
             {
                 _localPipeSlot = slot;
                 ItemSlotChanged?.Invoke(PIPE_SLOT_INDEX, slot);
+            }
+        }
+
+        private void RefreshMountSlot()
+        {
+            var slot = _mountSlot;
+            if (_localMountSlot.Equals(slot) == false)
+            {
+                _localMountSlot = slot;
+                ItemSlotChanged?.Invoke(MOUNT_SLOT_INDEX, slot);
             }
         }
 
@@ -5829,7 +5995,7 @@ namespace TPSBR
                 return true;
 
             if (index == PICKAXE_SLOT_INDEX || index == WOOD_AXE_SLOT_INDEX || index == FISHING_POLE_SLOT_INDEX ||
-                index == HEAD_SLOT_INDEX || index == UPPER_BODY_SLOT_INDEX || index == LOWER_BODY_SLOT_INDEX || index == PIPE_SLOT_INDEX)
+                index == HEAD_SLOT_INDEX || index == UPPER_BODY_SLOT_INDEX || index == LOWER_BODY_SLOT_INDEX || index == PIPE_SLOT_INDEX || index == MOUNT_SLOT_INDEX)
                 return true;
 
             if (TryGetHotbarSlotFromInventoryIndex(index, out int hotbarSlot) == true)
@@ -5871,6 +6037,11 @@ namespace TPSBR
         private static bool IsPipeSlotItem(InventorySlot slot)
         {
             return HasSlotCategory(slot, ESlotCategory.Pipe);
+        }
+
+        private static bool IsMountSlotItem(InventorySlot slot)
+        {
+            return HasSlotCategory(slot, ESlotCategory.Mount);
         }
 
         private static bool IsBagSlotItem(InventorySlot slot)

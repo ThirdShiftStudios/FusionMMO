@@ -14,5 +14,6 @@ namespace TSS.Data
         Fishing = 9,
         Bag = 10,
         Pipe = 11,
+        Mount = 12,
     }
 }

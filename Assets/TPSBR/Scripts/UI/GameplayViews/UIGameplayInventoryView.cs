@@ -7,6 +7,7 @@ using TMPro;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using TSS.Data;
+using TPSBR;
 
 namespace TPSBR.UI
 {
@@ -32,6 +33,7 @@ namespace TPSBR.UI
         [SerializeField] private UIListItem _upperBodySlot;
         [SerializeField] private UIListItem _lowerBodySlot;
         [SerializeField] private UIListItem _pipeSlot;
+        [SerializeField] private UIListItem _mountSlot;
         [SerializeField] private UIListItem _bagSlotOne;
         [SerializeField] private UIListItem _bagSlotTwo;
         [SerializeField] private UIListItem _bagSlotThree;
@@ -41,10 +43,14 @@ namespace TPSBR.UI
         [SerializeField] private UIInventoryItemToolTip _itemToolTip;
         [SerializeField] private UIStatToolTip _statToolTip;
         [SerializeField] private UIProfessionToolTip _professionToolTip;
+        [SerializeField] private List<MountDefinition> _unlockedMounts = new List<MountDefinition>();
+        [SerializeField] private MountDefinition _equippedMount;
+        private static Dictionary<string, MountDefinition> _mountDefinitionLookup;
 
         private bool _menuVisible;
         private Agent _boundAgent;
         private Inventory _boundInventory;
+        private MountCollection _boundMountCollection;
         private InventoryListPresenter _inventoryPresenter;
         [SerializeField]
         private UICharacterDetailsView _characterDetails;
@@ -170,6 +176,7 @@ namespace TPSBR.UI
                     _upperBodySlot,
                     _lowerBodySlot,
                     _pipeSlot,
+                    _mountSlot,
                     _bagSlotOne,
                     _bagSlotTwo,
                     _bagSlotThree,
@@ -206,7 +213,14 @@ namespace TPSBR.UI
                 _boundInventory = null;
             }
 
+            if (_boundMountCollection != null)
+            {
+                _boundMountCollection.MountsChanged -= OnMountsChanged;
+                _boundMountCollection = null;
+            }
+
             _boundAgent = null;
+            ClearMounts();
             UpdateGoldLabel(0);
 
             if (_inventoryPresenter != null)
@@ -406,6 +420,7 @@ namespace TPSBR.UI
             private UIListItem _upperBodySlotOverride;
             private UIListItem _lowerBodySlotOverride;
             private UIListItem _pipeSlotOverride;
+            private UIListItem _mountSlotOverride;
             private UIListItem[] _bagSlotOverrides;
             private List<UIListItem> _generalSlots;
             private UIListItem _generalSlotTemplate;
@@ -432,6 +447,7 @@ namespace TPSBR.UI
                 UIListItem upperBodySlot,
                 UIListItem lowerBodySlot,
                 UIListItem pipeSlot,
+                UIListItem mountSlot,
                 UIListItem bagSlotOne,
                 UIListItem bagSlotTwo,
                 UIListItem bagSlotThree,
@@ -446,6 +462,7 @@ namespace TPSBR.UI
                 _upperBodySlotOverride = upperBodySlot;
                 _lowerBodySlotOverride = lowerBodySlot;
                 _pipeSlotOverride = pipeSlot;
+                _mountSlotOverride = mountSlot;
                 _bagSlotOverrides = new[] { bagSlotOne, bagSlotTwo, bagSlotThree, bagSlotFour, bagSlotFive };
 
                 if (_list == null)
@@ -468,6 +485,7 @@ namespace TPSBR.UI
                 AddSpecialSlot(_upperBodySlotOverride, specialSlots);
                 AddSpecialSlot(_lowerBodySlotOverride, specialSlots);
                 AddSpecialSlot(_pipeSlotOverride, specialSlots);
+                AddSpecialSlot(_mountSlotOverride, specialSlots);
 
                 if (_bagSlotOverrides != null)
                 {
@@ -633,6 +651,7 @@ namespace TPSBR.UI
                 if (_upperBodySlotOverride != null) estimatedCapacity++;
                 if (_lowerBodySlotOverride != null) estimatedCapacity++;
                 if (_pipeSlotOverride != null) estimatedCapacity++;
+                if (_mountSlotOverride != null) estimatedCapacity++;
 
                 if (_bagSlotOverrides != null)
                 {
@@ -711,6 +730,13 @@ namespace TPSBR.UI
                     orderedSlots,
                     indices,
                     $"{nameof(UIList)} inventory list is missing a pipe inventory slot.");
+
+                AddSpecialSlotMapping(
+                    _mountSlotOverride,
+                    Inventory.MOUNT_SLOT_INDEX,
+                    orderedSlots,
+                    indices,
+                    $"{nameof(UIList)} inventory list is missing a mount inventory slot.");
 
                 if (_bagSlotOverrides != null)
                 {
@@ -1194,11 +1220,18 @@ namespace TPSBR.UI
                         _boundInventory.GoldChanged -= OnGoldChanged;
                     }
 
+                    if (_boundMountCollection != null)
+                    {
+                        _boundMountCollection.MountsChanged -= OnMountsChanged;
+                    }
+
                     _boundAgent = null;
                     _boundInventory = null;
+                    _boundMountCollection = null;
                     _inventoryPresenter?.Bind(null);
                     _hotbar?.Bind(null);
                     UpdateGoldLabel(0);
+                    ClearMounts();
                     HideAllTooltips();
                 }
                 return;
@@ -1213,8 +1246,14 @@ namespace TPSBR.UI
                 _boundInventory.GoldChanged -= OnGoldChanged;
             }
 
+            if (_boundMountCollection != null)
+            {
+                _boundMountCollection.MountsChanged -= OnMountsChanged;
+            }
+
             _boundAgent = agent;
             _boundInventory = agent != null ? agent.Inventory : null;
+            _boundMountCollection = agent != null ? agent.GetComponent<MountCollection>() : null;
             _inventoryPresenter?.Bind(_boundInventory);
             _hotbar?.Bind(_boundInventory);
             HideAllTooltips();
@@ -1227,6 +1266,16 @@ namespace TPSBR.UI
             else
             {
                 UpdateGoldLabel(0);
+            }
+
+            if (_boundMountCollection != null)
+            {
+                _boundMountCollection.MountsChanged += OnMountsChanged;
+                RefreshMounts();
+            }
+            else
+            {
+                ClearMounts();
             }
         }
 
@@ -1242,9 +1291,80 @@ namespace TPSBR.UI
             _characterDetails.UpdateProfessions(_boundAgent.Professions);
         }
 
+        private void RefreshMounts()
+        {
+            ClearMounts();
+
+            if (_boundMountCollection == null)
+                return;
+
+            EnsureMountDefinitionLookup();
+
+            var ownedMounts = _boundMountCollection.OwnedMountCodes;
+            if (ownedMounts != null)
+            {
+                for (int i = 0; i < ownedMounts.Count; i++)
+                {
+                    if (TryResolveMountDefinition(ownedMounts[i], out var definition) == true)
+                    {
+                        _unlockedMounts.Add(definition);
+                    }
+                }
+            }
+
+            if (TryResolveMountDefinition(_boundMountCollection.ActiveMountCode, out var activeMount) == true)
+            {
+                _equippedMount = activeMount;
+            }
+        }
+
+        private void ClearMounts()
+        {
+            _unlockedMounts.Clear();
+            _equippedMount = null;
+        }
+
         private void OnGoldChanged(int amount)
         {
             UpdateGoldLabel(amount);
+        }
+
+        private void OnMountsChanged()
+        {
+            RefreshMounts();
+        }
+
+        private static bool TryResolveMountDefinition(string mountCode, out MountDefinition definition)
+        {
+            definition = null;
+
+            if (string.IsNullOrWhiteSpace(mountCode) == true)
+                return false;
+
+            EnsureMountDefinitionLookup();
+
+            return _mountDefinitionLookup != null && _mountDefinitionLookup.TryGetValue(mountCode, out definition);
+        }
+
+        private static void EnsureMountDefinitionLookup()
+        {
+            if (_mountDefinitionLookup != null)
+                return;
+
+            _mountDefinitionLookup = new Dictionary<string, MountDefinition>();
+
+            var definitions = Resources.LoadAll<MountDefinition>(string.Empty);
+            for (int i = 0; i < definitions.Length; i++)
+            {
+                var definition = definitions[i];
+                if (definition == null)
+                    continue;
+
+                if (string.IsNullOrWhiteSpace(definition.Code) == true)
+                    continue;
+
+                _mountDefinitionLookup[definition.Code] = definition;
+            }
         }
 
         private void UpdateGoldLabel(int amount)

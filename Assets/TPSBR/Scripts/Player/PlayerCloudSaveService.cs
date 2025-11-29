@@ -77,6 +77,7 @@ namespace TPSBR
         public PlayerInventoryItemData UpperBodySlot;
         public PlayerInventoryItemData LowerBodySlot;
         public PlayerInventoryItemData PipeSlot;
+        public PlayerInventoryItemData MountSlot;
         public PlayerInventoryItemData[] BagSlots;
         public int Gold;
     }
