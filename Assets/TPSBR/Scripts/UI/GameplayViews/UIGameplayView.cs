@@ -168,13 +168,28 @@ namespace TPSBR.UI
             _stamina?.UpdateStamina(_localAgent.Stamina);
             _effects.UpdateEffects(_localAgent);
             _buffs?.UpdateBuffs(_localAgent);
-            bool interactionsAreVisible = RefreshInteractionVisibility();
+            bool hasOpenGamblingView = HasOpenGamblingView();
+            bool interactionsAreVisible = RefreshInteractionVisibility(hasOpenGamblingView);
 
             if (interactionsAreVisible == true)
             {
                 _interactions.UpdateInteractions(Context, _localAgent);
             }
-            _abilityView?.UpdateAbilities(_localAgent);
+            bool shouldShowAbilityView = _localAgent != null && hasOpenGamblingView == false;
+
+            if (_abilityView != null)
+            {
+                _abilityView.gameObject.SetActive(shouldShowAbilityView);
+
+                if (shouldShowAbilityView == true)
+                {
+                    _abilityView.UpdateAbilities(_localAgent);
+                }
+                else
+                {
+                    _abilityView.Clear();
+                }
+            }
             _teamPlayerPanels.UpdateTeamPlayerPanels(Context, _localAgent);
         }
 
@@ -302,7 +317,7 @@ namespace TPSBR.UI
             _health.SetActive(true);
             _mana?.SetActive(true);
             _stamina?.SetActive(true);
-            RefreshInteractionVisibility();
+            RefreshInteractionVisibility(HasOpenGamblingView());
             _effects.SetActive(true);
             _buffs?.SetAgent(agent);
             _spectatingGroup.SetActive(isLocalPlayer == false);
@@ -463,12 +478,12 @@ namespace TPSBR.UI
             _experienceIndicator.ExperienceAdded(amount, provider);
         }
 
-        private bool RefreshInteractionVisibility()
+        private bool RefreshInteractionVisibility(bool hasOpenGamblingView)
         {
             if (_interactions == null)
                 return false;
 
-            bool shouldShowInteractions = _localAgent != null && HasOpenGamblingView() == false;
+            bool shouldShowInteractions = _localAgent != null && hasOpenGamblingView == false;
 
             _interactions.SetActive(shouldShowInteractions);
 

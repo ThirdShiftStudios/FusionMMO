@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -15,6 +16,7 @@ namespace TPSBR.UI
                 private UIDeathView _deathView;
                 private UIGameplayInventoryView _inventoryView;
                 private UISocialView _socialView;
+                private readonly List<UIGamblingView> _gamblingViews = new List<UIGamblingView>();
 		
 		private bool _gameOverShown;
 		private Coroutine _gameOverCoroutine;
@@ -98,6 +100,8 @@ namespace TPSBR.UI
                         if (Context.Runner == null || Context.Runner.Exists(Context.GameplayMode.Object) == false)
                                 return;
 
+                        bool hasOpenGamblingView = HasOpenGamblingView();
+
                         var player = Context.NetworkGame.GetPlayer(Context.LocalPlayerRef);
                         if (player == null || player.Statistics.IsAlive == true)
                         {
@@ -108,8 +112,13 @@ namespace TPSBR.UI
                                 _deathView.Open();
                         }
 
+                        if (hasOpenGamblingView == true && _inventoryView != null && _inventoryView.MenuVisible == true)
+                        {
+                                _inventoryView.Show(false, true);
+                        }
+
                         bool toggleInventory = Keyboard.current.tabKey.wasPressedThisFrame;
-                        if (toggleInventory)
+                        if (toggleInventory && hasOpenGamblingView == false)
                         {
                                 _inventoryView.Show(!_inventoryView.MenuVisible);
                         }
@@ -171,9 +180,9 @@ namespace TPSBR.UI
                         CreateViewFromResource<UISlotMachineView>(UISlotMachineView.ResourcePath);
                 }
 
-		private IEnumerator ShowGameOver_Coroutine(float delay)
-		{
-			yield return new WaitForSeconds(delay);
+                private IEnumerator ShowGameOver_Coroutine(float delay)
+                {
+                        yield return new WaitForSeconds(delay);
 			
 			_gameOverShown = true;
 			
@@ -184,9 +193,27 @@ namespace TPSBR.UI
 			Close<UIAnnouncementsView>();
 			Close<UIGameplayInventoryView>();
 			
-			Open<UIGameOverView>();
+                        Open<UIGameOverView>();
 
-			_gameOverCoroutine = null;
-		}
-	}
+                        _gameOverCoroutine = null;
+                }
+
+                private bool HasOpenGamblingView()
+                {
+                        _gamblingViews.Clear();
+                        GetAll(_gamblingViews);
+
+                        for (int i = 0, count = _gamblingViews.Count; i < count; i++)
+                        {
+                                UIGamblingView gamblingView = _gamblingViews[i];
+
+                                if (gamblingView != null && gamblingView.IsOpen == true)
+                                {
+                                        return true;
+                                }
+                        }
+
+                        return false;
+                }
+        }
 }
