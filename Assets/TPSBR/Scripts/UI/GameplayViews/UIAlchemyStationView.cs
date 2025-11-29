@@ -124,6 +124,8 @@ namespace TPSBR.UI
         {
             base.OnClose();
 
+            ClearContainers();
+            ResetDragState();
             TryRestoreSuppressedViews();
         }
 
@@ -409,6 +411,15 @@ namespace TPSBR.UI
                 bool highlight = _activeDragCategory != null && container.Category == _activeDragCategory.Value;
                 container.SetHighlight(highlight);
             }
+        }
+
+        private void ResetDragState()
+        {
+            _dragSource = null;
+            _activeDragCategory = null;
+
+            SetDragVisible(false);
+            UpdateContainerHighlights();
         }
 
         private void EnsureDragVisual()
