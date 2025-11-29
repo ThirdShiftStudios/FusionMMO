@@ -54,9 +54,9 @@ namespace TPSBR.UI
             };
         }
 
-        public bool AddItem(UIAlchemyStationView.InventoryEntry entry, int maxAvailable)
+        public bool AddItem(UIAlchemyStationView.InventoryEntry entry, int totalAvailable)
         {
-            if (HasReachedInventoryLimit(entry, maxAvailable))
+            if (HasReachedInventoryLimit(entry, totalAvailable))
                 return false;
 
             _items.Add(entry);
@@ -108,7 +108,7 @@ namespace TPSBR.UI
             listItem?.SetItem(entry.Icon, 1);
         }
 
-        private bool HasReachedInventoryLimit(UIAlchemyStationView.InventoryEntry entry, int maxAvailable)
+        private bool HasReachedInventoryLimit(UIAlchemyStationView.InventoryEntry entry, int totalAvailable)
         {
             int usedQuantity = 0;
 
@@ -120,7 +120,7 @@ namespace TPSBR.UI
                 }
             }
 
-            return usedQuantity >= maxAvailable;
+            return usedQuantity >= totalAvailable;
         }
 
         internal int GetUsedQuantityForSlot(int slotIndex)

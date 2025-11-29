@@ -158,7 +158,7 @@ namespace TPSBR.UI
             if (remainingQuantity <= 0)
                 return;
 
-            if (container.AddItem(entry, remainingQuantity))
+            if (container.AddItem(entry, entry.Quantity))
             {
                 RefreshInventoryItems();
             }
