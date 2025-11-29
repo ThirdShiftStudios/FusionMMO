@@ -57,12 +57,14 @@ namespace TPSBR.UI
         public void AddItem(UIAlchemyStationView.InventoryEntry entry)
         {
             _items.Add(entry);
+            UpdateDropSlot();
             RefreshList();
         }
 
         public void ClearItems()
         {
             _items.Clear();
+            UpdateDropSlot();
             RefreshList();
         }
 
@@ -79,6 +81,22 @@ namespace TPSBR.UI
             if (_itemList != null)
             {
                 _itemList.Refresh(_items.Count);
+            }
+        }
+
+        private void UpdateDropSlot()
+        {
+            if (_dropSlot == null)
+                return;
+
+            if (_items.Count > 0)
+            {
+                UIAlchemyStationView.InventoryEntry entry = _items[0];
+                _dropSlot.SetItem(entry.Icon, entry.Quantity);
+            }
+            else
+            {
+                _dropSlot.Clear();
             }
         }
 
