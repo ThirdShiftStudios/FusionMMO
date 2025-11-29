@@ -107,10 +107,8 @@ namespace TPSBR.UI
 
             UIAlchemyStationView.InventoryEntry entry = _items[index];
 
-            if (content is UIListItem listItem)
-            {
-                listItem.SetItem(entry.Icon, entry.Quantity);
-            }
+            UIListItem listItem = _itemList != null ? _itemList.GetItem(index) : null;
+            listItem?.SetItem(entry.Icon, entry.Quantity);
         }
     }
 }
