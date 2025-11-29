@@ -154,10 +154,11 @@ namespace TPSBR.UI
                 return;
 
             int totalUsedQuantity = GetTotalUsedQuantity(entry.SlotIndex);
-            if (totalUsedQuantity >= entry.Quantity)
+            int remainingQuantity = entry.Quantity - totalUsedQuantity;
+            if (remainingQuantity <= 0)
                 return;
 
-            if (container.AddItem(entry))
+            if (container.AddItem(entry, remainingQuantity))
             {
                 RefreshInventoryItems();
             }
