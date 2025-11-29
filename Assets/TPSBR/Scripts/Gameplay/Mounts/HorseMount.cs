@@ -11,6 +11,9 @@ namespace TPSBR
         [SerializeField] private Transform _cameraTransform;
         [SerializeField] private Transform _riderAnchor;
         [SerializeField] private LayerMask _blockedLayers;
+        [SerializeField] private LayerMask _groundLayers;
+        [SerializeField, Range(0.25f, 5f)] private float _groundCheckHeight = 1.5f;
+        [SerializeField, Range(0.25f, 10f)] private float _groundCheckDistance = 4f;
         [SerializeField] private MountAnimator _animator;
 
         private MountController _rider;
@@ -119,6 +122,14 @@ namespace TPSBR
             if (Physics.Linecast(transform.position, nextPosition, out RaycastHit hit, _blockedLayers, QueryTriggerInteraction.Ignore) == true)
             {
                 nextPosition = hit.point;
+            }
+
+            Vector3 groundOrigin = nextPosition + Vector3.up * _groundCheckHeight;
+            float groundRayLength = _groundCheckHeight + _groundCheckDistance;
+
+            if (Physics.Raycast(groundOrigin, Vector3.down, out RaycastHit groundHit, groundRayLength, _groundLayers, QueryTriggerInteraction.Ignore) == true)
+            {
+                nextPosition = groundHit.point;
             }
 
             transform.position = nextPosition;

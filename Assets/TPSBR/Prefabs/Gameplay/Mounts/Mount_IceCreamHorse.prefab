@@ -354,7 +354,12 @@ MonoBehaviour:
   _riderAnchor: {fileID: 2679563704330232904}
   _blockedLayers:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 16
+  _groundLayers:
+    serializedVersion: 2
+    m_Bits: 1
+  _groundCheckHeight: 1.5
+  _groundCheckDistance: 4
   _animator: {fileID: 7732341139436001784}
 --- !u!114 &4528763854878546093
 MonoBehaviour:
