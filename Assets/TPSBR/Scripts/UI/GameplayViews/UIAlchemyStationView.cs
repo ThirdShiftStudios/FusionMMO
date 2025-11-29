@@ -129,6 +129,14 @@ namespace TPSBR.UI
             TryRestoreSuppressedViews();
         }
 
+        protected override void OnDisable()
+        {
+            ClearContainerItems();
+            ResetDragState();
+
+            base.OnDisable();
+        }
+
         public void BeginSlotDrag(UIListItem slot, PointerEventData eventData)
         {
             if (slot == null || eventData == null)
