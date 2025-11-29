@@ -109,6 +109,9 @@ namespace TPSBR
             _currentSpeed = Mathf.MoveTowards(_currentSpeed, targetSpeed, _definition.Acceleration * deltaTime);
 
             Vector3 displacement = desiredDirection.normalized * _currentSpeed * deltaTime;
+            float normalizedSpeed = _definition.MoveSpeed > 0f ? _currentSpeed / _definition.MoveSpeed : 0f;
+            _animator?.SetMoveInput(normalizedSpeed);
+
             if (displacement.sqrMagnitude < float.Epsilon)
                 return;
 
@@ -119,9 +122,6 @@ namespace TPSBR
             }
 
             transform.position = nextPosition;
-
-            float normalizedSpeed = _definition.MoveSpeed > 0f ? _currentSpeed / _definition.MoveSpeed : 0f;
-            _animator?.SetMoveInput(normalizedSpeed);
         }
     }
 }

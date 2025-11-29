@@ -58,6 +58,8 @@ namespace TPSBR
             if (_activeMount == null)
                 return;
 
+            Vector3 dismountPosition = _activeMount.transform.position;
+
             if (_riderAnchor != null && _character.transform.parent == _riderAnchor)
             {
                 _character.transform.SetParent(null, true);
@@ -67,6 +69,7 @@ namespace TPSBR
             _activeMount = null;
 
             _character.CharacterController.enabled = _kccEnabled;
+            _character.CharacterController.SetPosition(dismountPosition);
             _interactions?.ClearInteractionCameraAuthority();
 
             _character.AnimationController?.SetMounted(false, null);
