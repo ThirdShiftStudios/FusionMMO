@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using TSS.Data;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
 namespace TPSBR.UI
 {
@@ -70,6 +71,12 @@ namespace TPSBR.UI
         private Agent _agent;
         private AlchemyStation _station;
         private AlchemyCategory? _activeDragCategory;
+        private UIListItem _dragSource;
+        private RectTransform _dragIcon;
+        private CanvasGroup _dragCanvasGroup;
+        private Image _dragImage;
+        [SerializeField]
+        private RectTransform _dragLayer;
 
         public void Configure(Agent agent, AlchemyStation station)
         {
@@ -121,23 +128,40 @@ namespace TPSBR.UI
 
         public void BeginSlotDrag(UIListItem slot, PointerEventData eventData)
         {
-            _ = eventData;
+            if (slot == null || eventData == null)
+                return;
+
+            _dragSource = slot;
+
             if (_slotToItem.TryGetValue(slot, out InventoryEntry entry) == true)
             {
                 _activeDragCategory = ResolveCategory(entry.Definition);
                 UpdateContainerHighlights();
             }
+
+            EnsureDragVisual();
+            UpdateDragIcon(slot.IconSprite, slot.Quantity, GetSlotSize(slot));
+            SetDragVisible(true);
+            UpdateDragPosition(eventData);
         }
 
         public void UpdateSlotDrag(PointerEventData eventData)
         {
-            _ = eventData;
+            if (_dragSource == null || eventData == null)
+                return;
+
+            UpdateDragPosition(eventData);
         }
 
         public void EndSlotDrag(UIListItem slot, PointerEventData eventData)
         {
-            _ = slot;
             _ = eventData;
+            if (_dragSource == slot)
+            {
+                _dragSource = null;
+                SetDragVisible(false);
+            }
+
             _activeDragCategory = null;
             UpdateContainerHighlights();
         }
@@ -384,6 +408,88 @@ namespace TPSBR.UI
                 bool highlight = _activeDragCategory != null && container.Category == _activeDragCategory.Value;
                 container.SetHighlight(highlight);
             }
+        }
+
+        private void EnsureDragVisual()
+        {
+            if (_dragIcon != null)
+                return;
+
+            RectTransform parent = _dragLayer != null ? _dragLayer : SceneUI?.Canvas.transform as RectTransform;
+            if (parent == null)
+                return;
+
+            GameObject dragObject = new GameObject("AlchemyDrag", typeof(RectTransform), typeof(CanvasGroup), typeof(Image));
+            dragObject.transform.SetParent(parent, false);
+
+            _dragIcon = dragObject.GetComponent<RectTransform>();
+            _dragCanvasGroup = dragObject.GetComponent<CanvasGroup>();
+            _dragImage = dragObject.GetComponent<Image>();
+
+            _dragCanvasGroup.blocksRaycasts = false;
+            _dragCanvasGroup.interactable = false;
+            _dragImage.raycastTarget = false;
+            _dragImage.preserveAspect = true;
+
+            dragObject.SetActive(false);
+        }
+
+        private void UpdateDragIcon(Sprite sprite, int quantity, Vector2 size)
+        {
+            if (_dragIcon == null || _dragImage == null)
+                return;
+
+            if (sprite == null || quantity <= 0)
+            {
+                SetDragVisible(false);
+                return;
+            }
+
+            _dragImage.sprite = sprite;
+            _dragImage.color = Color.white;
+            _dragIcon.sizeDelta = size;
+        }
+
+        private void UpdateDragPosition(PointerEventData eventData)
+        {
+            if (_dragIcon == null)
+                return;
+
+            RectTransform referenceRect = _dragIcon.parent as RectTransform;
+            Canvas canvas = SceneUI?.Canvas;
+            if (referenceRect == null || canvas == null)
+                return;
+
+            if (RectTransformUtility.ScreenPointToLocalPointInRectangle(referenceRect, eventData.position, canvas.worldCamera, out Vector2 localPoint))
+            {
+                _dragIcon.localPosition = localPoint;
+            }
+        }
+
+        private void SetDragVisible(bool visible)
+        {
+            if (_dragIcon == null)
+                return;
+
+            _dragIcon.gameObject.SetActive(visible);
+            if (_dragCanvasGroup != null)
+            {
+                _dragCanvasGroup.alpha = visible ? 1f : 0f;
+            }
+        }
+
+        private static Vector2 GetSlotSize(UIListItem slot)
+        {
+            if (slot != null && slot.SlotRectTransform != null)
+            {
+                Rect rect = slot.SlotRectTransform.rect;
+                if (rect.width > 0f && rect.height > 0f)
+                {
+                    return rect.size;
+                }
+            }
+
+            return new Vector2(64f, 64f);
         }
 
         private int GetRemainingQuantity(InventoryEntry entry)
