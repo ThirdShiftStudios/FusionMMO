@@ -80,6 +80,7 @@ namespace TPSBR.UI
         private int[] _currentAssignedAbilityIndexes;
         private UIListItem _dragSource;
         private RectTransform _dragIcon;
+        private Canvas _dragCanvas;
         private Image _dragImage;
         private CanvasGroup _dragCanvasGroup;
         private UIListItem _activeAbilityTooltipSlot;
@@ -1553,8 +1554,22 @@ namespace TPSBR.UI
             dragObject.transform.SetParent(parent, false);
 
             _dragIcon = dragObject.GetComponent<RectTransform>();
+            _dragCanvas = dragObject.AddComponent<Canvas>();
             _dragCanvasGroup = dragObject.GetComponent<CanvasGroup>();
             _dragImage = dragObject.GetComponent<Image>();
+
+            if (_dragCanvas != null)
+            {
+                _dragCanvas.overrideSorting = true;
+                _dragCanvas.sortingOrder = short.MaxValue;
+
+                Canvas parentCanvas = parent.GetComponentInParent<Canvas>();
+                if (parentCanvas != null)
+                {
+                    _dragCanvas.sortingLayerID = parentCanvas.sortingLayerID;
+                    _dragCanvas.worldCamera = parentCanvas.worldCamera;
+                }
+            }
 
             _dragCanvasGroup.blocksRaycasts = false;
             _dragCanvasGroup.interactable = false;
@@ -1598,6 +1613,7 @@ namespace TPSBR.UI
             if (_dragIcon == null)
                 return;
 
+            _dragIcon.SetAsLastSibling();
             _dragIcon.gameObject.SetActive(visible);
             if (_dragCanvasGroup != null)
             {
