@@ -73,6 +73,7 @@ namespace TPSBR.UI
         private AlchemyCategory? _activeDragCategory;
         private UIListItem _dragSource;
         private RectTransform _dragIcon;
+        private Canvas _dragCanvas;
         private CanvasGroup _dragCanvasGroup;
         private Image _dragImage;
         [SerializeField]
@@ -423,8 +424,18 @@ namespace TPSBR.UI
             dragObject.transform.SetParent(parent, false);
 
             _dragIcon = dragObject.GetComponent<RectTransform>();
+            _dragCanvas = dragObject.AddComponent<Canvas>();
             _dragCanvasGroup = dragObject.GetComponent<CanvasGroup>();
             _dragImage = dragObject.GetComponent<Image>();
+
+            Canvas parentCanvas = SceneUI?.Canvas;
+            _dragCanvas.overrideSorting = true;
+            _dragCanvas.sortingOrder = short.MaxValue;
+            if (parentCanvas != null)
+            {
+                _dragCanvas.sortingLayerID = parentCanvas.sortingLayerID;
+                _dragCanvas.worldCamera = parentCanvas.worldCamera;
+            }
 
             _dragCanvasGroup.blocksRaycasts = false;
             _dragCanvasGroup.interactable = false;
@@ -471,10 +482,29 @@ namespace TPSBR.UI
             if (_dragIcon == null)
                 return;
 
+            if (visible == true)
+            {
+                BringDragVisualToFront();
+            }
+
             _dragIcon.gameObject.SetActive(visible);
             if (_dragCanvasGroup != null)
             {
                 _dragCanvasGroup.alpha = visible ? 1f : 0f;
+            }
+        }
+
+        private void BringDragVisualToFront()
+        {
+            if (_dragIcon == null)
+                return;
+
+            _dragIcon.SetAsLastSibling();
+
+            if (_dragCanvas != null)
+            {
+                _dragCanvas.overrideSorting = true;
+                _dragCanvas.sortingOrder = short.MaxValue;
             }
         }
 
