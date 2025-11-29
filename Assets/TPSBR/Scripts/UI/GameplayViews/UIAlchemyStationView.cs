@@ -457,6 +457,7 @@ namespace TPSBR.UI
 
             SetDragVisible(false);
             UpdateContainerHighlights();
+            UIInventorySlotListItem.ResetAllDragStates();
         }
 
         private void EnsureDragVisual()

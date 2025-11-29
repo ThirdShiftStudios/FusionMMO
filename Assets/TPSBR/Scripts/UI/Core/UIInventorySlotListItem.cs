@@ -6,7 +6,7 @@ using UnityEngine.UI;
 
 namespace TPSBR.UI
 {
-    public class UIInventorySlotListItem : UIListItemBase<MonoBehaviour>, IBeginDragHandler, IDragHandler, IEndDragHandler, IDropHandler, IPointerClickHandler, IPointerEnterHandler, IPointerExitHandler, IPointerMoveHandler
+        public class UIInventorySlotListItem : UIListItemBase<MonoBehaviour>, IBeginDragHandler, IDragHandler, IEndDragHandler, IDropHandler, IPointerClickHandler, IPointerEnterHandler, IPointerExitHandler, IPointerMoveHandler
         {
                 private static readonly Dictionary<int, UIInventorySlotListItem> _lastDropTargets = new Dictionary<int, UIInventorySlotListItem>();
                 private static readonly List<RaycastResult> _raycastResults = new List<RaycastResult>();
@@ -118,6 +118,30 @@ namespace TPSBR.UI
                 {
                         _iconSprite = icon;
                         _quantity = quantity;
+                }
+
+                internal static void ResetAllDragStates()
+                {
+                        _activeDragSlot = null;
+                        _lastDropTargets.Clear();
+
+                        for (int i = 0; i < _allSlots.Count; i++)
+                        {
+                                var slot = _allSlots[i];
+                                if (slot == null)
+                                        continue;
+
+                                slot._isDragging = false;
+                                slot._isPointerOver = false;
+                                slot._isPointerInsideTooltipRegion = false;
+
+                                slot.EnsureCanvasGroup();
+                                if (slot._canvasGroup != null)
+                                {
+                                        slot._canvasGroup.alpha = 1f;
+                                        slot._canvasGroup.blocksRaycasts = true;
+                                }
+                        }
                 }
 
                 // EVENT HANDLERS
