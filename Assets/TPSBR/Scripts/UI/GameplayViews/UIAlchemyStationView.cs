@@ -129,7 +129,7 @@ namespace TPSBR.UI
             TryRestoreSuppressedViews();
         }
 
-        protected override void OnDisable()
+        protected new void OnDisable()
         {
             ClearContainerItems();
             ResetDragState();
