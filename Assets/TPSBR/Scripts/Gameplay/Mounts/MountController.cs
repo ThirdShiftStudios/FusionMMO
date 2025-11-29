@@ -58,12 +58,15 @@ namespace TPSBR
             if (_activeMount == null)
                 return;
 
-            Vector3 dismountPosition = _activeMount.transform.position;
+            Transform activeMountTransform = _activeMount.transform;
+            Vector3 dismountPosition = activeMountTransform.position;
 
             if (_riderAnchor != null && _character.transform.parent == _riderAnchor)
             {
                 _character.transform.SetParent(null, true);
             }
+
+            _character.transform.SetPositionAndRotation(dismountPosition, activeMountTransform.rotation);
 
             _activeMount.EndRide();
             _activeMount = null;
