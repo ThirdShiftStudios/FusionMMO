@@ -160,6 +160,42 @@ namespace TPSBR
             return true;
         }
 
+        public void ProcessRenderInput(GameplayInput input, float deltaTime)
+        {
+            if (HasStateAuthority == true)
+                return;
+
+            bool mountHeld = EGameplayInputAction.Mount.IsActive(input);
+
+            if (_activeMount == null)
+            {
+                if (mountHeld == true)
+                {
+                    if (_mountHoldStartTime < 0f)
+                    {
+                        _mountHoldStartTime = Time.time;
+                        _mountHoldTimer = 0f;
+                    }
+
+                    _mountHoldTimer = Time.time - _mountHoldStartTime;
+
+                    if (_mountSpawnRequested == false && _mountHoldTimer >= _mountSpawnHoldDuration)
+                    {
+                        _mountSpawnRequested = true;
+                        RPC_RequestSpawnEquippedMount();
+                    }
+
+                    return;
+                }
+
+                ResetMountHold();
+
+                return;
+            }
+
+            ResetMountHold();
+        }
+
         public void SyncRiderTransform()
         {
             if (_activeMount == null || _riderAnchor == null)

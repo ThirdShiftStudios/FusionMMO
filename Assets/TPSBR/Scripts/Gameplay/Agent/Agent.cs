@@ -422,6 +422,11 @@ namespace TPSBR
                 input.LookRotationDelta = accumulatedInput.LookRotationDelta;
             }
 
+            if (_mountController != null && HasStateAuthority == false)
+            {
+                _mountController.ProcessRenderInput(input, Time.deltaTime);
+            }
+
 
             SetLookRotation(kccFixedData, input.LookRotationDelta);
 
