@@ -51,7 +51,6 @@ namespace TPSBR.UI
         [SerializeField] private UIStatToolTip _statToolTip;
         [SerializeField] private UIProfessionToolTip _professionToolTip;
         [SerializeField] private UIAbilityView _abilityView;
-        [SerializeField] private Sprite _defaultMountIcon;
         [SerializeField] private List<MountDefinition> _unlockedMounts = new List<MountDefinition>();
         [SerializeField] private MountDefinition _equippedMount;
         private static Dictionary<string, MountDefinition> _mountDefinitionLookup;
@@ -1859,7 +1858,7 @@ namespace TPSBR.UI
             if (mountDefinition == null)
                 return null;
 
-            return mountDefinition.Icon != null ? mountDefinition.Icon : _defaultMountIcon;
+            return mountDefinition.Icon;
         }
 
         private void EquipMount(MountDefinition mountDefinition)
