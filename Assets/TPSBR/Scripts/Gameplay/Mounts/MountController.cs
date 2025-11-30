@@ -269,9 +269,9 @@ namespace TPSBR
             if (_character != null)
             {
                 KCC kcc = _character.CharacterController;
-                KCCData kccData = kcc != null ? kcc.Data : default;
+                KCCData kccData = kcc != null ? kcc.FixedData : default;
 
-                spawnPosition = kcc != null ? kccData.TransformPosition : _character.transform.position;
+                spawnPosition = kcc != null ? kccData.GroundPosition : _character.transform.position;
                 spawnRotation = kcc != null ? kccData.TransformRotation : _character.transform.rotation;
             }
 
