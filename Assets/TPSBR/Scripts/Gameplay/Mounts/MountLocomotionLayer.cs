@@ -23,10 +23,10 @@ namespace TPSBR
 
         public void ApplyDefinition(MountDefinition definition)
         {
-            _activeMoveSpeed = definition != null ? definition.MountMoveClipSpeed : _defaultMoveSpeed;
+            _activeMoveSpeed = _defaultMoveSpeed;
 
-            SetClip(_idle, definition?.MountIdleClip, 1f, ref _defaultIdleClip, ref _defaultIdleLooping);
-            SetClip(_move, definition?.MountMoveClip, _activeMoveSpeed, ref _defaultMoveClip, ref _defaultMoveLooping);
+            SetClip(_idle, 1f, ref _defaultIdleClip, ref _defaultIdleLooping);
+            SetClip(_move, _activeMoveSpeed, ref _defaultMoveClip, ref _defaultMoveLooping);
         }
 
         public void SetMounted(bool mounted)
@@ -90,23 +90,14 @@ namespace TPSBR
             }
         }
 
-        private static void SetClip(ClipState state, AnimationClip clip, float speed, ref AnimationClip defaultClip, ref bool defaultLooping)
+        private static void SetClip(ClipState state, float speed, ref AnimationClip defaultClip, ref bool defaultLooping)
         {
             if (state == null || state.Node == null)
                 return;
 
-            if (clip != null)
-            {
-                state.Node.Clip = clip;
-                state.Node.Speed = speed;
-                state.Node.IsLooping = true;
-            }
-            else
-            {
-                state.Node.Clip = defaultClip;
-                state.Node.Speed = speed;
-                state.Node.IsLooping = defaultLooping;
-            }
+            state.Node.Clip = defaultClip;
+            state.Node.Speed = speed;
+            state.Node.IsLooping = defaultLooping;
         }
     }
 }

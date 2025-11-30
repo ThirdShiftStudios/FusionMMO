@@ -12,12 +12,6 @@ namespace TPSBR
         [SerializeField] private float _moveSpeed = 10f;
         [SerializeField] private float _turnSpeed = 240f;
         [SerializeField] private float _acceleration = 20f;
-        [Header("Animation")]
-        [SerializeField] private AnimationClip _riderRideClip;
-        [SerializeField] private float _riderRideClipSpeed = 1f;
-        [SerializeField] private AnimationClip _mountIdleClip;
-        [SerializeField] private AnimationClip _mountMoveClip;
-        [SerializeField] private float _mountMoveClipSpeed = 1f;
 
         public string Code => _code;
         public string DisplayName => _displayName.HasValue() ? _displayName : name;
@@ -25,11 +19,6 @@ namespace TPSBR
         public float MoveSpeed => _moveSpeed;
         public float TurnSpeed => _turnSpeed;
         public float Acceleration => _acceleration;
-        public AnimationClip RiderRideClip => _riderRideClip;
-        public float RiderRideClipSpeed => _riderRideClipSpeed;
-        public AnimationClip MountIdleClip => _mountIdleClip;
-        public AnimationClip MountMoveClip => _mountMoveClip;
-        public float MountMoveClipSpeed => _mountMoveClipSpeed;
         public override ESlotCategory SlotCategory => ESlotCategory.Mount;
 
 #if UNITY_EDITOR
@@ -38,8 +27,6 @@ namespace TPSBR
             _moveSpeed = Mathf.Max(0.0f, _moveSpeed);
             _turnSpeed = Mathf.Max(0.0f, _turnSpeed);
             _acceleration = Mathf.Max(0.0f, _acceleration);
-            _riderRideClipSpeed = Mathf.Max(0.0f, _riderRideClipSpeed);
-            _mountMoveClipSpeed = Mathf.Max(0.0f, _mountMoveClipSpeed);
 
             if (string.IsNullOrEmpty(_code) == true)
             {

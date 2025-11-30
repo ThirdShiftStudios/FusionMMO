@@ -22,18 +22,10 @@ namespace TPSBR
 
             _appliedDefinition = definition != null ? definition : _mountDefinition;
 
-            if (_appliedDefinition != null && _appliedDefinition.RiderRideClip != null)
-            {
-                Node.Clip = _appliedDefinition.RiderRideClip;
-                Node.Speed = _appliedDefinition.RiderRideClipSpeed;
-                Node.IsLooping = true;
-            }
-            else
-            {
-                Node.Clip = _defaultClip;
-                Node.Speed = _defaultSpeed;
-                Node.IsLooping = _defaultLooping;
-            }
+            Node.Clip = _defaultClip;
+            Node.Speed = _defaultSpeed;
+            Node.IsLooping = _defaultLooping;
+
         }
 
         protected override void OnActivate()
