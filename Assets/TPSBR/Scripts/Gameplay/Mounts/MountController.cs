@@ -12,6 +12,7 @@ namespace TPSBR
         private Character _character;
         private Interactions _interactions;
         private MountCollection _mountCollection;
+        private Inventory _inventory;
         private HorseMount _activeMount;
         private bool _kccEnabled;
         private Transform _defaultRiderAnchor;
@@ -19,6 +20,11 @@ namespace TPSBR
         [Tooltip("How long to ignore dismount inputs right after mounting.")]
         private float _dismountInputBlockDuration = 0.25f;
         private float _dismountInputBlockedUntil;
+        [SerializeField]
+        [Tooltip("How long the mount input needs to be held to spawn the equipped mount.")]
+        private float _mountSpawnHoldDuration = 1f;
+        private float _mountHoldTimer;
+        private bool _mountSpawnRequested;
 
         public bool IsMounted => _activeMount != null;
         public HorseMount ActiveMount => _activeMount;
@@ -88,8 +94,37 @@ namespace TPSBR
 
         public bool ProcessFixedInput(GameplayInput input, float deltaTime)
         {
+            bool mountHeld = EGameplayInputAction.Mount.IsActive(input);
+
             if (_activeMount == null)
+            {
+                if (mountHeld == true)
+                {
+                    _mountHoldTimer += deltaTime;
+
+                    if (_mountSpawnRequested == false && _mountHoldTimer >= _mountSpawnHoldDuration)
+                    {
+                        _mountSpawnRequested = true;
+
+                        if (HasStateAuthority == true)
+                        {
+                            SpawnEquippedMount();
+                        }
+                        else
+                        {
+                            RPC_RequestSpawnEquippedMount();
+                        }
+                    }
+                }
+                else
+                {
+                    ResetMountHold();
+                }
+
                 return false;
+            }
+
+            ResetMountHold();
 
             if (HasStateAuthority == false)
                 return true;
@@ -134,7 +169,74 @@ namespace TPSBR
             _character = GetComponent<Character>();
             _interactions = GetComponent<Interactions>();
             _mountCollection = GetComponent<MountCollection>();
+            _inventory = GetComponent<Inventory>();
             _defaultRiderAnchor = _riderAnchor != null ? _riderAnchor : transform;
+        }
+
+        private void ResetMountHold()
+        {
+            _mountHoldTimer = 0f;
+            _mountSpawnRequested = false;
+        }
+
+        private MountDefinition GetEquippedMountDefinition()
+        {
+            if (_inventory == null)
+                return null;
+
+            InventorySlot mountSlot = _inventory.GetItemSlot(Inventory.MOUNT_SLOT_INDEX);
+            if (mountSlot.IsEmpty == true)
+                return null;
+
+            return mountSlot.GetDefinition() as MountDefinition;
+        }
+
+        private void SpawnEquippedMount()
+        {
+            if (_activeMount != null)
+                return;
+
+            if (Runner == null || HasStateAuthority == false)
+                return;
+
+            MountDefinition mountDefinition = GetEquippedMountDefinition();
+            if (mountDefinition == null)
+                return;
+
+            if (_mountCollection != null && mountDefinition.Code.HasValue() == true && _mountCollection.HasMount(mountDefinition.Code) == false)
+                return;
+
+            MountBase mountPrefab = mountDefinition.MountBase;
+            if (mountPrefab == null)
+                return;
+
+            Vector3 spawnPosition = _character != null ? _character.transform.position : transform.position;
+            Quaternion spawnRotation = _character != null ? _character.transform.rotation : transform.rotation;
+
+            MountBase spawnedMount = Runner.Spawn(mountPrefab, spawnPosition, spawnRotation, Object.InputAuthority, (runner, obj) =>
+            {
+                if (obj is IContextBehaviour contextBehaviour)
+                {
+                    contextBehaviour.Context = Context;
+                }
+            });
+
+            HorseMount horseMount = spawnedMount as HorseMount;
+            if (horseMount == null)
+            {
+                horseMount = spawnedMount != null ? spawnedMount.GetComponent<HorseMount>() : null;
+            }
+
+            if (horseMount != null)
+            {
+                TryMount(horseMount);
+            }
+        }
+
+        [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority, Channel = RpcChannel.Reliable)]
+        private void RPC_RequestSpawnEquippedMount(RpcInfo rpcInfo = default)
+        {
+            SpawnEquippedMount();
         }
     }
 }
