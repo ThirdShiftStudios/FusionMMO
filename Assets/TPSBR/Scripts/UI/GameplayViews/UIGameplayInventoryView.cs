@@ -22,8 +22,10 @@ namespace TPSBR.UI
         [SerializeField] private UIButton _cancelButton;
         [SerializeField] private UIButton _inventoryTabButton;
         [SerializeField] private UIButton _mountTabButton;
+        [SerializeField] private UIButton _professionTabButton;
         [SerializeField] private RectTransform _inventoryTabContent;
         [SerializeField] private RectTransform _mountTabContent;
+        [SerializeField] private RectTransform _professionTabContent;
         [SerializeField] private UIList _inventoryList;
         [SerializeField] private UIList _mountList;
         [SerializeField] private RectTransform _inventoryDragLayer;
@@ -67,7 +69,8 @@ namespace TPSBR.UI
         private enum Tab
         {
             Inventory,
-            Mounts
+            Mounts,
+            Professions,
         }
 
         internal SceneUI GameplaySceneUI => SceneUI;
@@ -235,6 +238,11 @@ namespace TPSBR.UI
                 _mountTabButton.onClick.AddListener(OnMountTabClicked);
             }
 
+            if (_professionTabButton != null)
+            {
+                _professionTabButton.onClick.AddListener(OnProfessionTabClicked);
+            }
+
             if (_cancelButton != null)
             {
                 _cancelButton.onClick.AddListener(OnCancelButton);
@@ -288,6 +296,11 @@ namespace TPSBR.UI
             if (_mountTabButton != null)
             {
                 _mountTabButton.onClick.RemoveListener(OnMountTabClicked);
+            }
+
+            if (_professionTabButton != null)
+            {
+                _professionTabButton.onClick.RemoveListener(OnProfessionTabClicked);
             }
 
             if (_cancelButton != null)
@@ -465,6 +478,11 @@ namespace TPSBR.UI
             SetActiveTab(Tab.Mounts);
         }
 
+        private void OnProfessionTabClicked()
+        {
+            SetActiveTab(Tab.Professions);
+        }
+
         private void SetActiveTab(Tab tab)
         {
             if (_activeTab == tab)
@@ -477,6 +495,8 @@ namespace TPSBR.UI
         private void ApplyTabState()
         {
             bool inventoryActive = _activeTab == Tab.Inventory;
+            bool mountActive = _activeTab == Tab.Mounts;
+            bool professionActive = _activeTab == Tab.Professions;
 
             if (_inventoryTabContent != null)
             {
@@ -485,7 +505,12 @@ namespace TPSBR.UI
 
             if (_mountTabContent != null)
             {
-                _mountTabContent.gameObject.SetActive(inventoryActive == false);
+                _mountTabContent.gameObject.SetActive(mountActive);
+            }
+
+            if (_professionTabContent != null)
+            {
+                _professionTabContent.gameObject.SetActive(professionActive);
             }
 
             if (_inventoryTabButton != null)
@@ -495,7 +520,12 @@ namespace TPSBR.UI
 
             if (_mountTabButton != null)
             {
-                _mountTabButton.interactable = inventoryActive;
+                _mountTabButton.interactable = mountActive == false;
+            }
+
+            if (_professionTabButton != null)
+            {
+                _professionTabButton.interactable = professionActive == false;
             }
         }
 
