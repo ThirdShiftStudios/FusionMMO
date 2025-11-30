@@ -564,7 +564,7 @@ namespace TPSBR.UI
             private int[] _slotIndices;
             private Dictionary<int, UIListItem> _slotLookup;
             private Inventory _inventory;
-            private UIListItem _dragSource;
+            private UIInventorySlotListItem _dragSource;
             private RectTransform _dragIcon;
             private Image _dragImage;
             private CanvasGroup _dragCanvasGroup;
@@ -1381,7 +1381,7 @@ namespace TPSBR.UI
             private readonly UIGameplayInventoryView _view;
             private UIList _list;
             private RectTransform _dragLayer;
-            private UIListItem _dragSource;
+            private UIInventorySlotListItem _dragSource;
             private RectTransform _dragIcon;
             private Image _dragImage;
             private CanvasGroup _dragCanvasGroup;
@@ -1397,7 +1397,7 @@ namespace TPSBR.UI
                 _dragLayer = dragLayer;
             }
 
-            internal void InitializeSlot(UIListItem slot, int index)
+            internal void InitializeSlot(UIInventorySlotListItem slot, int index)
             {
                 if (slot == null)
                     return;
@@ -1818,10 +1818,11 @@ namespace TPSBR.UI
                 return;
 
             var slot = _mountList.GetItem(index);
-            if (slot == null)
+            var targetSlot = content as UIInventorySlotListItem ?? slot;
+            if (slot == null || targetSlot == null)
                 return;
 
-            _mountPresenter?.InitializeSlot(slot, index);
+            _mountPresenter?.InitializeSlot(targetSlot, index);
 
             MountDefinition mountDefinition = (index >= 0 && index < _unlockedMounts.Count) ? _unlockedMounts[index] : null;
             if (mountDefinition == null)
@@ -1830,7 +1831,7 @@ namespace TPSBR.UI
                 return;
             }
 
-            slot.SetItem(GetMountIcon(mountDefinition), 1);
+            targetSlot.SetItem(GetMountIcon(mountDefinition), 1);
         }
 
         private static bool TryResolveMountDefinition(string mountCode, out MountDefinition definition)
