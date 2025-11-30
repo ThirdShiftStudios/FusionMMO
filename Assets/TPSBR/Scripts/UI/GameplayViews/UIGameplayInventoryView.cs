@@ -28,6 +28,7 @@ namespace TPSBR.UI
         [SerializeField] private UIList _mountList;
         [SerializeField] private RectTransform _inventoryDragLayer;
         [SerializeField] private UIHotbar _hotbar;
+        [SerializeField] private UIAbilityView _abilityView;
         [SerializeField] private Color _selectedHotbarColor = Color.white;
         [SerializeField] private Color _selectedInventorySlotColor = Color.white;
         [SerializeField] private Color _selectedHotbarSlotColor = Color.white;
@@ -57,6 +58,7 @@ namespace TPSBR.UI
         private bool _menuVisible;
         private Agent _boundAgent;
         private Inventory _boundInventory;
+        private MountController _boundMountController;
         private MountCollection _boundMountCollection;
         private InventoryListPresenter _inventoryPresenter;
         private MountListPresenter _mountPresenter;
@@ -215,6 +217,11 @@ namespace TPSBR.UI
                 _mountPresenter.Initialize(_mountList, _inventoryDragLayer);
             }
 
+            if (_abilityView == null)
+            {
+                _abilityView = GetComponentInChildren<UIAbilityView>(true);
+            }
+
             if (_hotbar != null)
             {
                 _hotbar.SetSelectedColor(_selectedHotbarColor);
@@ -345,6 +352,7 @@ namespace TPSBR.UI
 
             RefreshInventoryBinding();
             RefreshCharacterDetails();
+            RefreshMountState();
         }
 
        
@@ -1519,6 +1527,7 @@ namespace TPSBR.UI
 
                     _boundAgent = null;
                     _boundInventory = null;
+                    _boundMountController = null;
                     _boundMountCollection = null;
                     _inventoryPresenter?.Bind(null);
                     _hotbar?.Bind(null);
@@ -1545,6 +1554,7 @@ namespace TPSBR.UI
 
             _boundAgent = agent;
             _boundInventory = agent != null ? agent.Inventory : null;
+            _boundMountController = agent != null ? agent.GetComponent<MountController>() : null;
             _boundMountCollection = agent != null ? agent.GetComponent<MountCollection>() : null;
             _inventoryPresenter?.Bind(_boundInventory);
             _hotbar?.Bind(_boundInventory);
@@ -1569,6 +1579,8 @@ namespace TPSBR.UI
             {
                 ClearMounts();
             }
+
+            RefreshMountState();
         }
 
         private void RefreshCharacterDetails()
@@ -1634,6 +1646,21 @@ namespace TPSBR.UI
             }
 
             RefreshMountListUI();
+        }
+
+        private void RefreshMountState()
+        {
+            bool isMounted = _boundMountController != null && _boundMountController.IsMounted == true;
+
+            if (_hotbar != null && _hotbar.gameObject.activeSelf == isMounted)
+            {
+                _hotbar.gameObject.SetActive(isMounted == false);
+            }
+
+            if (_abilityView != null && _abilityView.gameObject.activeSelf == isMounted)
+            {
+                _abilityView.gameObject.SetActive(isMounted == false);
+            }
         }
 
         private void CacheDefaultMounts()
