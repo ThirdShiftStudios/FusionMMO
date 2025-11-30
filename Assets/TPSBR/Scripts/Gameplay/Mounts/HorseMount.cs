@@ -2,9 +2,8 @@ namespace TPSBR
 {
     using Fusion;
     using UnityEngine;
-
     [DefaultExecutionOrder(-3)]
-    public sealed class HorseMount : NetworkBehaviour, IInteraction
+    public sealed class HorseMount : MountBase, IInteraction
     {
         [SerializeField] private MountDefinition _definition;
         [SerializeField] private Transform _interactionPoint;

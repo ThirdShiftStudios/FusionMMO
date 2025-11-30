@@ -12,7 +12,9 @@ namespace TPSBR
         [SerializeField] private float _moveSpeed = 10f;
         [SerializeField] private float _turnSpeed = 240f;
         [SerializeField] private float _acceleration = 20f;
+        [SerializeField] private MountBase _mountBase;
 
+        public MountBase MountBase => _mountBase;
         public string Code => _code;
         public string DisplayName => _displayName.HasValue() ? _displayName : name;
         public string Description => _description;
