@@ -1575,6 +1575,7 @@ namespace TPSBR.UI
                     _hotbar?.Bind(null);
                     UpdateGoldLabel(0);
                     ClearMounts();
+                    RefreshMountListUI();
                     HideAllTooltips();
                     RefreshMountState();
                 }
@@ -1621,6 +1622,7 @@ namespace TPSBR.UI
             else
             {
                 ClearMounts();
+                RefreshMountListUI();
             }
 
             RefreshMountState();
@@ -1714,6 +1716,8 @@ namespace TPSBR.UI
 
         private void ClearMounts()
         {
+            CacheDefaultMounts();
+
             _unlockedMounts.Clear();
             if (_defaultUnlockedMounts != null)
             {
