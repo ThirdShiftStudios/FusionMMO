@@ -7,6 +7,7 @@ using TMPro;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using TSS.Data;
+using TPSBR;
 
 namespace TPSBR.UI
 {
@@ -20,6 +21,7 @@ namespace TPSBR.UI
         // PRIVATE MEMBERS
         [SerializeField] private UIButton _cancelButton;
         [SerializeField] private UIList _inventoryList;
+        [SerializeField] private UIList _mountList;
         [SerializeField] private RectTransform _inventoryDragLayer;
         [SerializeField] private UIHotbar _hotbar;
         [SerializeField] private Color _selectedHotbarColor = Color.white;
@@ -32,6 +34,7 @@ namespace TPSBR.UI
         [SerializeField] private UIListItem _upperBodySlot;
         [SerializeField] private UIListItem _lowerBodySlot;
         [SerializeField] private UIListItem _pipeSlot;
+        [SerializeField] private UIListItem _mountSlot;
         [SerializeField] private UIListItem _bagSlotOne;
         [SerializeField] private UIListItem _bagSlotTwo;
         [SerializeField] private UIListItem _bagSlotThree;
@@ -41,11 +44,18 @@ namespace TPSBR.UI
         [SerializeField] private UIInventoryItemToolTip _itemToolTip;
         [SerializeField] private UIStatToolTip _statToolTip;
         [SerializeField] private UIProfessionToolTip _professionToolTip;
+        [SerializeField] private List<MountDefinition> _unlockedMounts = new List<MountDefinition>();
+        [SerializeField] private MountDefinition _equippedMount;
+        private static Dictionary<string, MountDefinition> _mountDefinitionLookup;
+        private List<MountDefinition> _defaultUnlockedMounts;
+        private MountDefinition _defaultEquippedMount;
 
         private bool _menuVisible;
         private Agent _boundAgent;
         private Inventory _boundInventory;
+        private MountCollection _boundMountCollection;
         private InventoryListPresenter _inventoryPresenter;
+        private MountListPresenter _mountPresenter;
         [SerializeField]
         private UICharacterDetailsView _characterDetails;
         
@@ -147,10 +157,18 @@ namespace TPSBR.UI
         protected override void OnInitialize()
         {
             base.OnInitialize();
-            
+
+            CacheDefaultMounts();
+
             if (_inventoryList == null)
             {
                 _inventoryList = GetComponentInChildren<UIList>(true);
+            }
+
+            if (_mountList != null)
+            {
+                _mountList.UpdateContent -= OnMountListItemUpdate;
+                _mountList.UpdateContent += OnMountListItemUpdate;
             }
 
             if (_characterDetails == null)
@@ -170,6 +188,7 @@ namespace TPSBR.UI
                     _upperBodySlot,
                     _lowerBodySlot,
                     _pipeSlot,
+                    _mountSlot,
                     _bagSlotOne,
                     _bagSlotTwo,
                     _bagSlotThree,
@@ -177,6 +196,12 @@ namespace TPSBR.UI
                     _bagSlotFive);
                 _inventoryPresenter.SetSelectionColor(_selectedInventorySlotColor);
                 _inventoryPresenter.ItemSelected += OnInventoryItemSelected;
+            }
+
+            if (_mountList != null && _mountPresenter == null)
+            {
+                _mountPresenter = new MountListPresenter(this);
+                _mountPresenter.Initialize(_mountList, _inventoryDragLayer);
             }
 
             if (_hotbar != null)
@@ -206,7 +231,15 @@ namespace TPSBR.UI
                 _boundInventory = null;
             }
 
+            if (_boundMountCollection != null)
+            {
+                _boundMountCollection.MountsChanged -= OnMountsChanged;
+                _boundMountCollection = null;
+            }
+
+            _mountPresenter?.ResetDragState();
             _boundAgent = null;
+            ClearMounts();
             UpdateGoldLabel(0);
 
             if (_inventoryPresenter != null)
@@ -229,6 +262,13 @@ namespace TPSBR.UI
             {
                 _cancelButton.onClick.RemoveListener(OnCancelButton);
             }
+
+            if (_mountList != null)
+            {
+                _mountList.UpdateContent -= OnMountListItemUpdate;
+            }
+
+            _mountPresenter?.ResetDragState();
 
             HideAllTooltips();
 
@@ -406,6 +446,7 @@ namespace TPSBR.UI
             private UIListItem _upperBodySlotOverride;
             private UIListItem _lowerBodySlotOverride;
             private UIListItem _pipeSlotOverride;
+            private UIListItem _mountSlotOverride;
             private UIListItem[] _bagSlotOverrides;
             private List<UIListItem> _generalSlots;
             private UIListItem _generalSlotTemplate;
@@ -432,6 +473,7 @@ namespace TPSBR.UI
                 UIListItem upperBodySlot,
                 UIListItem lowerBodySlot,
                 UIListItem pipeSlot,
+                UIListItem mountSlot,
                 UIListItem bagSlotOne,
                 UIListItem bagSlotTwo,
                 UIListItem bagSlotThree,
@@ -446,6 +488,7 @@ namespace TPSBR.UI
                 _upperBodySlotOverride = upperBodySlot;
                 _lowerBodySlotOverride = lowerBodySlot;
                 _pipeSlotOverride = pipeSlot;
+                _mountSlotOverride = mountSlot;
                 _bagSlotOverrides = new[] { bagSlotOne, bagSlotTwo, bagSlotThree, bagSlotFour, bagSlotFive };
 
                 if (_list == null)
@@ -468,6 +511,7 @@ namespace TPSBR.UI
                 AddSpecialSlot(_upperBodySlotOverride, specialSlots);
                 AddSpecialSlot(_lowerBodySlotOverride, specialSlots);
                 AddSpecialSlot(_pipeSlotOverride, specialSlots);
+                AddSpecialSlot(_mountSlotOverride, specialSlots);
 
                 if (_bagSlotOverrides != null)
                 {
@@ -633,6 +677,7 @@ namespace TPSBR.UI
                 if (_upperBodySlotOverride != null) estimatedCapacity++;
                 if (_lowerBodySlotOverride != null) estimatedCapacity++;
                 if (_pipeSlotOverride != null) estimatedCapacity++;
+                if (_mountSlotOverride != null) estimatedCapacity++;
 
                 if (_bagSlotOverrides != null)
                 {
@@ -711,6 +756,13 @@ namespace TPSBR.UI
                     orderedSlots,
                     indices,
                     $"{nameof(UIList)} inventory list is missing a pipe inventory slot.");
+
+                AddSpecialSlotMapping(
+                    _mountSlotOverride,
+                    Inventory.MOUNT_SLOT_INDEX,
+                    orderedSlots,
+                    indices,
+                    $"{nameof(UIList)} inventory list is missing a mount inventory slot.");
 
                 if (_bagSlotOverrides != null)
                 {
@@ -843,6 +895,18 @@ namespace TPSBR.UI
                         return;
 
                     _inventory.RequestStoreHotbar(source.Index, target.Index);
+                }
+
+                if (source.Owner is MountListPresenter)
+                {
+                    if (target.Index != Inventory.MOUNT_SLOT_INDEX)
+                        return;
+
+                    var mountDefinition = _view?.GetUnlockedMount(source.Index);
+                    if (mountDefinition == null)
+                        return;
+
+                    _view.EquipMount(mountDefinition);
                 }
             }
 
@@ -1183,6 +1247,181 @@ namespace TPSBR.UI
             }
         }
 
+        private sealed class MountListPresenter : IUIListItemOwner
+        {
+            private readonly UIGameplayInventoryView _view;
+            private UIList _list;
+            private RectTransform _dragLayer;
+            private UIListItem _dragSource;
+            private RectTransform _dragIcon;
+            private Image _dragImage;
+            private CanvasGroup _dragCanvasGroup;
+
+            internal MountListPresenter(UIGameplayInventoryView view)
+            {
+                _view = view;
+            }
+
+            internal void Initialize(UIList list, RectTransform dragLayer)
+            {
+                _list = list;
+                _dragLayer = dragLayer;
+            }
+
+            internal void InitializeSlot(UIListItem slot, int index)
+            {
+                if (slot == null)
+                    return;
+
+                slot.InitializeSlot(this, index);
+            }
+
+            internal void ResetDragState()
+            {
+                _dragSource = null;
+                SetDragVisible(false);
+            }
+
+            void IUIListItemOwner.BeginSlotDrag(UIListItem slot, PointerEventData eventData)
+            {
+                var mountDefinition = _view?.GetUnlockedMount(slot?.Index ?? -1);
+                if (slot == null || mountDefinition == null)
+                    return;
+
+                _dragSource = slot;
+                EnsureDragVisual();
+                UpdateDragIcon(mountDefinition.Icon, 1, slot.SlotRectTransform.rect.size);
+                SetDragVisible(true);
+                UpdateDragPosition(eventData);
+            }
+
+            void IUIListItemOwner.UpdateSlotDrag(PointerEventData eventData)
+            {
+                if (_dragSource == null)
+                    return;
+
+                UpdateDragPosition(eventData);
+            }
+
+            void IUIListItemOwner.EndSlotDrag(UIListItem slot, PointerEventData eventData)
+            {
+                if (_dragSource != slot)
+                    return;
+
+                _dragSource = null;
+                SetDragVisible(false);
+            }
+
+            void IUIListItemOwner.HandleSlotDrop(UIListItem source, UIListItem target)
+            {
+                if (_view == null || source == null || target == null)
+                    return;
+
+                if (target.Owner is InventoryListPresenter == false)
+                    return;
+
+                if (target.Index != Inventory.MOUNT_SLOT_INDEX)
+                    return;
+
+                var mountDefinition = _view.GetUnlockedMount(source.Index);
+                if (mountDefinition == null)
+                    return;
+
+                _view.EquipMount(mountDefinition);
+            }
+
+            void IUIListItemOwner.HandleSlotDropOutside(UIListItem slot, PointerEventData eventData)
+            {
+            }
+
+            void IUIListItemOwner.HandleSlotSelected(UIListItem slot)
+            {
+            }
+
+            void IUIListItemOwner.HandleSlotPointerEnter(UIListItem slot, PointerEventData eventData)
+            {
+            }
+
+            void IUIListItemOwner.HandleSlotPointerExit(UIListItem slot)
+            {
+            }
+
+            void IUIListItemOwner.HandleSlotPointerMove(UIListItem slot, PointerEventData eventData)
+            {
+            }
+
+            private void EnsureDragVisual()
+            {
+                if (_dragIcon != null)
+                    return;
+
+                var parent = _dragLayer != null ? _dragLayer : _view?.GameplaySceneUI?.Canvas.transform as RectTransform;
+                if (parent == null)
+                    return;
+
+                var dragObject = new GameObject("MountDrag", typeof(RectTransform), typeof(CanvasGroup), typeof(Image));
+                dragObject.transform.SetParent(parent, false);
+
+                _dragIcon = dragObject.GetComponent<RectTransform>();
+                _dragCanvasGroup = dragObject.GetComponent<CanvasGroup>();
+                _dragImage = dragObject.GetComponent<Image>();
+
+                _dragCanvasGroup.blocksRaycasts = false;
+                _dragCanvasGroup.interactable = false;
+                _dragImage.raycastTarget = false;
+                _dragImage.preserveAspect = true;
+
+                dragObject.SetActive(false);
+            }
+
+            private void UpdateDragIcon(Sprite sprite, int quantity, Vector2 size)
+            {
+                if (_dragIcon == null)
+                    return;
+
+                if (sprite == null || quantity <= 0)
+                {
+                    SetDragVisible(false);
+                    return;
+                }
+
+                _dragImage.sprite = sprite;
+                _dragImage.color = Color.white;
+                _dragIcon.sizeDelta = size;
+            }
+
+            private void UpdateDragPosition(PointerEventData eventData)
+            {
+                if (_dragIcon == null)
+                    return;
+
+                RectTransform referenceRect = _dragIcon.parent as RectTransform;
+                if (referenceRect == null)
+                    return;
+
+                var sceneUI = _view?.GameplaySceneUI;
+                if (sceneUI == null)
+                    return;
+
+                if (RectTransformUtility.ScreenPointToLocalPointInRectangle(referenceRect, eventData.position, sceneUI.Canvas.worldCamera, out Vector2 localPoint))
+                {
+                    _dragIcon.localPosition = localPoint;
+                }
+            }
+
+            private void SetDragVisible(bool visible)
+            {
+                if (_dragIcon == null)
+                    return;
+
+                _dragIcon.gameObject.SetActive(visible);
+                if (_dragCanvasGroup != null)
+                {
+                    _dragCanvasGroup.alpha = visible ? 1f : 0f;
+                }
+            }
+        }
+
         private void RefreshInventoryBinding()
         {
             if (Context == null)
@@ -1194,11 +1433,18 @@ namespace TPSBR.UI
                         _boundInventory.GoldChanged -= OnGoldChanged;
                     }
 
+                    if (_boundMountCollection != null)
+                    {
+                        _boundMountCollection.MountsChanged -= OnMountsChanged;
+                    }
+
                     _boundAgent = null;
                     _boundInventory = null;
+                    _boundMountCollection = null;
                     _inventoryPresenter?.Bind(null);
                     _hotbar?.Bind(null);
                     UpdateGoldLabel(0);
+                    ClearMounts();
                     HideAllTooltips();
                 }
                 return;
@@ -1213,8 +1459,14 @@ namespace TPSBR.UI
                 _boundInventory.GoldChanged -= OnGoldChanged;
             }
 
+            if (_boundMountCollection != null)
+            {
+                _boundMountCollection.MountsChanged -= OnMountsChanged;
+            }
+
             _boundAgent = agent;
             _boundInventory = agent != null ? agent.Inventory : null;
+            _boundMountCollection = agent != null ? agent.GetComponent<MountCollection>() : null;
             _inventoryPresenter?.Bind(_boundInventory);
             _hotbar?.Bind(_boundInventory);
             HideAllTooltips();
@@ -1227,6 +1479,16 @@ namespace TPSBR.UI
             else
             {
                 UpdateGoldLabel(0);
+            }
+
+            if (_boundMountCollection != null)
+            {
+                _boundMountCollection.MountsChanged += OnMountsChanged;
+                RefreshMounts();
+            }
+            else
+            {
+                ClearMounts();
             }
         }
 
@@ -1242,9 +1504,192 @@ namespace TPSBR.UI
             _characterDetails.UpdateProfessions(_boundAgent.Professions);
         }
 
+        private void RefreshMounts()
+        {
+            ClearMounts();
+
+            if (_boundMountCollection == null)
+            {
+                RefreshMountListUI();
+                return;
+            }
+
+            EnsureMountDefinitionLookup();
+
+            HashSet<string> mountCodes = null;
+            if (_unlockedMounts.Count > 0)
+            {
+                mountCodes = new HashSet<string>(StringComparer.Ordinal);
+                for (int i = 0; i < _unlockedMounts.Count; i++)
+                {
+                    var definition = _unlockedMounts[i];
+                    if (definition != null && string.IsNullOrWhiteSpace(definition.Code) == false)
+                    {
+                        mountCodes.Add(definition.Code);
+                    }
+                }
+            }
+
+            var ownedMounts = _boundMountCollection.OwnedMountCodes;
+            if (ownedMounts != null)
+            {
+                for (int i = 0; i < ownedMounts.Count; i++)
+                {
+                    if (TryResolveMountDefinition(ownedMounts[i], out var definition) == true)
+                    {
+                        if (mountCodes == null || mountCodes.Add(definition.Code) == true)
+                        {
+                            _unlockedMounts.Add(definition);
+                        }
+                    }
+                }
+            }
+
+            if (TryResolveMountDefinition(_boundMountCollection.ActiveMountCode, out var activeMount) == true)
+            {
+                _equippedMount = activeMount;
+            }
+            else
+            {
+                _equippedMount = _defaultEquippedMount;
+            }
+
+            RefreshMountListUI();
+        }
+
+        private void CacheDefaultMounts()
+        {
+            if (_defaultUnlockedMounts == null)
+            {
+                _defaultUnlockedMounts = new List<MountDefinition>();
+                for (int i = 0; i < _unlockedMounts.Count; i++)
+                {
+                    var definition = _unlockedMounts[i];
+                    if (definition != null && _defaultUnlockedMounts.Contains(definition) == false)
+                    {
+                        _defaultUnlockedMounts.Add(definition);
+                    }
+                }
+            }
+
+            if (_defaultEquippedMount == null)
+            {
+                _defaultEquippedMount = _equippedMount;
+            }
+        }
+
+        private void ClearMounts()
+        {
+            _unlockedMounts.Clear();
+            if (_defaultUnlockedMounts != null)
+            {
+                for (int i = 0; i < _defaultUnlockedMounts.Count; i++)
+                {
+                    var definition = _defaultUnlockedMounts[i];
+                    if (definition != null && _unlockedMounts.Contains(definition) == false)
+                    {
+                        _unlockedMounts.Add(definition);
+                    }
+                }
+            }
+
+            _equippedMount = _defaultEquippedMount;
+
+            if (_mountList != null)
+            {
+                _mountList.Clear(false);
+            }
+        }
+
         private void OnGoldChanged(int amount)
         {
             UpdateGoldLabel(amount);
+        }
+
+        private void OnMountsChanged()
+        {
+            RefreshMounts();
+        }
+
+        private void RefreshMountListUI()
+        {
+            if (_mountList == null)
+                return;
+
+            _mountList.Refresh(_unlockedMounts.Count, false);
+        }
+
+        private void OnMountListItemUpdate(int index, MonoBehaviour content)
+        {
+            if (_mountList == null)
+                return;
+
+            var slot = _mountList.GetItem(index);
+            if (slot == null)
+                return;
+
+            _mountPresenter?.InitializeSlot(slot, index);
+
+            MountDefinition mountDefinition = (index >= 0 && index < _unlockedMounts.Count) ? _unlockedMounts[index] : null;
+            if (mountDefinition == null)
+            {
+                slot.Clear();
+                return;
+            }
+
+            slot.SetItem(mountDefinition.Icon, 1);
+        }
+
+        private static bool TryResolveMountDefinition(string mountCode, out MountDefinition definition)
+        {
+            definition = null;
+
+            if (string.IsNullOrWhiteSpace(mountCode) == true)
+                return false;
+
+            EnsureMountDefinitionLookup();
+
+            return _mountDefinitionLookup != null && _mountDefinitionLookup.TryGetValue(mountCode, out definition);
+        }
+
+        private MountDefinition GetUnlockedMount(int index)
+        {
+            if (index < 0 || index >= _unlockedMounts.Count)
+                return null;
+
+            return _unlockedMounts[index];
+        }
+
+        private void EquipMount(MountDefinition mountDefinition)
+        {
+            if (mountDefinition == null)
+                return;
+
+            _equippedMount = mountDefinition;
+
+            _boundInventory?.RequestEquipMount(mountDefinition);
+            _boundMountCollection?.SetActiveMount(mountDefinition.Code);
+        }
+
+        private static void EnsureMountDefinitionLookup()
+        {
+            if (_mountDefinitionLookup != null)
+                return;
+
+            _mountDefinitionLookup = new Dictionary<string, MountDefinition>();
+
+            var definitions = Resources.LoadAll<MountDefinition>(string.Empty);
+            for (int i = 0; i < definitions.Length; i++)
+            {
+                var definition = definitions[i];
+                if (definition == null)
+                    continue;
+
+                if (string.IsNullOrWhiteSpace(definition.Code) == true)
+                    continue;
+
+                _mountDefinitionLookup[definition.Code] = definition;
+            }
         }
 
         private void UpdateGoldLabel(int amount)

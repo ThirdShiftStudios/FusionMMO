@@ -30,6 +30,7 @@ namespace TPSBR
         public AnimationClip MountIdleClip => _mountIdleClip;
         public AnimationClip MountMoveClip => _mountMoveClip;
         public float MountMoveClipSpeed => _mountMoveClipSpeed;
+        public override ESlotCategory SlotCategory => ESlotCategory.Mount;
 
 #if UNITY_EDITOR
         private void OnValidate()

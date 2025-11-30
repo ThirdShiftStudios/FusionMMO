@@ -41,11 +41,11 @@ namespace TPSBR.UI
 		private List<TListItem> _items = new List<TListItem>(32);
 
 		private int _dataCount;
-		private int _selection = -1;
+                private int _selection = -1;
 
-		// PUBLIC METHODS
+                // PUBLIC METHODS
 
-		public void Refresh(int dataCount, bool notifySelection = true)
+                public void Refresh(int dataCount, bool notifySelection = true)
 		{
 			_dataCount = dataCount;
 
@@ -91,15 +91,17 @@ namespace TPSBR.UI
 			}
 		}
 
-		// MONOBEHAVIOR
+                // MONOBEHAVIOR
 
-		protected void Awake()
-		{
-			if (_dataCount == 0)
-			{
-				_itemInstance.SetActive(false);
-			}
-		}
+                protected void Awake()
+                {
+                        EnsureRuntimeItemInstance();
+
+                        if (_dataCount == 0)
+                        {
+                                _itemInstance.SetActive(false);
+                        }
+                }
 
 		// PRIVATE METHODS
 
@@ -133,10 +135,10 @@ namespace TPSBR.UI
 			}
 		}
 
-		private void UpdateItems()
-		{
-			bool selectable = _itemInstance.IsSelectable;
-			var parent = _itemInstance.transform.parent;
+                private void UpdateItems()
+                {
+                        bool selectable = _itemInstance.IsSelectable;
+                        var parent = _itemInstance.transform.parent;
 
 			for (int i = _items.Count; i < _dataCount; i++)
 			{
@@ -174,7 +176,21 @@ namespace TPSBR.UI
 			if (id == _selection && _allowDeselection == false)
 				return;
 
-			SetSelection(id == _selection ? -1 : id, true);
-		}
-	}
+                                SetSelection(id == _selection ? -1 : id, true);
+                }
+
+                private void EnsureRuntimeItemInstance()
+                {
+                        if (_itemInstance == null)
+                                return;
+
+                        if (_itemInstance.gameObject.scene.IsValid() == true)
+                                return;
+
+                        string originalName = _itemInstance.name;
+                        var parent = transform;
+                        _itemInstance = Instantiate(_itemInstance, parent);
+                        _itemInstance.gameObject.name = originalName;
+                }
+        }
 }
