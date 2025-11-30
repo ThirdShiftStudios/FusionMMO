@@ -1760,7 +1760,7 @@ namespace TPSBR.UI
 
                 if (_abilityView == null && SceneUI != null)
                 {
-                    _abilityView = SceneUI.Get<UIAbilityView>();
+                    _abilityView = SceneUI.Canvas?.GetComponentInChildren<UIAbilityView>(true);
                 }
 
                 if (_abilityView != null && _abilityView.gameObject.activeSelf == true)
