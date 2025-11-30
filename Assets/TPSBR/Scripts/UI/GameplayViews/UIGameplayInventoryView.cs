@@ -1818,20 +1818,33 @@ namespace TPSBR.UI
                 return;
 
             var slot = _mountList.GetItem(index);
-            var targetSlot = content as UIInventorySlotListItem ?? slot;
-            if (slot == null || targetSlot == null)
+            var displaySlot = content as UIInventorySlotListItem ?? slot;
+            if (slot == null || displaySlot == null)
                 return;
 
-            _mountPresenter?.InitializeSlot(targetSlot, index);
+            _mountPresenter?.InitializeSlot(displaySlot, index);
+            if (displaySlot != slot)
+            {
+                _mountPresenter?.InitializeSlot(slot, index);
+            }
 
             MountDefinition mountDefinition = (index >= 0 && index < _unlockedMounts.Count) ? _unlockedMounts[index] : null;
             if (mountDefinition == null)
             {
-                slot.Clear();
+                displaySlot.Clear();
+                if (displaySlot != slot)
+                {
+                    slot.Clear();
+                }
                 return;
             }
 
-            targetSlot.SetItem(GetMountIcon(mountDefinition), 1);
+            var icon = GetMountIcon(mountDefinition);
+            displaySlot.SetItem(icon, 1);
+            if (displaySlot != slot)
+            {
+                slot.SetItemMetadata(icon, 1);
+            }
         }
 
         private static bool TryResolveMountDefinition(string mountCode, out MountDefinition definition)
