@@ -47,6 +47,8 @@ namespace TPSBR.UI
         [SerializeField] private List<MountDefinition> _unlockedMounts = new List<MountDefinition>();
         [SerializeField] private MountDefinition _equippedMount;
         private static Dictionary<string, MountDefinition> _mountDefinitionLookup;
+        private List<MountDefinition> _defaultUnlockedMounts;
+        private MountDefinition _defaultEquippedMount;
 
         private bool _menuVisible;
         private Agent _boundAgent;
@@ -154,7 +156,9 @@ namespace TPSBR.UI
         protected override void OnInitialize()
         {
             base.OnInitialize();
-            
+
+            CacheDefaultMounts();
+
             if (_inventoryList == null)
             {
                 _inventoryList = GetComponentInChildren<UIList>(true);
@@ -1315,6 +1319,20 @@ namespace TPSBR.UI
 
             EnsureMountDefinitionLookup();
 
+            HashSet<string> mountCodes = null;
+            if (_unlockedMounts.Count > 0)
+            {
+                mountCodes = new HashSet<string>(StringComparer.Ordinal);
+                for (int i = 0; i < _unlockedMounts.Count; i++)
+                {
+                    var definition = _unlockedMounts[i];
+                    if (definition != null && string.IsNullOrWhiteSpace(definition.Code) == false)
+                    {
+                        mountCodes.Add(definition.Code);
+                    }
+                }
+            }
+
             var ownedMounts = _boundMountCollection.OwnedMountCodes;
             if (ownedMounts != null)
             {
@@ -1322,7 +1340,10 @@ namespace TPSBR.UI
                 {
                     if (TryResolveMountDefinition(ownedMounts[i], out var definition) == true)
                     {
-                        _unlockedMounts.Add(definition);
+                        if (mountCodes == null || mountCodes.Add(definition.Code) == true)
+                        {
+                            _unlockedMounts.Add(definition);
+                        }
                     }
                 }
             }
@@ -1331,14 +1352,51 @@ namespace TPSBR.UI
             {
                 _equippedMount = activeMount;
             }
+            else
+            {
+                _equippedMount = _defaultEquippedMount;
+            }
 
             RefreshMountListUI();
+        }
+
+        private void CacheDefaultMounts()
+        {
+            if (_defaultUnlockedMounts == null)
+            {
+                _defaultUnlockedMounts = new List<MountDefinition>();
+                for (int i = 0; i < _unlockedMounts.Count; i++)
+                {
+                    var definition = _unlockedMounts[i];
+                    if (definition != null && _defaultUnlockedMounts.Contains(definition) == false)
+                    {
+                        _defaultUnlockedMounts.Add(definition);
+                    }
+                }
+            }
+
+            if (_defaultEquippedMount == null)
+            {
+                _defaultEquippedMount = _equippedMount;
+            }
         }
 
         private void ClearMounts()
         {
             _unlockedMounts.Clear();
-            _equippedMount = null;
+            if (_defaultUnlockedMounts != null)
+            {
+                for (int i = 0; i < _defaultUnlockedMounts.Count; i++)
+                {
+                    var definition = _defaultUnlockedMounts[i];
+                    if (definition != null && _unlockedMounts.Contains(definition) == false)
+                    {
+                        _unlockedMounts.Add(definition);
+                    }
+                }
+            }
+
+            _equippedMount = _defaultEquippedMount;
 
             if (_mountList != null)
             {
