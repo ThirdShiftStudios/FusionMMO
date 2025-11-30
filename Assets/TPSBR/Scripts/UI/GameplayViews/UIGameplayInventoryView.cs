@@ -51,6 +51,7 @@ namespace TPSBR.UI
         [SerializeField] private UIStatToolTip _statToolTip;
         [SerializeField] private UIProfessionToolTip _professionToolTip;
         [SerializeField] private UIAbilityView _abilityView;
+        [SerializeField] private Sprite _defaultMountIcon;
         [SerializeField] private List<MountDefinition> _unlockedMounts = new List<MountDefinition>();
         [SerializeField] private MountDefinition _equippedMount;
         private static Dictionary<string, MountDefinition> _mountDefinitionLookup;
@@ -1419,7 +1420,7 @@ namespace TPSBR.UI
 
                 _dragSource = slot;
                 EnsureDragVisual();
-                UpdateDragIcon(mountDefinition.Icon, 1, slot.SlotRectTransform.rect.size);
+                UpdateDragIcon(_view?.GetMountIcon(mountDefinition), 1, slot.SlotRectTransform.rect.size);
                 SetDragVisible(true);
                 UpdateDragPosition(eventData);
             }
@@ -1830,7 +1831,7 @@ namespace TPSBR.UI
                 return;
             }
 
-            slot.SetItem(mountDefinition.Icon, 1);
+            slot.SetItem(GetMountIcon(mountDefinition), 1);
         }
 
         private static bool TryResolveMountDefinition(string mountCode, out MountDefinition definition)
@@ -1851,6 +1852,14 @@ namespace TPSBR.UI
                 return null;
 
             return _unlockedMounts[index];
+        }
+
+        private Sprite GetMountIcon(MountDefinition mountDefinition)
+        {
+            if (mountDefinition == null)
+                return null;
+
+            return mountDefinition.Icon != null ? mountDefinition.Icon : _defaultMountIcon;
         }
 
         private void EquipMount(MountDefinition mountDefinition)
