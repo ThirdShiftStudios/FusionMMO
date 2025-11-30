@@ -82,6 +82,8 @@ namespace TPSBR
 
             _character.transform.SetPositionAndRotation(dismountPosition, activeMountTransform.rotation);
 
+            HorseMount dismountedMount = _activeMount;
+
             _activeMount.EndRide();
             _activeMount = null;
 
@@ -92,6 +94,15 @@ namespace TPSBR
             _character.AnimationController?.SetMounted(false, null);
 
             _riderAnchor = _defaultRiderAnchor;
+
+            if (dismountedMount != null && Runner != null && HasStateAuthority == true)
+            {
+                NetworkObject mountObject = dismountedMount.Object;
+                if (mountObject != null)
+                {
+                    Runner.Despawn(mountObject);
+                }
+            }
         }
 
         public bool ProcessFixedInput(GameplayInput input, float deltaTime)
@@ -142,13 +153,6 @@ namespace TPSBR
                 _agent.AgentInput.WasActivated(EGameplayInputAction.Mount, input) == true ||
                 _agent.AgentInput.WasActivated(EGameplayInputAction.Interact, input) == true ||
                 _agent.AgentInput.WasActivated(EGameplayInputAction.Jump, input) == true);
-
-            if (dismountRequested == false && canProcessDismountInput == true)
-            {
-                dismountRequested = EGameplayInputAction.Mount.IsActive(input) ||
-                                     EGameplayInputAction.Interact.IsActive(input) ||
-                                     EGameplayInputAction.Jump.IsActive(input);
-            }
 
             if (dismountRequested == true)
             {
