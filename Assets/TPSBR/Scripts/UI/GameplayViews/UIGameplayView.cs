@@ -43,6 +43,7 @@ namespace TPSBR.UI
         private UIFishingView _fishingView;
         private Agent _localAgent;
         private NetworkBehaviourId _localAgentId;
+        private MountController _localMountController;
         private bool _localAgentIsLocalPlayer;
         private int _lastKnownPlayerLevel = -1;
         private bool _isExperienceSubscribed;
@@ -175,7 +176,8 @@ namespace TPSBR.UI
             {
                 _interactions.UpdateInteractions(Context, _localAgent);
             }
-            bool shouldShowAbilityView = _localAgent != null && hasOpenGamblingView == false;
+            bool isMounted = _localMountController != null && _localMountController.IsMounted == true;
+            bool shouldShowAbilityView = _localAgent != null && hasOpenGamblingView == false && isMounted == false;
 
             if (_abilityView != null)
             {
@@ -312,6 +314,7 @@ namespace TPSBR.UI
 
             _localAgent = agent;
             _localAgentId = agent.Id;
+            _localMountController = agent.GetComponent<MountController>();
             _localAgentIsLocalPlayer = isLocalPlayer;
 
             _health.SetActive(true);
@@ -393,6 +396,7 @@ namespace TPSBR.UI
                 _localAgentId = default;
             }
 
+            _localMountController = null;
             _localAgentIsLocalPlayer = false;
             _lastKnownPlayerLevel = -1;
         }
