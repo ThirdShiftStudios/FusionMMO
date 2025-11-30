@@ -1,16 +1,20 @@
 using Fusion;
 using FusionMMO.Loading;
+using TPSBR;
 using UnityEngine;
 
 namespace FusionMMO.Dungeons
 {
-    public abstract class RemoteEntranceBase : NetworkBehaviour
+    public abstract class RemoteEntranceBase : NetworkBehaviour, IInteraction
     {
-        [SerializeField]
-        private Transform _entrance;
+        [Header("Interaction")]
+        [SerializeField] private string _interactionName = "Enter";
+        [SerializeField, TextArea] private string _interactionDescription = "Enter the remote location.";
+        [SerializeField] private Transform _hudPivot;
+        [SerializeField] private Collider _interactionCollider;
 
-        [SerializeField]
-        private float _activationDistance = 5f;
+        [Header("References")]
+        [SerializeField] private Transform _entrance;
 
         [SerializeField]
         private LoadingScreenDefinition _loadingScreenDefinition;
@@ -18,48 +22,6 @@ namespace FusionMMO.Dungeons
         public Transform EntranceTransform => _entrance;
 
         protected LoadingScreenDefinition LoadingScreen => _loadingScreenDefinition;
-
-        public override void FixedUpdateNetwork()
-        {
-            base.FixedUpdateNetwork();
-
-            if (HasStateAuthority == false || _entrance == null || Runner == null)
-            {
-                return;
-            }
-
-            float sqrActivationDistance = _activationDistance * _activationDistance;
-            foreach (var player in Runner.ActivePlayers)
-            {
-                if (Runner.TryGetPlayerObject(player, out var playerObject) == false || playerObject == null)
-                {
-                    continue;
-                }
-
-                var playerComponent = playerObject.GetComponent<TPSBR.Player>();
-                if (playerComponent == null)
-                {
-                    continue;
-                }
-
-                var agent = playerComponent.ActiveAgent;
-                if (agent == null)
-                {
-                    continue;
-                }
-
-                Vector3 toEntrance = agent.transform.position - _entrance.position;
-                if (toEntrance.sqrMagnitude > sqrActivationDistance)
-                {
-                    continue;
-                }
-
-                if (TryHandleEntry(player))
-                {
-                    RPC_ShowLoadingScene(player);
-                }
-            }
-        }
 
         public void RequestLoadingScene(PlayerRef playerRef)
         {
@@ -74,6 +36,48 @@ namespace FusionMMO.Dungeons
             }
 
             RPC_ShowLoadingScene(playerRef);
+        }
+
+        string IInteraction.Name => _interactionName;
+        string IInteraction.Description => _interactionDescription;
+        Vector3 IInteraction.HUDPosition => _hudPivot != null ? _hudPivot.position : (_entrance != null ? _entrance.position : transform.position);
+        bool IInteraction.IsActive => isActiveAndEnabled == true && (_interactionCollider == null || (_interactionCollider.enabled == true && _interactionCollider.gameObject.activeInHierarchy == true));
+
+        bool IInteraction.Interact(in InteractionContext context, out string message)
+        {
+            message = string.Empty;
+
+            if (HasStateAuthority == false)
+            {
+                return false;
+            }
+
+            var agent = context.Agent;
+            if (agent == null)
+            {
+                return false;
+            }
+
+            var agentObject = agent.Object;
+            if (agentObject == null)
+            {
+                return false;
+            }
+
+            PlayerRef playerRef = agentObject.InputAuthority;
+            if (playerRef == PlayerRef.None)
+            {
+                return false;
+            }
+
+            if (TryHandleEntry(playerRef))
+            {
+                RPC_ShowLoadingScene(playerRef);
+                return true;
+            }
+
+            message = "Unable to enter.";
+            return false;
         }
 
         protected abstract bool TryHandleEntry(PlayerRef playerRef);
