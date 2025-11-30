@@ -173,6 +173,7 @@ MonoBehaviour:
   _oreContainer: {fileID: 7498455727512854845}
   _liquidContainer: {fileID: 2325491688109534007}
   _alchemizeButton: {fileID: 5385356000258673781}
+  _dragLayer: {fileID: 0}
 --- !u!1 &1810654831877579036
 GameObject:
   m_ObjectHideFlags: 0
@@ -802,6 +803,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 2915562997327141876, guid: baab226bf1d5e594b8d5a470e6a8bcaf, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 3357680375949438464, guid: baab226bf1d5e594b8d5a470e6a8bcaf, type: 3}
       propertyPath: _category
       value: 3
@@ -905,6 +910,10 @@ PrefabInstance:
     - target: {fileID: 7188736715446020420, guid: baab226bf1d5e594b8d5a470e6a8bcaf, type: 3}
       propertyPath: m_Name
       value: AlchemyDrop_BaseLiquid
+      objectReference: {fileID: 0}
+    - target: {fileID: 7605765073546814049, guid: baab226bf1d5e594b8d5a470e6a8bcaf, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1184,6 +1193,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 2915562997327141876, guid: baab226bf1d5e594b8d5a470e6a8bcaf, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 3357680375949438464, guid: baab226bf1d5e594b8d5a470e6a8bcaf, type: 3}
       propertyPath: _category
       value: 2
@@ -1287,6 +1300,10 @@ PrefabInstance:
     - target: {fileID: 7188736715446020420, guid: baab226bf1d5e594b8d5a470e6a8bcaf, type: 3}
       propertyPath: m_Name
       value: AlchemyDrop_Ore
+      objectReference: {fileID: 0}
+    - target: {fileID: 7605765073546814049, guid: baab226bf1d5e594b8d5a470e6a8bcaf, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1542,6 +1559,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 2915562997327141876, guid: baab226bf1d5e594b8d5a470e6a8bcaf, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 5285240603222306623, guid: baab226bf1d5e594b8d5a470e6a8bcaf, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
@@ -1593,6 +1614,10 @@ PrefabInstance:
     - target: {fileID: 7188736715446020420, guid: baab226bf1d5e594b8d5a470e6a8bcaf, type: 3}
       propertyPath: m_Name
       value: AlchemyDrop_Flora
+      objectReference: {fileID: 0}
+    - target: {fileID: 7605765073546814049, guid: baab226bf1d5e594b8d5a470e6a8bcaf, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1706,6 +1731,10 @@ PrefabInstance:
     - target: {fileID: 2816681939503014035, guid: 2240850c425092947a275dd96f69fc73, type: 3}
       propertyPath: m_Name
       value: UIItemSlot
+      objectReference: {fileID: 0}
+    - target: {fileID: 2816681939503014035, guid: 2240850c425092947a275dd96f69fc73, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1864,6 +1893,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 2915562997327141876, guid: baab226bf1d5e594b8d5a470e6a8bcaf, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 3357680375949438464, guid: baab226bf1d5e594b8d5a470e6a8bcaf, type: 3}
       propertyPath: _category
       value: 1
@@ -1967,6 +2000,10 @@ PrefabInstance:
     - target: {fileID: 7188736715446020420, guid: baab226bf1d5e594b8d5a470e6a8bcaf, type: 3}
       propertyPath: m_Name
       value: AlchemyDrop_Essense
+      objectReference: {fileID: 0}
+    - target: {fileID: 7605765073546814049, guid: baab226bf1d5e594b8d5a470e6a8bcaf, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
