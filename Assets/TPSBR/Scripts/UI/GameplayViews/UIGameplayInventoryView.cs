@@ -1830,6 +1830,12 @@ namespace TPSBR.UI
                 return;
             }
 
+            if (mountDefinition.Icon == null && TryResolveMountDefinition(mountDefinition.Code, out var resolvedDefinition) == true)
+            {
+                mountDefinition = resolvedDefinition;
+                _unlockedMounts[index] = mountDefinition;
+            }
+
             slot.SetItem(mountDefinition.Icon, 1);
         }
 
