@@ -175,14 +175,14 @@ namespace TPSBR.UI
             _effects.UpdateEffects(_localAgent);
             _buffs?.UpdateBuffs(_localAgent);
             bool hasOpenGamblingView = HasOpenGamblingView();
-            bool isInventoryOpen = IsInventoryOpen();
+            bool isInventoryMenuVisible = IsInventoryMenuVisible();
             bool interactionsAreVisible = RefreshInteractionVisibility(hasOpenGamblingView);
 
             if (interactionsAreVisible == true)
             {
                 _interactions.UpdateInteractions(Context, _localAgent);
             }
-            bool shouldShowAbilityView = _localAgent != null && hasOpenGamblingView == false && isInventoryOpen == false;
+            bool shouldShowAbilityView = _localAgent != null && hasOpenGamblingView == false && isInventoryMenuVisible == false;
 
             if (_abilityView != null)
             {
@@ -200,7 +200,7 @@ namespace TPSBR.UI
 
             if (_teamPlayerPanels != null)
             {
-                bool shouldShowTeamPlayerPanels = isInventoryOpen == false;
+                bool shouldShowTeamPlayerPanels = isInventoryMenuVisible == false;
 
                 _teamPlayerPanels.gameObject.SetActive(shouldShowTeamPlayerPanels);
 
@@ -508,14 +508,14 @@ namespace TPSBR.UI
             return shouldShowInteractions;
         }
 
-        private bool IsInventoryOpen()
+        private bool IsInventoryMenuVisible()
         {
             if (_inventoryView == null && SceneUI != null)
             {
                 _inventoryView = SceneUI.Get<UIGameplayInventoryView>();
             }
 
-            return _inventoryView != null && _inventoryView.IsOpen == true;
+            return _inventoryView != null && _inventoryView.MenuVisible == true;
         }
 
         private bool HasOpenGamblingView()
