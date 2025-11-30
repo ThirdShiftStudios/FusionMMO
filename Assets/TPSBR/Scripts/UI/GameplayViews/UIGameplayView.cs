@@ -38,6 +38,7 @@ namespace TPSBR.UI
 
         [SerializeField] private UITeamPlayerPanels _teamPlayerPanels;
 
+        private UIGameplayInventoryView _inventoryView;
         private UIMana _mana;
         private UIStamina _stamina;
         private UIFishingView _fishingView;
@@ -89,6 +90,11 @@ namespace TPSBR.UI
             if (_menuButton != null)
             {
                 _menuButton.onClick.AddListener(OnMenuButton);
+            }
+
+            if (SceneUI != null)
+            {
+                _inventoryView = SceneUI.Get<UIGameplayInventoryView>();
             }
         }
 
@@ -169,13 +175,14 @@ namespace TPSBR.UI
             _effects.UpdateEffects(_localAgent);
             _buffs?.UpdateBuffs(_localAgent);
             bool hasOpenGamblingView = HasOpenGamblingView();
+            bool isInventoryOpen = IsInventoryOpen();
             bool interactionsAreVisible = RefreshInteractionVisibility(hasOpenGamblingView);
 
             if (interactionsAreVisible == true)
             {
                 _interactions.UpdateInteractions(Context, _localAgent);
             }
-            bool shouldShowAbilityView = _localAgent != null && hasOpenGamblingView == false;
+            bool shouldShowAbilityView = _localAgent != null && hasOpenGamblingView == false && isInventoryOpen == false;
 
             if (_abilityView != null)
             {
@@ -190,7 +197,18 @@ namespace TPSBR.UI
                     _abilityView.Clear();
                 }
             }
-            _teamPlayerPanels.UpdateTeamPlayerPanels(Context, _localAgent);
+
+            if (_teamPlayerPanels != null)
+            {
+                bool shouldShowTeamPlayerPanels = isInventoryOpen == false;
+
+                _teamPlayerPanels.gameObject.SetActive(shouldShowTeamPlayerPanels);
+
+                if (shouldShowTeamPlayerPanels == true)
+                {
+                    _teamPlayerPanels.UpdateTeamPlayerPanels(Context, _localAgent);
+                }
+            }
         }
 
         // PRIVATE MEMBERS
@@ -488,6 +506,16 @@ namespace TPSBR.UI
             _interactions.SetActive(shouldShowInteractions);
 
             return shouldShowInteractions;
+        }
+
+        private bool IsInventoryOpen()
+        {
+            if (_inventoryView == null && SceneUI != null)
+            {
+                _inventoryView = SceneUI.Get<UIGameplayInventoryView>();
+            }
+
+            return _inventoryView != null && _inventoryView.IsOpen == true;
         }
 
         private bool HasOpenGamblingView()
