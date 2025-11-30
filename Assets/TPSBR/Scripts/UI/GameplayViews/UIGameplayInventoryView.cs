@@ -1714,6 +1714,8 @@ namespace TPSBR.UI
 
         private void ClearMounts()
         {
+            CacheDefaultMounts();
+
             _unlockedMounts.Clear();
             if (_defaultUnlockedMounts != null)
             {
