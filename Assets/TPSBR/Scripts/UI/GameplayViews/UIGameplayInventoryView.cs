@@ -21,6 +21,7 @@ namespace TPSBR.UI
         // PRIVATE MEMBERS
         [SerializeField] private UIButton _cancelButton;
         [SerializeField] private UIList _inventoryList;
+        [SerializeField] private UIList _mountList;
         [SerializeField] private RectTransform _inventoryDragLayer;
         [SerializeField] private UIHotbar _hotbar;
         [SerializeField] private Color _selectedHotbarColor = Color.white;
@@ -159,6 +160,12 @@ namespace TPSBR.UI
                 _inventoryList = GetComponentInChildren<UIList>(true);
             }
 
+            if (_mountList != null)
+            {
+                _mountList.UpdateContent -= OnMountListItemUpdate;
+                _mountList.UpdateContent += OnMountListItemUpdate;
+            }
+
             if (_characterDetails == null)
             {
                 _characterDetails = GetComponentInChildren<UICharacterDetailsView>();
@@ -242,6 +249,11 @@ namespace TPSBR.UI
             if (_cancelButton != null)
             {
                 _cancelButton.onClick.RemoveListener(OnCancelButton);
+            }
+
+            if (_mountList != null)
+            {
+                _mountList.UpdateContent -= OnMountListItemUpdate;
             }
 
             HideAllTooltips();
@@ -1296,7 +1308,10 @@ namespace TPSBR.UI
             ClearMounts();
 
             if (_boundMountCollection == null)
+            {
+                RefreshMountListUI();
                 return;
+            }
 
             EnsureMountDefinitionLookup();
 
@@ -1316,12 +1331,19 @@ namespace TPSBR.UI
             {
                 _equippedMount = activeMount;
             }
+
+            RefreshMountListUI();
         }
 
         private void ClearMounts()
         {
             _unlockedMounts.Clear();
             _equippedMount = null;
+
+            if (_mountList != null)
+            {
+                _mountList.Clear(false);
+            }
         }
 
         private void OnGoldChanged(int amount)
@@ -1332,6 +1354,33 @@ namespace TPSBR.UI
         private void OnMountsChanged()
         {
             RefreshMounts();
+        }
+
+        private void RefreshMountListUI()
+        {
+            if (_mountList == null)
+                return;
+
+            _mountList.Refresh(_unlockedMounts.Count, false);
+        }
+
+        private void OnMountListItemUpdate(int index, MonoBehaviour content)
+        {
+            if (_mountList == null)
+                return;
+
+            var slot = _mountList.GetItem(index);
+            if (slot == null)
+                return;
+
+            MountDefinition mountDefinition = (index >= 0 && index < _unlockedMounts.Count) ? _unlockedMounts[index] : null;
+            if (mountDefinition == null)
+            {
+                slot.Clear();
+                return;
+            }
+
+            slot.SetItem(mountDefinition.Icon, 1);
         }
 
         private static bool TryResolveMountDefinition(string mountCode, out MountDefinition definition)
