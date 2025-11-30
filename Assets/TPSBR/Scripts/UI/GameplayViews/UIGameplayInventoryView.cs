@@ -50,6 +50,7 @@ namespace TPSBR.UI
         [SerializeField] private UIInventoryItemToolTip _itemToolTip;
         [SerializeField] private UIStatToolTip _statToolTip;
         [SerializeField] private UIProfessionToolTip _professionToolTip;
+        [SerializeField] private UIAbilityView _abilityView;
         [SerializeField] private List<MountDefinition> _unlockedMounts = new List<MountDefinition>();
         [SerializeField] private MountDefinition _equippedMount;
         private static Dictionary<string, MountDefinition> _mountDefinitionLookup;
@@ -60,11 +61,15 @@ namespace TPSBR.UI
         private Agent _boundAgent;
         private Inventory _boundInventory;
         private MountCollection _boundMountCollection;
+        private MountController _boundMountController;
         private InventoryListPresenter _inventoryPresenter;
         private MountListPresenter _mountPresenter;
         [SerializeField]
         private UICharacterDetailsView _characterDetails;
         private Tab _activeTab = Tab.Inventory;
+        private bool _isMounted;
+        private bool _hotbarHiddenForMount;
+        private bool _abilityViewHiddenForMount;
 
         private enum Tab
         {
@@ -269,7 +274,21 @@ namespace TPSBR.UI
 
             _mountPresenter?.ResetDragState();
             _boundAgent = null;
+            _boundMountController = null;
             ClearMounts();
+            if (_hotbarHiddenForMount == true && _hotbar != null)
+            {
+                _hotbar.gameObject.SetActive(true);
+            }
+
+            if (_abilityViewHiddenForMount == true && _abilityView != null)
+            {
+                _abilityView.gameObject.SetActive(true);
+            }
+
+            _isMounted = false;
+            _hotbarHiddenForMount = false;
+            _abilityViewHiddenForMount = false;
             UpdateGoldLabel(0);
 
             if (_inventoryPresenter != null)
@@ -358,6 +377,7 @@ namespace TPSBR.UI
 
             RefreshInventoryBinding();
             RefreshCharacterDetails();
+            RefreshMountState();
         }
 
        
@@ -1547,6 +1567,7 @@ namespace TPSBR.UI
                         _boundMountCollection.MountsChanged -= OnMountsChanged;
                     }
 
+                    _boundMountController = null;
                     _boundAgent = null;
                     _boundInventory = null;
                     _boundMountCollection = null;
@@ -1555,6 +1576,7 @@ namespace TPSBR.UI
                     UpdateGoldLabel(0);
                     ClearMounts();
                     HideAllTooltips();
+                    RefreshMountState();
                 }
                 return;
             }
@@ -1576,6 +1598,7 @@ namespace TPSBR.UI
             _boundAgent = agent;
             _boundInventory = agent != null ? agent.Inventory : null;
             _boundMountCollection = agent != null ? agent.GetComponent<MountCollection>() : null;
+            _boundMountController = agent != null ? agent.GetComponent<MountController>() : null;
             _inventoryPresenter?.Bind(_boundInventory);
             _hotbar?.Bind(_boundInventory);
             HideAllTooltips();
@@ -1599,6 +1622,8 @@ namespace TPSBR.UI
             {
                 ClearMounts();
             }
+
+            RefreshMountState();
         }
 
         private void RefreshCharacterDetails()
@@ -1707,6 +1732,61 @@ namespace TPSBR.UI
             if (_mountList != null)
             {
                 _mountList.Clear(false);
+            }
+        }
+
+        private void RefreshMountState()
+        {
+            bool isMounted = _boundMountController != null && _boundMountController.IsMounted == true;
+
+            if (_isMounted == isMounted)
+            {
+                return;
+            }
+
+            _isMounted = isMounted;
+
+            if (isMounted == true)
+            {
+                if (_hotbar != null && _hotbar.gameObject.activeSelf == true)
+                {
+                    _hotbarHiddenForMount = true;
+                    _hotbar.gameObject.SetActive(false);
+                }
+                else
+                {
+                    _hotbarHiddenForMount = false;
+                }
+
+                if (_abilityView == null && SceneUI != null)
+                {
+                    _abilityView = SceneUI.Get<UIAbilityView>();
+                }
+
+                if (_abilityView != null && _abilityView.gameObject.activeSelf == true)
+                {
+                    _abilityViewHiddenForMount = true;
+                    _abilityView.gameObject.SetActive(false);
+                }
+                else
+                {
+                    _abilityViewHiddenForMount = false;
+                }
+            }
+            else
+            {
+                if (_hotbarHiddenForMount == true && _hotbar != null)
+                {
+                    _hotbar.gameObject.SetActive(true);
+                }
+
+                if (_abilityViewHiddenForMount == true && _abilityView != null)
+                {
+                    _abilityView.gameObject.SetActive(true);
+                }
+
+                _hotbarHiddenForMount = false;
+                _abilityViewHiddenForMount = false;
             }
         }
 
