@@ -2,6 +2,7 @@ namespace TPSBR
 {
     using UnityEngine;
     using Fusion;
+    using Fusion.Addons.KCC;
 
     [DefaultExecutionOrder(-4)]
     public sealed class MountController : ContextBehaviour
@@ -162,7 +163,7 @@ namespace TPSBR
 
         public void ProcessRenderInput(GameplayInput input, float deltaTime)
         {
-            if (HasStateAuthority == true)
+            if (Object == null || Object.HasInputAuthority == false)
                 return;
 
             bool mountHeld = EGameplayInputAction.Mount.IsActive(input);
@@ -182,7 +183,15 @@ namespace TPSBR
                     if (_mountSpawnRequested == false && _mountHoldTimer >= _mountSpawnHoldDuration)
                     {
                         _mountSpawnRequested = true;
-                        RPC_RequestSpawnEquippedMount();
+
+                        if (HasStateAuthority == true)
+                        {
+                            SpawnEquippedMount();
+                        }
+                        else
+                        {
+                            RPC_RequestSpawnEquippedMount();
+                        }
                     }
 
                     return;
@@ -254,8 +263,17 @@ namespace TPSBR
             if (mountPrefab == null)
                 return;
 
-            Vector3 spawnPosition = _character != null ? _character.transform.position : transform.position;
-            Quaternion spawnRotation = _character != null ? _character.transform.rotation : transform.rotation;
+            Vector3 spawnPosition = transform.position;
+            Quaternion spawnRotation = transform.rotation;
+
+            if (_character != null)
+            {
+                KCC kcc = _character.CharacterController;
+                KCCData kccData = kcc != null ? kcc.Data : default;
+
+                spawnPosition = kcc != null ? kccData.TransformPosition : _character.transform.position;
+                spawnRotation = kcc != null ? kccData.TransformRotation : _character.transform.rotation;
+            }
 
             MountBase spawnedMount = Runner.Spawn(mountPrefab, spawnPosition, spawnRotation, Object.InputAuthority, (runner, obj) =>
             {

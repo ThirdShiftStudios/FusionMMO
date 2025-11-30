@@ -422,7 +422,7 @@ namespace TPSBR
                 input.LookRotationDelta = accumulatedInput.LookRotationDelta;
             }
 
-            if (_mountController != null && HasStateAuthority == false)
+            if (_mountController != null)
             {
                 _mountController.ProcessRenderInput(input, Time.deltaTime);
             }
