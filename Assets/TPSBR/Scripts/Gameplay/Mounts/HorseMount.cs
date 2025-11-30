@@ -3,10 +3,9 @@ namespace TPSBR
     using Fusion;
     using UnityEngine;
     [DefaultExecutionOrder(-3)]
-    public sealed class HorseMount : MountBase, IInteraction
+    public sealed class HorseMount : MountBase
     {
         [SerializeField] private MountDefinition _definition;
-        [SerializeField] private Transform _interactionPoint;
         [SerializeField] private Transform _cameraTransform;
         [SerializeField] private Transform _riderAnchor;
         [SerializeField] private LayerMask _blockedLayers;
@@ -18,10 +17,6 @@ namespace TPSBR
         private MountController _rider;
         private float _currentSpeed;
 
-        public string Name => _definition != null ? _definition.DisplayName : "Mount";
-        public string Description => _definition != null ? _definition.Description : string.Empty;
-        public Vector3 HUDPosition => _interactionPoint != null ? _interactionPoint.position : transform.position + Vector3.up;
-        public bool IsActive => _rider == null;
         public string MountCode => _definition != null ? _definition.Code : string.Empty;
         public Transform MountCamera => _cameraTransform;
         public Transform RiderAnchor => _riderAnchor;
@@ -33,41 +28,6 @@ namespace TPSBR
             {
                 _animator = GetComponent<MountAnimator>();
             }
-        }
-
-        public bool Interact(in InteractionContext context, out string message)
-        {
-            message = default;
-
-            if (_definition == null)
-            {
-                message = "Missing mount definition.";
-                return false;
-            }
-
-            if (IsActive == false)
-            {
-                message = "Mount already occupied.";
-                return false;
-            }
-
-            var riderController = context.Agent != null ? context.Agent.GetComponent<MountController>() : null;
-            var mountInventory = context.Agent != null ? context.Agent.GetComponent<MountCollection>() : null;
-
-            if (riderController == null)
-            {
-                message = "No rider controller found.";
-                return false;
-            }
-
-            if (mountInventory != null && mountInventory.HasMount(MountCode) == false)
-            {
-                message = "You have not unlocked this mount.";
-                return false;
-            }
-
-            riderController.TryMount(this);
-            return true;
         }
 
         public void BeginRide(MountController rider)

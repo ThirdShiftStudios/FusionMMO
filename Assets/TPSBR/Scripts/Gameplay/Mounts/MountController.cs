@@ -151,7 +151,6 @@ namespace TPSBR
             bool canProcessDismountInput = Time.time >= _dismountInputBlockedUntil;
             bool dismountRequested = canProcessDismountInput && (
                 _agent.AgentInput.WasActivated(EGameplayInputAction.Mount, input) == true ||
-                _agent.AgentInput.WasActivated(EGameplayInputAction.Interact, input) == true ||
                 _agent.AgentInput.WasActivated(EGameplayInputAction.Jump, input) == true);
 
             if (dismountRequested == true)
