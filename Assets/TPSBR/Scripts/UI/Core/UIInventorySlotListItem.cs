@@ -3,6 +3,9 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace TPSBR.UI
 {
@@ -349,6 +352,9 @@ namespace TPSBR.UI
                         if (_iconImage != null)
                                 return;
 
+                        if (CanModifyHierarchy() == false)
+                                return;
+
                         var existing = transform.Find("Icon") as RectTransform;
                         if (existing != null)
                         {
@@ -383,6 +389,9 @@ namespace TPSBR.UI
                         if (_quantityLabel != null)
                                 return;
 
+                        if (CanModifyHierarchy() == false)
+                                return;
+
                         var labelObject = new GameObject("Quantity", typeof(RectTransform));
                         labelObject.transform.SetParent(transform, false);
 
@@ -401,6 +410,16 @@ namespace TPSBR.UI
                         {
                                 _quantityLabel.font = TMP_Settings.defaultFontAsset;
                         }
+                }
+
+                private bool CanModifyHierarchy()
+                {
+#if UNITY_EDITOR
+                        if (PrefabUtility.IsPartOfPrefabAsset(gameObject) == true)
+                                return false;
+#endif
+
+                        return gameObject.scene.IsValid();
                 }
 
                 private static void CacheDropTarget(int pointerId, UIInventorySlotListItem slot)
