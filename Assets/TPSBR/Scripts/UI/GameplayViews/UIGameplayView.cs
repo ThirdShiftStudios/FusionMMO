@@ -43,6 +43,7 @@ namespace TPSBR.UI
         private UIStamina _stamina;
         private UIFishingView _fishingView;
         private Agent _localAgent;
+        private MountController _localMountController;
         private NetworkBehaviourId _localAgentId;
         private bool _localAgentIsLocalPlayer;
         private int _lastKnownPlayerLevel = -1;
@@ -182,7 +183,8 @@ namespace TPSBR.UI
             {
                 _interactions.UpdateInteractions(Context, _localAgent);
             }
-            bool shouldShowAbilityView = _localAgent != null && hasOpenGamblingView == false && isInventoryMenuVisible == false;
+            bool isMounted = _localMountController != null && _localMountController.IsMounted == true;
+            bool shouldShowAbilityView = _localAgent != null && hasOpenGamblingView == false && isInventoryMenuVisible == false && isMounted == false;
 
             if (_abilityView != null)
             {
@@ -331,6 +333,7 @@ namespace TPSBR.UI
             _localAgent = agent;
             _localAgentId = agent.Id;
             _localAgentIsLocalPlayer = isLocalPlayer;
+            _localMountController = agent.GetComponent<MountController>();
 
             _health.SetActive(true);
             _mana?.SetActive(true);
@@ -409,6 +412,7 @@ namespace TPSBR.UI
 
                 _localAgent = null;
                 _localAgentId = default;
+                _localMountController = null;
             }
 
             _localAgentIsLocalPlayer = false;
