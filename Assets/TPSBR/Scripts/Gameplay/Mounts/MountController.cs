@@ -24,6 +24,7 @@ namespace TPSBR
         [Tooltip("How long the mount input needs to be held to spawn the equipped mount.")]
         private float _mountSpawnHoldDuration = 1f;
         private float _mountHoldTimer;
+        private float _mountHoldStartTime = -1f;
         private bool _mountSpawnRequested;
 
         public bool IsMounted => _activeMount != null;
@@ -100,7 +101,13 @@ namespace TPSBR
             {
                 if (mountHeld == true)
                 {
-                    _mountHoldTimer += deltaTime;
+                    if (_mountHoldStartTime < 0f)
+                    {
+                        _mountHoldStartTime = Time.time;
+                        _mountHoldTimer = 0f;
+                    }
+
+                    _mountHoldTimer = Time.time - _mountHoldStartTime;
 
                     if (_mountSpawnRequested == false && _mountHoldTimer >= _mountSpawnHoldDuration)
                     {
@@ -176,6 +183,7 @@ namespace TPSBR
         private void ResetMountHold()
         {
             _mountHoldTimer = 0f;
+            _mountHoldStartTime = -1f;
             _mountSpawnRequested = false;
         }
 
