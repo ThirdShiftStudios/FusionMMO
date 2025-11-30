@@ -90,9 +90,13 @@ namespace TPSBR.UI
                         if (icon != null)
                         {
                                 EnsureIconImage();
-                                _iconImage.sprite = icon;
-                                _iconImage.color = Color.white;
-                                _iconImage.enabled = true;
+
+                                if (_iconImage != null)
+                                {
+                                        _iconImage.sprite = icon;
+                                        _iconImage.color = Color.white;
+                                        _iconImage.enabled = true;
+                                }
                         }
                         else if (_iconImage != null)
                         {
@@ -103,8 +107,12 @@ namespace TPSBR.UI
                         if (quantity > 1)
                         {
                                 EnsureQuantityLabel();
-                                _quantityLabel.text = quantity.ToString();
-                                _quantityLabel.gameObject.SetActive(true);
+
+                                if (_quantityLabel != null)
+                                {
+                                        _quantityLabel.text = quantity.ToString();
+                                        _quantityLabel.gameObject.SetActive(true);
+                                }
                         }
                         else if (_quantityLabel != null)
                         {
