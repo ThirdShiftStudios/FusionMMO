@@ -55,6 +55,7 @@ namespace TPSBR.UI
         private Inventory _boundInventory;
         private MountCollection _boundMountCollection;
         private InventoryListPresenter _inventoryPresenter;
+        private MountListPresenter _mountPresenter;
         [SerializeField]
         private UICharacterDetailsView _characterDetails;
         
@@ -197,6 +198,12 @@ namespace TPSBR.UI
                 _inventoryPresenter.ItemSelected += OnInventoryItemSelected;
             }
 
+            if (_mountList != null && _mountPresenter == null)
+            {
+                _mountPresenter = new MountListPresenter(this);
+                _mountPresenter.Initialize(_mountList, _inventoryDragLayer);
+            }
+
             if (_hotbar != null)
             {
                 _hotbar.SetSelectedColor(_selectedHotbarColor);
@@ -230,6 +237,7 @@ namespace TPSBR.UI
                 _boundMountCollection = null;
             }
 
+            _mountPresenter?.ResetDragState();
             _boundAgent = null;
             ClearMounts();
             UpdateGoldLabel(0);
@@ -259,6 +267,8 @@ namespace TPSBR.UI
             {
                 _mountList.UpdateContent -= OnMountListItemUpdate;
             }
+
+            _mountPresenter?.ResetDragState();
 
             HideAllTooltips();
 
@@ -886,6 +896,18 @@ namespace TPSBR.UI
 
                     _inventory.RequestStoreHotbar(source.Index, target.Index);
                 }
+
+                if (source.Owner is MountListPresenter)
+                {
+                    if (target.Index != Inventory.MOUNT_SLOT_INDEX)
+                        return;
+
+                    var mountDefinition = _view?.GetUnlockedMount(source.Index);
+                    if (mountDefinition == null)
+                        return;
+
+                    _view.EquipMount(mountDefinition);
+                }
             }
 
             void IUIListItemOwner.HandleSlotDropOutside(UIListItem slot, PointerEventData eventData)
@@ -1225,6 +1247,181 @@ namespace TPSBR.UI
             }
         }
 
+        private sealed class MountListPresenter : IUIListItemOwner
+        {
+            private readonly UIGameplayInventoryView _view;
+            private UIList _list;
+            private RectTransform _dragLayer;
+            private UIListItem _dragSource;
+            private RectTransform _dragIcon;
+            private Image _dragImage;
+            private CanvasGroup _dragCanvasGroup;
+
+            internal MountListPresenter(UIGameplayInventoryView view)
+            {
+                _view = view;
+            }
+
+            internal void Initialize(UIList list, RectTransform dragLayer)
+            {
+                _list = list;
+                _dragLayer = dragLayer;
+            }
+
+            internal void InitializeSlot(UIListItem slot, int index)
+            {
+                if (slot == null)
+                    return;
+
+                slot.InitializeSlot(this, index);
+            }
+
+            internal void ResetDragState()
+            {
+                _dragSource = null;
+                SetDragVisible(false);
+            }
+
+            void IUIListItemOwner.BeginSlotDrag(UIListItem slot, PointerEventData eventData)
+            {
+                var mountDefinition = _view?.GetUnlockedMount(slot?.Index ?? -1);
+                if (slot == null || mountDefinition == null)
+                    return;
+
+                _dragSource = slot;
+                EnsureDragVisual();
+                UpdateDragIcon(mountDefinition.Icon, 1, slot.SlotRectTransform.rect.size);
+                SetDragVisible(true);
+                UpdateDragPosition(eventData);
+            }
+
+            void IUIListItemOwner.UpdateSlotDrag(PointerEventData eventData)
+            {
+                if (_dragSource == null)
+                    return;
+
+                UpdateDragPosition(eventData);
+            }
+
+            void IUIListItemOwner.EndSlotDrag(UIListItem slot, PointerEventData eventData)
+            {
+                if (_dragSource != slot)
+                    return;
+
+                _dragSource = null;
+                SetDragVisible(false);
+            }
+
+            void IUIListItemOwner.HandleSlotDrop(UIListItem source, UIListItem target)
+            {
+                if (_view == null || source == null || target == null)
+                    return;
+
+                if (target.Owner is InventoryListPresenter == false)
+                    return;
+
+                if (target.Index != Inventory.MOUNT_SLOT_INDEX)
+                    return;
+
+                var mountDefinition = _view.GetUnlockedMount(source.Index);
+                if (mountDefinition == null)
+                    return;
+
+                _view.EquipMount(mountDefinition);
+            }
+
+            void IUIListItemOwner.HandleSlotDropOutside(UIListItem slot, PointerEventData eventData)
+            {
+            }
+
+            void IUIListItemOwner.HandleSlotSelected(UIListItem slot)
+            {
+            }
+
+            void IUIListItemOwner.HandleSlotPointerEnter(UIListItem slot, PointerEventData eventData)
+            {
+            }
+
+            void IUIListItemOwner.HandleSlotPointerExit(UIListItem slot)
+            {
+            }
+
+            void IUIListItemOwner.HandleSlotPointerMove(UIListItem slot, PointerEventData eventData)
+            {
+            }
+
+            private void EnsureDragVisual()
+            {
+                if (_dragIcon != null)
+                    return;
+
+                var parent = _dragLayer != null ? _dragLayer : _view?.GameplaySceneUI?.Canvas.transform as RectTransform;
+                if (parent == null)
+                    return;
+
+                var dragObject = new GameObject("MountDrag", typeof(RectTransform), typeof(CanvasGroup), typeof(Image));
+                dragObject.transform.SetParent(parent, false);
+
+                _dragIcon = dragObject.GetComponent<RectTransform>();
+                _dragCanvasGroup = dragObject.GetComponent<CanvasGroup>();
+                _dragImage = dragObject.GetComponent<Image>();
+
+                _dragCanvasGroup.blocksRaycasts = false;
+                _dragCanvasGroup.interactable = false;
+                _dragImage.raycastTarget = false;
+                _dragImage.preserveAspect = true;
+
+                dragObject.SetActive(false);
+            }
+
+            private void UpdateDragIcon(Sprite sprite, int quantity, Vector2 size)
+            {
+                if (_dragIcon == null)
+                    return;
+
+                if (sprite == null || quantity <= 0)
+                {
+                    SetDragVisible(false);
+                    return;
+                }
+
+                _dragImage.sprite = sprite;
+                _dragImage.color = Color.white;
+                _dragIcon.sizeDelta = size;
+            }
+
+            private void UpdateDragPosition(PointerEventData eventData)
+            {
+                if (_dragIcon == null)
+                    return;
+
+                RectTransform referenceRect = _dragIcon.parent as RectTransform;
+                if (referenceRect == null)
+                    return;
+
+                var sceneUI = _view?.GameplaySceneUI;
+                if (sceneUI == null)
+                    return;
+
+                if (RectTransformUtility.ScreenPointToLocalPointInRectangle(referenceRect, eventData.position, sceneUI.Canvas.worldCamera, out Vector2 localPoint))
+                {
+                    _dragIcon.localPosition = localPoint;
+                }
+            }
+
+            private void SetDragVisible(bool visible)
+            {
+                if (_dragIcon == null)
+                    return;
+
+                _dragIcon.gameObject.SetActive(visible);
+                if (_dragCanvasGroup != null)
+                {
+                    _dragCanvasGroup.alpha = visible ? 1f : 0f;
+                }
+            }
+        }
+
         private void RefreshInventoryBinding()
         {
             if (Context == null)
@@ -1431,6 +1628,8 @@ namespace TPSBR.UI
             if (slot == null)
                 return;
 
+            _mountPresenter?.InitializeSlot(slot, index);
+
             MountDefinition mountDefinition = (index >= 0 && index < _unlockedMounts.Count) ? _unlockedMounts[index] : null;
             if (mountDefinition == null)
             {
@@ -1451,6 +1650,25 @@ namespace TPSBR.UI
             EnsureMountDefinitionLookup();
 
             return _mountDefinitionLookup != null && _mountDefinitionLookup.TryGetValue(mountCode, out definition);
+        }
+
+        private MountDefinition GetUnlockedMount(int index)
+        {
+            if (index < 0 || index >= _unlockedMounts.Count)
+                return null;
+
+            return _unlockedMounts[index];
+        }
+
+        private void EquipMount(MountDefinition mountDefinition)
+        {
+            if (mountDefinition == null)
+                return;
+
+            _equippedMount = mountDefinition;
+
+            _boundInventory?.RequestEquipMount(mountDefinition);
+            _boundMountCollection?.SetActiveMount(mountDefinition.Code);
         }
 
         private static void EnsureMountDefinitionLookup()

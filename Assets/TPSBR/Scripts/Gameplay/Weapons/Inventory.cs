@@ -1159,6 +1159,24 @@ namespace TPSBR
             }
         }
 
+        public void RequestEquipMount(MountDefinition mountDefinition)
+        {
+            if (mountDefinition == null)
+                return;
+
+            if (mountDefinition.SlotCategory != ESlotCategory.Mount)
+                return;
+
+            if (HasStateAuthority == true)
+            {
+                EquipMountInternal(mountDefinition.ID);
+            }
+            else
+            {
+                RPC_RequestEquipMount(mountDefinition.ID);
+            }
+        }
+
         public void RequestAssignHotbar(int inventoryIndex, int hotbarIndex)
         {
             if (IsGeneralInventoryIndex(inventoryIndex) == false)
@@ -2476,6 +2494,15 @@ namespace TPSBR
         private void RPC_RequestMoveItem(byte fromIndex, byte toIndex)
         {
             MoveItem(fromIndex, toIndex);
+        }
+
+        [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
+        private void RPC_RequestEquipMount(int mountDefinitionId)
+        {
+            if (HasStateAuthority == false)
+                return;
+
+            EquipMountInternal(mountDefinitionId);
         }
 
         [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
@@ -4961,6 +4988,23 @@ namespace TPSBR
             RefreshMountSlot();
 
             return (byte)(quantity - space);
+        }
+
+        private void EquipMountInternal(int mountDefinitionId)
+        {
+            var mountDefinition = ItemDefinition.Get(mountDefinitionId) as MountDefinition;
+            if (mountDefinition == null)
+                return;
+
+            if (mountDefinition.SlotCategory != ESlotCategory.Mount)
+                return;
+
+            var newSlot = new InventorySlot(mountDefinitionId, 1, default);
+            if (_mountSlot.Equals(newSlot))
+                return;
+
+            _mountSlot = newSlot;
+            RefreshMountSlot();
         }
 
         private byte AddToBagSlots(ItemDefinition definition, byte quantity, NetworkString<_64> configurationHash)
