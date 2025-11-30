@@ -20,6 +20,10 @@ namespace TPSBR.UI
         public bool MenuVisible => _menuVisible;
         // PRIVATE MEMBERS
         [SerializeField] private UIButton _cancelButton;
+        [SerializeField] private UIButton _inventoryTabButton;
+        [SerializeField] private UIButton _mountTabButton;
+        [SerializeField] private RectTransform _inventoryTabContent;
+        [SerializeField] private RectTransform _mountTabContent;
         [SerializeField] private UIList _inventoryList;
         [SerializeField] private UIList _mountList;
         [SerializeField] private RectTransform _inventoryDragLayer;
@@ -58,7 +62,14 @@ namespace TPSBR.UI
         private MountListPresenter _mountPresenter;
         [SerializeField]
         private UICharacterDetailsView _characterDetails;
-        
+        private Tab _activeTab = Tab.Inventory;
+
+        private enum Tab
+        {
+            Inventory,
+            Mounts
+        }
+
         internal SceneUI GameplaySceneUI => SceneUI;
 
         internal void ShowItemTooltip(IInventoryItemDetails details, ItemDefinition definition, NetworkString<_64> configurationHash, Vector2 screenPosition)
@@ -214,6 +225,16 @@ namespace TPSBR.UI
                 _hotbar.ItemPointerExit += OnHotbarItemPointerExit;
             }
 
+            if (_inventoryTabButton != null)
+            {
+                _inventoryTabButton.onClick.AddListener(OnInventoryTabClicked);
+            }
+
+            if (_mountTabButton != null)
+            {
+                _mountTabButton.onClick.AddListener(OnMountTabClicked);
+            }
+
             if (_cancelButton != null)
             {
                 _cancelButton.onClick.AddListener(OnCancelButton);
@@ -221,6 +242,7 @@ namespace TPSBR.UI
 
             _detailsPanel?.Hide();
             HideAllTooltips();
+            ApplyTabState();
         }
 
         protected override void OnDeinitialize()
@@ -258,6 +280,16 @@ namespace TPSBR.UI
                 _hotbar.Bind(null);
             }
 
+            if (_inventoryTabButton != null)
+            {
+                _inventoryTabButton.onClick.RemoveListener(OnInventoryTabClicked);
+            }
+
+            if (_mountTabButton != null)
+            {
+                _mountTabButton.onClick.RemoveListener(OnMountTabClicked);
+            }
+
             if (_cancelButton != null)
             {
                 _cancelButton.onClick.RemoveListener(OnCancelButton);
@@ -284,6 +316,9 @@ namespace TPSBR.UI
             CanvasGroup.interactable = false;
 
             NotifyInventoryCameraState(false);
+
+            _activeTab = Tab.Inventory;
+            ApplyTabState();
 
             RefreshInventoryBinding();
             _detailsPanel?.Hide();
@@ -418,6 +453,50 @@ namespace TPSBR.UI
         {
             var settings = Open<UISettingsView>();
             settings.HasClosed += () => { Show(false); };
+        }
+
+        private void OnInventoryTabClicked()
+        {
+            SetActiveTab(Tab.Inventory);
+        }
+
+        private void OnMountTabClicked()
+        {
+            SetActiveTab(Tab.Mounts);
+        }
+
+        private void SetActiveTab(Tab tab)
+        {
+            if (_activeTab == tab)
+                return;
+
+            _activeTab = tab;
+            ApplyTabState();
+        }
+
+        private void ApplyTabState()
+        {
+            bool inventoryActive = _activeTab == Tab.Inventory;
+
+            if (_inventoryTabContent != null)
+            {
+                _inventoryTabContent.gameObject.SetActive(inventoryActive);
+            }
+
+            if (_mountTabContent != null)
+            {
+                _mountTabContent.gameObject.SetActive(inventoryActive == false);
+            }
+
+            if (_inventoryTabButton != null)
+            {
+                _inventoryTabButton.interactable = inventoryActive == false;
+            }
+
+            if (_mountTabButton != null)
+            {
+                _mountTabButton.interactable = inventoryActive;
+            }
         }
 
         private void OnCancelButton()
