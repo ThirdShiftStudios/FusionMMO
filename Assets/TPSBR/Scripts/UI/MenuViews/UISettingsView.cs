@@ -121,8 +121,7 @@ namespace TPSBR.UI
                 {
                         base.OnTick();
 
-                        bool hasUnsavedChanges = Context.RuntimeSettings.Options.HasUnsavedChanges || HasSettingsChangedFromInitial();
-                        _confirmButton.interactable = hasUnsavedChanges;
+                        UpdateConfirmButtonState();
 
                         _limitFPS.SetActive(_vSync.isOn == false);
                         _targetFPS.SetActive(_vSync.isOn == false && _limitFPS.isOn);
@@ -130,9 +129,9 @@ namespace TPSBR.UI
 
 		// PRIVATE METHODS
 
-		private void LoadValues()
-		{
-			var runtimeSettings = Context.RuntimeSettings;
+                private void LoadValues()
+                {
+                        var runtimeSettings = Context.RuntimeSettings;
 
 			_musicVolumeSlider.SetOptionsValueFloat(runtimeSettings.Options.GetValue(RuntimeSettings.KEY_MUSIC_VOLUME));
 			_effectsVolumeSlider.SetOptionsValueFloat(runtimeSettings.Options.GetValue(RuntimeSettings.KEY_EFFECTS_VOLUME));
@@ -144,13 +143,15 @@ namespace TPSBR.UI
 			_graphicsQuality.SetValueWithoutNotify(runtimeSettings.GraphicsQuality);
 			_resolution.SetValueWithoutNotify(_validResolutions.FindIndex(t => t.Index == runtimeSettings.Resolution));
 			_targetFPS.SetOptionsValueInt(runtimeSettings.Options.GetValue(RuntimeSettings.KEY_TARGET_FPS));
-			_limitFPS.SetIsOnWithoutNotify(runtimeSettings.LimitFPS);
-			_vSync.SetIsOnWithoutNotify(runtimeSettings.VSync);
-		}
+                        _limitFPS.SetIsOnWithoutNotify(runtimeSettings.LimitFPS);
+                        _vSync.SetIsOnWithoutNotify(runtimeSettings.VSync);
 
-		private void OnConfirmButton()
-		{
-			Context.RuntimeSettings.Options.SaveChanges();
+                        UpdateConfirmButtonState();
+                }
+
+                private void OnConfirmButton()
+                {
+                        Context.RuntimeSettings.Options.SaveChanges();
 
 			var runtimeSettings = Context.RuntimeSettings;
 
@@ -165,12 +166,12 @@ namespace TPSBR.UI
 			Application.targetFrameRate = runtimeSettings.LimitFPS == true ? runtimeSettings.TargetFPS : -1;
 			QualitySettings.vSyncCount = runtimeSettings.VSync == true ? 1 : 0;
 
-			Close();
-		}
+                        Close();
+                }
 
-		private void OnResetButton()
-		{
-			var options = Context.RuntimeSettings.Options;
+                private void OnResetButton()
+                {
+                        var options = Context.RuntimeSettings.Options;
 
 			options.ResetValueToDefault(RuntimeSettings.KEY_EFFECTS_VOLUME, false);
 			options.ResetValueToDefault(RuntimeSettings.KEY_MUSIC_VOLUME, false);
@@ -183,49 +184,63 @@ namespace TPSBR.UI
 			options.ResetValueToDefault(RuntimeSettings.KEY_AIM_SENSITIVITY, false);
 			options.ResetValueToDefault(RuntimeSettings.KEY_VSYNC, false);
 
-			LoadValues();
+                        LoadValues();
 
-			Context.Audio.UpdateVolume();
-		}
+                        UpdateConfirmButtonState();
 
-		private void OnVolumeChanged(float value)
-		{
-			Context.RuntimeSettings.MusicVolume = _musicVolumeSlider.value;
-			Context.RuntimeSettings.EffectsVolume = _effectsVolumeSlider.value;
+                        Context.Audio.UpdateVolume();
+                }
 
-			Context.Audio.UpdateVolume();
-		}
+                private void OnVolumeChanged(float value)
+                {
+                        Context.RuntimeSettings.MusicVolume = _musicVolumeSlider.value;
+                        Context.RuntimeSettings.EffectsVolume = _effectsVolumeSlider.value;
 
-		private void OnSensitivityChanged(float value)
-		{
-			Context.RuntimeSettings.Sensitivity = _sensitivitySlider.value;
-			Context.RuntimeSettings.AimSensitivity = _aimSensitivitySlider.value;
-		}
+                        Context.Audio.UpdateVolume();
 
-		private void OnLimitFPSChanged(bool value)
-		{
-			OnGraphicsChanged(-1);
-		}
+                        UpdateConfirmButtonState();
+                }
 
-		private void OnTargetFPSChanged(float value)
-		{
-			OnGraphicsChanged(-1);
-		}
+                private void OnSensitivityChanged(float value)
+                {
+                        Context.RuntimeSettings.Sensitivity = _sensitivitySlider.value;
+                        Context.RuntimeSettings.AimSensitivity = _aimSensitivitySlider.value;
 
-		private void OnGraphicsChanged(int value)
-		{
-			var runtimeSettings = Context.RuntimeSettings;
+                        UpdateConfirmButtonState();
+                }
+
+                private void OnLimitFPSChanged(bool value)
+                {
+                        OnGraphicsChanged(-1);
+
+                        UpdateConfirmButtonState();
+                }
+
+                private void OnTargetFPSChanged(float value)
+                {
+                        OnGraphicsChanged(-1);
+
+                        UpdateConfirmButtonState();
+                }
+
+                private void OnGraphicsChanged(int value)
+                {
+                        var runtimeSettings = Context.RuntimeSettings;
 
 			runtimeSettings.GraphicsQuality = _graphicsQuality.value;
-			runtimeSettings.Resolution = _validResolutions[_resolution.value].Index;
-			runtimeSettings.TargetFPS = Mathf.RoundToInt(_targetFPS.value);
-			runtimeSettings.LimitFPS = _limitFPS.isOn;
-			runtimeSettings.VSync = _vSync.isOn;
-		}
+                        runtimeSettings.Resolution = _validResolutions[_resolution.value].Index;
+                        runtimeSettings.TargetFPS = Mathf.RoundToInt(_targetFPS.value);
+                        runtimeSettings.LimitFPS = _limitFPS.isOn;
+                        runtimeSettings.VSync = _vSync.isOn;
+
+                        UpdateConfirmButtonState();
+                }
 
                 private void OnWindowedChanged(bool value)
                 {
                         Context.RuntimeSettings.Windowed = value;
+
+                        UpdateConfirmButtonState();
                 }
 
                 private void PrepareResolutionDropdown()
@@ -274,6 +289,14 @@ namespace TPSBR.UI
                         _initialLimitFPS        = runtimeSettings.LimitFPS;
                         _initialVSync           = runtimeSettings.VSync;
                         _initialWindowed        = runtimeSettings.Windowed;
+
+                        UpdateConfirmButtonState();
+                }
+
+                private void UpdateConfirmButtonState()
+                {
+                        bool hasUnsavedChanges = Context.RuntimeSettings.Options.HasUnsavedChanges || HasSettingsChangedFromInitial();
+                        _confirmButton.interactable = hasUnsavedChanges;
                 }
 
                 private bool HasSettingsChangedFromInitial()
