@@ -277,18 +277,16 @@ namespace TPSBR.UI
 
                 private void StoreInitialValues()
                 {
-                        var runtimeSettings = Context.RuntimeSettings;
-
-                        _initialMusicVolume     = runtimeSettings.MusicVolume;
-                        _initialEffectsVolume   = runtimeSettings.EffectsVolume;
-                        _initialSensitivity     = runtimeSettings.Sensitivity;
-                        _initialAimSensitivity  = runtimeSettings.AimSensitivity;
-                        _initialGraphicsQuality = runtimeSettings.GraphicsQuality;
-                        _initialResolution      = runtimeSettings.Resolution;
-                        _initialTargetFPS       = runtimeSettings.TargetFPS;
-                        _initialLimitFPS        = runtimeSettings.LimitFPS;
-                        _initialVSync           = runtimeSettings.VSync;
-                        _initialWindowed        = runtimeSettings.Windowed;
+                        _initialMusicVolume     = _musicVolumeSlider.value;
+                        _initialEffectsVolume   = _effectsVolumeSlider.value;
+                        _initialSensitivity     = _sensitivitySlider.value;
+                        _initialAimSensitivity  = _aimSensitivitySlider.value;
+                        _initialGraphicsQuality = _graphicsQuality.value;
+                        _initialResolution      = GetSelectedResolutionIndex();
+                        _initialTargetFPS       = Mathf.RoundToInt(_targetFPS.value);
+                        _initialLimitFPS        = _limitFPS.isOn;
+                        _initialVSync           = _vSync.isOn;
+                        _initialWindowed        = _windowed.isOn;
 
                         UpdateConfirmButtonState();
                 }
