@@ -51,7 +51,7 @@ namespace TPSBR
 		public string               Description       => _description;
 		public Sprite               Icon              => _icon;
 		public NetworkPrefabRef     AgentPrefab       => _agentPrefab;
-		public GameObject           MenuAgentPrefab   => _menuAgentPrefab;
+		public MenuAgent           MenuAgentPrefab   => _menuAgentPrefab;
 
 		// PRIVATE MEMBERS
 
@@ -66,6 +66,6 @@ namespace TPSBR
 		[SerializeField]
 		private NetworkPrefabRef _agentPrefab;
 		[SerializeField]
-		private GameObject _menuAgentPrefab;
+		private MenuAgent _menuAgentPrefab;
 	}
 }

@@ -15,7 +15,7 @@ namespace TPSBR
 		private Transform _agentParent;
 
 		private string _agentID;
-		private GameObject _agentInstance;
+		private MenuAgent _agentInstance;
 
 		private OutlineBehaviour _outline;
 

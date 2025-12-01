@@ -9,6 +9,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7971562992937117717}
+  - component: {fileID: 2739477128988515808}
+  - component: {fileID: -8807317313162100442}
   m_Layer: 0
   m_Name: MenuAgentBase
   m_TagString: Untagged
@@ -32,6 +34,32 @@ Transform:
   - {fileID: 8632717752587365906}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2739477128988515808
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4219948192033639525}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1d513df43cdb3e24087296961d38f878, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _equipmentVisuals: {fileID: -8807317313162100442}
+--- !u!114 &-8807317313162100442
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4219948192033639525}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5dc839799f1f046468eff465f47c4954, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _collectOnStart: 1
 --- !u!1 &6711466312299051178
 GameObject:
   m_ObjectHideFlags: 0
