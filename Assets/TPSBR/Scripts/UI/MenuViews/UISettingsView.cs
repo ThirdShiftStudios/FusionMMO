@@ -113,12 +113,7 @@ namespace TPSBR.UI
                 {
                         base.OnTick();
 
-                        var hasUnsavedChanges = Context.RuntimeSettings.Options.HasUnsavedChanges ||
-                                                _windowed.isOn != _initialWindowed ||
-                                                _vSync.isOn != _initialVSync ||
-                                                _limitFPS.isOn != _initialLimitFPS;
-
-                        _confirmButton.interactable = hasUnsavedChanges;
+                        _confirmButton.interactable = true;
 
                         _limitFPS.SetActive(_vSync.isOn == false);
                         _targetFPS.SetActive(_vSync.isOn == false && _limitFPS.isOn);
