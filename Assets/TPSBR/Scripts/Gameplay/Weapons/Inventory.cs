@@ -229,8 +229,6 @@ namespace TPSBR
         private int _generalInventorySize = BASE_GENERAL_INVENTORY_SLOTS;
 
         private static readonly Dictionary<int, Weapon> _weaponPrefabsByDefinitionId = new Dictionary<int, Weapon>();
-        private static PickaxeDefinition _cachedFallbackPickaxe;
-        private static WoodAxeDefinition _cachedFallbackWoodAxe;
         private static readonly int[] _bagSlotIndices =
         {
             BAG_SLOT_1_INDEX,
@@ -5506,21 +5504,9 @@ namespace TPSBR
                 return;
             }
 
-            var defaultPickaxe = ResolveDefaultPickaxe();
-            if (defaultPickaxe == null)
-            {
-                EnsurePickaxeInstance();
-                return;
-            }
-
-            // Ensure the pickaxe definition is registered before we assign it so UI lookups succeed.
-            ItemDefinition.Get(defaultPickaxe.ID);
-
-            var defaultConfiguration = ResolveDefaultPickaxeConfiguration();
-
-            _pickaxeSlot = new InventorySlot(defaultPickaxe.ID, 1, defaultConfiguration);
+            _pickaxeSlot = default;
             RefreshPickaxeSlot();
-            EnsurePickaxeInstance();
+            DespawnPickaxe();
         }
 
         private void EnsureWoodAxeAvailability()
@@ -5557,20 +5543,9 @@ namespace TPSBR
                 return;
             }
 
-            var defaultWoodAxe = ResolveDefaultWoodAxe();
-            if (defaultWoodAxe == null)
-            {
-                DespawnWoodAxe();
-                return;
-            }
-
-            ItemDefinition.Get(defaultWoodAxe.ID);
-
-            var defaultConfiguration = ResolveDefaultWoodAxeConfiguration();
-
-            _woodAxeSlot = new InventorySlot(defaultWoodAxe.ID, 1, defaultConfiguration);
+            _woodAxeSlot = default;
             RefreshWoodAxeSlot();
-            EnsureWoodAxeInstance();
+            DespawnWoodAxe();
         }
 
         private void EnsureFishingPoleAvailability()
@@ -5893,85 +5868,6 @@ namespace TPSBR
 
             _fishingLifecycleState = state;
             FishingLifecycleStateChanged?.Invoke(state);
-        }
-
-        private static PickaxeDefinition ResolveDefaultPickaxe()
-        {
-            var defaultDefinitions = DefaultItemDefinitions.Instance;
-            if (defaultDefinitions != null && defaultDefinitions.DefaultPickaxe != null)
-            {
-                return defaultDefinitions.DefaultPickaxe;
-            }
-
-            // Fallback: locate any pickaxe definition so new profiles always receive a tool.
-            if (_cachedFallbackPickaxe == null)
-            {
-                var pickaxes = Resources.LoadAll<PickaxeDefinition>(string.Empty);
-                for (int i = 0; i < pickaxes.Length; i++)
-                {
-                    if (pickaxes[i] != null)
-                    {
-                        _cachedFallbackPickaxe = pickaxes[i];
-                        break;
-                    }
-                }
-            }
-
-            return _cachedFallbackPickaxe;
-        }
-
-        private static WoodAxeDefinition ResolveDefaultWoodAxe()
-        {
-            var defaultDefinitions = DefaultItemDefinitions.Instance;
-            if (defaultDefinitions != null && defaultDefinitions.DefaultWoodAxe != null)
-            {
-                return defaultDefinitions.DefaultWoodAxe;
-            }
-
-            if (_cachedFallbackWoodAxe == null)
-            {
-                var woodAxes = Resources.LoadAll<WoodAxeDefinition>(string.Empty);
-                for (int i = 0; i < woodAxes.Length; i++)
-                {
-                    if (woodAxes[i] != null)
-                    {
-                        _cachedFallbackWoodAxe = woodAxes[i];
-                        break;
-                    }
-                }
-            }
-
-            return _cachedFallbackWoodAxe;
-        }
-
-        private static NetworkString<_64> ResolveDefaultPickaxeConfiguration()
-        {
-            var defaultDefinitions = DefaultItemDefinitions.Instance;
-            if (defaultDefinitions == null)
-                return default;
-
-            return ToNetworkConfiguration(defaultDefinitions.DefaultPickaxeConfiguration);
-        }
-
-        private static NetworkString<_64> ResolveDefaultWoodAxeConfiguration()
-        {
-            var defaultDefinitions = DefaultItemDefinitions.Instance;
-            if (defaultDefinitions == null)
-                return default;
-
-            return ToNetworkConfiguration(defaultDefinitions.DefaultWoodAxeConfiguration);
-        }
-
-        private static NetworkString<_64> ToNetworkConfiguration(ToolConfiguration configuration)
-        {
-            string encodedConfiguration = Tool.EncodeConfiguration(configuration);
-            if (string.IsNullOrEmpty(encodedConfiguration) == true)
-            {
-                return default;
-            }
-
-            NetworkString<_64> networkHash = encodedConfiguration;
-            return networkHash;
         }
 
         private bool HasAnyPickaxe()
