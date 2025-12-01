@@ -1823,20 +1823,30 @@ namespace TPSBR.UI
                 return;
 
             var mountSlots = ListPool<UIInventorySlotListItem>.Get();
+            var mountIcons = ListPool<Image>.Get();
             try
             {
                 AddMountSlotCandidate(slot, mountSlots);
+                AddMountIconCandidates(slot, mountIcons);
                 AddMountSlotCandidate(content as UIInventorySlotListItem, mountSlots);
+                AddMountIconCandidates(content, mountIcons);
                 if (content != null)
                 {
                     var nestedSlots = content.GetComponentsInChildren<UIInventorySlotListItem>(true);
                     for (int i = 0; i < nestedSlots.Length; i++)
                     {
                         AddMountSlotCandidate(nestedSlots[i], mountSlots);
+                        AddMountIconCandidates(nestedSlots[i], mountIcons);
+                    }
+
+                    var nestedIcons = content.GetComponentsInChildren<Image>(true);
+                    for (int i = 0; i < nestedIcons.Length; i++)
+                    {
+                        AddMountIconCandidates(nestedIcons[i], mountIcons);
                     }
                 }
 
-                if (mountSlots.Count == 0)
+                if (mountSlots.Count == 0 && mountIcons.Count == 0)
                     return;
 
                 for (int i = 0; i < mountSlots.Count; i++)
@@ -1858,10 +1868,24 @@ namespace TPSBR.UI
                         mountSlots[i].SetItem(icon, 1);
                     }
                 }
+
+                for (int i = 0; i < mountIcons.Count; i++)
+                {
+                    var image = mountIcons[i];
+                    if (image == null)
+                        continue;
+
+                    image.sprite = icon;
+                    image.color = icon != null ? Color.white : image.color;
+                    image.enabled = icon != null;
+                    image.preserveAspect = true;
+                    image.raycastTarget = false;
+                }
             }
             finally
             {
                 ListPool<UIInventorySlotListItem>.Release(mountSlots);
+                ListPool<Image>.Release(mountIcons);
             }
         }
 
@@ -1873,6 +1897,24 @@ namespace TPSBR.UI
             if (slots.Contains(slot) == false)
             {
                 slots.Add(slot);
+            }
+        }
+
+        private static void AddMountIconCandidates(Component component, List<Image> icons)
+        {
+            if (component == null || icons == null)
+                return;
+
+            var image = component as Image;
+            if (image == null)
+                return;
+
+            if (string.Equals(image.gameObject.name, "Icon", StringComparison.OrdinalIgnoreCase) == false)
+                return;
+
+            if (icons.Contains(image) == false)
+            {
+                icons.Add(image);
             }
         }
 
