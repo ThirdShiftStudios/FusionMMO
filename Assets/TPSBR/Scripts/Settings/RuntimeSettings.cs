@@ -45,11 +45,15 @@ namespace TPSBR
 
 		public void Initialize(GlobalSettings settings)
 		{
-			_options.Initialize(settings.DefaultOptions, true, "Options.V3.");
+                        _options.Initialize(settings.DefaultOptions, true, "Options.V3.");
 
-			Windowed = Screen.fullScreen == false;
-			GraphicsQuality = QualitySettings.GetQualityLevel();
-			Resolution = GetCurrentResolutionIndex();
+                        _options.AddDefaultValue(new OptionsValue(KEY_WINDOWED, Screen.fullScreen == false));
+                        _options.AddDefaultValue(new OptionsValue(KEY_LIMIT_FPS, false));
+                        _options.AddDefaultValue(new OptionsValue(KEY_VSYNC, QualitySettings.vSyncCount > 0));
+
+                        Windowed = Screen.fullScreen == false;
+                        GraphicsQuality = QualitySettings.GetQualityLevel();
+                        Resolution = GetCurrentResolutionIndex();
 
 			QualitySettings.vSyncCount = VSync == true ? 1 : 0;
 			Application.targetFrameRate = LimitFPS == true ? TargetFPS : -1;
