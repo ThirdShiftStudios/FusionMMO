@@ -477,13 +477,7 @@ namespace TPSBR
         {
             _thirdPersonView.RootBone.localScale = new Vector3(1.0f, 1.0f, 1.0f);
 
-            Vector3 currentHeadOffset = _thirdPersonView.HeadTransform.position - transform.position;
-            Vector3 headOffsetDifference = currentHeadOffset - _defaultHeadOffset;
-            Vector3 cameraPosition = transform.position + _defaultHeadOffset + headOffsetDifference * 0.5f;
-
-            Vector3 cameraHeadPosition = _thirdPersonView.CameraTransformHead.position;
-            cameraHeadPosition.y = cameraPosition.y;
-            _thirdPersonView.CameraTransformHead.position = cameraHeadPosition;
+            _thirdPersonView.CameraTransformHead.position = transform.position + _defaultHeadOffset;
         }
 
         private void RefreshFiringPosition()
