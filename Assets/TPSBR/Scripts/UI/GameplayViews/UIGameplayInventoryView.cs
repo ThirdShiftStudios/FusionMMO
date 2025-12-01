@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Fusion;
 using Unity.Template.CompetitiveActionMultiplayer;
 using UnityEngine;
+using UnityEngine.Pool;
 using TMPro;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -1818,32 +1819,60 @@ namespace TPSBR.UI
                 return;
 
             var slot = _mountList.GetItem(index);
-            var displaySlot = content as UIInventorySlotListItem ?? slot;
-            if (slot == null || displaySlot == null)
+            if (slot == null)
                 return;
 
-            _mountPresenter?.InitializeSlot(displaySlot, index);
-            if (displaySlot != slot)
+            var mountSlots = ListPool<UIInventorySlotListItem>.Get();
+            try
             {
-                _mountPresenter?.InitializeSlot(slot, index);
-            }
-
-            MountDefinition mountDefinition = (index >= 0 && index < _unlockedMounts.Count) ? _unlockedMounts[index] : null;
-            if (mountDefinition == null)
-            {
-                displaySlot.Clear();
-                if (displaySlot != slot)
+                AddMountSlotCandidate(slot, mountSlots);
+                AddMountSlotCandidate(content as UIInventorySlotListItem, mountSlots);
+                if (content != null)
                 {
-                    slot.Clear();
+                    var nestedSlots = content.GetComponentsInChildren<UIInventorySlotListItem>(true);
+                    for (int i = 0; i < nestedSlots.Length; i++)
+                    {
+                        AddMountSlotCandidate(nestedSlots[i], mountSlots);
+                    }
                 }
-                return;
-            }
 
-            var icon = GetMountIcon(mountDefinition);
-            displaySlot.SetItem(icon, 1);
-            if (displaySlot != slot)
+                if (mountSlots.Count == 0)
+                    return;
+
+                for (int i = 0; i < mountSlots.Count; i++)
+                {
+                    _mountPresenter?.InitializeSlot(mountSlots[i], index);
+                }
+
+                MountDefinition mountDefinition = (index >= 0 && index < _unlockedMounts.Count) ? _unlockedMounts[index] : null;
+                var icon = mountDefinition != null ? GetMountIcon(mountDefinition) : null;
+
+                for (int i = 0; i < mountSlots.Count; i++)
+                {
+                    if (mountDefinition == null)
+                    {
+                        mountSlots[i].Clear();
+                    }
+                    else
+                    {
+                        mountSlots[i].SetItem(icon, 1);
+                    }
+                }
+            }
+            finally
             {
-                slot.SetItemMetadata(icon, 1);
+                ListPool<UIInventorySlotListItem>.Release(mountSlots);
+            }
+        }
+
+        private static void AddMountSlotCandidate(UIInventorySlotListItem slot, List<UIInventorySlotListItem> slots)
+        {
+            if (slot == null || slots == null)
+                return;
+
+            if (slots.Contains(slot) == false)
+            {
+                slots.Add(slot);
             }
         }
 
