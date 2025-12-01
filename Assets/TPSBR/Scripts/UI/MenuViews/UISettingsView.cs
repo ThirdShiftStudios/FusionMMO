@@ -301,30 +301,36 @@ namespace TPSBR.UI
 
                 private bool HasSettingsChangedFromInitial()
                 {
-                        var runtimeSettings = Context.RuntimeSettings;
-
-                        if (Mathf.Approximately(runtimeSettings.MusicVolume, _initialMusicVolume) == false)
+                        if (Mathf.Approximately(_musicVolumeSlider.value, _initialMusicVolume) == false)
                                 return true;
-                        if (Mathf.Approximately(runtimeSettings.EffectsVolume, _initialEffectsVolume) == false)
+                        if (Mathf.Approximately(_effectsVolumeSlider.value, _initialEffectsVolume) == false)
                                 return true;
-                        if (Mathf.Approximately(runtimeSettings.Sensitivity, _initialSensitivity) == false)
+                        if (Mathf.Approximately(_sensitivitySlider.value, _initialSensitivity) == false)
                                 return true;
-                        if (Mathf.Approximately(runtimeSettings.AimSensitivity, _initialAimSensitivity) == false)
+                        if (Mathf.Approximately(_aimSensitivitySlider.value, _initialAimSensitivity) == false)
                                 return true;
-                        if (runtimeSettings.GraphicsQuality != _initialGraphicsQuality)
+                        if (_graphicsQuality.value != _initialGraphicsQuality)
                                 return true;
-                        if (runtimeSettings.Resolution != _initialResolution)
+                        if (GetSelectedResolutionIndex() != _initialResolution)
                                 return true;
-                        if (runtimeSettings.TargetFPS != _initialTargetFPS)
+                        if (Mathf.RoundToInt(_targetFPS.value) != _initialTargetFPS)
                                 return true;
-                        if (runtimeSettings.LimitFPS != _initialLimitFPS)
+                        if (_limitFPS.isOn != _initialLimitFPS)
                                 return true;
-                        if (runtimeSettings.VSync != _initialVSync)
+                        if (_vSync.isOn != _initialVSync)
                                 return true;
-                        if (runtimeSettings.Windowed != _initialWindowed)
+                        if (_windowed.isOn != _initialWindowed)
                                 return true;
 
                         return false;
+                }
+
+                private int GetSelectedResolutionIndex()
+                {
+                        if (_validResolutions.Count == 0 || _resolution.value < 0 || _resolution.value >= _validResolutions.Count)
+                                return -1;
+
+                        return _validResolutions[_resolution.value].Index;
                 }
 
                 // HELPERS
