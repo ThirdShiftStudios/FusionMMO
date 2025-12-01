@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using Fusion;
 using Unity.Template.CompetitiveActionMultiplayer;
 using UnityEngine;
-using UnityEngine.Pool;
 using TMPro;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -1822,8 +1821,8 @@ namespace TPSBR.UI
             if (slot == null)
                 return;
 
-            var mountSlots = ListPool<UIInventorySlotListItem>.Get();
-            var mountIcons = ListPool<Image>.Get();
+            var mountSlots = ListPool.Get<UIInventorySlotListItem>(4);
+            var mountIcons = ListPool.Get<Image>(4);
             try
             {
                 AddMountSlotCandidate(slot, mountSlots);
@@ -1884,8 +1883,8 @@ namespace TPSBR.UI
             }
             finally
             {
-                ListPool<UIInventorySlotListItem>.Release(mountSlots);
-                ListPool<Image>.Release(mountIcons);
+                ListPool.Return(mountSlots);
+                ListPool.Return(mountIcons);
             }
         }
 
