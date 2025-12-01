@@ -1642,48 +1642,53 @@ namespace TPSBR.UI
 
         private void RefreshMounts()
         {
-            ClearMounts();
+            CacheDefaultMounts();
 
-            if (_boundMountCollection == null)
+            HashSet<string> mountCodes = new HashSet<string>(StringComparer.Ordinal);
+
+            _unlockedMounts.Clear();
+            if (_defaultUnlockedMounts != null)
             {
-                RefreshMountListUI();
-                return;
-            }
-
-            EnsureMountDefinitionLookup();
-
-            HashSet<string> mountCodes = null;
-            if (_unlockedMounts.Count > 0)
-            {
-                mountCodes = new HashSet<string>(StringComparer.Ordinal);
-                for (int i = 0; i < _unlockedMounts.Count; i++)
+                for (int i = 0; i < _defaultUnlockedMounts.Count; i++)
                 {
-                    var definition = _unlockedMounts[i];
-                    if (definition != null && string.IsNullOrWhiteSpace(definition.Code) == false)
+                    var definition = _defaultUnlockedMounts[i];
+                    if (definition == null)
+                        continue;
+
+                    _unlockedMounts.Add(definition);
+
+                    if (string.IsNullOrWhiteSpace(definition.Code) == false)
                     {
                         mountCodes.Add(definition.Code);
                     }
                 }
             }
 
-            var ownedMounts = _boundMountCollection.OwnedMountCodes;
-            if (ownedMounts != null)
+            if (_boundMountCollection != null)
             {
-                for (int i = 0; i < ownedMounts.Count; i++)
+                EnsureMountDefinitionLookup();
+
+                var ownedMounts = _boundMountCollection.OwnedMountCodes;
+                if (ownedMounts != null)
                 {
-                    if (TryResolveMountDefinition(ownedMounts[i], out var definition) == true)
+                    for (int i = 0; i < ownedMounts.Count; i++)
                     {
-                        if (mountCodes == null || mountCodes.Add(definition.Code) == true)
+                        if (TryResolveMountDefinition(ownedMounts[i], out var definition) == true &&
+                            (string.IsNullOrWhiteSpace(definition.Code) == true || mountCodes.Add(definition.Code) == true))
                         {
                             _unlockedMounts.Add(definition);
                         }
                     }
                 }
-            }
 
-            if (TryResolveMountDefinition(_boundMountCollection.ActiveMountCode, out var activeMount) == true)
-            {
-                _equippedMount = activeMount;
+                if (TryResolveMountDefinition(_boundMountCollection.ActiveMountCode, out var activeMount) == true)
+                {
+                    _equippedMount = activeMount;
+                }
+                else
+                {
+                    _equippedMount = _defaultEquippedMount;
+                }
             }
             else
             {
