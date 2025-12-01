@@ -1698,6 +1698,10 @@ namespace TPSBR.UI
             if (_defaultUnlockedMounts == null)
             {
                 _defaultUnlockedMounts = new List<MountDefinition>();
+            }
+
+            if (_defaultUnlockedMounts.Count == 0 && _unlockedMounts != null)
+            {
                 for (int i = 0; i < _unlockedMounts.Count; i++)
                 {
                     var definition = _unlockedMounts[i];
