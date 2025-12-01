@@ -1714,22 +1714,36 @@ namespace TPSBR.UI
             }
         }
 
+        private void EnsureDefaultMountsRestored()
+        {
+            if (_unlockedMounts.Count > 0)
+                return;
+
+            CacheDefaultMounts();
+            AddDefaultUnlockedMounts();
+        }
+
+        private void AddDefaultUnlockedMounts()
+        {
+            if (_defaultUnlockedMounts == null)
+                return;
+
+            for (int i = 0; i < _defaultUnlockedMounts.Count; i++)
+            {
+                var definition = _defaultUnlockedMounts[i];
+                if (definition != null && _unlockedMounts.Contains(definition) == false)
+                {
+                    _unlockedMounts.Add(definition);
+                }
+            }
+        }
+
         private void ClearMounts()
         {
             CacheDefaultMounts();
 
             _unlockedMounts.Clear();
-            if (_defaultUnlockedMounts != null)
-            {
-                for (int i = 0; i < _defaultUnlockedMounts.Count; i++)
-                {
-                    var definition = _defaultUnlockedMounts[i];
-                    if (definition != null && _unlockedMounts.Contains(definition) == false)
-                    {
-                        _unlockedMounts.Add(definition);
-                    }
-                }
-            }
+            AddDefaultUnlockedMounts();
 
             _equippedMount = _defaultEquippedMount;
 
@@ -1808,6 +1822,8 @@ namespace TPSBR.UI
         {
             if (_mountList == null)
                 return;
+
+            EnsureDefaultMountsRestored();
 
             _mountList.Refresh(_unlockedMounts.Count, false);
         }
