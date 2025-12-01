@@ -43,23 +43,40 @@ namespace TPSBR
 
 		// PUBLIC METHODS
 
-		public void Initialize(GlobalSettings settings)
-		{
+                public void Initialize(GlobalSettings settings)
+                {
                         _options.Initialize(settings.DefaultOptions, true, "Options.V3.");
 
                         _options.AddDefaultValue(new OptionsValue(KEY_WINDOWED, Screen.fullScreen == false));
                         _options.AddDefaultValue(new OptionsValue(KEY_LIMIT_FPS, false));
                         _options.AddDefaultValue(new OptionsValue(KEY_VSYNC, QualitySettings.vSyncCount > 0));
 
-                        Windowed = Screen.fullScreen == false;
-                        GraphicsQuality = QualitySettings.GetQualityLevel();
-                        Resolution = GetCurrentResolutionIndex();
+                        var windowed = _options.GetBool(KEY_WINDOWED);
+                        var resolution = _options.GetInt(KEY_RESOLUTION);
+                        var graphicsQuality = _options.GetInt(KEY_GRAPHICS_QUALITY);
+                        var limitFPS = _options.GetBool(KEY_LIMIT_FPS);
+                        var targetFPS = _options.GetInt(KEY_TARGET_FPS);
+                        var vSync = _options.GetBool(KEY_VSYNC);
 
-			QualitySettings.vSyncCount = VSync == true ? 1 : 0;
-			Application.targetFrameRate = LimitFPS == true ? TargetFPS : -1;
+                        if (Application.isMobilePlatform == false || Application.isEditor == true)
+                        {
+                                var resolutions = Screen.resolutions;
 
-			_options.SaveChanges();
-		}
+                                if (resolutions != null && resolutions.Length > 0)
+                                {
+                                        int resolutionIndex = resolution < 0 ? GetCurrentResolutionIndex() : resolution;
+                                        var currentResolution = resolutions[Mathf.Clamp(resolutionIndex, 0, resolutions.Length - 1)];
+
+                                        Screen.SetResolution(currentResolution.width, currentResolution.height, windowed == false);
+                                }
+                        }
+
+                        QualitySettings.SetQualityLevel(graphicsQuality);
+                        QualitySettings.vSyncCount = vSync == true ? 1 : 0;
+                        Application.targetFrameRate = limitFPS == true ? targetFPS : -1;
+
+                        _options.SaveChanges();
+                }
 
 		// PRIVATE MEMBERS
 
