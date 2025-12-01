@@ -34,12 +34,23 @@ namespace TPSBR.UI
 		[SerializeField]
 		private UIToggle _windowed;
 
-		[SerializeField]
-		private UIButton _confirmButton;
-		[SerializeField]
-		private UIButton _resetButton;
+                [SerializeField]
+                private UIButton _confirmButton;
+                [SerializeField]
+                private UIButton _resetButton;
 
-		private List<ResolutionData> _validResolutions = new List<ResolutionData>(32);
+                private float _initialMusicVolume;
+                private float _initialEffectsVolume;
+                private float _initialSensitivity;
+                private float _initialAimSensitivity;
+                private int   _initialGraphicsQuality;
+                private int   _initialResolution;
+                private int   _initialTargetFPS;
+                private bool  _initialLimitFPS;
+                private bool  _initialVSync;
+                private bool  _initialWindowed;
+
+                private List<ResolutionData> _validResolutions = new List<ResolutionData>(32);
 
 		// UICloseView INTERFACE
 
@@ -87,14 +98,15 @@ namespace TPSBR.UI
 			base.OnDeinitialize();
 		}
 
-		protected override void OnOpen()
-		{
-			base.OnOpen();
+                protected override void OnOpen()
+                {
+                        base.OnOpen();
 
-			PrepareResolutionDropdown();
+                        PrepareResolutionDropdown();
 
-			LoadValues();
-		}
+                        LoadValues();
+                        StoreInitialValues();
+                }
 
 		protected override void OnClose()
 		{
@@ -105,15 +117,16 @@ namespace TPSBR.UI
 			Context.Audio.UpdateVolume();
 		}
 
-		protected override void OnTick()
-		{
-			base.OnTick();
+                protected override void OnTick()
+                {
+                        base.OnTick();
 
-			_confirmButton.interactable = Context.RuntimeSettings.Options.HasUnsavedChanges;
+                        bool hasUnsavedChanges = Context.RuntimeSettings.Options.HasUnsavedChanges || HasSettingsChangedFromInitial();
+                        _confirmButton.interactable = hasUnsavedChanges;
 
-			_limitFPS.SetActive(_vSync.isOn == false);
-			_targetFPS.SetActive(_vSync.isOn == false && _limitFPS.isOn);
-		}
+                        _limitFPS.SetActive(_vSync.isOn == false);
+                        _targetFPS.SetActive(_vSync.isOn == false && _limitFPS.isOn);
+                }
 
 		// PRIVATE METHODS
 
@@ -210,63 +223,107 @@ namespace TPSBR.UI
 			runtimeSettings.VSync = _vSync.isOn;
 		}
 
-		private void OnWindowedChanged(bool value)
-		{
-			Context.RuntimeSettings.Windowed = value;
-		}
+                private void OnWindowedChanged(bool value)
+                {
+                        Context.RuntimeSettings.Windowed = value;
+                }
 
-		private void PrepareResolutionDropdown()
-		{
-			_validResolutions.Clear();
-			var resolutions = Screen.resolutions;
+                private void PrepareResolutionDropdown()
+                {
+                        _validResolutions.Clear();
+                        var resolutions = Screen.resolutions;
 
-			int defaultRefreshRate = Mathf.RoundToInt((float)resolutions[^1].refreshRateRatio.value);
+                        int defaultRefreshRate = Mathf.RoundToInt((float)resolutions[^1].refreshRateRatio.value);
 
-			// Add resolutions in reversed order
-			for (int i = resolutions.Length - 1; i >= 0; i--)
-			{
-				var resolution = resolutions[i];
-				if (Mathf.RoundToInt((float)resolution.refreshRateRatio.value) != defaultRefreshRate)
-					continue;
+                        // Add resolutions in reversed order
+                        for (int i = resolutions.Length - 1; i >= 0; i--)
+                        {
+                                var resolution = resolutions[i];
+                                if (Mathf.RoundToInt((float)resolution.refreshRateRatio.value) != defaultRefreshRate)
+                                        continue;
 
-				_validResolutions.Add(new ResolutionData(i, resolution));
-			}
+                                _validResolutions.Add(new ResolutionData(i, resolution));
+                        }
 
 
-			var options = ListPool.Get<TMP_Dropdown.OptionData>(16);
+                        var options = ListPool.Get<TMP_Dropdown.OptionData>(16);
 
-			for (int i = 0; i < _validResolutions.Count; i++)
-			{
-				var resolution = _validResolutions[i].Resolution;
-				options.Add(new TMP_Dropdown.OptionData($"{resolution.width} x {resolution.height}"));
-			}
+                        for (int i = 0; i < _validResolutions.Count; i++)
+                        {
+                                var resolution = _validResolutions[i].Resolution;
+                                options.Add(new TMP_Dropdown.OptionData($"{resolution.width} x {resolution.height}"));
+                        }
 
-			_resolution.ClearOptions();
-			_resolution.AddOptions(options);
+                        _resolution.ClearOptions();
+                        _resolution.AddOptions(options);
 
-			ListPool.Return(options);
-		}
+                        ListPool.Return(options);
+                }
 
-		// HELPERS
+                private void StoreInitialValues()
+                {
+                        var runtimeSettings = Context.RuntimeSettings;
 
-		private struct ResolutionData
-		{
-			public int Index;
-			public Resolution Resolution;
+                        _initialMusicVolume     = runtimeSettings.MusicVolume;
+                        _initialEffectsVolume   = runtimeSettings.EffectsVolume;
+                        _initialSensitivity     = runtimeSettings.Sensitivity;
+                        _initialAimSensitivity  = runtimeSettings.AimSensitivity;
+                        _initialGraphicsQuality = runtimeSettings.GraphicsQuality;
+                        _initialResolution      = runtimeSettings.Resolution;
+                        _initialTargetFPS       = runtimeSettings.TargetFPS;
+                        _initialLimitFPS        = runtimeSettings.LimitFPS;
+                        _initialVSync           = runtimeSettings.VSync;
+                        _initialWindowed        = runtimeSettings.Windowed;
+                }
 
-			public ResolutionData(int index, Resolution resolution)
-			{
-				Index = index;
-				Resolution = resolution;
-			}
-		}
-	}
+                private bool HasSettingsChangedFromInitial()
+                {
+                        var runtimeSettings = Context.RuntimeSettings;
 
-	public static class UISliderExtensions
-	{
-		public static void SetOptionsValueFloat(this UISlider slider, OptionsValue value)
-		{
-			if (value.Type != EOptionsValueType.Float)
+                        if (Mathf.Approximately(runtimeSettings.MusicVolume, _initialMusicVolume) == false)
+                                return true;
+                        if (Mathf.Approximately(runtimeSettings.EffectsVolume, _initialEffectsVolume) == false)
+                                return true;
+                        if (Mathf.Approximately(runtimeSettings.Sensitivity, _initialSensitivity) == false)
+                                return true;
+                        if (Mathf.Approximately(runtimeSettings.AimSensitivity, _initialAimSensitivity) == false)
+                                return true;
+                        if (runtimeSettings.GraphicsQuality != _initialGraphicsQuality)
+                                return true;
+                        if (runtimeSettings.Resolution != _initialResolution)
+                                return true;
+                        if (runtimeSettings.TargetFPS != _initialTargetFPS)
+                                return true;
+                        if (runtimeSettings.LimitFPS != _initialLimitFPS)
+                                return true;
+                        if (runtimeSettings.VSync != _initialVSync)
+                                return true;
+                        if (runtimeSettings.Windowed != _initialWindowed)
+                                return true;
+
+                        return false;
+                }
+
+                // HELPERS
+
+                private struct ResolutionData
+                {
+                        public int Index;
+                        public Resolution Resolution;
+
+                        public ResolutionData(int index, Resolution resolution)
+                        {
+                                Index = index;
+                                Resolution = resolution;
+                        }
+                }
+        }
+
+        public static class UISliderExtensions
+        {
+                public static void SetOptionsValueFloat(this UISlider slider, OptionsValue value)
+                {
+                        if (value.Type != EOptionsValueType.Float)
 			{
 				slider.value = 0f;
 				return;
@@ -311,7 +368,7 @@ namespace TPSBR.UI
 				slider.onValueChanged = onValueChanged;
 			}
 
-			slider.SetValue(value.IntValue.Value);
-		}
-	}
+                        slider.SetValue(value.IntValue.Value);
+                }
+        }
 }
