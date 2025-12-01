@@ -295,8 +295,7 @@ namespace TPSBR.UI
 
                 private void UpdateConfirmButtonState()
                 {
-                        bool hasUnsavedChanges = Context.RuntimeSettings.Options.HasUnsavedChanges || HasSettingsChangedFromInitial();
-                        _confirmButton.interactable = hasUnsavedChanges;
+                        _confirmButton.interactable = HasSettingsChangedFromInitial();
                 }
 
                 private bool HasSettingsChangedFromInitial()
