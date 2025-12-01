@@ -153,6 +153,23 @@ namespace TPSBR
         public IReadOnlyList<PlayerCharacterSaveData> Characters => _characters;
         public string ActiveCharacterId => _activeCharacterId;
 
+        public PlayerCharacterInventorySaveData GetActiveCharacterInventorySnapshot()
+        {
+            if (_activeCharacterId.HasValue() == false)
+                return null;
+
+            return GetCharacterInventorySnapshot(_activeCharacterId);
+        }
+
+        public PlayerCharacterInventorySaveData GetCharacterInventorySnapshot(string characterId)
+        {
+            var source = GetCharacterInventoryData(characterId);
+            if (source == null)
+                return null;
+
+            return CloneInventory(source);
+        }
+
         public event Action CharactersChanged;
         public event Action<string> ActiveCharacterChanged;
 
@@ -986,6 +1003,37 @@ namespace TPSBR
             }
 
             _characterInventories.Add(snapshot);
+        }
+
+        private static PlayerCharacterInventorySaveData CloneInventory(PlayerCharacterInventorySaveData source)
+        {
+            return new PlayerCharacterInventorySaveData
+            {
+                CharacterId = source.CharacterId,
+                InventorySlots = CloneInventoryItems(source.InventorySlots),
+                HotbarSlots = CloneHotbarSlots(source.HotbarSlots),
+                CurrentWeaponSlot = source.CurrentWeaponSlot,
+                PickaxeSlot = source.PickaxeSlot,
+                WoodAxeSlot = source.WoodAxeSlot,
+                FishingPoleSlot = source.FishingPoleSlot,
+                HeadSlot = source.HeadSlot,
+                UpperBodySlot = source.UpperBodySlot,
+                LowerBodySlot = source.LowerBodySlot,
+                PipeSlot = source.PipeSlot,
+                MountSlot = source.MountSlot,
+                BagSlots = CloneInventoryItems(source.BagSlots),
+                Gold = source.Gold,
+            };
+        }
+
+        private static PlayerInventoryItemData[] CloneInventoryItems(PlayerInventoryItemData[] source)
+        {
+            return source != null ? (PlayerInventoryItemData[])source.Clone() : null;
+        }
+
+        private static PlayerHotbarSlotData[] CloneHotbarSlots(PlayerHotbarSlotData[] source)
+        {
+            return source != null ? (PlayerHotbarSlotData[])source.Clone() : null;
         }
 
         private PlayerCharacterProfessionSaveData GetCharacterProfessionData(string characterId)

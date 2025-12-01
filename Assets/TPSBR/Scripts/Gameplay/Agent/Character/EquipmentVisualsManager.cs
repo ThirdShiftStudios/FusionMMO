@@ -63,6 +63,14 @@ namespace TPSBR
             }
         }
 
+        public void RefreshFromInventoryData(PlayerCharacterInventorySaveData inventoryData)
+        {
+            for (int i = 0; i < _trackedCategories.Length; ++i)
+            {
+                RefreshCategory(_trackedCategories[i], inventoryData);
+            }
+        }
+
         public void CollectVisuals()
         {
             _visualsByCategory.Clear();
@@ -119,17 +127,46 @@ namespace TPSBR
         private void RefreshCategory(ESlotCategory category)
         {
             InventorySlot slot = _inventory != null ? _inventory.GetEquipmentSlot(category) : default;
-            RefreshCategory(category, slot);
+            RefreshCategory(category, slot.GetDefinition());
         }
 
         private void RefreshCategory(ESlotCategory category, InventorySlot slot)
+        {
+            RefreshCategory(category, slot.GetDefinition());
+        }
+
+        private void RefreshCategory(ESlotCategory category, PlayerCharacterInventorySaveData inventoryData)
+        {
+            ItemDefinition definition = null;
+
+            if (inventoryData != null)
+            {
+                switch (category)
+                {
+                    case ESlotCategory.Head:
+                        definition = GetDefinition(inventoryData.HeadSlot);
+                        break;
+                    case ESlotCategory.UpperBody:
+                        definition = GetDefinition(inventoryData.UpperBodySlot);
+                        break;
+                    case ESlotCategory.LowerBody:
+                        definition = GetDefinition(inventoryData.LowerBodySlot);
+                        break;
+                    case ESlotCategory.Pipe:
+                        definition = GetDefinition(inventoryData.PipeSlot);
+                        break;
+                }
+            }
+
+            RefreshCategory(category, definition);
+        }
+
+        private void RefreshCategory(ESlotCategory category, ItemDefinition definition)
         {
             if (_visualsByCategory.TryGetValue(category, out List<EquipmentVisual> visuals) == false)
             {
                 return;
             }
-
-            ItemDefinition definition = slot.GetDefinition();
 
             for (int i = 0; i < visuals.Count; ++i)
             {
@@ -156,6 +193,16 @@ namespace TPSBR
             }
 
             return visual.DefaultObject == true;
+        }
+
+        private static ItemDefinition GetDefinition(PlayerInventoryItemData itemData)
+        {
+            if (itemData.Quantity == 0)
+            {
+                return null;
+            }
+
+            return ItemDefinition.Get(itemData.ItemDefinitionId);
         }
 
         private void Unsubscribe()
