@@ -39,7 +39,11 @@ namespace TPSBR.UI
 		[SerializeField]
 		private UIButton _resetButton;
 
-		private List<ResolutionData> _validResolutions = new List<ResolutionData>(32);
+                private List<ResolutionData> _validResolutions = new List<ResolutionData>(32);
+
+                private bool _initialWindowed;
+                private bool _initialVSync;
+                private bool _initialLimitFPS;
 
 		// UICloseView INTERFACE
 
@@ -105,35 +109,44 @@ namespace TPSBR.UI
 			Context.Audio.UpdateVolume();
 		}
 
-		protected override void OnTick()
-		{
-			base.OnTick();
+                protected override void OnTick()
+                {
+                        base.OnTick();
 
-			_confirmButton.interactable = Context.RuntimeSettings.Options.HasUnsavedChanges;
+                        var hasUnsavedChanges = Context.RuntimeSettings.Options.HasUnsavedChanges ||
+                                                _windowed.isOn != _initialWindowed ||
+                                                _vSync.isOn != _initialVSync ||
+                                                _limitFPS.isOn != _initialLimitFPS;
 
-			_limitFPS.SetActive(_vSync.isOn == false);
-			_targetFPS.SetActive(_vSync.isOn == false && _limitFPS.isOn);
-		}
+                        _confirmButton.interactable = hasUnsavedChanges;
+
+                        _limitFPS.SetActive(_vSync.isOn == false);
+                        _targetFPS.SetActive(_vSync.isOn == false && _limitFPS.isOn);
+                }
 
 		// PRIVATE METHODS
 
-		private void LoadValues()
-		{
-			var runtimeSettings = Context.RuntimeSettings;
+                private void LoadValues()
+                {
+                        var runtimeSettings = Context.RuntimeSettings;
 
-			_musicVolumeSlider.SetOptionsValueFloat(runtimeSettings.Options.GetValue(RuntimeSettings.KEY_MUSIC_VOLUME));
-			_effectsVolumeSlider.SetOptionsValueFloat(runtimeSettings.Options.GetValue(RuntimeSettings.KEY_EFFECTS_VOLUME));
+                        _musicVolumeSlider.SetOptionsValueFloat(runtimeSettings.Options.GetValue(RuntimeSettings.KEY_MUSIC_VOLUME));
+                        _effectsVolumeSlider.SetOptionsValueFloat(runtimeSettings.Options.GetValue(RuntimeSettings.KEY_EFFECTS_VOLUME));
 
-			_sensitivitySlider.SetOptionsValueFloat(runtimeSettings.Options.GetValue(RuntimeSettings.KEY_SENSITIVITY));
-			_aimSensitivitySlider.SetOptionsValueFloat(runtimeSettings.Options.GetValue(RuntimeSettings.KEY_AIM_SENSITIVITY));
+                        _sensitivitySlider.SetOptionsValueFloat(runtimeSettings.Options.GetValue(RuntimeSettings.KEY_SENSITIVITY));
+                        _aimSensitivitySlider.SetOptionsValueFloat(runtimeSettings.Options.GetValue(RuntimeSettings.KEY_AIM_SENSITIVITY));
 
-			_windowed.SetIsOnWithoutNotify(runtimeSettings.Windowed);
-			_graphicsQuality.SetValueWithoutNotify(runtimeSettings.GraphicsQuality);
-			_resolution.SetValueWithoutNotify(_validResolutions.FindIndex(t => t.Index == runtimeSettings.Resolution));
-			_targetFPS.SetOptionsValueInt(runtimeSettings.Options.GetValue(RuntimeSettings.KEY_TARGET_FPS));
-			_limitFPS.SetIsOnWithoutNotify(runtimeSettings.LimitFPS);
-			_vSync.SetIsOnWithoutNotify(runtimeSettings.VSync);
-		}
+                        _windowed.SetIsOnWithoutNotify(runtimeSettings.Windowed);
+                        _graphicsQuality.SetValueWithoutNotify(runtimeSettings.GraphicsQuality);
+                        _resolution.SetValueWithoutNotify(_validResolutions.FindIndex(t => t.Index == runtimeSettings.Resolution));
+                        _targetFPS.SetOptionsValueInt(runtimeSettings.Options.GetValue(RuntimeSettings.KEY_TARGET_FPS));
+                        _limitFPS.SetIsOnWithoutNotify(runtimeSettings.LimitFPS);
+                        _vSync.SetIsOnWithoutNotify(runtimeSettings.VSync);
+
+                        _initialWindowed = runtimeSettings.Windowed;
+                        _initialVSync    = runtimeSettings.VSync;
+                        _initialLimitFPS = runtimeSettings.LimitFPS;
+                }
 
 		private void OnConfirmButton()
 		{
