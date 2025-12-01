@@ -47,7 +47,6 @@ namespace TPSBR.UI
 
 			_settingsButton.onClick.AddListener(OnSettingsButton);
 			_playButton.onClick.AddListener(OnPlayButton);
-			_changeNicknameButton.onClick.AddListener(OnChangeNicknameButton);
 			_quitButton.onClick.AddListener(OnQuitButton);
 			_playerButton.onClick.AddListener(OnPlayerButton);
 			_applicationVersion.text = $"Version {Application.version}";
@@ -57,7 +56,6 @@ namespace TPSBR.UI
 		{
 			_settingsButton.onClick.RemoveListener(OnSettingsButton);
 			_playButton.onClick.RemoveListener(OnPlayButton);
-			_changeNicknameButton.onClick.RemoveListener(OnChangeNicknameButton);
 			_quitButton.onClick.RemoveListener(OnQuitButton);
 			_playerButton.onClick.RemoveListener(OnPlayerButton);
 			base.OnDeinitialize();
@@ -113,12 +111,6 @@ namespace TPSBR.UI
 		private void OnCreditsButton()
 		{
 			Open<UICreditsView>();
-		}
-
-		private void OnChangeNicknameButton()
-		{
-			var changeNicknameView = Open<UIChangeNicknameView>();
-			changeNicknameView.SetData("CHANGE NICKNAME", false);
 		}
 
 		private void OnQuitButton()

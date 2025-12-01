@@ -12,12 +12,6 @@ namespace TPSBR.UI
 
                         Context.Input.RequestCursorVisibility(true, ECursorStateSource.Menu);
 
-                        if (Context.PlayerData.Nickname.HasValue() == false)
-                        {
-                                var changeNicknameView = Open<UIChangeNicknameView>();
-                                changeNicknameView.SetData("ENTER NICKNAME", true);
-                        }
-
                         if (Global.PlayerCloudSaveService != null)
                         {
                                 Global.PlayerCloudSaveService.CharactersChanged += OnCloudCharactersChanged;
