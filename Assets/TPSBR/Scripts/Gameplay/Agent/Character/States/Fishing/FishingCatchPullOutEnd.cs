@@ -26,6 +26,7 @@ namespace TPSBR
         protected override void OnClipFinished()
         {
             base.OnClipFinished();
+            _weapon?.NotifyCastCompleted();
             ClipFinished?.Invoke();
         }
 

@@ -51,6 +51,7 @@ namespace TPSBR
         private Vector3 _cachedLureLocalPosition;
         private Quaternion _cachedLureLocalRotation;
         private bool _hasCachedLureParent;
+        private bool _castCompletionHandled;
         private static FishDefinition[] _cachedResourceFishDefinitions;
 
         [Networked]
@@ -239,6 +240,7 @@ namespace TPSBR
             _castActive = true;
             _lureLaunched = false;
             _waitingForPrimaryRelease = false;
+            _castCompletionHandled = false;
             EndWaitingPhase();
             DespawnActiveFish();
             CleanupLure(false);
@@ -254,6 +256,10 @@ namespace TPSBR
 
         internal void NotifyCastCompleted()
         {
+            if (_castCompletionHandled == true)
+                return;
+
+            _castCompletionHandled = true;
             _castActive = false;
             _castRequested = false;
             _waitingForPrimaryRelease = false;
@@ -270,6 +276,7 @@ namespace TPSBR
         {
             _castActive = false;
             _castRequested = false;
+            _castCompletionHandled = true;
             ResetHoldTracking();
             _waitingForPrimaryRelease = true;
             EndWaitingPhase();
