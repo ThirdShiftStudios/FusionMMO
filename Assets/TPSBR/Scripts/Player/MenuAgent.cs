@@ -7,6 +7,10 @@ namespace TPSBR
     {
         [SerializeField]
         private EquipmentVisualsManager _equipmentVisuals;
+        [SerializeField]
+        private Animator _animator;
+        [SerializeField]
+        private RuntimeAnimatorController _animatorController;
 
         private Coroutine _initialRefreshRoutine;
         private bool _isSubscribed;
@@ -17,12 +21,18 @@ namespace TPSBR
             {
                 _equipmentVisuals = GetComponentInChildren<EquipmentVisualsManager>(true);
             }
+
+            if (_animator == null)
+            {
+                _animator = GetComponentInChildren<Animator>(true);
+            }
         }
 
         private void OnEnable()
         {
             SubscribeToCloud();
             RefreshActiveCharacterVisuals();
+            ApplyAnimatorController();
 
             if (_initialRefreshRoutine == null)
             {
@@ -106,6 +116,14 @@ namespace TPSBR
             }
 
             RefreshActiveCharacterVisuals();
+        }
+
+        private void ApplyAnimatorController()
+        {
+            if (_animator == null || _animatorController == null)
+                return;
+
+            _animator.runtimeAnimatorController = _animatorController;
         }
     }
 }
