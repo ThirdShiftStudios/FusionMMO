@@ -37,41 +37,5 @@ namespace TPSBR
                 Deactivate(blendDuration > 0f ? blendDuration : _blendOutDuration, true);
             }
         }
-
-        protected override void OnActivate()
-        {
-            base.OnActivate();
-            SuppressMovement();
-        }
-
-        protected override void OnFixedUpdate()
-        {
-            base.OnFixedUpdate();
-            SuppressMovement();
-        }
-
-        protected override void OnInterpolate()
-        {
-            base.OnInterpolate();
-            SuppressMovement();
-        }
-
-        protected override void OnDeactivate()
-        {
-            base.OnDeactivate();
-            SuppressMovement();
-        }
-
-        private void SuppressMovement()
-        {
-            if (_weapon?.Character?.CharacterController is not KCC kcc)
-                return;
-
-            kcc.SetInputDirection(Vector3.zero);
-            kcc.SetDynamicVelocity(Vector3.zero);
-            kcc.SetKinematicVelocity(Vector3.zero);
-            kcc.SetExternalVelocity(Vector3.zero);
-            kcc.SetExternalAcceleration(Vector3.zero);
-        }
     }
 }
