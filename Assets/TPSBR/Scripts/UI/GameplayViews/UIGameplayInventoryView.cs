@@ -1583,8 +1583,17 @@ namespace TPSBR.UI
             }
 
             var agent = Context.ObservedAgent;
-            if (_boundAgent == agent)
+            var inventory = agent != null ? agent.Inventory : null;
+            var mountCollection = agent != null ? agent.GetComponent<MountCollection>() : null;
+            var mountController = agent != null ? agent.GetComponent<MountController>() : null;
+
+            if (_boundAgent == agent &&
+                _boundInventory == inventory &&
+                _boundMountCollection == mountCollection &&
+                _boundMountController == mountController)
+            {
                 return;
+            }
 
             if (_boundInventory != null)
             {
@@ -1597,9 +1606,9 @@ namespace TPSBR.UI
             }
 
             _boundAgent = agent;
-            _boundInventory = agent != null ? agent.Inventory : null;
-            _boundMountCollection = agent != null ? agent.GetComponent<MountCollection>() : null;
-            _boundMountController = agent != null ? agent.GetComponent<MountController>() : null;
+            _boundInventory = inventory;
+            _boundMountCollection = mountCollection;
+            _boundMountController = mountController;
             _inventoryPresenter?.Bind(_boundInventory);
             _hotbar?.Bind(_boundInventory);
             HideAllTooltips();
