@@ -2,17 +2,20 @@ namespace TPSBR
 {
     using Fusion;
     using UnityEngine;
+    using Fusion.Addons.KCC;
+
+    [DisallowMultipleComponent]
+    [RequireComponent(typeof(KCC))]
+    [RequireComponent(typeof(HorseMountProcessor))]
     [DefaultExecutionOrder(-3)]
     public sealed class HorseMount : MountBase
     {
         [SerializeField] private MountDefinition _definition;
         [SerializeField] private Transform _cameraTransform;
         [SerializeField] private Transform _riderAnchor;
-        [SerializeField] private LayerMask _blockedLayers;
-        [SerializeField] private LayerMask _groundLayers;
-        [SerializeField, Range(0.25f, 5f)] private float _groundCheckHeight = 1.5f;
-        [SerializeField, Range(0.25f, 10f)] private float _groundCheckDistance = 4f;
         [SerializeField] private MountAnimator _animator;
+        [SerializeField] private KCC _kcc;
+        [SerializeField] private HorseMountProcessor _movementProcessor;
 
         private MountController _rider;
         private float _currentSpeed;
@@ -28,12 +31,30 @@ namespace TPSBR
             {
                 _animator = GetComponent<MountAnimator>();
             }
+
+            if (_kcc == null)
+            {
+                _kcc = GetComponent<KCC>();
+            }
+
+            if (_movementProcessor == null)
+            {
+                _movementProcessor = GetComponent<HorseMountProcessor>();
+            }
+
+            if (_animator != null)
+            {
+                _animator.ApplyDefinition(_definition);
+            }
         }
 
         public void BeginRide(MountController rider)
         {
             _rider = rider;
             _currentSpeed = 0f;
+
+            _movementProcessor?.ResetMovement();
+            _kcc?.SetInputDirection(Vector3.zero);
 
             if (_animator != null)
             {
@@ -47,6 +68,9 @@ namespace TPSBR
         {
             _rider = null;
             _currentSpeed = 0f;
+
+            _movementProcessor?.ResetMovement();
+            _kcc?.SetInputDirection(Vector3.zero);
 
             if (_animator != null)
             {
@@ -70,28 +94,18 @@ namespace TPSBR
             float targetSpeed = move.magnitude * _definition.MoveSpeed;
             _currentSpeed = Mathf.MoveTowards(_currentSpeed, targetSpeed, _definition.Acceleration * deltaTime);
 
-            Vector3 displacement = desiredDirection.normalized * _currentSpeed * deltaTime;
             float normalizedSpeed = _definition.MoveSpeed > 0f ? _currentSpeed / _definition.MoveSpeed : 0f;
             _animator?.SetMoveInput(normalizedSpeed);
 
-            if (displacement.sqrMagnitude < float.Epsilon)
-                return;
-
-            Vector3 nextPosition = transform.position + displacement;
-            if (Physics.Linecast(transform.position, nextPosition, out RaycastHit hit, _blockedLayers, QueryTriggerInteraction.Ignore) == true)
+            if (_movementProcessor != null)
             {
-                nextPosition = hit.point;
+                _movementProcessor.SetMovement(desiredDirection, _currentSpeed);
             }
 
-            Vector3 groundOrigin = nextPosition + Vector3.up * _groundCheckHeight;
-            float groundRayLength = _groundCheckHeight + _groundCheckDistance;
-
-            if (Physics.Raycast(groundOrigin, Vector3.down, out RaycastHit groundHit, groundRayLength, _groundLayers, QueryTriggerInteraction.Ignore) == true)
+            if (_kcc != null)
             {
-                nextPosition = groundHit.point;
+                _kcc.SetInputDirection(desiredDirection);
             }
-
-            transform.position = nextPosition;
         }
     }
 }
