@@ -5614,11 +5614,6 @@ namespace TPSBR
             {
                 fishingPole.SetConfigurationHash(_fishingPoleSlot.ConfigurationHash);
                 EnsureWeaponPrefabRegistered(definition, fishingPole);
-
-                if (_hotbar.Length > HOTBAR_FISHING_POLE_SLOT && _hotbar[HOTBAR_FISHING_POLE_SLOT] != fishingPole)
-                {
-                    AddWeapon(fishingPole, HOTBAR_FISHING_POLE_SLOT);
-                }
             }
 
             RefreshFishingPoleVisuals();
