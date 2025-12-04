@@ -6,6 +6,7 @@ namespace TPSBR.UI
     public class UITeamPlayerPanels : UIBehaviour
     {
         private List<UITeamPlayerPanel> _teamPlayerPanels;
+        [SerializeField]
         private GameObject _panelPrefab;
         private bool _initialized;
 
