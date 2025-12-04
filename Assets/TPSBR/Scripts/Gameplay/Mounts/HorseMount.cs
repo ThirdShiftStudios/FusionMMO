@@ -39,6 +39,8 @@ namespace TPSBR
             {
                 _processor = GetComponent<HorseMountProcessor>();
             }
+
+            RegisterProcessor();
         }
 
         public void BeginRide(MountController rider)
@@ -88,6 +90,14 @@ namespace TPSBR
 
             _processor.SetMoveInput(move, _definition.MoveSpeed, _definition.Acceleration, deltaTime);
             _animator?.SetMoveInput(_processor.NormalizedSpeed);
+        }
+
+        private void RegisterProcessor()
+        {
+            if (_kcc == null || _processor == null)
+                return;
+
+            _kcc.InvokeOnSpawn(kcc => kcc.AddLocalProcessor(_processor));
         }
     }
 }
