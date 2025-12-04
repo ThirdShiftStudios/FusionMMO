@@ -4470,12 +4470,15 @@ namespace TPSBR
         return TryAddWeaponDefinitionToInventory(weapon.Definition);
     }
 
-    private bool TryAddWeaponDefinitionToInventory(WeaponDefinition definition)
-    {
-        if (definition == null)
-            return false;
+        private bool TryAddWeaponDefinitionToInventory(WeaponDefinition definition)
+        {
+            if (definition == null)
+                return false;
 
-        EnsureWeaponPrefabRegistered(definition);
+            if (definition is FishingPoleDefinition)
+                return false;
+
+            EnsureWeaponPrefabRegistered(definition);
 
         int emptySlot = FindEmptyInventorySlot();
         if (emptySlot < 0)
@@ -5558,8 +5561,7 @@ namespace TPSBR
 
             if (_fishingPoleSlot.IsEmpty == false && IsFishingPoleSlotItem(_fishingPoleSlot) == false)
             {
-                _fishingPoleSlot = default;
-                RefreshFishingPoleSlot();
+                ClearFishingPoleSlot();
                 DespawnFishingPole();
             }
 
@@ -5582,6 +5584,7 @@ namespace TPSBR
 
             if (_fishingPoleSlot.IsEmpty == true || IsFishingPoleSlotItem(_fishingPoleSlot) == false)
             {
+                ClearFishingPoleSlot();
                 DespawnFishingPole();
                 return;
             }
@@ -5589,6 +5592,7 @@ namespace TPSBR
             var definition = _fishingPoleSlot.GetDefinition() as FishingPoleDefinition;
             if (definition == null || Runner == null)
             {
+                ClearFishingPoleSlot();
                 DespawnFishingPole();
                 return;
             }
@@ -5596,6 +5600,7 @@ namespace TPSBR
             var prefab = definition.FishingPolePrefab ?? definition.WeaponPrefab as FishingPoleWeapon;
             if (prefab == null)
             {
+                ClearFishingPoleSlot();
                 DespawnFishingPole();
                 return;
             }
@@ -5625,6 +5630,15 @@ namespace TPSBR
             }
 
             RefreshFishingPoleVisuals();
+        }
+
+        private void ClearFishingPoleSlot()
+        {
+            if (_fishingPoleSlot.IsEmpty == true)
+                return;
+
+            _fishingPoleSlot = default;
+            RefreshFishingPoleSlot();
         }
 
         private void DespawnFishingPole()
