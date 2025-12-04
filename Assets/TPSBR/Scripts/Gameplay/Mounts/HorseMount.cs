@@ -2,20 +2,21 @@ namespace TPSBR
 {
     using Fusion;
     using UnityEngine;
+    using Fusion.Addons.KCC;
+
+    [RequireComponent(typeof(KCC))]
     [DefaultExecutionOrder(-3)]
     public sealed class HorseMount : MountBase
     {
         [SerializeField] private MountDefinition _definition;
         [SerializeField] private Transform _cameraTransform;
         [SerializeField] private Transform _riderAnchor;
-        [SerializeField] private LayerMask _blockedLayers;
-        [SerializeField] private LayerMask _groundLayers;
-        [SerializeField, Range(0.25f, 5f)] private float _groundCheckHeight = 1.5f;
-        [SerializeField, Range(0.25f, 10f)] private float _groundCheckDistance = 4f;
         [SerializeField] private MountAnimator _animator;
+        [SerializeField] private HorseMountProcessor _mountProcessor;
 
         private MountController _rider;
-        private float _currentSpeed;
+        private KCC _kcc;
+        private bool _processorRegistered;
 
         public string MountCode => _definition != null ? _definition.Code : string.Empty;
         public Transform MountCamera => _cameraTransform;
@@ -24,20 +25,54 @@ namespace TPSBR
 
         private void Awake()
         {
+            _kcc = GetComponent<KCC>();
+
             if (_animator == null)
             {
                 _animator = GetComponent<MountAnimator>();
+            }
+
+            if (_mountProcessor == null)
+            {
+                _mountProcessor = GetComponent<HorseMountProcessor>();
+
+                if (_mountProcessor == null)
+                {
+                    _mountProcessor = gameObject.AddComponent<HorseMountProcessor>();
+                }
+            }
+        }
+
+        public override void Spawned()
+        {
+            base.Spawned();
+
+            RegisterProcessor();
+            ApplyMountDefinition();
+        }
+
+        public override void Despawned(NetworkRunner runner, bool hasState)
+        {
+            base.Despawned(runner, hasState);
+
+            if (_processorRegistered == true && _kcc != null && _mountProcessor != null)
+            {
+                _kcc.RemoveLocalProcessor(_mountProcessor);
+                _processorRegistered = false;
             }
         }
 
         public void BeginRide(MountController rider)
         {
             _rider = rider;
-            _currentSpeed = 0f;
+
+            _mountProcessor?.ResetState();
+            _kcc?.SetInputDirection(Vector3.zero);
+
+            ApplyMountDefinition();
 
             if (_animator != null)
             {
-                _animator.ApplyDefinition(_definition);
                 _animator.SetMoveInput(0f);
                 _animator.SetMounted(true);
             }
@@ -46,7 +81,9 @@ namespace TPSBR
         public void EndRide()
         {
             _rider = null;
-            _currentSpeed = 0f;
+
+            _mountProcessor?.ResetState();
+            _kcc?.SetInputDirection(Vector3.zero);
 
             if (_animator != null)
             {
@@ -60,38 +97,57 @@ namespace TPSBR
             if (_definition == null || Object == null || Object.HasStateAuthority == false)
                 return;
 
-            if (lookDelta.sqrMagnitude > 0.0001f)
-            {
-                float yawDelta = lookDelta.y * _definition.TurnSpeed * deltaTime;
-                transform.rotation *= Quaternion.Euler(0f, yawDelta, 0f);
-            }
+            ApplyLookDelta(lookDelta, deltaTime);
 
-            Vector3 desiredDirection = transform.forward * move.y + transform.right * move.x;
-            float targetSpeed = move.magnitude * _definition.MoveSpeed;
-            _currentSpeed = Mathf.MoveTowards(_currentSpeed, targetSpeed, _definition.Acceleration * deltaTime);
+            Vector3 worldMoveDirection = CalculateMoveDirection(move);
 
-            Vector3 displacement = desiredDirection.normalized * _currentSpeed * deltaTime;
-            float normalizedSpeed = _definition.MoveSpeed > 0f ? _currentSpeed / _definition.MoveSpeed : 0f;
-            _animator?.SetMoveInput(normalizedSpeed);
+            _kcc?.SetInputDirection(worldMoveDirection);
+            _mountProcessor?.SetMoveInput(worldMoveDirection);
 
-            if (displacement.sqrMagnitude < float.Epsilon)
+            float projectedSpeed = _mountProcessor != null ? _mountProcessor.GetProjectedNormalizedSpeed(move.magnitude, deltaTime) : 0f;
+            _animator?.SetMoveInput(projectedSpeed);
+        }
+
+        private void ApplyLookDelta(Vector2 lookDelta, float deltaTime)
+        {
+            if (_kcc == null || _definition == null)
                 return;
 
-            Vector3 nextPosition = transform.position + displacement;
-            if (Physics.Linecast(transform.position, nextPosition, out RaycastHit hit, _blockedLayers, QueryTriggerInteraction.Ignore) == true)
+            if (lookDelta.sqrMagnitude < 0.0001f)
+                return;
+
+            Vector2 currentLookRotation = _kcc.Data.GetLookRotation(true, true);
+            currentLookRotation.y += lookDelta.y * _definition.TurnSpeed * deltaTime;
+
+            _kcc.SetLookRotation(currentLookRotation);
+        }
+
+        private Vector3 CalculateMoveDirection(Vector2 move)
+        {
+            if (_kcc == null || move.IsZero() == true)
+                return Vector3.zero;
+
+            return _kcc.FixedData.TransformRotation * new Vector3(move.x, 0f, move.y);
+        }
+
+        private void RegisterProcessor()
+        {
+            if (_processorRegistered == true || _kcc == null || _mountProcessor == null)
+                return;
+
+            if (_kcc.AddLocalProcessor(_mountProcessor) == true)
             {
-                nextPosition = hit.point;
+                _processorRegistered = true;
             }
+        }
 
-            Vector3 groundOrigin = nextPosition + Vector3.up * _groundCheckHeight;
-            float groundRayLength = _groundCheckHeight + _groundCheckDistance;
+        private void ApplyMountDefinition()
+        {
+            if (_definition == null)
+                return;
 
-            if (Physics.Raycast(groundOrigin, Vector3.down, out RaycastHit groundHit, groundRayLength, _groundLayers, QueryTriggerInteraction.Ignore) == true)
-            {
-                nextPosition = groundHit.point;
-            }
-
-            transform.position = nextPosition;
+            _mountProcessor?.ApplyDefinition(_definition);
+            _animator?.ApplyDefinition(_definition);
         }
     }
 }
