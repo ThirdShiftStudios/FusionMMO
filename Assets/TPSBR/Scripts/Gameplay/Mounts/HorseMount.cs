@@ -1,21 +1,22 @@
 namespace TPSBR
 {
     using Fusion;
+    using Fusion.Addons.KCC;
     using UnityEngine;
+
+    [RequireComponent(typeof(KCC))]
+    [RequireComponent(typeof(HorseMountProcessor))]
     [DefaultExecutionOrder(-3)]
     public sealed class HorseMount : MountBase
     {
         [SerializeField] private MountDefinition _definition;
         [SerializeField] private Transform _cameraTransform;
         [SerializeField] private Transform _riderAnchor;
-        [SerializeField] private LayerMask _blockedLayers;
-        [SerializeField] private LayerMask _groundLayers;
-        [SerializeField, Range(0.25f, 5f)] private float _groundCheckHeight = 1.5f;
-        [SerializeField, Range(0.25f, 10f)] private float _groundCheckDistance = 4f;
         [SerializeField] private MountAnimator _animator;
+        [SerializeField] private KCC _kcc;
+        [SerializeField] private HorseMountProcessor _processor;
 
         private MountController _rider;
-        private float _currentSpeed;
 
         public string MountCode => _definition != null ? _definition.Code : string.Empty;
         public Transform MountCamera => _cameraTransform;
@@ -28,12 +29,22 @@ namespace TPSBR
             {
                 _animator = GetComponent<MountAnimator>();
             }
+
+            if (_kcc == null)
+            {
+                _kcc = GetComponent<KCC>();
+            }
+
+            if (_processor == null)
+            {
+                _processor = GetComponent<HorseMountProcessor>();
+            }
         }
 
         public void BeginRide(MountController rider)
         {
             _rider = rider;
-            _currentSpeed = 0f;
+            _processor?.ResetState();
 
             if (_animator != null)
             {
@@ -46,12 +57,18 @@ namespace TPSBR
         public void EndRide()
         {
             _rider = null;
-            _currentSpeed = 0f;
+            _processor?.ResetState();
 
             if (_animator != null)
             {
                 _animator.SetMoveInput(0f);
                 _animator.SetMounted(false);
+            }
+
+            if (_kcc != null)
+            {
+                _kcc.SetDynamicVelocity(Vector3.zero);
+                _kcc.SetKinematicVelocity(Vector3.zero);
             }
         }
 
@@ -60,38 +77,17 @@ namespace TPSBR
             if (_definition == null || Object == null || Object.HasStateAuthority == false)
                 return;
 
+            if (_kcc == null || _processor == null)
+                return;
+
             if (lookDelta.sqrMagnitude > 0.0001f)
             {
                 float yawDelta = lookDelta.y * _definition.TurnSpeed * deltaTime;
-                transform.rotation *= Quaternion.Euler(0f, yawDelta, 0f);
+                _kcc.AddLookRotation(0f, yawDelta);
             }
 
-            Vector3 desiredDirection = transform.forward * move.y + transform.right * move.x;
-            float targetSpeed = move.magnitude * _definition.MoveSpeed;
-            _currentSpeed = Mathf.MoveTowards(_currentSpeed, targetSpeed, _definition.Acceleration * deltaTime);
-
-            Vector3 displacement = desiredDirection.normalized * _currentSpeed * deltaTime;
-            float normalizedSpeed = _definition.MoveSpeed > 0f ? _currentSpeed / _definition.MoveSpeed : 0f;
-            _animator?.SetMoveInput(normalizedSpeed);
-
-            if (displacement.sqrMagnitude < float.Epsilon)
-                return;
-
-            Vector3 nextPosition = transform.position + displacement;
-            if (Physics.Linecast(transform.position, nextPosition, out RaycastHit hit, _blockedLayers, QueryTriggerInteraction.Ignore) == true)
-            {
-                nextPosition = hit.point;
-            }
-
-            Vector3 groundOrigin = nextPosition + Vector3.up * _groundCheckHeight;
-            float groundRayLength = _groundCheckHeight + _groundCheckDistance;
-
-            if (Physics.Raycast(groundOrigin, Vector3.down, out RaycastHit groundHit, groundRayLength, _groundLayers, QueryTriggerInteraction.Ignore) == true)
-            {
-                nextPosition = groundHit.point;
-            }
-
-            transform.position = nextPosition;
+            _processor.SetMoveInput(move, _definition.MoveSpeed, _definition.Acceleration, deltaTime);
+            _animator?.SetMoveInput(_processor.NormalizedSpeed);
         }
     }
 }
