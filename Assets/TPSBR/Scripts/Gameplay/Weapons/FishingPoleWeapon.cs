@@ -258,6 +258,16 @@ namespace TPSBR
             _castRequested = false;
             _waitingForPrimaryRelease = false;
             ResetHoldTracking();
+
+            bool hasActiveLure = _activeLureProjectile != null || _lureLaunched == true;
+
+            if (hasActiveLure == true)
+            {
+                // Preserve the lure and current lifecycle so a landing impact can still start fishing.
+                RaiseLifecycleStateChanged(_isInWaitingPhase == true ? FishingLifecycleState.Waiting : FishingLifecycleState.LureInFlight);
+                return;
+            }
+
             EndWaitingPhase();
             GrantCaughtFishToInventory();
             DespawnActiveFish();
