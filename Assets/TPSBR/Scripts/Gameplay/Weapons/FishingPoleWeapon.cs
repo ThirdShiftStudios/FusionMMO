@@ -471,7 +471,7 @@ namespace TPSBR
 
         internal void OnLureImpacted(FishingLureProjectile projectile, in LagCompensatedHit hit)
         {
-            if (_castActive == false)
+            if (_castActive == false && _lureLaunched == false)
                 return;
 
             bool hitWater = hit.GameObject != null && hit.GameObject.layer == ObjectLayer.Water;
