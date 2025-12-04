@@ -1,8 +1,9 @@
 namespace TPSBR
 {
-	using UnityEngine;
-	using Fusion;
-	using Fusion.Addons.InterestManagement;
+        using System.Collections.Generic;
+        using UnityEngine;
+        using Fusion;
+        using Fusion.Addons.InterestManagement;
 
 	public struct PlayerStatistics : INetworkStruct
 	{
@@ -218,15 +219,32 @@ namespace TPSBR
 			{
 				Context.ObservedAgent     = observedAgent;
 				Context.ObservedPlayerRef = observedPlayerRef;
-				Context.LocalPlayerRef    = Object.InputAuthority;
+                                Context.LocalPlayerRef    = Object.InputAuthority;
 
-				if (_playerDataSent == false && Runner.IsForward == true && Context.PlayerData != null)
-				{
-					var unityID = Context.PlayerData.UnityID != null ? Context.PlayerData.UnityID : string.Empty;
+                                if (_playerDataSent == false && Runner.IsForward == true && Context.PlayerData != null)
+                                {
+                                        List<string> missingFields = null;
 
-					RPC_SendPlayerData(Context.PeerUserID, Context.PlayerData.Nickname, Context.PlayerData.CharacterName, Context.PlayerData.AgentPrefab, unityID);
-					_playerDataSent = true;
-				}
+                                        if (Context.PeerUserID == null)
+                                                (missingFields ??= new List<string>()).Add(nameof(Context.PeerUserID));
+                                        if (Context.PlayerData.Nickname == null)
+                                                (missingFields ??= new List<string>()).Add(nameof(Context.PlayerData.Nickname));
+                                        if (Context.PlayerData.CharacterName == null)
+                                                (missingFields ??= new List<string>()).Add(nameof(Context.PlayerData.CharacterName));
+                                        if (Context.PlayerData.UnityID == null)
+                                                (missingFields ??= new List<string>()).Add(nameof(Context.PlayerData.UnityID));
+
+                                        if (missingFields != null)
+                                                Debug.LogError($"[Player] Missing player data fields: {string.Join(", ", missingFields)} for player {Object.InputAuthority}.");
+
+                                        var userID        = Context.PeerUserID ?? string.Empty;
+                                        var nickname      = Context.PlayerData.Nickname ?? string.Empty;
+                                        var characterName = Context.PlayerData.CharacterName ?? string.Empty;
+                                        var unityID       = Context.PlayerData.UnityID ?? string.Empty;
+
+                                        RPC_SendPlayerData(userID, nickname, characterName, Context.PlayerData.AgentPrefab, unityID);
+                                        _playerDataSent = true;
+                                }
 			}
 		}
 
