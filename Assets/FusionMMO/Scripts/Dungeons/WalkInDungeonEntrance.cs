@@ -33,7 +33,7 @@ namespace FusionMMO.Dungeons
                 return false;
             }
 
-            Vector3 spawnPosition = RemoteSpawnManager.GetOrReservePosition(this);
+            Vector3 spawnPosition = GetReservedSpawnPosition();
             Quaternion spawnRotation = Quaternion.identity;
 
             _spawnedDungeon = Runner.Spawn(_dungeonPrefab, spawnPosition, spawnRotation);

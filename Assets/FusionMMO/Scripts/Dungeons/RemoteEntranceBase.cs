@@ -19,9 +19,23 @@ namespace FusionMMO.Dungeons
         [SerializeField]
         private LoadingScreenDefinition _loadingScreenDefinition;
 
+        private bool _hasReservedSpawnPosition;
+        private Vector3 _reservedSpawnPosition;
+
         public Transform EntranceTransform => _entrance;
 
         protected LoadingScreenDefinition LoadingScreen => _loadingScreenDefinition;
+
+        protected Vector3 GetReservedSpawnPosition()
+        {
+            if (_hasReservedSpawnPosition == false)
+            {
+                _reservedSpawnPosition = RemoteSpawnManager.GetOrReservePosition(this);
+                _hasReservedSpawnPosition = true;
+            }
+
+            return _reservedSpawnPosition;
+        }
 
         public void RequestLoadingScene(PlayerRef playerRef)
         {
