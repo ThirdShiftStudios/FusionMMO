@@ -157,6 +157,8 @@ namespace TPSBR
         [Networked] private InventorySlot _pickaxeSlot { get; set; }
         [Networked] private InventorySlot _woodAxeSlot { get; set; }
         [Networked] private InventorySlot _fishingPoleSlot { get; set; }
+        [Networked(OnChanged = nameof(OnIsFishingPoleEquippedChanged))] private NetworkBool _isFishingPoleEquipped { get; set; }
+        [Networked(OnChanged = nameof(OnFishingPoleChanged))] private FishingPoleWeapon _fishingPole { get; set; }
         [Networked] private InventorySlot _headSlot { get; set; }
         [Networked] private InventorySlot _upperBodySlot { get; set; }
         [Networked] private InventorySlot _lowerBodySlot { get; set; }
@@ -172,8 +174,6 @@ namespace TPSBR
         [Networked] private NetworkBool _isPickaxeEquipped { get; set; }
         [Networked] private WoodAxe _woodAxe { get; set; }
         [Networked] private NetworkBool _isWoodAxeEquipped { get; set; }
-        [Networked] private FishingPoleWeapon _fishingPole { get; set; }
-        [Networked] private NetworkBool _isFishingPoleEquipped { get; set; }
         [Networked] private byte _fightingHitsRequired { get; set; }
         [Networked] private byte _fightingHitsSucceeded { get; set; }
 
@@ -5717,6 +5717,16 @@ namespace TPSBR
             }
 
             UpdateLocalFishingPoleEquipped(_isFishingPoleEquipped);
+        }
+
+        public static void OnFishingPoleChanged(Changed<Inventory> changed)
+        {
+            changed.Behaviour.RefreshFishingPoleVisuals();
+        }
+
+        public static void OnIsFishingPoleEquippedChanged(Changed<Inventory> changed)
+        {
+            changed.Behaviour.UpdateLocalFishingPoleEquipped(changed.Behaviour._isFishingPoleEquipped);
         }
 
         private void SubscribeToFishingLifecycle(FishingPoleWeapon weapon)
