@@ -5618,12 +5618,15 @@ namespace TPSBR
                 fishingPole.SetConfigurationHash(_fishingPoleSlot.ConfigurationHash);
                 EnsureWeaponPrefabRegistered(definition, fishingPole);
 
-                // TODO
-                // This causes fishing pole definition to get readded to the _hotbar[HOTBAR_FISHING_POLE_SLOT] - bad
-                // but removing this breaks the fishing loop. the player can cast the fishing lure but the minigame and fishing cycle does not commence
-                if (_hotbar.Length > HOTBAR_FISHING_POLE_SLOT && _hotbar[HOTBAR_FISHING_POLE_SLOT] != fishingPole)
+                if (_hotbar.Length > HOTBAR_FISHING_POLE_SLOT)
                 {
-                    AddWeapon(fishingPole, HOTBAR_FISHING_POLE_SLOT);
+                    bool fishingPoleShouldStayInHotbar =
+                        _isFishingPoleEquipped == true || _currentWeaponSlot == HOTBAR_FISHING_POLE_SLOT;
+
+                    if (fishingPoleShouldStayInHotbar == true && _hotbar[HOTBAR_FISHING_POLE_SLOT] != fishingPole)
+                    {
+                        AddWeapon(fishingPole, HOTBAR_FISHING_POLE_SLOT);
+                    }
                 }
             }
 
