@@ -1,12 +1,12 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace TPSBR.UI
 {
     public class UITeamPlayerPanels : UIBehaviour
     {
-        private UIHealth[] _uiHealth;
-
-        private UITeamPlayerPanel[] _teamPlayerPanels;
+        private List<UITeamPlayerPanel> _teamPlayerPanels;
+        private GameObject _panelPrefab;
         private bool _initialized;
 
         public void UpdateTeamPlayerPanels(SceneContext context, Agent observedAgent)
@@ -18,7 +18,9 @@ namespace TPSBR.UI
 
             var allPlayers = context.NetworkGame.ActivePlayers;
             int totalOtherPlayers = allPlayers.Count - 1;
-            for (int i = 0; i < _teamPlayerPanels.Length; i++)
+            EnsureCapacity(totalOtherPlayers);
+
+            for (int i = 0; i < _teamPlayerPanels.Count; i++)
             {
                 var panel = _teamPlayerPanels[i];
                 panel.GameObject.SetActive(false);
@@ -56,15 +58,34 @@ namespace TPSBR.UI
 
         private void Initialize()
         {
-            _uiHealth = GetComponentsInChildren<UIHealth>();
-            
-            _teamPlayerPanels = new UITeamPlayerPanel[_uiHealth.Length];
+            var uiHealthComponents = GetComponentsInChildren<UIHealth>(true);
+            _teamPlayerPanels = new List<UITeamPlayerPanel>(uiHealthComponents.Length);
 
-            for (int i = 0; i < _uiHealth.Length; i++)
+            for (int i = 0; i < uiHealthComponents.Length; i++)
             {
-                _teamPlayerPanels[i] = new UITeamPlayerPanel(_uiHealth[i].gameObject);
+                _teamPlayerPanels.Add(new UITeamPlayerPanel(uiHealthComponents[i].gameObject));
+            }
+
+            if (uiHealthComponents.Length > 0)
+            {
+                _panelPrefab = uiHealthComponents[0].gameObject;
             }
             _initialized = true;
+        }
+
+        private void EnsureCapacity(int requiredCount)
+        {
+            if (requiredCount <= 0 || _panelPrefab == null)
+                return;
+
+            Transform parent = _panelPrefab.transform.parent != null ? _panelPrefab.transform.parent : transform;
+
+            while (_teamPlayerPanels.Count < requiredCount)
+            {
+                var panelObject = Instantiate(_panelPrefab, parent);
+                panelObject.name = $"{_panelPrefab.name}_{_teamPlayerPanels.Count}";
+                _teamPlayerPanels.Add(new UITeamPlayerPanel(panelObject));
+            }
         }
 
         private class UITeamPlayerPanel
