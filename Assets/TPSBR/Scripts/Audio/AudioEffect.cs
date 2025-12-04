@@ -182,16 +182,22 @@ namespace TPSBR
 					_audioSource.FadeOut(this, previousSetup.FadeOut);
 				}
 
-				_delayedPlayRoutine = StartCoroutine(PlayDelayed_Coroutine(delay, LastPlayedClipIndex));
+                        _delayedPlayRoutine = StartCoroutine(PlayDelayed_Coroutine(delay, LastPlayedClipIndex, _currentSetup));
 			}
 		}
 
-		private void PlayClip(int clipIndex)
-		{
-			_audioSource.Stop();
-			StopAllCoroutines(); // Stop audiosource fadings
+                private void PlayClip(int clipIndex)
+                {
+                        if (_currentSetup == null || _currentSetup.Clips == null)
+                                return;
 
-			LastPlayedClipIndex = clipIndex;
+                        if (clipIndex < 0 || clipIndex >= _currentSetup.Clips.Length)
+                                return;
+
+                        _audioSource.Stop();
+                        StopAllCoroutines(); // Stop audiosource fadings
+
+                        LastPlayedClipIndex = clipIndex;
 
 			_audioSource.clip = _currentSetup.Clips[clipIndex];
 			_audioSource.volume = _currentSetup.Volume;
@@ -209,25 +215,34 @@ namespace TPSBR
 
 			_playCount++;
 
-			if (_currentSetup.Repeat == true && _playCount < _currentSetup.RepeatPlayCount)
-			{
-				_delayedPlayRoutine = StartCoroutine(PlayDelayed_Coroutine(_audioSource.clip.length + _currentSetup.RepeatDelay, clipIndex));
-			}
-		}
+                        if (_currentSetup.Repeat == true && _playCount < _currentSetup.RepeatPlayCount)
+                        {
+                                _delayedPlayRoutine = StartCoroutine(PlayDelayed_Coroutine(_audioSource.clip.length + _currentSetup.RepeatDelay, clipIndex, _currentSetup));
+                        }
+                }
 
-		private IEnumerator PlayDelayed_Coroutine(float delay, int clipIndex)
-		{
-			if (delay > 0.01f)
-			{
-				yield return new WaitForSeconds(delay);
-			}
+                private IEnumerator PlayDelayed_Coroutine(float delay, int clipIndex, AudioSetup expectedSetup)
+                {
+                        if (delay > 0.01f)
+                        {
+                                yield return new WaitForSeconds(delay);
+                        }
 
-			_delayedPlayRoutine = null;
+                        _delayedPlayRoutine = null;
 
-			PlayClip(clipIndex);
-		}
+                        if (_currentSetup != expectedSetup)
+                                yield break;
 
-		private void StopDelayedPlay()
+                        if (_currentSetup == null || _currentSetup.Clips == null)
+                                yield break;
+
+                        if (clipIndex < 0 || clipIndex >= _currentSetup.Clips.Length)
+                                yield break;
+
+                        PlayClip(clipIndex);
+                }
+
+                private void StopDelayedPlay()
 		{
 			if (_delayedPlayRoutine != null)
 			{
