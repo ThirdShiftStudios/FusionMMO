@@ -698,7 +698,6 @@ namespace TPSBR
             }
 
             _isWaiting = false;
-            _awaitingLureImpact = false;
             _isFighting = false;
             _isReeling = false;
             _isCatching = false;
@@ -707,6 +706,13 @@ namespace TPSBR
             {
                 _activeWeapon.NotifyCastCompleted();
             }
+
+            // If the lure is still in flight, keep the active weapon reference so impact
+            // callbacks can transition into the waiting phase and update the lifecycle.
+            if (_awaitingLureImpact == true)
+                return;
+
+            _awaitingLureImpact = false;
 
             Finish();
         }
