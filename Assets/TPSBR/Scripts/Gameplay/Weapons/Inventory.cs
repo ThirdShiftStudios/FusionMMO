@@ -2598,11 +2598,6 @@ namespace TPSBR
                 remaining = AddToWoodAxeSlot(definition, remaining, configurationHash);
             }
 
-            if (isFishingPole == true && remaining > 0)
-            {
-                remaining = AddToFishingPoleSlot(definition, remaining, configurationHash);
-            }
-
             if (isHead == true && remaining > 0)
             {
                 remaining = AddToHeadSlot(definition, remaining, configurationHash);
@@ -4470,12 +4465,15 @@ namespace TPSBR
         return TryAddWeaponDefinitionToInventory(weapon.Definition);
     }
 
-    private bool TryAddWeaponDefinitionToInventory(WeaponDefinition definition)
-    {
-        if (definition == null)
-            return false;
+        private bool TryAddWeaponDefinitionToInventory(WeaponDefinition definition)
+        {
+            if (definition == null)
+                return false;
 
-        EnsureWeaponPrefabRegistered(definition);
+            if (definition is FishingPoleDefinition)
+                return false;
+
+            EnsureWeaponPrefabRegistered(definition);
 
         int emptySlot = FindEmptyInventorySlot();
         if (emptySlot < 0)
@@ -5558,14 +5556,13 @@ namespace TPSBR
 
             if (_fishingPoleSlot.IsEmpty == false && IsFishingPoleSlotItem(_fishingPoleSlot) == false)
             {
-                _fishingPoleSlot = default;
-                RefreshFishingPoleSlot();
-                DespawnFishingPole();
+                ClearFishingPoleState();
+                return;
             }
 
             if (IsFishingPoleSlotItem(_fishingPoleSlot) == false)
             {
-                DespawnFishingPole();
+                ClearFishingPoleState();
                 return;
             }
 
@@ -5582,21 +5579,21 @@ namespace TPSBR
 
             if (_fishingPoleSlot.IsEmpty == true || IsFishingPoleSlotItem(_fishingPoleSlot) == false)
             {
-                DespawnFishingPole();
+                ClearFishingPoleState();
                 return;
             }
 
             var definition = _fishingPoleSlot.GetDefinition() as FishingPoleDefinition;
             if (definition == null || Runner == null)
             {
-                DespawnFishingPole();
+                ClearFishingPoleState();
                 return;
             }
 
             var prefab = definition.FishingPolePrefab ?? definition.WeaponPrefab as FishingPoleWeapon;
             if (prefab == null)
             {
-                DespawnFishingPole();
+                ClearFishingPoleState();
                 return;
             }
 
@@ -5617,14 +5614,28 @@ namespace TPSBR
             {
                 fishingPole.SetConfigurationHash(_fishingPoleSlot.ConfigurationHash);
                 EnsureWeaponPrefabRegistered(definition, fishingPole);
-
-                if (_hotbar.Length > HOTBAR_FISHING_POLE_SLOT && _hotbar[HOTBAR_FISHING_POLE_SLOT] != fishingPole)
-                {
-                    AddWeapon(fishingPole, HOTBAR_FISHING_POLE_SLOT);
-                }
             }
 
             RefreshFishingPoleVisuals();
+        }
+
+        private void ClearFishingPoleState()
+        {
+            ClearFishingPoleSlot();
+
+            if (_fishingPole != null || _localFishingPole != null)
+            {
+                DespawnFishingPole();
+            }
+        }
+
+        private void ClearFishingPoleSlot()
+        {
+            if (_fishingPoleSlot.IsEmpty == true)
+                return;
+
+            _fishingPoleSlot = default;
+            RefreshFishingPoleSlot();
         }
 
         private void DespawnFishingPole()
