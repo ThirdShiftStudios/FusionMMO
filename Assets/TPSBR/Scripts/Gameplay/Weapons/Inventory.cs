@@ -5556,13 +5556,13 @@ namespace TPSBR
 
             if (_fishingPoleSlot.IsEmpty == false && IsFishingPoleSlotItem(_fishingPoleSlot) == false)
             {
-                ClearFishingPoleSlot();
-                DespawnFishingPole();
+                ClearFishingPoleState();
+                return;
             }
 
             if (IsFishingPoleSlotItem(_fishingPoleSlot) == false)
             {
-                DespawnFishingPole();
+                ClearFishingPoleState();
                 return;
             }
 
@@ -5579,24 +5579,21 @@ namespace TPSBR
 
             if (_fishingPoleSlot.IsEmpty == true || IsFishingPoleSlotItem(_fishingPoleSlot) == false)
             {
-                ClearFishingPoleSlot();
-                DespawnFishingPole();
+                ClearFishingPoleState();
                 return;
             }
 
             var definition = _fishingPoleSlot.GetDefinition() as FishingPoleDefinition;
             if (definition == null || Runner == null)
             {
-                ClearFishingPoleSlot();
-                DespawnFishingPole();
+                ClearFishingPoleState();
                 return;
             }
 
             var prefab = definition.FishingPolePrefab ?? definition.WeaponPrefab as FishingPoleWeapon;
             if (prefab == null)
             {
-                ClearFishingPoleSlot();
-                DespawnFishingPole();
+                ClearFishingPoleState();
                 return;
             }
 
@@ -5625,6 +5622,16 @@ namespace TPSBR
             }
 
             RefreshFishingPoleVisuals();
+        }
+
+        private void ClearFishingPoleState()
+        {
+            ClearFishingPoleSlot();
+
+            if (_fishingPole != null || _localFishingPole != null)
+            {
+                DespawnFishingPole();
+            }
         }
 
         private void ClearFishingPoleSlot()
