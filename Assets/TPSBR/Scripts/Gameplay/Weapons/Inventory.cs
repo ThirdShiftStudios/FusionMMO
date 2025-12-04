@@ -5712,9 +5712,13 @@ namespace TPSBR
 
                     _localFishingPole.Initialize(Object, equippedParent, unequippedParent);
                     _localFishingPole.AssignFireAudioEffects(_fireAudioEffectsRoot, _fireAudioEffects);
-                    SubscribeToFishingLifecycle(_localFishingPole);
                 }
             }
+
+            // Keep the lifecycle subscription alive even if the weapon instance hasn't changed. This prevents
+            // losing state updates after respawns or reinitializations where the event hookup could be cleared
+            // while the networked reference stays the same.
+            SubscribeToFishingLifecycle(_localFishingPole);
 
             UpdateLocalFishingPoleEquipped(_isFishingPoleEquipped);
         }
