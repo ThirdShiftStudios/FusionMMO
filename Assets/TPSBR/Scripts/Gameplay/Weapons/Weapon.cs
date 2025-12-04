@@ -75,7 +75,18 @@ namespace TPSBR
         public NetworkObject Owner => _owner;
         public Character Character => _character;
         public WeaponSize Size => _weaponSize;
-        public NetworkString<_64> ConfigurationHash => _configurationHash;
+        public NetworkString<_64> ConfigurationHash
+        {
+            get
+            {
+                if (Object != null && Object.IsSpawned == true)
+                {
+                    return _configurationHash;
+                }
+
+                return _appliedConfigurationHash;
+            }
+        }
 
         // PRIVATE MEMBERS
 
