@@ -557,7 +557,7 @@ namespace TPSBR
 
             NetworkObject networkObject = Object;
 
-            if (networkObject == null || networkObject.HasInputAuthority == true)
+            if (networkObject == null)
                 return;
 
             PlayerRef inputAuthority = networkObject.InputAuthority;
@@ -565,6 +565,10 @@ namespace TPSBR
             if (inputAuthority == PlayerRef.None)
                 return;
 
+            // Propagate the lifecycle change to the owning client whenever state authority
+            // is authoritative over the weapon. This ensures the UI and minigame logic stay
+            // in sync even when the state authority also has input authority (e.g. listen
+            // server/host scenarios).
             RPC_ReportLifecycleStateChanged(state);
         }
 
