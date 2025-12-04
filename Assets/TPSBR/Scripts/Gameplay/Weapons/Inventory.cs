@@ -2598,11 +2598,6 @@ namespace TPSBR
                 remaining = AddToWoodAxeSlot(definition, remaining, configurationHash);
             }
 
-            if (isFishingPole == true && remaining > 0)
-            {
-                remaining = AddToFishingPoleSlot(definition, remaining, configurationHash);
-            }
-
             if (isHead == true && remaining > 0)
             {
                 remaining = AddToHeadSlot(definition, remaining, configurationHash);
