@@ -1,6 +1,7 @@
 using System;
 using System.Text;
 using System.Threading.Tasks;
+using Steamworks;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -86,6 +87,8 @@ namespace TPSBR
                     {
                         record.SubmittedToTrello = true;
                         Debug.Log(LogPrefix + $"Created Trello card {result.TicketKey} for error: {record.Condition}");
+
+                        await TryAttachScreenshotAsync(result.CardId);
                     }
                     else
                     {
@@ -174,6 +177,8 @@ namespace TPSBR
             builder.AppendLine("Automated Error Capture");
             builder.AppendLine($"Log Type: {record.LogType}");
             builder.AppendLine($"Condition: {record.Condition}");
+            builder.AppendLine($"Steam User Name: {GetSteamUserName()}");
+            builder.AppendLine($"Steam User ID: {GetSteamUserId()}");
 
             if (string.IsNullOrWhiteSpace(record.StackTrace) == false)
             {
@@ -181,6 +186,9 @@ namespace TPSBR
                 builder.AppendLine("Stack Trace:");
                 builder.AppendLine(record.StackTrace);
             }
+
+            builder.AppendLine();
+            builder.AppendLine("Screenshot attached at submission time.");
 
             return builder.ToString();
         }
@@ -196,32 +204,144 @@ namespace TPSBR
 
             var statusCode = (long)request.responseCode;
             var isSuccess = request.result == UnityWebRequest.Result.Success && statusCode >= 200 && statusCode < 300;
-            var ticketKey = ExtractTicketKey(request.downloadHandler?.text);
             var responseBody = request.downloadHandler?.text;
+            var response = ExtractCardResponse(responseBody);
+            var ticketKey = string.IsNullOrWhiteSpace(response?.shortUrl) ? response?.id ?? string.Empty : response.shortUrl;
             var error = string.IsNullOrWhiteSpace(responseBody) ? request.error : responseBody;
 
             return new TrelloSubmissionResult
             {
                 IsSuccess = isSuccess,
                 StatusCode = statusCode,
+                CardId = response?.id ?? string.Empty,
                 TicketKey = ticketKey,
                 Error = error
             };
         }
 
-        private string ExtractTicketKey(string responseText)
+        private TrelloCardResponse ExtractCardResponse(string responseText)
         {
             if (string.IsNullOrEmpty(responseText) == true)
-                return string.Empty;
+                return new TrelloCardResponse();
 
             try
             {
                 var response = JsonUtility.FromJson<TrelloCardResponse>(responseText);
-                return string.IsNullOrWhiteSpace(response?.shortUrl) ? response?.id ?? string.Empty : response.shortUrl;
+                return response ?? new TrelloCardResponse();
             }
             catch
             {
-                return string.Empty;
+                return new TrelloCardResponse();
+            }
+        }
+
+        private async Task TryAttachScreenshotAsync(string cardId)
+        {
+            if (string.IsNullOrWhiteSpace(cardId) == true)
+            {
+                Debug.LogWarning(LogPrefix + "Cannot attach screenshot because Trello card ID is missing.");
+                return;
+            }
+
+            Texture2D screenshot = null;
+
+            try
+            {
+                screenshot = ScreenCapture.CaptureScreenshotAsTexture();
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning(LogPrefix + $"Failed to capture screenshot for Trello card {cardId}: {exception}");
+            }
+
+            if (screenshot == null)
+            {
+                Debug.LogWarning(LogPrefix + "Screenshot capture returned null. Skipping attachment upload.");
+                return;
+            }
+
+            byte[] pngData = null;
+
+            try
+            {
+                pngData = screenshot.EncodeToPNG();
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning(LogPrefix + $"Failed to encode screenshot for Trello card {cardId}: {exception}");
+            }
+            finally
+            {
+                UnityEngine.Object.Destroy(screenshot);
+            }
+
+            if (pngData == null || pngData.Length == 0)
+            {
+                Debug.LogWarning(LogPrefix + "Screenshot data was empty. Skipping attachment upload.");
+                return;
+            }
+
+            using (var request = BuildAttachmentRequest(cardId, pngData))
+            {
+                var attachmentResult = await SendRequestAsync(request);
+
+                if (attachmentResult.IsSuccess == false)
+                {
+                    Debug.LogWarning(LogPrefix + $"Failed to attach screenshot to Trello card {cardId} (HTTP {attachmentResult.StatusCode}): {attachmentResult.Error}");
+                }
+            }
+        }
+
+        private UnityWebRequest BuildAttachmentRequest(string cardId, byte[] pngData)
+        {
+            var url = $"https://api.trello.com/1/cards/{cardId}/attachments";
+            var form = new WWWForm();
+
+            form.AddField("key", Configuration.ApiKey);
+            form.AddField("token", Configuration.ApiToken);
+            form.AddBinaryData("file", pngData, "bug-screenshot.png", "image/png");
+
+            var request = UnityWebRequest.Post(url, form);
+            request.downloadHandler = new DownloadHandlerBuffer();
+
+            return request;
+        }
+
+        private string GetSteamUserName()
+        {
+            try
+            {
+                if (SteamAPI.IsSteamRunning() == false)
+                {
+                    return "Unknown Steam Name";
+                }
+
+                var personaName = SteamFriends.GetPersonaName();
+                return string.IsNullOrWhiteSpace(personaName) ? "Unknown Steam Name" : personaName;
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning(LogPrefix + $"Failed to retrieve Steam user name: {exception}");
+                return "Unknown Steam Name";
+            }
+        }
+
+        private string GetSteamUserId()
+        {
+            try
+            {
+                if (SteamAPI.IsSteamRunning() == false)
+                {
+                    return "Unknown Steam ID";
+                }
+
+                var steamId = SteamUser.GetSteamID().ToString();
+                return string.IsNullOrWhiteSpace(steamId) ? "Unknown Steam ID" : steamId;
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning(LogPrefix + $"Failed to retrieve Steam user ID: {exception}");
+                return "Unknown Steam ID";
             }
         }
 
@@ -247,6 +367,7 @@ namespace TPSBR
         {
             public bool IsSuccess;
             public long StatusCode;
+            public string CardId;
             public string TicketKey;
             public string Error;
         }
