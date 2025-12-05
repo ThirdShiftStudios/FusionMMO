@@ -26,12 +26,12 @@ namespace TPSBR
             _normalizedSpeed = 0f;
         }
 
-        public void SetMoveInput(Vector2 moveInput, float moveSpeed, float acceleration, float deltaTime)
+        public void SetMoveInput(Vector3 worldDirection, float inputMagnitude, float moveSpeed, float acceleration, float deltaTime)
         {
-            float targetSpeed = Mathf.Clamp01(moveInput.magnitude) * moveSpeed;
+            float targetSpeed = Mathf.Clamp01(inputMagnitude) * moveSpeed;
             _currentSpeed = Mathf.MoveTowards(_currentSpeed, targetSpeed, acceleration * deltaTime);
             _normalizedSpeed = moveSpeed > 0f ? _currentSpeed / moveSpeed : 0f;
-            _inputDirection = new Vector3(moveInput.x, 0f, moveInput.y);
+            _inputDirection = worldDirection;
         }
 
         public void Execute(PrepareData stage, KCC kcc, KCCData data)
@@ -70,7 +70,7 @@ namespace TPSBR
 
         public void Execute(ISetKinematicDirection stage, KCC kcc, KCCData data)
         {
-            data.KinematicDirection = _inputDirection.sqrMagnitude > float.Epsilon ? (data.TransformRotation * _inputDirection).normalized : Vector3.zero;
+            data.KinematicDirection = _inputDirection.sqrMagnitude > float.Epsilon ? _inputDirection : Vector3.zero;
         }
 
         public void Execute(ISetKinematicSpeed stage, KCC kcc, KCCData data)

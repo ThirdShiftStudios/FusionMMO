@@ -82,13 +82,22 @@ namespace TPSBR
             if (_kcc == null || _processor == null)
                 return;
 
+            Vector3 worldMoveDirection = Vector3.zero;
+
             if (lookDelta.sqrMagnitude > 0.0001f)
             {
                 float yawDelta = lookDelta.y * _definition.TurnSpeed * deltaTime;
                 _kcc.AddLookRotation(0f, yawDelta);
             }
 
-            _processor.SetMoveInput(move, _definition.MoveSpeed, _definition.Acceleration, deltaTime);
+            if (move.sqrMagnitude > 0.0001f)
+            {
+                Vector3 inputDirection = new Vector3(move.x, 0f, move.y);
+                worldMoveDirection = (_kcc.FixedData.TransformRotation * inputDirection).normalized;
+            }
+
+            _kcc.SetInputDirection(worldMoveDirection);
+            _processor.SetMoveInput(worldMoveDirection, move.magnitude, _definition.MoveSpeed, _definition.Acceleration, deltaTime);
             _animator?.SetMoveInput(_processor.NormalizedSpeed);
         }
 
