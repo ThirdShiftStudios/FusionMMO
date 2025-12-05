@@ -101,35 +101,61 @@ namespace TPSBR
 
         private UnityWebRequest BuildCreateCardRequest(ErrorRecord record)
         {
-            var baseUrl = string.IsNullOrWhiteSpace(Configuration.BaseUrl) ? "https://api.trello.com/1/" : Configuration.BaseUrl;
-            var issueUrl = new Uri(new Uri(baseUrl.TrimEnd('/') + "/"), "cards");
+            const string baseUrl = "https://api.trello.com/1/cards";
 
-            var payload = new TrelloCreateCardPayload
+            // Trim everything defensive-style
+            string listId = Configuration.ListId?.Trim();
+            string labelIds = Configuration.LabelIds?.Trim();
+            string memberIds = Configuration.MemberIds?.Trim();
+
+            var name = UnityWebRequest.EscapeURL(BuildSummary(record));
+            var desc = UnityWebRequest.EscapeURL(BuildDescription(record));
+
+            var sb = new StringBuilder();
+            sb.Append($"{baseUrl}?key={Configuration.ApiKey}");
+            sb.Append($"&token={Configuration.ApiToken}");
+            sb.Append($"&idList={listId}");
+            sb.Append($"&name={name}");
+            sb.Append($"&desc={desc}");
+
+            // Labels: split, trim each, then re-join so we guarantee no hidden spaces
+            if (!string.IsNullOrWhiteSpace(labelIds))
             {
-                name = BuildSummary(record),
-                desc = BuildDescription(record),
-                idBoard = string.IsNullOrWhiteSpace(Configuration.BoardId) ? null : Configuration.BoardId,
-                idList = Configuration.ListId,
-                idLabels = string.IsNullOrWhiteSpace(Configuration.LabelIds) ? null : Configuration.LabelIds,
-                idMembers = string.IsNullOrWhiteSpace(Configuration.MemberIds) ? null : Configuration.MemberIds
-            };
+                var parts = labelIds.Split(',');
+                for (int i = 0; i < parts.Length; i++)
+                    parts[i] = parts[i].Trim();
 
-            var json = JsonUtility.ToJson(payload);
-            var jsonBytes = Encoding.UTF8.GetBytes(json);
+                var cleaned = string.Join(",", parts);
+                sb.Append($"&idLabels={UnityWebRequest.EscapeURL(cleaned)}");
+            }
 
-            var request = new UnityWebRequest(issueUrl, UnityWebRequest.kHttpVerbPOST)
+            // Members: same deal
+            if (!string.IsNullOrWhiteSpace(memberIds))
             {
-                uploadHandler = new UploadHandlerRaw(jsonBytes),
+                var parts = memberIds.Split(',');
+                for (int i = 0; i < parts.Length; i++)
+                    parts[i] = parts[i].Trim();
+
+                var cleaned = string.Join(",", parts);
+                sb.Append($"&idMembers={UnityWebRequest.EscapeURL(cleaned)}");
+            }
+
+            var url = sb.ToString();
+
+            var request = new UnityWebRequest(url, UnityWebRequest.kHttpVerbPOST)
+            {
+                uploadHandler = new UploadHandlerRaw(Array.Empty<byte>()),
                 downloadHandler = new DownloadHandlerBuffer()
             };
 
             request.SetRequestHeader("Content-Type", "application/json");
 
-            var query = $"key={Configuration.ApiKey}&token={Configuration.ApiToken}";
-            request.url = issueUrl + (issueUrl.Query.Length > 0 ? "&" : "?") + query;
+            Debug.Log(LogPrefix + "Trello URL: " + url);
 
             return request;
         }
+
+
 
         private string BuildSummary(ErrorRecord record)
         {
