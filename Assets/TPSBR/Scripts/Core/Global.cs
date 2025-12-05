@@ -32,6 +32,7 @@ namespace TPSBR
         public static MultiplayManager MultiplayManager { get; private set; }
         public static Task AreServicesInitialized => _servicesInitializedTask.Task;
         public static Task UnityServicesInitialization => _unityServicesInitializationTask ?? Task.CompletedTask;
+        public static ErrorRecorder ErrorRecorder { get; private set; }
 
         // PRIVATE MEMBERS
 
@@ -45,6 +46,7 @@ namespace TPSBR
 
         static Global()
         {
+            ErrorRecorder = new ErrorRecorder();
             ResetServicesInitializationTracker();
         }
 
