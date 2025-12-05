@@ -44,8 +44,17 @@ namespace TPSBR
 
         public void Execute(PrepareData stage, KCC kcc, KCCData data)
         {
+            KCCData fixedData = kcc.FixedData;
+            float deltaTime = fixedData.DeltaTime > 0f ? fixedData.DeltaTime : data.DeltaTime;
+
             float targetSpeed = _moveAmount * _moveSpeed;
-            _currentSpeed = Mathf.MoveTowards(_currentSpeed, targetSpeed, _acceleration * data.DeltaTime);
+
+            _currentSpeed = Mathf.MoveTowards(_currentSpeed, targetSpeed, _acceleration * deltaTime);
+
+            if (_currentSpeed < 0.001f && targetSpeed <= 0f)
+            {
+                _currentSpeed = 0f;
+            }
 
             data.Gravity = Physics.gravity;
             data.KinematicDirection = _moveDirection;
