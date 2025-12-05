@@ -112,7 +112,7 @@ namespace TPSBR
                     summary = BuildSummary(record),
                     description = BuildDescriptionDocument(record),
                     issuetype = new JiraIssueType { name = string.IsNullOrWhiteSpace(Configuration.IssueTypeName) ? "Bug" : Configuration.IssueTypeName },
-                    labels = string.IsNullOrWhiteSpace(Configuration.Label) ? null : new[] { Configuration.Label }
+                    labels = string.IsNullOrWhiteSpace(Configuration.Label) ? Array.Empty<string>() : new[] { Configuration.Label }
                 }
             };
 
