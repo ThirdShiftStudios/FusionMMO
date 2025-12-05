@@ -111,7 +111,7 @@ namespace TPSBR
                     project = new JiraProject { key = Configuration.ProjectKey },
                     summary = BuildSummary(record),
                     description = BuildDescriptionDocument(record),
-                    issuetype = new JiraIssueType { name = string.IsNullOrWhiteSpace(Configuration.IssueTypeName) ? "Bug" : Configuration.IssueTypeName },
+                    issuetype = BuildIssueType(),
                     labels = string.IsNullOrWhiteSpace(Configuration.Label) ? null : new[] { Configuration.Label }
                 }
             };
@@ -129,6 +129,23 @@ namespace TPSBR
             request.SetRequestHeader("Authorization", "Basic " + BuildAuthToken());
 
             return request;
+        }
+
+        private JiraIssueType BuildIssueType()
+        {
+            var hasId = string.IsNullOrWhiteSpace(Configuration.IssueTypeId) == false;
+            var issueType = new JiraIssueType();
+
+            if (hasId == true)
+            {
+                issueType.id = Configuration.IssueTypeId;
+            }
+            else
+            {
+                issueType.name = string.IsNullOrWhiteSpace(Configuration.IssueTypeName) ? "Bug" : Configuration.IssueTypeName;
+            }
+
+            return issueType;
         }
 
         private string BuildSummary(ErrorRecord record)
@@ -286,6 +303,7 @@ namespace TPSBR
         [Serializable]
         private class JiraIssueType
         {
+            public string id;
             public string name;
         }
 

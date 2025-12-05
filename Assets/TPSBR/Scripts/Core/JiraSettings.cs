@@ -24,6 +24,9 @@ namespace TPSBR
             [Tooltip("Optional label to attach to auto-created tickets")]
             public string Label = "auto-error";
 
+            [Tooltip("Issue type id to use when creating Jira tickets. Overrides IssueTypeName when provided.")]
+            public string IssueTypeId;
+
             [Tooltip("Issue type to use when creating Jira tickets, e.g. Bug, Task")]
             public string IssueTypeName = "Bug";
         }
