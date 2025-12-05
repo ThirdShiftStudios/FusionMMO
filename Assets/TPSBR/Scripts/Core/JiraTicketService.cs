@@ -30,6 +30,9 @@ namespace TPSBR
 
             [Tooltip("Optional label to attach to auto-created tickets")]
             public string Label = "auto-error";
+
+            [Tooltip("Issue type to use when creating Jira tickets, e.g. Bug, Task")]
+            public string IssueTypeName = "Bug";
         }
 
         public Settings Configuration { get; }
@@ -115,7 +118,7 @@ namespace TPSBR
                     project = new JiraProject { key = Configuration.ProjectKey },
                     summary = BuildSummary(record),
                     description = BuildDescriptionDocument(record),
-                    issuetype = new JiraIssueType { name = "Bug" },
+                    issuetype = new JiraIssueType { name = string.IsNullOrWhiteSpace(Configuration.IssueTypeName) ? "Bug" : Configuration.IssueTypeName },
                     labels = string.IsNullOrWhiteSpace(Configuration.Label) ? null : new[] { Configuration.Label }
                 }
             };
@@ -207,7 +210,8 @@ namespace TPSBR
             var statusCode = (long)request.responseCode;
             var isSuccess = request.result == UnityWebRequest.Result.Success && statusCode >= 200 && statusCode < 300;
             var ticketKey = ExtractTicketKey(request.downloadHandler?.text);
-            var error = request.error ?? request.downloadHandler?.text;
+            var responseBody = request.downloadHandler?.text;
+            var error = string.IsNullOrWhiteSpace(responseBody) ? request.error : responseBody;
 
             return new JiraSubmissionResult
             {
