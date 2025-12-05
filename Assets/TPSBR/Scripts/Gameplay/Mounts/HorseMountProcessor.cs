@@ -7,6 +7,9 @@ namespace TPSBR
     {
         [SerializeField] private MountDefinition _definition;
         [SerializeField] private MountAnimator _animator;
+        [SerializeField] private Vector3 _gravity = default;
+        [SerializeField] private float _upGravityMultiplier = 1f;
+        [SerializeField] private float _downGravityMultiplier = 1f;
 
         private float _currentSpeed;
 
@@ -28,9 +31,15 @@ namespace TPSBR
             if (_definition == null)
                 return;
 
+            Vector3 gravity = _gravity != default ? _gravity : Physics.gravity;
             Vector3 inputDirection = data.InputDirection;
-            float targetSpeed = Mathf.Clamp01(inputDirection.magnitude) * _definition.MoveSpeed;
-            _currentSpeed = Mathf.MoveTowards(_currentSpeed, targetSpeed, _definition.Acceleration * data.DeltaTime);
+
+            if (kcc.IsInFixedUpdate == true)
+            {
+                float fixedDeltaTime = kcc.FixedData.DeltaTime;
+                float targetSpeed = Mathf.Clamp01(inputDirection.magnitude) * _definition.MoveSpeed;
+                _currentSpeed = Mathf.MoveTowards(_currentSpeed, targetSpeed, _definition.Acceleration * fixedDeltaTime);
+            }
 
             Vector3 kinematicDirection = Vector3.zero;
             Vector3 kinematicVelocity = Vector3.zero;
@@ -40,6 +49,8 @@ namespace TPSBR
                 kinematicDirection = inputDirection.normalized;
                 kinematicVelocity = kinematicDirection * _currentSpeed;
             }
+
+            data.Gravity = gravity * (kcc.FixedData.RealVelocity.y > 0.0f ? _upGravityMultiplier : _downGravityMultiplier);
 
             data.KinematicDirection = kinematicDirection;
             data.KinematicSpeed = _currentSpeed;
