@@ -44,7 +44,6 @@ namespace TPSBR
             data.KinematicDirection = kinematicDirection;
             data.KinematicSpeed = _currentSpeed;
             data.KinematicVelocity = kinematicVelocity;
-            data.DesiredVelocity = kinematicVelocity;
 
             if (_animator != null)
             {
