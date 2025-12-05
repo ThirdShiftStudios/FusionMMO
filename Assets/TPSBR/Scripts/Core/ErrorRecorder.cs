@@ -9,9 +9,11 @@ namespace TPSBR
         private const string LogPrefix = "[<color=red>ErrorRecorder</color>] ";
 
         private readonly object _sync = new object();
-        private readonly HashSet<string> _recordedErrors = new HashSet<string>();
+        private readonly Dictionary<ErrorKey, ErrorRecord> _recordedErrors = new Dictionary<ErrorKey, ErrorRecord>();
 
-        public IReadOnlyCollection<string> RecordedErrors => _recordedErrors;
+        public event Action<ErrorRecord> ErrorRecorded;
+
+        public IReadOnlyCollection<ErrorRecord> RecordedErrors => _recordedErrors.Values;
 
         public ErrorRecorder()
         {
@@ -24,25 +26,88 @@ namespace TPSBR
             if (type != LogType.Exception && type != LogType.Error && type != LogType.Assert)
                 return;
 
-            string formattedMessage = string.IsNullOrEmpty(stackTrace) ? condition : $"{condition}\n{stackTrace}";
-            RecordError(formattedMessage);
+            RecordError(condition, stackTrace, type);
         }
 
-        private void RecordError(string errorMessage)
+        private void RecordError(string condition, string stackTrace, LogType logType)
         {
-            if (string.IsNullOrEmpty(errorMessage) == true)
+            if (string.IsNullOrEmpty(condition) == true)
                 return;
 
+            var key = new ErrorKey(condition, stackTrace, logType);
+            ErrorRecord record;
             bool wasAdded;
+
             lock (_sync)
             {
-                wasAdded = _recordedErrors.Add(errorMessage);
+                if (_recordedErrors.TryGetValue(key, out record) == false)
+                {
+                    record = new ErrorRecord(condition, stackTrace, logType);
+                    _recordedErrors.Add(key, record);
+                    wasAdded = true;
+                }
+                else
+                {
+                    wasAdded = false;
+                }
             }
 
             if (wasAdded == false)
                 return;
 
-            Debug.Log(LogPrefix + errorMessage);
+            Debug.Log(LogPrefix + record.FormattedMessage);
+            ErrorRecorded?.Invoke(record);
+        }
+    }
+
+    public readonly struct ErrorKey : IEquatable<ErrorKey>
+    {
+        public readonly string Condition;
+        public readonly string StackTrace;
+        public readonly LogType LogType;
+
+        public ErrorKey(string condition, string stackTrace, LogType logType)
+        {
+            Condition = condition ?? string.Empty;
+            StackTrace = stackTrace ?? string.Empty;
+            LogType = logType;
+        }
+
+        public bool Equals(ErrorKey other)
+        {
+            return Condition == other.Condition && StackTrace == other.StackTrace && LogType == other.LogType;
+        }
+
+        public override bool Equals(object obj)
+        {
+            return obj is ErrorKey other && Equals(other);
+        }
+
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                int hash = Condition.GetHashCode();
+                hash = (hash * 397) ^ StackTrace.GetHashCode();
+                hash = (hash * 397) ^ (int)LogType;
+                return hash;
+            }
+        }
+    }
+
+    public class ErrorRecord
+    {
+        public string Condition { get; }
+        public string StackTrace { get; }
+        public LogType LogType { get; }
+        public bool SubmittedToJira { get; set; }
+        public string FormattedMessage => string.IsNullOrEmpty(StackTrace) ? Condition : $"{Condition}\n{StackTrace}";
+
+        public ErrorRecord(string condition, string stackTrace, LogType logType)
+        {
+            Condition = condition ?? string.Empty;
+            StackTrace = stackTrace ?? string.Empty;
+            LogType = logType;
         }
     }
 }

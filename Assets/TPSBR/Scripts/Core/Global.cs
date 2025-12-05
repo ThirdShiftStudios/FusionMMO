@@ -33,6 +33,7 @@ namespace TPSBR
         public static Task AreServicesInitialized => _servicesInitializedTask.Task;
         public static Task UnityServicesInitialization => _unityServicesInitializationTask ?? Task.CompletedTask;
         public static ErrorRecorder ErrorRecorder { get; private set; }
+        public static JiraTicketService JiraTicketService { get; private set; }
 
         // PRIVATE MEMBERS
 
@@ -47,6 +48,7 @@ namespace TPSBR
         static Global()
         {
             ErrorRecorder = new ErrorRecorder();
+            JiraTicketService = new JiraTicketService(ErrorRecorder);
             ResetServicesInitializationTracker();
         }
 
