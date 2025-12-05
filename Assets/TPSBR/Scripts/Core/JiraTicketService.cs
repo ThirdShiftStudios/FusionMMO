@@ -112,7 +112,7 @@ namespace TPSBR
                     summary = BuildSummary(record),
                     description = BuildDescriptionDocument(record),
                     issuetype = new JiraIssueType { name = string.IsNullOrWhiteSpace(Configuration.IssueTypeName) ? "Bug" : Configuration.IssueTypeName },
-                    labels = string.IsNullOrWhiteSpace(Configuration.Label) ? null : new[] { Configuration.Label }
+                    labels = string.IsNullOrWhiteSpace(Configuration.Label) ? Array.Empty<string>() : new[] { Configuration.Label }
                 }
             };
 
@@ -148,17 +148,17 @@ namespace TPSBR
                 {
                     type = "heading",
                     attrs = new JiraAttributes { level = 2 },
-                    content = new[] { new JiraText { text = "Automated Error Capture" } }
+                    content = new[] { new JiraText { type = "text", text = "Automated Error Capture" } }
                 },
                 new JiraBlock
                 {
                     type = "paragraph",
-                    content = new[] { new JiraText { text = $"Log Type: {record.LogType}" } }
+                    content = new[] { new JiraText { type = "text", text = $"Log Type: {record.LogType}" } }
                 },
                 new JiraBlock
                 {
                     type = "paragraph",
-                    content = new[] { new JiraText { text = $"Condition: {record.Condition}" } }
+                    content = new[] { new JiraText { type = "text", text = $"Condition: {record.Condition}" } }
                 }
             };
 
@@ -168,19 +168,21 @@ namespace TPSBR
                 {
                     type = "heading",
                     attrs = new JiraAttributes { level = 3 },
-                    content = new[] { new JiraText { text = "Stack Trace" } }
+                    content = new[] { new JiraText { type = "text", text = "Stack Trace" } }
                 });
 
                 blocks.Add(new JiraBlock
                 {
                     type = "codeBlock",
                     attrs = new JiraAttributes { language = string.Empty },
-                    content = new[] { new JiraText { text = record.StackTrace } }
+                    content = new[] { new JiraText { type = "text", text = record.StackTrace } }
                 });
             }
 
             return new JiraDocument
             {
+                type = "doc",
+                version = 1,
                 content = blocks.ToArray()
             };
         }
