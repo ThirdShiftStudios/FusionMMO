@@ -159,7 +159,7 @@ namespace TPSBR
                 return true;
             }
 
-            _activeMount.SimulateMovement(input.MoveDirection, input.LookRotationDelta, deltaTime);
+            _activeMount.ApplyFixedInput(input, deltaTime);
             SyncRiderTransform();
             return true;
         }
@@ -206,6 +206,8 @@ namespace TPSBR
             }
 
             ResetMountHold();
+
+            _activeMount.ApplyRenderInput(input, deltaTime);
         }
 
         public void SyncRiderTransform()
