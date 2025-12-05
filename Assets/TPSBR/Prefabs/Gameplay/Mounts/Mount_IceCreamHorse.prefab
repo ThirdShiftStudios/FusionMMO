@@ -94,6 +94,74 @@ Transform:
   - {fileID: 5134629351758378832}
   m_Father: {fileID: 2635377667509972256}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &6581990798023957781
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 9012051645338775130}
+  - component: {fileID: 5455578346051577398}
+  - component: {fileID: 6697305131297745339}
+  m_Layer: 0
+  m_Name: HorseProcessor
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &9012051645338775130
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6581990798023957781}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2635377667509972256}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &5455578346051577398
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6581990798023957781}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: -1552182283, guid: e725a070cec140c4caffb81624c8c787, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  SortKey: 2854780791
+  ObjectInterest: 1
+  Flags: 262145
+  NestedObjects: []
+  NetworkedBehaviours: []
+  ForceRemoteRenderTimeframe: 0
+--- !u!114 &6697305131297745339
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6581990798023957781}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3309f1cd999d4e2c941302e310e3e276, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _definition: {fileID: 11400000, guid: 1bee5d2195867bb499df0bab3ab51a6d, type: 2}
+  _animator: {fileID: 7732341139436001784}
+  _gravity: {x: 0, y: 8, z: 0}
+  _upGravityMultiplier: 1
+  _downGravityMultiplier: -1
 --- !u!1 &7267604729261916491
 GameObject:
   m_ObjectHideFlags: 0
@@ -255,8 +323,9 @@ GameObject:
   - component: {fileID: 2635377667509972256}
   - component: {fileID: 5415836780639984578}
   - component: {fileID: 4528763854878546093}
-  - component: {fileID: 4996846526997699219}
   - component: {fileID: 7732341139436001784}
+  - component: {fileID: 7955680375041341971}
+  - component: {fileID: 5691497802987715525}
   m_Layer: 0
   m_Name: Mount_IceCreamHorse
   m_TagString: Untagged
@@ -280,6 +349,7 @@ Transform:
   - {fileID: 6849573999365464925}
   - {fileID: 338931900589949377}
   - {fileID: 3721110034222744865}
+  - {fileID: 9012051645338775130}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &5415836780639984578
@@ -297,15 +367,9 @@ MonoBehaviour:
   _definition: {fileID: 11400000, guid: 1bee5d2195867bb499df0bab3ab51a6d, type: 2}
   _cameraTransform: {fileID: 3721110034222744865}
   _riderAnchor: {fileID: 2679563704330232904}
-  _blockedLayers:
-    serializedVersion: 2
-    m_Bits: 16
-  _groundLayers:
-    serializedVersion: 2
-    m_Bits: 1
-  _groundCheckHeight: 1.5
-  _groundCheckDistance: 4
   _animator: {fileID: 7732341139436001784}
+  _kcc: {fileID: 5691497802987715525}
+  _movementProcessor: {fileID: 6697305131297745339}
 --- !u!114 &4528763854878546093
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -321,29 +385,13 @@ MonoBehaviour:
   SortKey: 4044304465
   ObjectInterest: 1
   Flags: 262145
-  NestedObjects: []
+  NestedObjects:
+  - {fileID: 5455578346051577398}
   NetworkedBehaviours:
   - {fileID: 5415836780639984578}
-  - {fileID: 4996846526997699219}
   - {fileID: 7732341139436001784}
+  - {fileID: 5691497802987715525}
   ForceRemoteRenderTimeframe: 0
---- !u!114 &4996846526997699219
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 9116871574485540594}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 158639473, guid: e725a070cec140c4caffb81624c8c787, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _stateAuthorityChangeErrorCorrectionDelta: 0
-  SyncScale: 0
-  SyncParent: 0
-  _autoAOIOverride: 1
-  DisableSharedModeInterpolation: 0
 --- !u!114 &7732341139436001784
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -359,6 +407,72 @@ MonoBehaviour:
   _root: {fileID: 338931900589949377}
   _animator: {fileID: 7102401941064015269}
   _locomotion: {fileID: 7862762456896825926}
+--- !u!54 &7955680375041341971
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9116871574485540594}
+  serializedVersion: 4
+  m_Mass: 1
+  m_Drag: 0
+  m_AngularDrag: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 0
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
+--- !u!114 &5691497802987715525
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9116871574485540594}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2f7684f04e649e84fb2ee1bc9fbee42d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _stateAuthorityChangeErrorCorrectionDelta: 0
+  _settings:
+    Shape: 1
+    IsTrigger: 0
+    Radius: 0.35
+    Height: 1.8
+    Extent: 0.035
+    ColliderLayer: 11
+    CollisionLayerMask:
+      serializedVersion: 2
+      m_Bits: 1
+    Features: -1
+    InputAuthorityBehavior: 1
+    StateAuthorityBehavior: 0
+    ProxyInterpolationMode: 0
+    ForcePredictedLookRotation: 0
+    AllowClientTeleports: 0
+    Processors:
+    - {fileID: 6697305131297745339}
+    MaxPenetrationSteps: 1
+    CCDRadiusMultiplier: 0.75
+    AntiJitterDistance: {x: 0, y: 0}
+    PredictionCorrectionSpeed: 30
+    NetworkedInteractions: 2
+    CompressNetworkPosition: 0
+    ForceSingleOverlapQuery: 1
+    SuppressConvexMeshColliders: 0
 --- !u!1001 &4526078144358940974
 PrefabInstance:
   m_ObjectHideFlags: 0
