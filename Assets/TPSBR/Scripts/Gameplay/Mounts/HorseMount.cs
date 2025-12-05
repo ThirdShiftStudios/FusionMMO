@@ -17,6 +17,7 @@ namespace TPSBR
         private MountController _rider;
         private KCC _kcc;
         private bool _processorRegistered;
+        private readonly TransformSampler _cameraTransformSampler = new TransformSampler();
 
         public string MountCode => _definition != null ? _definition.Code : string.Empty;
         public Transform MountCamera => _cameraTransform;
@@ -49,6 +50,13 @@ namespace TPSBR
 
             RegisterProcessor();
             ApplyMountDefinition();
+
+            if (_kcc != null)
+            {
+                _kcc.SetManualUpdate(true);
+            }
+
+            _cameraTransformSampler.Clear();
         }
 
         public override void Despawned(NetworkRunner runner, bool hasState)
@@ -59,6 +67,39 @@ namespace TPSBR
             {
                 _kcc.RemoveLocalProcessor(_mountProcessor);
                 _processorRegistered = false;
+            }
+        }
+
+        public override void FixedUpdateNetwork()
+        {
+            base.FixedUpdateNetwork();
+
+            if (_kcc == null)
+                return;
+
+            _kcc.ManualFixedUpdate();
+
+            if (_cameraTransform != null)
+            {
+                _cameraTransformSampler.Sample(_kcc, _cameraTransform.position, _cameraTransform.rotation);
+            }
+        }
+
+        public override void Render()
+        {
+            base.Render();
+
+            if (_kcc == null)
+                return;
+
+            if (_kcc.IsInFixedUpdate == true)
+                return;
+
+            _kcc.ManualRenderUpdate();
+
+            if (_cameraTransform != null && _cameraTransformSampler.ResolveRenderPositionAndRotation(_kcc, _kcc.Runner.LocalAlpha, out Vector3 renderPosition, out Quaternion renderRotation) == true)
+            {
+                _cameraTransform.SetPositionAndRotation(renderPosition, renderRotation);
             }
         }
 
