@@ -32,11 +32,12 @@ namespace TPSBR
                 return;
 
             Vector3 gravity = _gravity != default ? _gravity : Physics.gravity;
-            Vector3 inputDirection = data.InputDirection;
+            KCCData fixedData = kcc.FixedData;
+            Vector3 inputDirection = kcc.IsInFixedUpdate == true ? data.InputDirection : fixedData.InputDirection;
 
             if (kcc.IsInFixedUpdate == true)
             {
-                float fixedDeltaTime = kcc.FixedData.DeltaTime;
+                float fixedDeltaTime = fixedData.DeltaTime;
                 float targetSpeed = Mathf.Clamp01(inputDirection.magnitude) * _definition.MoveSpeed;
                 _currentSpeed = Mathf.MoveTowards(_currentSpeed, targetSpeed, _definition.Acceleration * fixedDeltaTime);
             }
@@ -50,8 +51,15 @@ namespace TPSBR
                 kinematicVelocity = kinematicDirection * _currentSpeed;
             }
 
-            data.Gravity = gravity * (kcc.FixedData.RealVelocity.y > 0.0f ? _upGravityMultiplier : _downGravityMultiplier);
+            Vector3 appliedGravity = gravity * (fixedData.RealVelocity.y > 0.0f ? _upGravityMultiplier : _downGravityMultiplier);
 
+            if (fixedData.IsGrounded == false)
+            {
+                Vector3 dynamicVelocity = fixedData.DynamicVelocity + appliedGravity * fixedData.DeltaTime;
+                data.DynamicVelocity = dynamicVelocity;
+            }
+
+            data.Gravity = appliedGravity;
             data.KinematicDirection = kinematicDirection;
             data.KinematicSpeed = _currentSpeed;
             data.KinematicVelocity = kinematicVelocity;
