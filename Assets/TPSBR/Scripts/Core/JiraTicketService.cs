@@ -6,39 +6,16 @@ using UnityEngine.Networking;
 
 namespace TPSBR
 {
-    public class JiraTicketService
+    public partial class JiraTicketService
     {
         private const string LogPrefix = "[<color=magenta>JiraTicketService</color>] ";
 
         private readonly object _sync = new object();
         private readonly ErrorRecorder _errorRecorder;
 
-        [Serializable]
-        [CreateAssetMenu(fileName = "JiraTicketSettings", menuName = "TPSBR/Jira Ticket Settings")]
-        public class Settings : ScriptableObject
-        {
-            [Tooltip("Base URL for your Jira instance, e.g. https://yourcompany.atlassian.net")]
-            public string BaseUrl;
+        public JiraSettings Configuration { get; }
 
-            [Tooltip("Project key for new tickets, e.g. GAME")]
-            public string ProjectKey;
-
-            [Tooltip("Email or username used for authentication")]
-            public string Username;
-
-            [Tooltip("API token or password used for authentication")]
-            public string ApiToken;
-
-            [Tooltip("Optional label to attach to auto-created tickets")]
-            public string Label = "auto-error";
-
-            [Tooltip("Issue type to use when creating Jira tickets, e.g. Bug, Task")]
-            public string IssueTypeName = "Bug";
-        }
-
-        public Settings Configuration { get; }
-
-        public JiraTicketService(ErrorRecorder errorRecorder, Settings configuration = null)
+        public JiraTicketService(ErrorRecorder errorRecorder, JiraSettings configuration = null)
         {
             _errorRecorder = errorRecorder;
             Configuration = configuration ?? LoadConfiguration();
@@ -50,15 +27,15 @@ namespace TPSBR
             }
         }
 
-        private Settings LoadConfiguration()
+        private JiraSettings LoadConfiguration()
         {
             const string resourcePath = "JiraTicketSettings";
 
-            var settings = Resources.Load<Settings>(resourcePath);
+            var settings = Resources.Load<JiraSettings>(resourcePath);
 
             if (settings == null)
             {
-                settings = ScriptableObject.CreateInstance<Settings>();
+                settings = ScriptableObject.CreateInstance<JiraSettings>();
                 Debug.LogWarning(LogPrefix + $"No JiraTicketSettings asset found at Resources/{resourcePath}. Using an in-memory configuration. Create one via Assets → Create → TPSBR → Jira Ticket Settings and keep API secrets out of version control.");
             }
 
