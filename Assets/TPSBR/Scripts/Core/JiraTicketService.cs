@@ -14,7 +14,8 @@ namespace TPSBR
         private readonly ErrorRecorder _errorRecorder;
 
         [Serializable]
-        public class Settings
+        [CreateAssetMenu(fileName = "JiraTicketSettings", menuName = "TPSBR/Jira Ticket Settings")]
+        public class Settings : ScriptableObject
         {
             [Tooltip("Base URL for your Jira instance, e.g. https://yourcompany.atlassian.net")]
             public string BaseUrl;
@@ -40,13 +41,28 @@ namespace TPSBR
         public JiraTicketService(ErrorRecorder errorRecorder, Settings configuration = null)
         {
             _errorRecorder = errorRecorder;
-            Configuration = configuration ?? new Settings();
+            Configuration = configuration ?? LoadConfiguration();
 
             if (_errorRecorder != null)
             {
                 _errorRecorder.ErrorRecorded -= OnErrorRecorded;
                 _errorRecorder.ErrorRecorded += OnErrorRecorded;
             }
+        }
+
+        private Settings LoadConfiguration()
+        {
+            const string resourcePath = "JiraTicketSettings";
+
+            var settings = Resources.Load<Settings>(resourcePath);
+
+            if (settings == null)
+            {
+                settings = ScriptableObject.CreateInstance<Settings>();
+                Debug.LogWarning(LogPrefix + $"No JiraTicketSettings asset found at Resources/{resourcePath}. Using an in-memory configuration. Create one via Assets → Create → TPSBR → Jira Ticket Settings and keep API secrets out of version control.");
+            }
+
+            return settings;
         }
 
         private void OnErrorRecorded(ErrorRecord record)
