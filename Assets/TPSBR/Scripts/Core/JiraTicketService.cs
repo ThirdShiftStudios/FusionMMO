@@ -135,9 +135,10 @@ namespace TPSBR
                     summary = BuildSummary(record),
                     description = BuildDescriptionDocument(record),
                     issuetype = new JiraIssueType { name = string.IsNullOrWhiteSpace(Configuration.IssueTypeName) ? "Bug" : Configuration.IssueTypeName },
-                    labels = string.IsNullOrWhiteSpace(Configuration.Label) ? null : new[] { Configuration.Label }
-                }
-            };
+                // Jira does not accept null for the labels field, so send an empty array when no label is configured.
+                labels = string.IsNullOrWhiteSpace(Configuration.Label) ? Array.Empty<string>() : new[] { Configuration.Label }
+            }
+        };
 
             var json = JsonUtility.ToJson(payload);
             var jsonBytes = Encoding.UTF8.GetBytes(json);
@@ -149,6 +150,7 @@ namespace TPSBR
             };
 
             request.SetRequestHeader("Content-Type", "application/json");
+            request.SetRequestHeader("Accept", "application/json");
             request.SetRequestHeader("Authorization", "Basic " + BuildAuthToken());
 
             return request;
