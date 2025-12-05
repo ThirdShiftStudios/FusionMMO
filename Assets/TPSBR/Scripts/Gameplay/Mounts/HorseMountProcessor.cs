@@ -11,6 +11,8 @@ namespace TPSBR
         private float _moveAmount;
         private float _currentSpeed;
 
+        private const float k_MoveDeadzone = 0.05f;
+
         public float NormalizedSpeed => _moveSpeed > 0f ? _currentSpeed / _moveSpeed : 0f;
 
         public override float GetPriority(KCC kcc) => BREnvironmentProcessor.DefaultPriority - 1;
@@ -30,13 +32,29 @@ namespace TPSBR
 
         public void SetMoveInput(Vector3 worldMoveDirection)
         {
-            _moveAmount = Mathf.Clamp(worldMoveDirection.magnitude, 0f, 1f);
-            _moveDirection = _moveAmount > 0f ? worldMoveDirection.normalized : Vector3.zero;
+            float magnitude = Mathf.Clamp(worldMoveDirection.magnitude, 0f, 1f);
+
+            if (magnitude < k_MoveDeadzone)
+            {
+                _moveAmount = 0f;
+                _moveDirection = Vector3.zero;
+                return;
+            }
+
+            _moveAmount = magnitude;
+            _moveDirection = worldMoveDirection.normalized;
         }
 
         public float GetProjectedNormalizedSpeed(float inputMagnitude, float deltaTime)
         {
-            float targetSpeed = Mathf.Clamp(inputMagnitude, 0f, 1f) * _moveSpeed;
+            float targetInput = Mathf.Clamp(inputMagnitude, 0f, 1f);
+
+            if (targetInput < k_MoveDeadzone)
+            {
+                return 0f;
+            }
+
+            float targetSpeed = targetInput * _moveSpeed;
             float projectedSpeed = Mathf.MoveTowards(_currentSpeed, targetSpeed, _acceleration * deltaTime);
 
             return _moveSpeed > 0f ? projectedSpeed / _moveSpeed : 0f;
