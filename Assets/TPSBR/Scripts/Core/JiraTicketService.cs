@@ -135,7 +135,7 @@ namespace TPSBR
                     summary = BuildSummary(record),
                     description = BuildDescriptionDocument(record),
                     issuetype = new JiraIssueType { name = string.IsNullOrWhiteSpace(Configuration.IssueTypeName) ? "Bug" : Configuration.IssueTypeName },
-                    labels = string.IsNullOrWhiteSpace(Configuration.Label) ? null : new[] { Configuration.Label }
+                    labels = BuildLabels()
                 }
             };
 
@@ -152,6 +152,14 @@ namespace TPSBR
             request.SetRequestHeader("Authorization", "Basic " + BuildAuthToken());
 
             return request;
+        }
+
+        private string[] BuildLabels()
+        {
+            if (string.IsNullOrWhiteSpace(Configuration.Label) == true)
+                return Array.Empty<string>();
+
+            return new[] { Configuration.Label };
         }
 
         private string BuildSummary(ErrorRecord record)
