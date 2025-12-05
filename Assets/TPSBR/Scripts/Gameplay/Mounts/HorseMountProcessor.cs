@@ -60,6 +60,7 @@ namespace TPSBR
 
             Vector3 appliedGravity = gravity * (fixedData.RealVelocity.y > 0.0f ? _upGravityMultiplier : _downGravityMultiplier);
             Vector3 dynamicVelocity = fixedData.DynamicVelocity;
+            bool   finalized       = false;
 
             bool applyGravity = fixedData.IsGrounded == false || (fixedData.IsSteppingUp == false && (fixedData.IsSnappingToGround == true || fixedData.GroundDistance > 0.001f));
             if (applyGravity == true)
@@ -113,7 +114,7 @@ namespace TPSBR
                 {
                     data.KinematicVelocity = kinematicVelocity + KCCPhysicsUtility.GetFriction(kinematicVelocity, kinematicVelocity, Vector3.one, fixedData.GroundNormal, _currentSpeed, true, 0.0f, 0.0f, _kinematicGroundFriction, fixedData.DeltaTime);
                     FinalizeData(data, appliedGravity, kinematicDirection);
-                    return;
+                    finalized = true;
                 }
             }
             else
@@ -131,8 +132,14 @@ namespace TPSBR
                 {
                     data.KinematicVelocity = kinematicVelocity + KCCPhysicsUtility.GetFriction(kinematicVelocity, kinematicVelocity, new Vector3(1.0f, 0.0f, 1.0f), _currentSpeed, true, 0.0f, 0.0f, _kinematicAirFriction, fixedData.DeltaTime);
                     FinalizeData(data, appliedGravity, kinematicDirection);
-                    return;
+                    finalized = true;
                 }
+            }
+
+            if (finalized == true)
+            {
+                UpdateAnimator();
+                return;
             }
 
             Vector3 moveDirection = kinematicVelocity.IsZero() == false ? kinematicVelocity : data.KinematicTangent;
@@ -161,11 +168,7 @@ namespace TPSBR
 
             FinalizeData(data, appliedGravity, kinematicDirection);
 
-            if (_animator != null)
-            {
-                float normalizedSpeed = _definition.MoveSpeed > 0f ? _currentSpeed / _definition.MoveSpeed : 0f;
-                _animator.SetMoveInput(normalizedSpeed);
-            }
+            UpdateAnimator();
         }
 
         private void FinalizeData(KCCData data, Vector3 appliedGravity, Vector3 kinematicDirection)
@@ -173,6 +176,15 @@ namespace TPSBR
             data.Gravity = appliedGravity;
             data.KinematicDirection = kinematicDirection;
             data.KinematicSpeed = _currentSpeed;
+        }
+
+        private void UpdateAnimator()
+        {
+            if (_animator == null)
+                return;
+
+            float normalizedSpeed = _definition.MoveSpeed > 0f ? _currentSpeed / _definition.MoveSpeed : 0f;
+            _animator.SetMoveInput(normalizedSpeed);
         }
     }
 }
