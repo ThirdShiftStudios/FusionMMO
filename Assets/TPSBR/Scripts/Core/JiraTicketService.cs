@@ -114,7 +114,7 @@ namespace TPSBR
                 {
                     project = new JiraProject { key = Configuration.ProjectKey },
                     summary = BuildSummary(record),
-                    description = BuildDescription(record),
+                    description = BuildDescriptionDocument(record),
                     issuetype = new JiraIssueType { name = "Bug" },
                     labels = string.IsNullOrWhiteSpace(Configuration.Label) ? null : new[] { Configuration.Label }
                 }
@@ -144,22 +144,49 @@ namespace TPSBR
             return record.Condition.Length <= maxLength ? record.Condition : record.Condition.Substring(0, maxLength);
         }
 
-        private string BuildDescription(ErrorRecord record)
+        private JiraDocument BuildDescriptionDocument(ErrorRecord record)
         {
-            var builder = new StringBuilder();
-            builder.AppendLine("h2. Automated Error Capture");
-            builder.AppendLine($"*Log Type:* {record.LogType}");
-            builder.AppendLine($"*Condition:* {record.Condition}");
+            var blocks = new System.Collections.Generic.List<JiraBlock>
+            {
+                new JiraBlock
+                {
+                    type = "heading",
+                    attrs = new JiraAttributes { level = 2 },
+                    content = new[] { new JiraText { text = "Automated Error Capture" } }
+                },
+                new JiraBlock
+                {
+                    type = "paragraph",
+                    content = new[] { new JiraText { text = $"Log Type: {record.LogType}" } }
+                },
+                new JiraBlock
+                {
+                    type = "paragraph",
+                    content = new[] { new JiraText { text = $"Condition: {record.Condition}" } }
+                }
+            };
 
             if (string.IsNullOrWhiteSpace(record.StackTrace) == false)
             {
-                builder.AppendLine("h3. Stack Trace");
-                builder.AppendLine("{code}");
-                builder.AppendLine(record.StackTrace);
-                builder.AppendLine("{code}");
+                blocks.Add(new JiraBlock
+                {
+                    type = "heading",
+                    attrs = new JiraAttributes { level = 3 },
+                    content = new[] { new JiraText { text = "Stack Trace" } }
+                });
+
+                blocks.Add(new JiraBlock
+                {
+                    type = "codeBlock",
+                    attrs = new JiraAttributes { language = string.Empty },
+                    content = new[] { new JiraText { text = record.StackTrace } }
+                });
             }
 
-            return builder.ToString();
+            return new JiraDocument
+            {
+                content = blocks.ToArray()
+            };
         }
 
         private string BuildAuthToken()
@@ -218,9 +245,39 @@ namespace TPSBR
         {
             public JiraProject project;
             public string summary;
-            public string description;
+            public JiraDocument description;
             public JiraIssueType issuetype;
             public string[] labels;
+        }
+
+        [Serializable]
+        private class JiraDocument
+        {
+            public string type = "doc";
+            public int version = 1;
+            public JiraBlock[] content;
+        }
+
+        [Serializable]
+        private class JiraBlock
+        {
+            public string type;
+            public JiraAttributes attrs;
+            public JiraText[] content;
+        }
+
+        [Serializable]
+        private class JiraAttributes
+        {
+            public int level;
+            public string language;
+        }
+
+        [Serializable]
+        private class JiraText
+        {
+            public string type = "text";
+            public string text;
         }
 
         [Serializable]
