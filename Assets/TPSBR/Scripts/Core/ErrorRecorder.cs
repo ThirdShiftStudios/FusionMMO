@@ -100,7 +100,7 @@ namespace TPSBR
         public string Condition { get; }
         public string StackTrace { get; }
         public LogType LogType { get; }
-        public bool SubmittedToJira { get; set; }
+        public bool SubmittedToTrello { get; set; }
         public string FormattedMessage => string.IsNullOrEmpty(StackTrace) ? Condition : $"{Condition}\n{StackTrace}";
 
         public ErrorRecord(string condition, string stackTrace, LogType logType)
