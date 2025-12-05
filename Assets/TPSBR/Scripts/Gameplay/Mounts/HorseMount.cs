@@ -97,7 +97,11 @@ namespace TPSBR
             if (_kcc == null || _processor == null)
                 return;
 
-            if (_kcc.AddLocalProcessor(_processor) == false)
+            if (_kcc.IsSpawned == true)
+            {
+                _kcc.AddLocalProcessor(_processor);
+            }
+            else
             {
                 _kcc.InvokeOnSpawn(kcc => kcc.AddLocalProcessor(_processor));
             }
