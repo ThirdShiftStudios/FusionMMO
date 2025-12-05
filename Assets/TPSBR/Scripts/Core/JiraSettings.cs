@@ -26,6 +26,9 @@ namespace TPSBR
 
             [Tooltip("Issue type to use when creating Jira tickets, e.g. Bug, Task")]
             public string IssueTypeName = "Bug";
+
+            [Tooltip("Optional issue type id to use when creating Jira tickets. Takes precedence over IssueTypeName when set.")]
+            public string IssueTypeId;
         }
     }
 }

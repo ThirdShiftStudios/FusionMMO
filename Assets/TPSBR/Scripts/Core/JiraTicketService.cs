@@ -111,8 +111,8 @@ namespace TPSBR
                     project = new JiraProject { key = Configuration.ProjectKey },
                     summary = BuildSummary(record),
                     description = BuildDescriptionDocument(record),
-                    issuetype = new JiraIssueType { name = string.IsNullOrWhiteSpace(Configuration.IssueTypeName) ? "Bug" : Configuration.IssueTypeName },
-                    labels = string.IsNullOrWhiteSpace(Configuration.Label) ? null : new[] { Configuration.Label }
+                    issuetype = BuildIssueType(),
+                    labels = string.IsNullOrWhiteSpace(Configuration.Label) ? Array.Empty<string>() : new[] { Configuration.Label }
                 }
             };
 
@@ -182,6 +182,19 @@ namespace TPSBR
             return new JiraDocument
             {
                 content = blocks.ToArray()
+            };
+        }
+
+        private JiraIssueType BuildIssueType()
+        {
+            if (string.IsNullOrWhiteSpace(Configuration.IssueTypeId) == false)
+            {
+                return new JiraIssueType { id = Configuration.IssueTypeId };
+            }
+
+            return new JiraIssueType
+            {
+                name = string.IsNullOrWhiteSpace(Configuration.IssueTypeName) ? "Bug" : Configuration.IssueTypeName
             };
         }
 
@@ -286,6 +299,7 @@ namespace TPSBR
         [Serializable]
         private class JiraIssueType
         {
+            public string id;
             public string name;
         }
 
