@@ -31,6 +31,7 @@ namespace TPSBR.UI
 
                 private IUIListItemOwner _owner;
                 private CanvasGroup _canvasGroup;
+                [SerializeField]
                 private Image _iconImage;
                 private TextMeshProUGUI _quantityLabel;
                 [SerializeField]
@@ -367,9 +368,6 @@ namespace TPSBR.UI
                         if (_iconImage != null)
                                 return;
 
-                        if (CanModifyHierarchy() == false)
-                                return;
-
                         var existing = transform.Find("Icon") as RectTransform;
                         if (existing != null)
                         {
@@ -379,24 +377,28 @@ namespace TPSBR.UI
                                 {
                                         _iconImage = existing.gameObject.AddComponent<Image>();
                                 }
-
-                                _iconImage.preserveAspect = true;
-                                _iconImage.raycastTarget = false;
-                                return;
                         }
 
-                        var iconObject = new GameObject("Icon", typeof(RectTransform));
-                        iconObject.transform.SetParent(transform, false);
+                        if (_iconImage == null)
+                                return;
 
-                        var rect = iconObject.GetComponent<RectTransform>();
-                        rect.anchorMin = Vector2.zero;
-                        rect.anchorMax = Vector2.one;
-                        rect.offsetMin = Vector2.zero;
-                        rect.offsetMax = Vector2.zero;
-
-                        _iconImage = iconObject.AddComponent<Image>();
                         _iconImage.preserveAspect = true;
                         _iconImage.raycastTarget = false;
+                }
+
+                private void OnValidate()
+                {
+                        if (Application.isPlaying)
+                                return;
+
+                        EnsureIconImage();
+
+                        if (_iconImage == null)
+                                return;
+
+                        _iconImage.sprite = _defaultIcon;
+                        _iconImage.color = _defaultIconColor;
+                        _iconImage.enabled = _defaultIcon != null;
                 }
 
                 private void EnsureQuantityLabel()
