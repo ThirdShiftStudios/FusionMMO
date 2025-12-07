@@ -36,6 +36,8 @@ namespace TPSBR.UI
                 [SerializeField]
                 private Sprite _defaultIcon;
                 [SerializeField]
+                private Color _defaultIconColor = Color.white;
+                [SerializeField]
                 private RectTransform _tooltipHotspot;
                 private Sprite _iconSprite;
                 private int _quantity;
@@ -103,7 +105,7 @@ namespace TPSBR.UI
                         else if (_iconImage != null)
                         {
                                 _iconImage.sprite = _defaultIcon;
-                                _iconImage.color = Color.white;
+                                _iconImage.color = _defaultIconColor;
                                 _iconImage.enabled = _defaultIcon != null;
                         }
 
