@@ -1603,9 +1603,6 @@ namespace TPSBR.UI
                 if (_view == null || source == null || target == null)
                     return;
 
-                if (target.Owner is InventoryListPresenter == false)
-                    return;
-
                 if (target.Index != Inventory.MOUNT_SLOT_INDEX)
                     return;
 
@@ -2024,15 +2021,45 @@ namespace TPSBR.UI
             return _unlockedMounts[index];
         }
 
+        private Inventory GetActiveInventory()
+        {
+            if (_boundInventory != null && (_boundInventory.HasStateAuthority == true || _boundInventory.HasInputAuthority == true))
+                return _boundInventory;
+
+            var observedInventory = Context?.ObservedAgent?.Inventory;
+            if (observedInventory != null && (observedInventory.HasStateAuthority == true || observedInventory.HasInputAuthority == true))
+                return observedInventory;
+
+            return null;
+        }
+
+        private MountCollection GetActiveMountCollection(Inventory inventory)
+        {
+            if (inventory == null)
+                return null;
+
+            if (_boundMountCollection != null && (_boundMountCollection.HasStateAuthority == true || _boundMountCollection.HasInputAuthority == true))
+                return _boundMountCollection;
+
+            var mountCollection = inventory.GetComponent<MountCollection>();
+            if (mountCollection != null && (mountCollection.HasStateAuthority == true || mountCollection.HasInputAuthority == true))
+                return mountCollection;
+
+            return null;
+        }
+
         private void EquipMount(MountDefinition mountDefinition)
         {
             if (mountDefinition == null)
                 return;
 
+            var inventory = GetActiveInventory();
+            var mountCollection = GetActiveMountCollection(inventory);
+
             _equippedMount = mountDefinition;
 
-            _boundInventory?.RequestEquipMount(mountDefinition);
-            _boundMountCollection?.SetActiveMount(mountDefinition.Code);
+            inventory?.RequestEquipMount(mountDefinition);
+            mountCollection?.SetActiveMount(mountDefinition.Code);
         }
 
         private static void EnsureMountDefinitionLookup()
