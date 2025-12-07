@@ -1355,6 +1355,8 @@ namespace TPSBR.UI
                 if (_slotLookup.ContainsKey(Inventory.MOUNT_SLOT_INDEX) == false)
                     return;
 
+                _view.ResolveEquippedMountDefinition();
+
                 var mountSlot = _inventory != null ? _inventory.GetItemSlot(Inventory.MOUNT_SLOT_INDEX) : default;
 
                 UpdateSlot(Inventory.MOUNT_SLOT_INDEX, mountSlot);
@@ -1879,6 +1881,7 @@ namespace TPSBR.UI
                 _equippedMount = _defaultEquippedMount;
             }
 
+            ResolveEquippedMountDefinition();
             _inventoryPresenter?.RefreshMountSlotView();
             RefreshMountListUI();
         }
@@ -2042,6 +2045,36 @@ namespace TPSBR.UI
                 return null;
 
             return _unlockedMounts[index];
+        }
+
+        private MountDefinition ResolveEquippedMountDefinition()
+        {
+            MountDefinition mountDefinition = null;
+
+            var inventory = GetActiveInventory();
+            var mountSlot = inventory != null ? inventory.GetItemSlot(Inventory.MOUNT_SLOT_INDEX) : default;
+            if (mountSlot.IsEmpty == false)
+            {
+                mountDefinition = mountSlot.GetDefinition() as MountDefinition;
+            }
+
+            if (mountDefinition == null)
+            {
+                var mountCollection = GetActiveMountCollection(inventory);
+                if (mountCollection != null && TryResolveMountDefinition(mountCollection.ActiveMountCode, out var activeMount) == true)
+                {
+                    mountDefinition = activeMount;
+                }
+            }
+
+            if (mountDefinition == null)
+            {
+                mountDefinition = _equippedMount ?? _defaultEquippedMount;
+            }
+
+            _equippedMount = mountDefinition;
+
+            return mountDefinition;
         }
 
         private Inventory GetActiveInventory()
