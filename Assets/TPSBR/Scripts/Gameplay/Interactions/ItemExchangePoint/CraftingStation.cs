@@ -162,7 +162,7 @@ namespace TPSBR
             OpenExchangeView(agent);
         }
 
-        [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority, Channel = RpcChannel.Reliable)]
+        [Rpc(RpcSources.All, RpcTargets.StateAuthority, Channel = RpcChannel.Reliable)]
         private void RPC_RequestCraft(PlayerRef playerRef, NetworkId agentId, int recipeId, int quantity)
         {
             if (TryResolveAgent(playerRef, agentId, out Agent agent) == false)
@@ -177,7 +177,7 @@ namespace TPSBR
             ProcessCraft(agent, recipe, quantity);
         }
 
-        [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority, Channel = RpcChannel.Reliable)]
+        [Rpc(RpcSources.All, RpcTargets.StateAuthority, Channel = RpcChannel.Reliable)]
         private void RPC_RequestCancel(PlayerRef playerRef, NetworkId agentId)
         {
             if (TryResolveAgent(playerRef, agentId, out Agent agent) == false)
