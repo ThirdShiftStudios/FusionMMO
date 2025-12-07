@@ -6,19 +6,11 @@ namespace TPSBR
 {
     public class FishingCatchPullOutLoop : ClipState
     {
-        [SerializeField] private Transform _fishTransform;
         private FishingPoleWeapon _weapon;
-        private bool _fishAttached;
 
         internal void SetActiveWeapon(FishingPoleWeapon weapon)
         {
             _weapon = weapon;
-            _fishAttached = false;
-
-            if (weapon != null && IsActive(true) == true)
-            {
-                EnsureWeaponReference(attachFish: true);
-            }
         }
 
         internal void ClearActiveWeapon(FishingPoleWeapon weapon)
@@ -26,16 +18,13 @@ namespace TPSBR
             if (_weapon == weapon)
             {
                 _weapon = null;
-                _fishAttached = false;
             }
         }
 
         protected override void OnActivate()
         {
             base.OnActivate();
-            _fishAttached = false;
             SuppressMovement();
-            EnsureWeaponReference(attachFish: true);
         }
 
         protected override void OnFixedUpdate()
@@ -54,12 +43,11 @@ namespace TPSBR
         {
             base.OnDeactivate();
             SuppressMovement();
-            _fishAttached = false;
         }
 
         private void SuppressMovement()
         {
-            EnsureWeaponReference(attachFish: _fishAttached == false);
+            EnsureWeaponReference();
 
             if (_weapon?.Character?.CharacterController is not KCC kcc)
                 return;
@@ -71,16 +59,10 @@ namespace TPSBR
             kcc.SetExternalAcceleration(Vector3.zero);
         }
 
-        private void EnsureWeaponReference(bool attachFish = false)
+        private void EnsureWeaponReference()
         {
             if (_weapon != null)
             {
-                if (attachFish == true && _fishTransform != null)
-                {
-                    _weapon.AttachFishToCatchTransform(_fishTransform);
-                    _fishAttached = true;
-                }
-
                 return;
             }
 
@@ -93,12 +75,6 @@ namespace TPSBR
                 return;
 
             _weapon = resolvedWeapon;
-
-            if (attachFish == true && _fishTransform != null)
-            {
-                _weapon.AttachFishToCatchTransform(_fishTransform);
-                _fishAttached = true;
-            }
         }
     }
 }
