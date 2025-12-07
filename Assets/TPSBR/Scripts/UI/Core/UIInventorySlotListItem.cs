@@ -20,7 +20,7 @@ namespace TPSBR.UI
 
                 public int Index { get; private set; } = -1;
                 public RectTransform SlotRectTransform => CachedRectTransform;
-                internal Sprite IconSprite => _iconSprite;
+                internal Sprite IconSprite => _iconSprite != null ? _iconSprite : _defaultIcon;
                 internal int Quantity => _quantity;
                 internal bool HasItem => _iconSprite != null && _quantity > 0;
                 internal IUIListItemOwner Owner => _owner;
@@ -31,8 +31,13 @@ namespace TPSBR.UI
 
                 private IUIListItemOwner _owner;
                 private CanvasGroup _canvasGroup;
+                [SerializeField]
                 private Image _iconImage;
                 private TextMeshProUGUI _quantityLabel;
+                [SerializeField]
+                private Sprite _defaultIcon;
+                [SerializeField]
+                private Color _defaultIconColor = Color.white;
                 [SerializeField]
                 private RectTransform _tooltipHotspot;
                 private Sprite _iconSprite;
@@ -79,6 +84,8 @@ namespace TPSBR.UI
                 {
                         _owner = owner;
                         Index = index;
+
+                        EnsureIconImage();
                         Clear();
                 }
 
@@ -100,8 +107,9 @@ namespace TPSBR.UI
                         }
                         else if (_iconImage != null)
                         {
-                                _iconImage.sprite = null;
-                                _iconImage.enabled = false;
+                                _iconImage.sprite = _defaultIcon;
+                                _iconImage.color = _defaultIconColor;
+                                _iconImage.enabled = _defaultIcon != null;
                         }
 
                         if (quantity > 1)
@@ -360,9 +368,6 @@ namespace TPSBR.UI
                         if (_iconImage != null)
                                 return;
 
-                        if (CanModifyHierarchy() == false)
-                                return;
-
                         var existing = transform.Find("Icon") as RectTransform;
                         if (existing != null)
                         {
@@ -372,24 +377,28 @@ namespace TPSBR.UI
                                 {
                                         _iconImage = existing.gameObject.AddComponent<Image>();
                                 }
-
-                                _iconImage.preserveAspect = true;
-                                _iconImage.raycastTarget = false;
-                                return;
                         }
 
-                        var iconObject = new GameObject("Icon", typeof(RectTransform));
-                        iconObject.transform.SetParent(transform, false);
+                        if (_iconImage == null)
+                                return;
 
-                        var rect = iconObject.GetComponent<RectTransform>();
-                        rect.anchorMin = Vector2.zero;
-                        rect.anchorMax = Vector2.one;
-                        rect.offsetMin = Vector2.zero;
-                        rect.offsetMax = Vector2.zero;
-
-                        _iconImage = iconObject.AddComponent<Image>();
                         _iconImage.preserveAspect = true;
                         _iconImage.raycastTarget = false;
+                }
+
+                private void OnValidate()
+                {
+                        if (Application.isPlaying)
+                                return;
+
+                        EnsureIconImage();
+
+                        if (_iconImage == null)
+                                return;
+
+                        _iconImage.sprite = _defaultIcon;
+                        _iconImage.color = _defaultIconColor;
+                        _iconImage.enabled = _defaultIcon != null;
                 }
 
                 private void EnsureQuantityLabel()
