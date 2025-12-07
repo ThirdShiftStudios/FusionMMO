@@ -1329,7 +1329,15 @@ namespace TPSBR.UI
 
                 if (slot.IsEmpty)
                 {
-                    uiSlot.Clear();
+                    if (index == Inventory.MOUNT_SLOT_INDEX && _view != null && _view._equippedMount != null)
+                    {
+                        uiSlot.SetItem(_view._equippedMount.Icon, 1);
+                    }
+                    else
+                    {
+                        uiSlot.Clear();
+                    }
+
                     return;
                 }
 
@@ -1337,6 +1345,19 @@ namespace TPSBR.UI
                 var sprite = definition != null ? definition.Icon : null;
 
                 uiSlot.SetItem(sprite, slot.Quantity);
+            }
+
+            internal void RefreshMountSlotView()
+            {
+                if (_slotLookup == null)
+                    return;
+
+                if (_slotLookup.ContainsKey(Inventory.MOUNT_SLOT_INDEX) == false)
+                    return;
+
+                var mountSlot = _inventory != null ? _inventory.GetItemSlot(Inventory.MOUNT_SLOT_INDEX) : default;
+
+                UpdateSlot(Inventory.MOUNT_SLOT_INDEX, mountSlot);
             }
 
             private void UpdateSelectionHighlight()
@@ -1603,9 +1624,6 @@ namespace TPSBR.UI
                 if (_view == null || source == null || target == null)
                     return;
 
-                if (target.Owner is InventoryListPresenter == false)
-                    return;
-
                 if (target.Index != Inventory.MOUNT_SLOT_INDEX)
                     return;
 
@@ -1861,6 +1879,7 @@ namespace TPSBR.UI
                 _equippedMount = _defaultEquippedMount;
             }
 
+            _inventoryPresenter?.RefreshMountSlotView();
             RefreshMountListUI();
         }
 
@@ -1904,6 +1923,7 @@ namespace TPSBR.UI
 
             _equippedMount = _defaultEquippedMount;
 
+            _inventoryPresenter?.RefreshMountSlotView();
             if (_mountList != null)
             {
                 _mountList.Clear(false);
@@ -2024,15 +2044,47 @@ namespace TPSBR.UI
             return _unlockedMounts[index];
         }
 
+        private Inventory GetActiveInventory()
+        {
+            if (_boundInventory != null && (_boundInventory.HasStateAuthority == true || _boundInventory.HasInputAuthority == true))
+                return _boundInventory;
+
+            var observedInventory = Context?.ObservedAgent?.Inventory;
+            if (observedInventory != null && (observedInventory.HasStateAuthority == true || observedInventory.HasInputAuthority == true))
+                return observedInventory;
+
+            return null;
+        }
+
+        private MountCollection GetActiveMountCollection(Inventory inventory)
+        {
+            if (inventory == null)
+                return null;
+
+            if (_boundMountCollection != null && (_boundMountCollection.HasStateAuthority == true || _boundMountCollection.HasInputAuthority == true))
+                return _boundMountCollection;
+
+            var mountCollection = inventory.GetComponent<MountCollection>();
+            if (mountCollection != null && (mountCollection.HasStateAuthority == true || mountCollection.HasInputAuthority == true))
+                return mountCollection;
+
+            return null;
+        }
+
         private void EquipMount(MountDefinition mountDefinition)
         {
             if (mountDefinition == null)
                 return;
 
+            var inventory = GetActiveInventory();
+            var mountCollection = GetActiveMountCollection(inventory);
+
             _equippedMount = mountDefinition;
 
-            _boundInventory?.RequestEquipMount(mountDefinition);
-            _boundMountCollection?.SetActiveMount(mountDefinition.Code);
+            inventory?.RequestEquipMount(mountDefinition);
+            mountCollection?.SetActiveMount(mountDefinition.Code);
+
+            _inventoryPresenter?.RefreshMountSlotView();
         }
 
         private static void EnsureMountDefinitionLookup()
