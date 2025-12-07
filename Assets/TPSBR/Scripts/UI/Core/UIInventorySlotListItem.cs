@@ -83,6 +83,8 @@ namespace TPSBR.UI
                 {
                         _owner = owner;
                         Index = index;
+
+                        EnsureIconImage();
                         Clear();
                 }
 
