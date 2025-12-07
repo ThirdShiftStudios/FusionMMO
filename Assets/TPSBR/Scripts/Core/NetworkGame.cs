@@ -56,13 +56,26 @@ namespace TPSBR
 
 		// PUBLIC METHODS
 
-		public void Initialize(EGameplayType gameplayType)
-		{
-			if (HasStateAuthority == true)
-			{
-				var prefab = _modePrefabs.Find(t => t.Type == gameplayType);
-				_gameplayMode = Runner.Spawn(prefab);
-			}
+                public void Initialize(EGameplayType gameplayType)
+                {
+                        if (HasStateAuthority == true)
+                        {
+                                if (_modePrefabs == null || _modePrefabs.Length == 0)
+                                {
+                                        Debug.LogError("NetworkGame.Initialize - No gameplay modes configured on NetworkGame");
+                                        return;
+                                }
+
+                                var prefab = _modePrefabs.Find(t => t.Type == gameplayType);
+
+                                if (prefab == null)
+                                {
+                                        Debug.LogError($"NetworkGame.Initialize - Gameplay mode prefab for '{gameplayType}' not found");
+                                        return;
+                                }
+
+                                _gameplayMode = Runner.Spawn(prefab);
+                        }
 
 			_localPlayer = Runner.LocalPlayer;
 
