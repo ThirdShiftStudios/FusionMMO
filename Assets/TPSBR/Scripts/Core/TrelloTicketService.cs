@@ -14,6 +14,10 @@ namespace TPSBR
 
         private readonly object _sync = new object();
         private readonly ErrorRecorder _errorRecorder;
+        private static readonly string[] _errorBlacklist = new[]
+        {
+            "A scripted object (probably TerrainToMapBaker?) has a different serialization layout when loading. (Read 32 bytes but expected 256 bytes)"
+        };
 
         public TrelloSettings Configuration { get; }
 
@@ -54,6 +58,9 @@ namespace TPSBR
                 if (record.SubmittedToTrello == true)
                     return;
 
+                if (IsBlacklisted(record))
+                    return;
+
                 if (IsConfigurationValid() == false)
                 {
                     Debug.LogWarning(LogPrefix + "Trello configuration missing. Populate TrelloTicketService.Settings to enable auto submission.");
@@ -69,6 +76,20 @@ namespace TPSBR
             return string.IsNullOrWhiteSpace(Configuration.ApiKey) == false
                    && string.IsNullOrWhiteSpace(Configuration.ApiToken) == false
                    && string.IsNullOrWhiteSpace(Configuration.ListId) == false;
+        }
+
+        private bool IsBlacklisted(ErrorRecord record)
+        {
+            if (record == null || string.IsNullOrWhiteSpace(record.Condition) == true)
+                return false;
+
+            for (int i = 0; i < _errorBlacklist.Length; i++)
+            {
+                if (record.Condition.IndexOf(_errorBlacklist[i], StringComparison.OrdinalIgnoreCase) >= 0)
+                    return true;
+            }
+
+            return false;
         }
 
         private void SubmitTicket(ErrorRecord record)
