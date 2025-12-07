@@ -91,6 +91,8 @@ namespace TPSBR
         [Networked, Capacity(Count)]
         private NetworkArray<ushort> _experience { get; }
 
+        private bool CanAccessNetworkedProfessions => Runner != null && Object != null && Object.IsValid == true;
+
         public event Action<ProfessionIndex, ProfessionSnapshot, ProfessionSnapshot> ProfessionChanged;
         public event Action<ProfessionIndex, int, ProfessionSnapshot, ProfessionSnapshot> ExperienceGained;
 
@@ -159,6 +161,13 @@ namespace TPSBR
                 throw new ArgumentOutOfRangeException(nameof(index));
             }
 
+            if (CanAccessNetworkedProfessions == false)
+            {
+                int level = GetInitialLevel(index);
+
+                return CreateSnapshot(level, 0);
+            }
+
             int level = _levels.Get(index);
             int experience = _experience.Get(index);
 
@@ -175,6 +184,11 @@ namespace TPSBR
             if (index < 0 || index >= Count)
             {
                 throw new ArgumentOutOfRangeException(nameof(index));
+            }
+
+            if (CanAccessNetworkedProfessions == false)
+            {
+                return GetInitialLevel(index);
             }
 
             return _levels.Get(index);
@@ -207,6 +221,11 @@ namespace TPSBR
                 throw new ArgumentOutOfRangeException(nameof(index));
             }
 
+            if (CanAccessNetworkedProfessions == false)
+            {
+                return 0;
+            }
+
             return _experience.Get(index);
         }
 
@@ -230,6 +249,11 @@ namespace TPSBR
             if (index < 0 || index >= Count)
             {
                 throw new ArgumentOutOfRangeException(nameof(index));
+            }
+
+            if (CanAccessNetworkedProfessions == false)
+            {
+                return;
             }
 
             if (HasStateAuthority == false)
@@ -280,6 +304,11 @@ namespace TPSBR
             }
 
             if (amount <= 0)
+            {
+                return;
+            }
+
+            if (CanAccessNetworkedProfessions == false)
             {
                 return;
             }
@@ -575,8 +604,25 @@ namespace TPSBR
             return Mathf.Max(1, Mathf.CeilToInt(baseAmount * multiplier));
         }
 
+        private int GetInitialLevel(int index)
+        {
+            int level = MinLevel;
+
+            if (_initialLevels != null && index < _initialLevels.Length)
+            {
+                level = Mathf.Clamp(_initialLevels[index], MinLevel, MaxLevel);
+            }
+
+            return level;
+        }
+
         private void EnsureCacheInitialized()
         {
+            if (CanAccessNetworkedProfessions == false)
+            {
+                return;
+            }
+
             if (_cachedLevels == null || _cachedLevels.Length != Count)
             {
                 _cachedLevels = new int[Count];
@@ -605,7 +651,7 @@ namespace TPSBR
 
         private void CheckForProfessionUpdates()
         {
-            if (Object == null || Object.IsValid == false)
+            if (CanAccessNetworkedProfessions == false)
             {
                 return;
             }
