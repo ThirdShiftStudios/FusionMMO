@@ -1,5 +1,6 @@
 using System;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Steamworks;
 using UnityEngine;
@@ -13,6 +14,7 @@ namespace TPSBR
 
         private readonly object _sync = new object();
         private readonly ErrorRecorder _errorRecorder;
+        private readonly SynchronizationContext _unitySyncContext;
 
         public TrelloSettings Configuration { get; }
 
@@ -20,6 +22,7 @@ namespace TPSBR
         {
             _errorRecorder = errorRecorder;
             Configuration = configuration ?? LoadConfiguration();
+            _unitySyncContext = SynchronizationContext.Current;
 
             if (_errorRecorder != null)
             {
@@ -247,6 +250,14 @@ namespace TPSBR
 
             try
             {
+                await SwitchToUnityThread();
+
+                if (Application.isBatchMode == true)
+                {
+                    Debug.LogWarning(LogPrefix + "Skipping screenshot capture in batch mode (no graphics context).");
+                    return;
+                }
+
                 screenshot = ScreenCapture.CaptureScreenshotAsTexture();
             }
             catch (Exception exception)
@@ -290,6 +301,17 @@ namespace TPSBR
                     Debug.LogWarning(LogPrefix + $"Failed to attach screenshot to Trello card {cardId} (HTTP {attachmentResult.StatusCode}): {attachmentResult.Error}");
                 }
             }
+        }
+
+        private Task SwitchToUnityThread()
+        {
+            if (_unitySyncContext == null || SynchronizationContext.Current == _unitySyncContext)
+                return Task.CompletedTask;
+
+            var tcs = new TaskCompletionSource<bool>();
+            _unitySyncContext.Post(_ => tcs.SetResult(true), null);
+
+            return tcs.Task;
         }
 
         private UnityWebRequest BuildAttachmentRequest(string cardId, byte[] pngData)
