@@ -182,6 +182,50 @@ MonoBehaviour:
   _smokeState: {fileID: 7418465582630858388}
   _blendInDuration: 0.1
   _blendOutDuration: 0.15
+--- !u!1 &462066427258038725
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4256468415381513308}
+  - component: {fileID: 1362567082962553683}
+  m_Layer: 0
+  m_Name: FishTransform
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4256468415381513308
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 462066427258038725}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.67877346, y: 0.35527703, z: 0.1508603, w: 0.6247288}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1968071770435146227}
+  m_LocalEulerAnglesHint: {x: 132.192, y: -74.99298, z: -92.81799}
+--- !u!114 &1362567082962553683
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 462066427258038725}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efb407adcd61a2742b097e1056cc451c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &701089063114127358
 GameObject:
   m_ObjectHideFlags: 0
@@ -227,10 +271,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _node:
-    Clip: {fileID: 3094330708855449807, guid: 210c0ba3454dd1a4681017115b0c564f, type: 3}
+    Clip: {fileID: -2469113479619051591, guid: 373db4e9030689849ac2efe6d6f04c78, type: 3}
     Speed: 1
     IsLooping: 1
-  _fishTransform: {fileID: 1292528308003204138}
+  _fishTransform: {fileID: 4256468415381513308}
 --- !u!1 &717184677871332033
 GameObject:
   m_ObjectHideFlags: 0
@@ -431,7 +475,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _node:
-    Clip: {fileID: 3094330708855449807, guid: 8a111a198b86a474b83a9511492b0c24, type: 3}
+    Clip: {fileID: 6369482114111941442, guid: e8d0a10ddfffe924bbc60eef5dcad077, type: 3}
     Speed: 1
     IsLooping: 0
 --- !u!1 &1272720040436013535
@@ -1582,7 +1626,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _node:
-    Clip: {fileID: 3094330708855449807, guid: 465fb86ce663147479f3c4257f502294, type: 3}
+    Clip: {fileID: -3806308429307879988, guid: d6ae38b3a6ee4a44190090855629d9e4, type: 3}
     Speed: 1
     IsLooping: 0
 --- !u!1 &8096356310853991931
@@ -1990,7 +2034,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
-    m_AddedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: 3943902359883509811, guid: 31a4fb56c558cb5498a0f4c7d3ae2b66, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 4256468415381513308}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 31a4fb56c558cb5498a0f4c7d3ae2b66, type: 3}
 --- !u!1 &707794619502609426 stripped
