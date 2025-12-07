@@ -56,6 +56,11 @@ namespace TPSBR.UI
             if (_highlightGraphic == null)
             {
                 _highlightGraphic = GetComponent<Graphic>();
+
+                if (_highlightGraphic == null)
+                {
+                    _highlightGraphic = GetComponentInChildren<Graphic>(true);
+                }
             }
         }
     }
