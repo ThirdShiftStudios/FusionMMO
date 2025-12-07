@@ -4,6 +4,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Steamworks;
 using UnityEngine;
+using UnityEngine.Rendering;
 using UnityEngine.Networking;
 
 namespace TPSBR
@@ -338,6 +339,12 @@ namespace TPSBR
             if (string.IsNullOrWhiteSpace(cardId) == true)
             {
                 Debug.LogWarning(LogPrefix + "Cannot attach screenshot because Trello card ID is missing.");
+                return;
+            }
+
+            if (Application.isBatchMode == true || SystemInfo.graphicsDeviceType == GraphicsDeviceType.Null)
+            {
+                Debug.LogWarning(LogPrefix + "Screenshot capture is unavailable because graphics are disabled.");
                 return;
             }
 
