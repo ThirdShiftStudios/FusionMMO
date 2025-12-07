@@ -42,29 +42,9 @@ namespace TPSBR
             if (HasStateAuthority == false)
                 return;
 
-            _activeMount = mount;
-            _activeMount.BeginRide(this);
+            MountInternal(mount);
 
-            _dismountInputBlockedUntil = Time.time + _dismountInputBlockDuration;
-
-            Transform preferredAnchor = mount.RiderAnchor != null ? mount.RiderAnchor : _defaultRiderAnchor;
-            _riderAnchor = preferredAnchor != null ? preferredAnchor : mount.transform;
-
-            _kccEnabled = _character.CharacterController.enabled;
-            _character.CharacterController.enabled = false;
-
-            if (_riderAnchor != null)
-            {
-                _character.transform.SetPositionAndRotation(_riderAnchor.position, _riderAnchor.rotation);
-                _character.transform.SetParent(_riderAnchor, true);
-            }
-
-            if (_activeMount.MountCamera != null)
-            {
-                _interactions?.SetInteractionCameraAuthority(_activeMount.MountCamera);
-            }
-
-            _character.AnimationController?.SetMounted(true, mount.Definition);
+            RPC_OnMounted(mount.Object);
         }
 
         public void Dismount()
@@ -72,35 +52,22 @@ namespace TPSBR
             if (_activeMount == null)
                 return;
 
-            Transform activeMountTransform = _activeMount.transform;
-            Vector3 dismountPosition = activeMountTransform.position;
-
-            if (_riderAnchor != null && _character.transform.parent == _riderAnchor)
-            {
-                _character.transform.SetParent(null, true);
-            }
-
-            _character.transform.SetPositionAndRotation(dismountPosition, activeMountTransform.rotation);
-
             HorseMount dismountedMount = _activeMount;
+            bool hasStateAuthority = HasStateAuthority;
 
-            _activeMount.EndRide();
-            _activeMount = null;
+            DismountInternal(false);
 
-            _character.CharacterController.enabled = _kccEnabled;
-            _character.CharacterController.SetPosition(dismountPosition);
-            _interactions?.ClearInteractionCameraAuthority();
-
-            _character.AnimationController?.SetMounted(false, null);
-
-            _riderAnchor = _defaultRiderAnchor;
-
-            if (dismountedMount != null && Runner != null && HasStateAuthority == true)
+            if (hasStateAuthority == true)
             {
-                NetworkObject mountObject = dismountedMount.Object;
-                if (mountObject != null)
+                RPC_OnDismounted();
+
+                if (dismountedMount != null && Runner != null)
                 {
-                    Runner.Despawn(mountObject);
+                    NetworkObject mountObject = dismountedMount.Object;
+                    if (mountObject != null)
+                    {
+                        Runner.Despawn(mountObject);
+                    }
                 }
             }
         }
@@ -304,6 +271,90 @@ namespace TPSBR
         private void RPC_RequestSpawnEquippedMount(RpcInfo rpcInfo = default)
         {
             SpawnEquippedMount();
+        }
+
+        [Rpc(RpcSources.StateAuthority, RpcTargets.All, Channel = RpcChannel.Reliable, InvokeLocal = false)]
+        private void RPC_OnMounted(NetworkObjectReference mountReference)
+        {
+            if (mountReference.TryGet(out var mountObject) == false)
+                return;
+
+            HorseMount horseMount = mountObject.GetComponent<HorseMount>();
+            if (horseMount == null)
+                return;
+
+            MountInternal(horseMount);
+        }
+
+        [Rpc(RpcSources.StateAuthority, RpcTargets.All, Channel = RpcChannel.Reliable, InvokeLocal = false)]
+        private void RPC_OnDismounted()
+        {
+            DismountInternal(false);
+        }
+
+        private void MountInternal(HorseMount mount)
+        {
+            _activeMount = mount;
+            _activeMount.BeginRide(this);
+
+            _dismountInputBlockedUntil = Time.time + _dismountInputBlockDuration;
+
+            Transform preferredAnchor = mount.RiderAnchor != null ? mount.RiderAnchor : _defaultRiderAnchor;
+            _riderAnchor = preferredAnchor != null ? preferredAnchor : mount.transform;
+
+            _kccEnabled = _character.CharacterController.enabled;
+            _character.CharacterController.enabled = false;
+
+            if (_riderAnchor != null)
+            {
+                _character.transform.SetPositionAndRotation(_riderAnchor.position, _riderAnchor.rotation);
+                _character.transform.SetParent(_riderAnchor, true);
+            }
+
+            if (_activeMount.MountCamera != null)
+            {
+                _interactions?.SetInteractionCameraAuthority(_activeMount.MountCamera);
+            }
+
+            _character.AnimationController?.SetMounted(true, mount.Definition);
+        }
+
+        private void DismountInternal(bool despawnMount)
+        {
+            if (_activeMount == null)
+                return;
+
+            Transform activeMountTransform = _activeMount.transform;
+            Vector3 dismountPosition = activeMountTransform.position;
+
+            if (_riderAnchor != null && _character.transform.parent == _riderAnchor)
+            {
+                _character.transform.SetParent(null, true);
+            }
+
+            _character.transform.SetPositionAndRotation(dismountPosition, activeMountTransform.rotation);
+
+            HorseMount dismountedMount = _activeMount;
+
+            _activeMount.EndRide();
+            _activeMount = null;
+
+            _character.CharacterController.enabled = _kccEnabled;
+            _character.CharacterController.SetPosition(dismountPosition);
+            _interactions?.ClearInteractionCameraAuthority();
+
+            _character.AnimationController?.SetMounted(false, null);
+
+            _riderAnchor = _defaultRiderAnchor;
+
+            if (despawnMount == true && dismountedMount != null && Runner != null)
+            {
+                NetworkObject mountObject = dismountedMount.Object;
+                if (mountObject != null)
+                {
+                    Runner.Despawn(mountObject);
+                }
+            }
         }
     }
 }
