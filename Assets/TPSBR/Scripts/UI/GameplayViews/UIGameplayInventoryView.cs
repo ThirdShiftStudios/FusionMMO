@@ -33,7 +33,6 @@ namespace TPSBR.UI
         [SerializeField] private Color _selectedHotbarColor = Color.white;
         [SerializeField] private Color _selectedInventorySlotColor = Color.white;
         [SerializeField] private Color _selectedHotbarSlotColor = Color.white;
-        [SerializeField] private Color _dragHighlightColor = Color.white;
         [SerializeField] private UIInventoryDetailsPanel _detailsPanel;
         [SerializeField] private UIListItem _pickaxeSlot;
         [SerializeField] private UIListItem _woodAxeSlot;
@@ -225,7 +224,7 @@ namespace TPSBR.UI
             if (hint == null)
                 return;
 
-            hint.ApplyHighlight(true, _dragHighlightColor);
+            hint.ApplyHighlight(true);
 
             if (_activeHighlightHints.Contains(hint) == false)
             {
@@ -244,7 +243,7 @@ namespace TPSBR.UI
                 if (hint == null)
                     continue;
 
-                hint.ApplyHighlight(false, _dragHighlightColor);
+                hint.ApplyHighlight(false);
             }
 
             _activeHighlightHints.Clear();
