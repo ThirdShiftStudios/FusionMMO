@@ -1911,6 +1911,7 @@ namespace TPSBR
                 {
                     playerData.ActiveCharacterName = character.CharacterName;
                     playerData.ActiveCharacterDefinitionCode = character.CharacterDefinitionCode;
+                    playerData.Nickname = character.CharacterName;
                     playerData.SetProgress(character.CharacterLevel, character.CharacterExperience);
                     return;
                 }
@@ -1924,6 +1925,11 @@ namespace TPSBR
             {
                 playerData.ActiveCharacterName = null;
                 playerData.ActiveCharacterDefinitionCode = null;
+            }
+
+            if (string.IsNullOrEmpty(playerData.Nickname) == true)
+            {
+                playerData.Nickname = playerData.ActiveCharacterName;
             }
 
             playerData.SetProgress(1, 0);
