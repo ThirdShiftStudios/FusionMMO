@@ -2709,9 +2709,23 @@ namespace TPSBR
             bool toMount = toIndex == MOUNT_SLOT_INDEX;
             bool fromBag = IsBagSlotIndex(fromIndex);
             bool toBag = IsBagSlotIndex(toIndex);
+            bool fromGeneral = IsGeneralInventoryIndex(fromIndex);
+            bool toGeneral = IsGeneralInventoryIndex(toIndex);
             bool fromSpecial = fromPickaxe || fromWoodAxe || fromFishingPole || fromHead || fromUpperBody || fromLowerBody || fromPipe || fromBag || fromMount;
             bool toSpecial = toPickaxe || toWoodAxe || toFishingPole || toHead || toUpperBody || toLowerBody || toPipe || toBag || toMount;
-            bool generalToGeneralTransfer = fromSpecial == false && toSpecial == false;
+            bool generalToGeneralTransfer = fromGeneral && toGeneral && fromSpecial == false && toSpecial == false;
+
+            if ((fromPickaxe || fromWoodAxe || fromFishingPole || fromHead || fromUpperBody || fromLowerBody || fromPipe || fromMount) && toGeneral == false)
+                return;
+
+            if ((toPickaxe || toWoodAxe || toFishingPole || toHead || toUpperBody || toLowerBody || toPipe || toMount) && fromGeneral == false)
+                return;
+
+            if (fromSpecial == false && fromGeneral == false)
+                return;
+
+            if (toSpecial == false && toGeneral == false)
+                return;
 
             if (fromSpecial == false && fromIndex >= _generalInventorySize)
                 return;
@@ -3245,6 +3259,9 @@ namespace TPSBR
                 RefreshItems();
                 return;
             }
+
+            if (fromGeneral == false || toGeneral == false)
+                return;
 
             var generalSourceSlot = _items[fromIndex];
             if (generalSourceSlot.IsEmpty == true)
