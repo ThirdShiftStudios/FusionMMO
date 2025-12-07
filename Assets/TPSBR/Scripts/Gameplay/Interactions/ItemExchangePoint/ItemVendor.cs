@@ -210,7 +210,7 @@ namespace TPSBR
             }
         }
 
-        [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority, Channel = RpcChannel.Reliable)]
+        [Rpc(RpcSources.All, RpcTargets.StateAuthority, Channel = RpcChannel.Reliable)]
         private void RPC_RequestPurchase(PlayerRef playerRef, NetworkId agentId, int vendorIndex)
         {
             if (TryResolveAgent(playerRef, agentId, out Agent agent) == false)
@@ -219,7 +219,7 @@ namespace TPSBR
             ProcessPurchase(agent, vendorIndex);
         }
 
-        [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority, Channel = RpcChannel.Reliable)]
+        [Rpc(RpcSources.All, RpcTargets.StateAuthority, Channel = RpcChannel.Reliable)]
         private void RPC_RequestSell(PlayerRef playerRef, NetworkId agentId, int inventoryIndex)
         {
             if (TryResolveAgent(playerRef, agentId, out Agent agent) == false)
