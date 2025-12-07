@@ -20,7 +20,7 @@ namespace TPSBR.UI
 
                 public int Index { get; private set; } = -1;
                 public RectTransform SlotRectTransform => CachedRectTransform;
-                internal Sprite IconSprite => _iconSprite;
+                internal Sprite IconSprite => _iconSprite != null ? _iconSprite : _defaultIcon;
                 internal int Quantity => _quantity;
                 internal bool HasItem => _iconSprite != null && _quantity > 0;
                 internal IUIListItemOwner Owner => _owner;
@@ -33,6 +33,8 @@ namespace TPSBR.UI
                 private CanvasGroup _canvasGroup;
                 private Image _iconImage;
                 private TextMeshProUGUI _quantityLabel;
+                [SerializeField]
+                private Sprite _defaultIcon;
                 [SerializeField]
                 private RectTransform _tooltipHotspot;
                 private Sprite _iconSprite;
@@ -100,8 +102,9 @@ namespace TPSBR.UI
                         }
                         else if (_iconImage != null)
                         {
-                                _iconImage.sprite = null;
-                                _iconImage.enabled = false;
+                                _iconImage.sprite = _defaultIcon;
+                                _iconImage.color = Color.white;
+                                _iconImage.enabled = _defaultIcon != null;
                         }
 
                         if (quantity > 1)
