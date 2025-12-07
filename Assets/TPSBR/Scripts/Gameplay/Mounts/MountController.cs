@@ -274,9 +274,9 @@ namespace TPSBR
         }
 
         [Rpc(RpcSources.StateAuthority, RpcTargets.All, Channel = RpcChannel.Reliable, InvokeLocal = false)]
-        private void RPC_OnMounted(NetworkObjectReference mountReference)
+        private void RPC_OnMounted(NetworkObject mountObject)
         {
-            if (mountReference.TryGet(out var mountObject) == false)
+            if (mountObject == null)
                 return;
 
             HorseMount horseMount = mountObject.GetComponent<HorseMount>();
