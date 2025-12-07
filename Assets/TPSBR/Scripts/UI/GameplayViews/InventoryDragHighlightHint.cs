@@ -16,6 +16,7 @@ namespace TPSBR.UI
 
         private void Awake()
         {
+            EnsureHighlightGraphic();
             CacheDefaultColor();
         }
 
@@ -31,6 +32,8 @@ namespace TPSBR.UI
 
         internal void ApplyHighlight(bool active, Color colorOverride)
         {
+            EnsureHighlightGraphic();
+
             if (_highlightGraphic == null)
                 return;
 
@@ -46,6 +49,14 @@ namespace TPSBR.UI
 
             _defaultColor = _highlightGraphic.color;
             _defaultColorCached = true;
+        }
+
+        private void EnsureHighlightGraphic()
+        {
+            if (_highlightGraphic == null)
+            {
+                _highlightGraphic = GetComponent<Graphic>();
+            }
         }
     }
 }
