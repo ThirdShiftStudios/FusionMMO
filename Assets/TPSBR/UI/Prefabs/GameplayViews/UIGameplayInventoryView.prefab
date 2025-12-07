@@ -435,6 +435,7 @@ MonoBehaviour:
   _selectedHotbarColor: {r: 0.5566038, g: 0.26270264, b: 0, a: 0.7058824}
   _selectedInventorySlotColor: {r: 0.2971698, g: 0.5005123, b: 1, a: 0.64705884}
   _selectedHotbarSlotColor: {r: 1, g: 0.8353392, b: 0, a: 0.6666667}
+  _dragHighlightColor: {r: 1, g: 1, b: 1, a: 1}
   _detailsPanel: {fileID: 7160561863765779860}
   _pickaxeSlot: {fileID: 2911749595052827928}
   _woodAxeSlot: {fileID: 1648648085013598956}
@@ -12133,6 +12134,26 @@ PrefabInstance:
     - target: {fileID: 2816681939503014035, guid: 2240850c425092947a275dd96f69fc73, type: 3}
       propertyPath: m_IsActive
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3122240021995864739, guid: 2240850c425092947a275dd96f69fc73, type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: 21300000, guid: b259bce8f8c0e374f80aada828bcba93, type: 3}
+    - target: {fileID: 3122240021995864739, guid: 2240850c425092947a275dd96f69fc73, type: 3}
+      propertyPath: m_Color.a
+      value: 0.7294118
+      objectReference: {fileID: 0}
+    - target: {fileID: 3122240021995864739, guid: 2240850c425092947a275dd96f69fc73, type: 3}
+      propertyPath: m_Color.b
+      value: 0.2264151
+      objectReference: {fileID: 0}
+    - target: {fileID: 3122240021995864739, guid: 2240850c425092947a275dd96f69fc73, type: 3}
+      propertyPath: m_Color.g
+      value: 0.2264151
+      objectReference: {fileID: 0}
+    - target: {fileID: 3122240021995864739, guid: 2240850c425092947a275dd96f69fc73, type: 3}
+      propertyPath: m_Color.r
+      value: 0.2264151
       objectReference: {fileID: 0}
     - target: {fileID: 4284538436436629100, guid: 2240850c425092947a275dd96f69fc73, type: 3}
       propertyPath: _defaultIcon

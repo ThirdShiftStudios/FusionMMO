@@ -88,6 +88,7 @@ GameObject:
   - component: {fileID: 2666945380867304323}
   - component: {fileID: 4284538436436629100}
   - component: {fileID: 6846514888227408305}
+  - component: {fileID: 4893069483275335978}
   m_Layer: 5
   m_Name: UIItemSlot
   m_TagString: Untagged
@@ -236,6 +237,20 @@ MonoBehaviour:
     Repeat: 0
     RepeatPlayCount: 0
     RepeatDelay: 0
+--- !u!114 &4893069483275335978
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2816681939503014035}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b9d0d8c198e861a4eac90272d98a68e1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _highlightGraphic: {fileID: 7365173924255391619}
+  _highlightColor: {r: 1, g: 0.9128059, b: 0, a: 1}
 --- !u!1 &3450563582141344038
 GameObject:
   m_ObjectHideFlags: 0
