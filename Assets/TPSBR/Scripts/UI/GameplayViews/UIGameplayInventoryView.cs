@@ -33,6 +33,7 @@ namespace TPSBR.UI
         [SerializeField] private Color _selectedHotbarColor = Color.white;
         [SerializeField] private Color _selectedInventorySlotColor = Color.white;
         [SerializeField] private Color _selectedHotbarSlotColor = Color.white;
+        [SerializeField] private Color _dragHighlightColor = Color.white;
         [SerializeField] private UIInventoryDetailsPanel _detailsPanel;
         [SerializeField] private UIListItem _pickaxeSlot;
         [SerializeField] private UIListItem _woodAxeSlot;
@@ -70,6 +71,7 @@ namespace TPSBR.UI
         private bool _isMounted;
         private bool _hotbarHiddenForMount;
         private bool _abilityViewHiddenForMount;
+        private readonly List<InventoryDragHighlightHint> _activeHighlightHints = new List<InventoryDragHighlightHint>();
 
         private enum Tab
         {
@@ -140,11 +142,143 @@ namespace TPSBR.UI
             _professionToolTip?.Hide();
         }
 
+        private void ShowDragHighlights(ItemDefinition definition)
+        {
+            ClearActiveHighlightHints();
+
+            if (definition == null)
+                return;
+
+            ESlotCategory category = definition.SlotCategory;
+
+            HighlightInventorySlot(category, ESlotCategory.Pickaxe, _pickaxeSlot);
+            HighlightInventorySlot(category, ESlotCategory.WoodAxe, _woodAxeSlot);
+            HighlightInventorySlot(category, ESlotCategory.Head, _headSlot);
+            HighlightInventorySlot(category, ESlotCategory.UpperBody, _upperBodySlot);
+            HighlightInventorySlot(category, ESlotCategory.LowerBody, _lowerBodySlot);
+            HighlightInventorySlot(category, ESlotCategory.Pipe, _pipeSlot);
+            HighlightInventorySlot(category, ESlotCategory.Mount, _mountSlot);
+
+            if (category == ESlotCategory.Bag)
+            {
+                HighlightBagSlots();
+            }
+
+            HighlightHotbarSlots(category);
+        }
+
+        private void HideDragHighlights()
+        {
+            ClearActiveHighlightHints();
+        }
+
         private void HideAllTooltips()
         {
             _itemToolTip?.Hide();
             _statToolTip?.Hide();
             _professionToolTip?.Hide();
+        }
+
+        private void HighlightInventorySlot(ESlotCategory itemCategory, ESlotCategory requiredCategory, UIListItem slot)
+        {
+            if (slot == null || itemCategory != requiredCategory)
+                return;
+
+            ActivateHighlightHint(slot);
+        }
+
+        private void HighlightBagSlots()
+        {
+            ActivateHighlightHint(_bagSlotOne);
+            ActivateHighlightHint(_bagSlotTwo);
+            ActivateHighlightHint(_bagSlotThree);
+            ActivateHighlightHint(_bagSlotFour);
+            ActivateHighlightHint(_bagSlotFive);
+        }
+
+        private void HighlightHotbarSlots(ESlotCategory category)
+        {
+            var slots = _hotbar?.Slots;
+            if (slots == null)
+                return;
+
+            for (int i = 0; i < slots.Count; i++)
+            {
+                var slot = slots[i];
+                if (slot == null)
+                    continue;
+
+                int hotbarSlot = slot.Index + 1;
+                if (TryGetHotbarSlotCategory(hotbarSlot, out var requiredCategory) == false)
+                    continue;
+
+                if (IsHotbarCategoryCompatible(category, requiredCategory) == false)
+                    continue;
+
+                ActivateHighlightHint(slot);
+            }
+        }
+
+        private void ActivateHighlightHint(UIListItem slot)
+        {
+            var hint = slot != null ? slot.GetComponent<InventoryDragHighlightHint>() : null;
+            if (hint == null)
+                return;
+
+            hint.ApplyHighlight(true, _dragHighlightColor);
+
+            if (_activeHighlightHints.Contains(hint) == false)
+            {
+                _activeHighlightHints.Add(hint);
+            }
+        }
+
+        private void ClearActiveHighlightHints()
+        {
+            if (_activeHighlightHints.Count == 0)
+                return;
+
+            for (int i = 0; i < _activeHighlightHints.Count; i++)
+            {
+                var hint = _activeHighlightHints[i];
+                if (hint == null)
+                    continue;
+
+                hint.ApplyHighlight(false, _dragHighlightColor);
+            }
+
+            _activeHighlightHints.Clear();
+        }
+
+        private static bool IsHotbarCategoryCompatible(ESlotCategory itemCategory, ESlotCategory requiredCategory)
+        {
+            if (requiredCategory == ESlotCategory.Fishing)
+                return itemCategory == ESlotCategory.Fishing || itemCategory == ESlotCategory.FishingPole;
+
+            return itemCategory == requiredCategory;
+        }
+
+        private static bool TryGetHotbarSlotCategory(int slot, out ESlotCategory category)
+        {
+            switch (slot)
+            {
+                case Inventory.HOTBAR_PRIMARY_WEAPON_SLOT:
+                case Inventory.HOTBAR_SECONDARY_WEAPON_SLOT:
+                    category = ESlotCategory.Weapon;
+                    return true;
+
+                case int consumableSlot when consumableSlot >= Inventory.HOTBAR_FIRST_CONSUMABLE_SLOT && consumableSlot <= Inventory.HOTBAR_THIRD_CONSUMABLE_SLOT:
+                    category = ESlotCategory.Consumable;
+                    return true;
+
+                case Inventory.HOTBAR_FISHING_POLE_SLOT:
+                    category = ESlotCategory.Fishing;
+                    return true;
+
+                default:
+                    category = default;
+                    return false;
+            }
         }
 
         // PUBLIC METHODS
@@ -231,6 +365,8 @@ namespace TPSBR.UI
                 _hotbar.ItemPointerEnter += OnHotbarItemPointerEnter;
                 _hotbar.ItemPointerMove += OnHotbarItemPointerMove;
                 _hotbar.ItemPointerExit += OnHotbarItemPointerExit;
+                _hotbar.ItemDragStarted += OnHotbarItemDragStarted;
+                _hotbar.ItemDragEnded += OnHotbarItemDragEnded;
             }
 
             if (_inventoryTabButton != null)
@@ -304,6 +440,8 @@ namespace TPSBR.UI
                 _hotbar.ItemPointerEnter -= OnHotbarItemPointerEnter;
                 _hotbar.ItemPointerMove -= OnHotbarItemPointerMove;
                 _hotbar.ItemPointerExit -= OnHotbarItemPointerExit;
+                _hotbar.ItemDragStarted -= OnHotbarItemDragStarted;
+                _hotbar.ItemDragEnded -= OnHotbarItemDragEnded;
                 _hotbar.Bind(null);
             }
 
@@ -335,6 +473,7 @@ namespace TPSBR.UI
             _mountPresenter?.ResetDragState();
 
             HideAllTooltips();
+            HideDragHighlights();
 
             base.OnDeinitialize();
         }
@@ -437,6 +576,16 @@ namespace TPSBR.UI
         private void OnHotbarItemPointerExit()
         {
             HideItemTooltip();
+        }
+
+        private void OnHotbarItemDragStarted(ItemDefinition definition)
+        {
+            ShowDragHighlights(definition);
+        }
+
+        private void OnHotbarItemDragEnded()
+        {
+            HideDragHighlights();
         }
 
         private void ShowItemDetails(IInventoryItemDetails item, NetworkString<_64> configurationHash)
@@ -977,6 +1126,9 @@ namespace TPSBR.UI
                 UpdateDragIcon(slot.IconSprite, slot.Quantity, slot.SlotRectTransform.rect.size);
                 SetDragVisible(true);
                 UpdateDragPosition(eventData);
+
+                var itemSlot = _inventory.GetItemSlot(slot.Index);
+                _view?.ShowDragHighlights(itemSlot.GetDefinition());
             }
 
             void IUIListItemOwner.UpdateSlotDrag(PointerEventData eventData)
@@ -994,6 +1146,8 @@ namespace TPSBR.UI
 
                 _dragSource = null;
                 SetDragVisible(false);
+
+                _view?.HideDragHighlights();
             }
 
             void IUIListItemOwner.HandleSlotDrop(UIListItem source, UIListItem target)
@@ -1422,6 +1576,8 @@ namespace TPSBR.UI
                 UpdateDragIcon(mountDefinition.Icon, 1, slot.SlotRectTransform.rect.size);
                 SetDragVisible(true);
                 UpdateDragPosition(eventData);
+
+                _view?.ShowDragHighlights(mountDefinition);
             }
 
             void IUIListItemOwner.UpdateSlotDrag(PointerEventData eventData)
@@ -1439,6 +1595,8 @@ namespace TPSBR.UI
 
                 _dragSource = null;
                 SetDragVisible(false);
+
+                _view?.HideDragHighlights();
             }
 
             void IUIListItemOwner.HandleSlotDrop(UIListItem source, UIListItem target)

@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using Fusion;
 using TPSBR;
+using TSS.Data;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -25,6 +27,9 @@ namespace TPSBR.UI
         private Color _selectedSlotColor = Color.white;
         internal event Action<IInventoryItemDetails, NetworkString<_64>> ItemSelected;
 
+        internal event Action<ItemDefinition> ItemDragStarted;
+        internal event Action ItemDragEnded;
+
         internal event Action<Weapon, Vector2> ItemPointerEnter;
         internal event Action<Vector2> ItemPointerMove;
         internal event Action ItemPointerExit;
@@ -32,6 +37,8 @@ namespace TPSBR.UI
         private int _selectedSlotIndex = -1;
         private int _hoveredSlotIndex = -1;
         private Vector2 _lastPointerPosition;
+
+        internal IReadOnlyList<UIListItem> Slots => _slots;
 
         protected override void OnInitialize()
         {
@@ -142,6 +149,9 @@ namespace TPSBR.UI
             UpdateDragIcon(slot.IconSprite, slot.Quantity, slot.SlotRectTransform.rect.size);
             SetDragVisible(true);
             UpdateDragPosition(eventData);
+
+            var hotbarSlot = _inventory.GetHotbarItemSlot(slot.Index + 1);
+            ItemDragStarted?.Invoke(hotbarSlot.GetDefinition());
         }
 
         void IUIListItemOwner.UpdateSlotDrag(PointerEventData eventData)
@@ -159,6 +169,7 @@ namespace TPSBR.UI
 
             _dragSource = null;
             SetDragVisible(false);
+            ItemDragEnded?.Invoke();
         }
 
         void IUIListItemOwner.HandleSlotDrop(UIListItem source, UIListItem target)
