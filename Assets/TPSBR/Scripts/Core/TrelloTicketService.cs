@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 using Steamworks;
@@ -79,7 +80,18 @@ namespace TPSBR
         {
             try
             {
-                using (var request = BuildCreateCardRequest(record))
+                var summary = BuildSummary(record);
+
+                if (await CardAlreadyExistsAsync(summary) == true)
+                {
+                    record.SubmittedToTrello = true;
+                    Debug.Log(LogPrefix + $"Skipped Trello card creation because a card named '{summary}' already exists.");
+                    return;
+                }
+
+                var description = BuildDescription(record);
+
+                using (var request = BuildCreateCardRequest(summary, description))
                 {
                     var result = await SendRequestAsync(request);
 
@@ -102,7 +114,7 @@ namespace TPSBR
             }
         }
 
-        private UnityWebRequest BuildCreateCardRequest(ErrorRecord record)
+        private UnityWebRequest BuildCreateCardRequest(string summary, string description)
         {
             const string baseUrl = "https://api.trello.com/1/cards";
 
@@ -111,8 +123,8 @@ namespace TPSBR
             string labelIds = Configuration.LabelIds?.Trim();
             string memberIds = Configuration.MemberIds?.Trim();
 
-            var name = UnityWebRequest.EscapeURL(BuildSummary(record));
-            var desc = UnityWebRequest.EscapeURL(BuildDescription(record));
+            var name = UnityWebRequest.EscapeURL(summary);
+            var desc = UnityWebRequest.EscapeURL(description);
 
             var sb = new StringBuilder();
             sb.Append($"{baseUrl}?key={Configuration.ApiKey}");
@@ -191,6 +203,71 @@ namespace TPSBR
             builder.AppendLine("Screenshot attached at submission time.");
 
             return builder.ToString();
+        }
+
+        private IEnumerable<TrelloCardInfo> ExtractCardList(string responseText)
+        {
+            if (string.IsNullOrWhiteSpace(responseText) == true)
+                return Array.Empty<TrelloCardInfo>();
+
+            try
+            {
+                var wrapped = $"{{\"cards\":{responseText}}}";
+                var response = JsonUtility.FromJson<TrelloCardListResponse>(wrapped);
+                return response?.cards ?? Array.Empty<TrelloCardInfo>();
+            }
+            catch
+            {
+                return Array.Empty<TrelloCardInfo>();
+            }
+        }
+
+        private async Task<bool> CardAlreadyExistsAsync(string summary)
+        {
+            try
+            {
+                var listId = Configuration.ListId?.Trim();
+
+                if (string.IsNullOrWhiteSpace(listId) == true)
+                    return false;
+
+                var url = $"https://api.trello.com/1/lists/{listId}/cards?fields=name&key={Configuration.ApiKey}&token={Configuration.ApiToken}";
+
+                using (var request = UnityWebRequest.Get(url))
+                {
+                    request.downloadHandler = new DownloadHandlerBuffer();
+
+                    var operation = request.SendWebRequest();
+
+                    while (operation.isDone == false)
+                    {
+                        await Task.Yield();
+                    }
+
+                    var statusCode = (long)request.responseCode;
+                    var isSuccess = request.result == UnityWebRequest.Result.Success && statusCode >= 200 && statusCode < 300;
+
+                    if (isSuccess == false)
+                    {
+                        Debug.LogWarning(LogPrefix + $"Failed to check existing Trello cards (HTTP {statusCode}): {request.error}");
+                        return false;
+                    }
+
+                    var cards = ExtractCardList(request.downloadHandler?.text);
+
+                    foreach (var card in cards)
+                    {
+                        if (string.Equals(card.name, summary, StringComparison.OrdinalIgnoreCase) == true)
+                            return true;
+                    }
+                }
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning(LogPrefix + $"Error while checking for duplicate Trello card: {exception}");
+            }
+
+            return false;
         }
 
         private async Task<TrelloSubmissionResult> SendRequestAsync(UnityWebRequest request)
@@ -361,6 +438,18 @@ namespace TPSBR
         {
             public string id;
             public string shortUrl;
+        }
+
+        [Serializable]
+        private class TrelloCardListResponse
+        {
+            public TrelloCardInfo[] cards;
+        }
+
+        [Serializable]
+        private class TrelloCardInfo
+        {
+            public string name;
         }
 
         private struct TrelloSubmissionResult
