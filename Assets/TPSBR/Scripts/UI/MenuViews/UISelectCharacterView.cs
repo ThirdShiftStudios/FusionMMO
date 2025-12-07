@@ -244,6 +244,10 @@ namespace TPSBR.UI
                 {
                     _characterList.Selection = 0;
                     _selectedCharacterId = characters[0]?.CharacterId;
+
+                    // Ensure the default selection is applied so player data (e.g. character name)
+                    // is propagated before the player starts a session.
+                    TryApplySelectedCharacter(cloud);
                 }
             }
             else
