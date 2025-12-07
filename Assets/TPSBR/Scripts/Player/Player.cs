@@ -35,7 +35,7 @@ namespace TPSBR
 		public string           Nickname       { get; private set; }
 		public string           CharacterName { get; private set; }
 		public SceneContext     Context        { get; set; }
-		public bool             IsInitialized => _initCounter <= 0;
+                public bool             IsInitialized => _initCounter <= 0;
 
 		[Networked]
 		public Agent            ActiveAgent    { get; private set; }
@@ -56,13 +56,14 @@ namespace TPSBR
 		[Networked]
 		private NetworkString<_32> NetworkedCharacterName { get; set; }
 		private byte      _syncToken;
-		private Agent     _activeAgent;
-		private PlayerRef _observePlayer;
-		private Vector3   _lastViewPosition;
-		private Vector3   _lastViewDirection;
-		private Agent     _platformAgent;
-		private bool      _playerDataSent;
-		private int       _initCounter;
+                private Agent     _activeAgent;
+                private PlayerRef _observePlayer;
+                private Vector3   _lastViewPosition;
+                private Vector3   _lastViewDirection;
+                private Agent     _platformAgent;
+                private bool      _playerDataSent;
+                private int       _initCounter;
+                private bool      _spawned;
 
 		// PUBLIC METHODS
 
@@ -105,12 +106,15 @@ namespace TPSBR
 			RPC_SetObservedPlayer(playerRef);
 		}
 
-		public void Refresh()
-		{
-			PlayerStatistics statistics = Statistics;
-			statistics.PlayerRef = Object.InputAuthority;
-			Statistics = statistics;
-		}
+                public void Refresh()
+                {
+                        if (_spawned == false)
+                                return;
+
+                        PlayerStatistics statistics = Statistics;
+                        statistics.PlayerRef = Object.InputAuthority;
+                        Statistics = statistics;
+                }
 
                 public void GrantExperience(int amount, IExperienceGiver experienceGiver = null)
                 {
@@ -165,13 +169,14 @@ namespace TPSBR
 			return Mathf.Max(1, Mathf.CeilToInt(baseAmount * multiplier));
 		}
 
-		protected override void OnSpawned()
-		{
-			_syncToken      = default;
-			_activeAgent    = ActiveAgent;
-			_observePlayer  = Object.InputAuthority;
-			_playerDataSent = false;
-			_initCounter    = 10;
+                protected override void OnSpawned()
+                {
+                        _spawned       = true;
+                        _syncToken      = default;
+                        _activeAgent    = ActiveAgent;
+                        _observePlayer  = Object.InputAuthority;
+                        _playerDataSent = false;
+                        _initCounter    = 10;
 
 			if (HasInputAuthority == true)
 			{
@@ -183,10 +188,11 @@ namespace TPSBR
 			Runner.SetIsSimulated(Object, true);
 		}
 
-		protected override void OnDespawned(NetworkRunner runner, bool hasState)
-		{
-			DespawnAgent();
-		}
+                protected override void OnDespawned(NetworkRunner runner, bool hasState)
+                {
+                        _spawned = false;
+                        DespawnAgent();
+                }
 
 		protected override void OnFixedUpdateNetwork()
 		{
