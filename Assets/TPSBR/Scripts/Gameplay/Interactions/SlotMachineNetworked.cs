@@ -216,7 +216,7 @@ namespace TPSBR
             return true;
         }
 
-        [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority, Channel = RpcChannel.Reliable)]
+        [Rpc(RpcSources.All, RpcTargets.StateAuthority, Channel = RpcChannel.Reliable)]
         private void RPC_RequestRoll(PlayerRef playerRef, NetworkId agentId, int wager)
         {
             _ = playerRef;
