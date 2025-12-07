@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Fusion;
 using TPSBR;
 using UnityEngine;
@@ -24,6 +25,8 @@ namespace TPSBR.UI
         [SerializeField]
         private Color _selectedSlotColor = Color.white;
         internal event Action<IInventoryItemDetails, NetworkString<_64>> ItemSelected;
+
+        internal IReadOnlyList<UIListItem> Slots => _slots;
 
         internal event Action<Weapon, Vector2> ItemPointerEnter;
         internal event Action<Vector2> ItemPointerMove;

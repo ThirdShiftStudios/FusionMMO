@@ -2197,27 +2197,27 @@ namespace TPSBR
             return _slots[fallbackIndex];
         }
 
-        private static bool IsWeaponHotbarSlot(int slot)
+        internal static bool IsWeaponHotbarSlot(int slot)
         {
             return TryGetHotbarSlotCategory(slot, out var category) && category == ESlotCategory.Weapon;
         }
 
-        private static bool IsConsumableHotbarSlot(int slot)
+        internal static bool IsConsumableHotbarSlot(int slot)
         {
             return TryGetHotbarSlotCategory(slot, out var category) && category == ESlotCategory.Consumable;
         }
 
-        private static bool IsFishingHotbarSlot(int slot)
+        internal static bool IsFishingHotbarSlot(int slot)
         {
             return TryGetHotbarSlotCategory(slot, out var category) && category == ESlotCategory.Fishing;
         }
 
-        private static bool IsValidHotbarAssignmentSlot(int slot)
+        internal static bool IsValidHotbarAssignmentSlot(int slot)
         {
             return TryGetHotbarSlotCategory(slot, out _);
         }
 
-        private static bool CanAssignDefinitionToHotbarSlot(ItemDefinition definition, int slot)
+        internal static bool CanAssignDefinitionToHotbarSlot(ItemDefinition definition, int slot)
         {
             if (definition == null)
                 return false;
@@ -2234,7 +2234,7 @@ namespace TPSBR
             return definition.SlotCategory == requiredCategory;
         }
 
-        private static bool TryGetHotbarSlotCategory(int slot, out ESlotCategory category)
+        internal static bool TryGetHotbarSlotCategory(int slot, out ESlotCategory category)
         {
             switch (slot)
             {
