@@ -161,15 +161,19 @@ namespace TPSBR
                 throw new ArgumentOutOfRangeException(nameof(index));
             }
 
+            int level;
+            int experience;
+
             if (CanAccessNetworkedProfessions == false)
             {
-                int level = GetInitialLevel(index);
-
-                return CreateSnapshot(level, 0);
+                level = GetInitialLevel(index);
+                experience = 0;
             }
-
-            int level = _levels.Get(index);
-            int experience = _experience.Get(index);
+            else
+            {
+                level = _levels.Get(index);
+                experience = _experience.Get(index);
+            }
 
             return CreateSnapshot(level, experience);
         }
