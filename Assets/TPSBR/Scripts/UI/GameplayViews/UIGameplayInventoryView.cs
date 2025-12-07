@@ -1329,7 +1329,15 @@ namespace TPSBR.UI
 
                 if (slot.IsEmpty)
                 {
-                    uiSlot.Clear();
+                    if (index == Inventory.MOUNT_SLOT_INDEX && _view != null && _view._equippedMount != null)
+                    {
+                        uiSlot.SetItem(_view._equippedMount.Icon, 1);
+                    }
+                    else
+                    {
+                        uiSlot.Clear();
+                    }
+
                     return;
                 }
 
@@ -1337,6 +1345,19 @@ namespace TPSBR.UI
                 var sprite = definition != null ? definition.Icon : null;
 
                 uiSlot.SetItem(sprite, slot.Quantity);
+            }
+
+            internal void RefreshMountSlotView()
+            {
+                if (_slotLookup == null)
+                    return;
+
+                if (_slotLookup.ContainsKey(Inventory.MOUNT_SLOT_INDEX) == false)
+                    return;
+
+                var mountSlot = _inventory != null ? _inventory.GetItemSlot(Inventory.MOUNT_SLOT_INDEX) : default;
+
+                UpdateSlot(Inventory.MOUNT_SLOT_INDEX, mountSlot);
             }
 
             private void UpdateSelectionHighlight()
@@ -1858,6 +1879,7 @@ namespace TPSBR.UI
                 _equippedMount = _defaultEquippedMount;
             }
 
+            _inventoryPresenter?.RefreshMountSlotView();
             RefreshMountListUI();
         }
 
@@ -1901,6 +1923,7 @@ namespace TPSBR.UI
 
             _equippedMount = _defaultEquippedMount;
 
+            _inventoryPresenter?.RefreshMountSlotView();
             if (_mountList != null)
             {
                 _mountList.Clear(false);
@@ -2060,6 +2083,8 @@ namespace TPSBR.UI
 
             inventory?.RequestEquipMount(mountDefinition);
             mountCollection?.SetActiveMount(mountDefinition.Code);
+
+            _inventoryPresenter?.RefreshMountSlotView();
         }
 
         private static void EnsureMountDefinitionLookup()
