@@ -382,7 +382,7 @@ namespace TPSBR
         {
             NetworkObject networkObject = Object;
 
-            if (networkObject == null || networkObject.IsValid == false || networkObject.IsSpawned == false)
+            if (networkObject == null || networkObject.IsValid == false || networkObject.Runner == null)
             {
                 return 0;
             }

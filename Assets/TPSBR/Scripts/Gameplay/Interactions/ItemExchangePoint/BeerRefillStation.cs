@@ -462,7 +462,7 @@ namespace TPSBR
 
                         NetworkObject networkObject = beer.Object;
 
-                        if (networkObject == null || networkObject.IsValid == false || networkObject.IsSpawned == false)
+                        if (networkObject == null || networkObject.IsValid == false || networkObject.Runner == null)
                                 return 0;
 
                         return beer.BeerStack;
