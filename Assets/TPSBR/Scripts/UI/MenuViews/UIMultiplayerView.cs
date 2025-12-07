@@ -15,7 +15,6 @@ namespace TPSBR.UI
 
 		[SerializeField] private UISession _sessionDetail;
 		[SerializeField] private UIButton _createSessionButton;
-		[SerializeField] private UIButton _quickPlayButton;
 		[SerializeField] private UIButton _cancelQuickPlayButton;
 		[SerializeField] private UIButton _joinButton;
 		[SerializeField] private UIButton _settingsButton;
@@ -37,10 +36,7 @@ namespace TPSBR.UI
 
 		// PUBLIC METHODS
 
-		public void StartQuickPlay()
-		{
-			OnQuickPlayButton();
-		}
+	
 
 		// UIView INTEFACE
 
@@ -53,7 +49,6 @@ namespace TPSBR.UI
 			_sessionList.UpdateContent += OnUpdateSessionListContent;
 
 			_createSessionButton.onClick.AddListener(OnCreateGameButton);
-			_quickPlayButton.onClick.AddListener(OnQuickPlayButton);
 			_cancelQuickPlayButton.onClick.AddListener(OnCancelQuickPlay);
 			_joinButton.onClick.AddListener(OnJoinButton);
 			_settingsButton.onClick.AddListener(OnSettingsButton);
@@ -74,7 +69,6 @@ namespace TPSBR.UI
 			_sessionList.UpdateContent -= OnUpdateSessionListContent;
 
 			_createSessionButton.onClick.RemoveListener(OnCreateGameButton);
-			_quickPlayButton.onClick.RemoveListener(OnQuickPlayButton);
 			_cancelQuickPlayButton.onClick.RemoveListener(OnCancelQuickPlay);
 			_joinButton.onClick.RemoveListener(OnJoinButton);
 			_settingsButton.onClick.RemoveListener(OnSettingsButton);
@@ -229,22 +223,7 @@ namespace TPSBR.UI
 			}
 		}
 
-		private async void OnQuickPlayButton()
-		{
-			if (Context.PlayerData.UnityID.HasValue() == true)
-			{
-				_errorText.text = string.Empty;
-				_matchmakerView = Open<UIMatchmakerView>();
-				await Context.Matchmaker.StartMatchmaker(Global.Settings.Network.GetCustomOrDefaultQueueName());
-			}
-			else
-			{
-				var infoDialog = Open<UIInfoDialogView>();
-
-				infoDialog.Title.text = "Unity Gaming Services";
-				infoDialog.Description.text = "For matchmaking functionality Unity Gaming Services need to be configured.\n\nPlease follow instructions in the Fusion BR200 documentation on how to add Unity Game Server Hosting support.";
-			}
-		}
+		
 
 		private async void OnCancelQuickPlay()
 		{
