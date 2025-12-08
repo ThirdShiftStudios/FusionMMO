@@ -23,6 +23,7 @@ public class SlotMachine : MonoBehaviour
     public AudioClip machineSound;
     public AudioClip machineSoundLoop;
     public AudioClip jackpot;
+    public AudioClip regularWinClip;
     public AudioClip fail;
 
     public GameObject jackpotEffect;
@@ -123,6 +124,8 @@ public class SlotMachine : MonoBehaviour
                 bool isJackpot = totalScore == 3;
                 bool isRegularWin = totalScore >= 2 && !isJackpot;
 
+                StopMachineLoop();
+
                 if (isJackpot)
                 {
                     if (lightBox)
@@ -137,6 +140,9 @@ public class SlotMachine : MonoBehaviour
                     if (lightBox)
                         lightBox.material.SetTexture("_MainTex", t0);
 
+                    if (audioSource && regularWinClip)
+                        audioSource.PlayOneShot(regularWinClip);
+
                     ShowEffect(ref regularWinHideCoroutine, regularWinEffect, regularWinHideTime);
                 }
                 else
@@ -149,7 +155,6 @@ public class SlotMachine : MonoBehaviour
                     HideWinEffects();
                 }
 
-                StopMachineLoop();
                 spin = false;
 
                 onRollComplete(score, totalScore);
