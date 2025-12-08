@@ -36,6 +36,11 @@ public class SlotMachine : MonoBehaviour
     private Coroutine jackpotHideCoroutine;
     private Coroutine regularWinHideCoroutine;
 
+    void Awake()
+    {
+        HideWinEffects();
+    }
+
     void Start ()
     {
         forcePoint = new float[slotList.Length];
@@ -115,7 +120,10 @@ public class SlotMachine : MonoBehaviour
                     if (s > totalScore)
                         totalScore = s;
                 }
-                if (totalScore == 3)
+                bool isJackpot = totalScore == 3;
+                bool isRegularWin = totalScore >= 2 && !isJackpot;
+
+                if (isJackpot)
                 {
                     if (lightBox)
                         lightBox.material.SetTexture("_MainTex", t2);
@@ -124,6 +132,13 @@ public class SlotMachine : MonoBehaviour
 
                     ShowEffect(ref jackpotHideCoroutine, jackpotEffect, jackpotHideTime);
                 }
+                else if (isRegularWin)
+                {
+                    if (lightBox)
+                        lightBox.material.SetTexture("_MainTex", t0);
+
+                    ShowEffect(ref regularWinHideCoroutine, regularWinEffect, regularWinHideTime);
+                }
                 else
                 {
                     if (lightBox)
@@ -131,7 +146,7 @@ public class SlotMachine : MonoBehaviour
                     if (audioSource && fail)
                         audioSource.PlayOneShot(fail);
 
-                    ShowEffect(ref regularWinHideCoroutine, regularWinEffect, regularWinHideTime);
+                    HideWinEffects();
                 }
 
                 StopMachineLoop();
