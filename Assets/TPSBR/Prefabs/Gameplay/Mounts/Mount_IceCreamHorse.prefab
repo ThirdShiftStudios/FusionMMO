@@ -162,6 +162,12 @@ MonoBehaviour:
   _gravity: {x: 0, y: 8, z: 0}
   _upGravityMultiplier: 1
   _downGravityMultiplier: -1
+  _kinematicGroundAcceleration: 50
+  _kinematicGroundFriction: 35
+  _kinematicAirAcceleration: 5
+  _kinematicAirFriction: 2
+  _dynamicGroundFriction: 20
+  _dynamicAirFriction: 2
 --- !u!1 &7267604729261916491
 GameObject:
   m_ObjectHideFlags: 0
@@ -484,6 +490,10 @@ PrefabInstance:
     - target: {fileID: 5309856681762309552, guid: dc9749d35a062644b8c5f115e39cd393, type: 3}
       propertyPath: m_Name
       value: RainbowHorse_icecream_horn
+      objectReference: {fileID: 0}
+    - target: {fileID: 5309856681762309552, guid: dc9749d35a062644b8c5f115e39cd393, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6656057435792792715, guid: dc9749d35a062644b8c5f115e39cd393, type: 3}
       propertyPath: m_Controller
