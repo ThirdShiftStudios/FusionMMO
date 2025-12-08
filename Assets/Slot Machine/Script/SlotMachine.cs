@@ -21,11 +21,20 @@ public class SlotMachine : MonoBehaviour
 
     public AudioSource audioSource;
     public AudioClip machineSound;
+    public AudioClip machineSoundLoop;
     public AudioClip jackpot;
     public AudioClip fail;
 
+    public GameObject jackpotEffect;
+    public GameObject regularWinEffect;
+    public float jackpotHideTime = 2f;
+    public float regularWinHideTime = 2f;
+
     public delegate void OnRollComplete(int[] score, int matchScore);
     public OnRollComplete onRollComplete;
+
+    private Coroutine jackpotHideCoroutine;
+    private Coroutine regularWinHideCoroutine;
 
     void Start ()
     {
@@ -48,6 +57,8 @@ public class SlotMachine : MonoBehaviour
     {
         if (!spin)
         {
+            HideWinEffects();
+
             for (int i = 0; i < numberOfObject; i++)
             {
                 score[i] = 0;
@@ -67,6 +78,13 @@ public class SlotMachine : MonoBehaviour
             if (lightBox)
                 lightBox.material.SetTexture("_MainTex", t1);
 
+            if (machineSoundLoop)
+            {
+                PlayMachineLoop();
+            }
+
+            tick = 0;
+
             spin = true;
         }
     }
@@ -80,9 +98,9 @@ public class SlotMachine : MonoBehaviour
         return true;
     }
 
-	void Update ()
+    void Update ()
     {
-		if (spin)
+        if (spin)
         {
             for (int i = 0; i < slotList.Length; i++)
             {
@@ -101,14 +119,22 @@ public class SlotMachine : MonoBehaviour
                 {
                     if (lightBox)
                         lightBox.material.SetTexture("_MainTex", t2);
-                    audioSource.PlayOneShot(jackpot);
+                    if (audioSource && jackpot)
+                        audioSource.PlayOneShot(jackpot);
+
+                    ShowEffect(ref jackpotHideCoroutine, jackpotEffect, jackpotHideTime);
                 }
                 else
                 {
                     if (lightBox)
                         lightBox.material.SetTexture("_MainTex", t0);
-                    audioSource.PlayOneShot(fail);
+                    if (audioSource && fail)
+                        audioSource.PlayOneShot(fail);
+
+                    ShowEffect(ref regularWinHideCoroutine, regularWinEffect, regularWinHideTime);
                 }
+
+                StopMachineLoop();
                 spin = false;
 
                 onRollComplete(score, totalScore);
@@ -119,7 +145,7 @@ public class SlotMachine : MonoBehaviour
         {
             transform.rotation = Quaternion.Euler(saveRotation);
         }
-	}
+    }
 
     private float tick = 0;
     private void Shack(float power)
@@ -133,11 +159,83 @@ public class SlotMachine : MonoBehaviour
 
             transform.rotation = Quaternion.Euler(newRand);
         }
-        if (tick >= 5)
+        if (!machineSoundLoop)
         {
-            audioSource.PlayOneShot(machineSound);
-            tick = 0;
+            if (tick >= 5)
+            {
+                if (audioSource && machineSound)
+                    audioSource.PlayOneShot(machineSound);
+                tick = 0;
+            }
+            tick += (power * 8) + 0.1f;
         }
-        tick += (power * 8) + 0.1f;
+    }
+
+    private void ShowEffect(ref Coroutine routine, GameObject effect, float hideTime)
+    {
+        if (!effect)
+            return;
+
+        if (routine != null)
+        {
+            StopCoroutine(routine);
+        }
+
+        effect.SetActive(true);
+        routine = StartCoroutine(HideEffectAfterDelay(effect, hideTime));
+    }
+
+    private IEnumerator HideEffectAfterDelay(GameObject effect, float hideTime)
+    {
+        yield return new WaitForSeconds(hideTime);
+        if (effect)
+            effect.SetActive(false);
+    }
+
+    private void HideWinEffects()
+    {
+        if (jackpotHideCoroutine != null)
+        {
+            StopCoroutine(jackpotHideCoroutine);
+            jackpotHideCoroutine = null;
+        }
+
+        if (regularWinHideCoroutine != null)
+        {
+            StopCoroutine(regularWinHideCoroutine);
+            regularWinHideCoroutine = null;
+        }
+
+        if (jackpotEffect && jackpotEffect.activeSelf)
+            jackpotEffect.SetActive(false);
+
+        if (regularWinEffect && regularWinEffect.activeSelf)
+            regularWinEffect.SetActive(false);
+    }
+
+    private void PlayMachineLoop()
+    {
+        if (!audioSource || !machineSoundLoop)
+            return;
+
+        audioSource.clip = machineSoundLoop;
+        audioSource.loop = true;
+
+        if (!audioSource.isPlaying)
+            audioSource.Play();
+    }
+
+    private void StopMachineLoop()
+    {
+        if (!audioSource)
+            return;
+
+        if (audioSource.isPlaying && audioSource.clip == machineSoundLoop)
+            audioSource.Stop();
+
+        audioSource.loop = false;
+
+        if (audioSource.clip == machineSoundLoop)
+            audioSource.clip = null;
     }
 }
