@@ -39,7 +39,10 @@ namespace TPSBR
 
             _icon.sprite = sprite;
 
-          
+            _icon.transform.localPosition = _iconOffset + additionalOffset;
+            _icon.transform.localRotation = Quaternion.identity;
+
+
             if (_useBillboard == true && _icon.GetComponent<FusionBasicBillboard>() == null)
             {
                 _icon.gameObject.AddComponent<FusionBasicBillboard>();
