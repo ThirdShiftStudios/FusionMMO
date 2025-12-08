@@ -39,11 +39,6 @@ namespace TPSBR
 
             _icon.sprite = sprite;
 
-            if (parent != null)
-            {
-                _icon.transform.SetParent(parent, false);
-            }
-
             _icon.transform.localPosition = _iconOffset + additionalOffset;
             _icon.transform.localRotation = Quaternion.identity;
 
