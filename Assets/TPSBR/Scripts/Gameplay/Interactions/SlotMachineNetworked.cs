@@ -224,9 +224,6 @@ namespace TPSBR
             if (Runner == null)
                 return;
 
-            if (Runner.LocalPlayer != playerRef)
-                return;
-
             Agent agent = null;
 
             if (Runner.TryFindObject(agentId, out NetworkObject agentObject) == true)
@@ -235,6 +232,9 @@ namespace TPSBR
             }
 
             if (agent == null)
+                return;
+
+            if (agent.Object == null || agent.Object.InputAuthority != playerRef)
                 return;
 
             StartRoll(agent, wager);
