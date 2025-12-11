@@ -12,7 +12,7 @@ namespace TPSBR
         private List<CinematicWaypointPath> _waypointPathRoots = new List<CinematicWaypointPath>();
 
         [SerializeField]
-        private CinematicWaypointPath _fallbackWaypointPath;
+        private CinematicWaypointPath __manualWaypointPath;
 
         public IReadOnlyList<CinematicWaypointPath> WaypointPathRoots => _waypointPathRoots;
         public bool OverrideIsActive = false;
@@ -96,7 +96,7 @@ namespace TPSBR
 
             if (_currentPath == null)
             {
-                SetCurrentPathInternal(_fallbackWaypointPath);
+                SetCurrentPathInternal(__manualWaypointPath);
                 ResetTraversal();
                 //IsActive = false;
                 //return;
@@ -200,6 +200,29 @@ namespace TPSBR
             IsActive = path != null;
         }
 
+        public void PlayManualPath()
+        {
+            if (__manualWaypointPath == null)
+                return;
+
+            SetCurrentPathInternal(__manualWaypointPath);
+            ResetTraversal();
+            IsActive = false;
+            IsActive = true;
+        }
+
+        public void StopManualPath()
+        {
+            if (_currentPath != __manualWaypointPath)
+                return;
+
+            IsActive = false;
+        }
+
+        public bool IsManualPathPlaying => IsActive && _currentPath == __manualWaypointPath;
+
+        public CinematicWaypointPath ManualWaypointPath => __manualWaypointPath;
+
         public void ResetCurrentPathProgress()
         {
             ResetTraversal();
@@ -225,9 +248,9 @@ namespace TPSBR
                 return;
             }
 
-            if (_fallbackWaypointPath != null)
+            if (__manualWaypointPath != null)
             {
-                SetCurrentPathInternal(_fallbackWaypointPath);
+                SetCurrentPathInternal(__manualWaypointPath);
                 ResetTraversal();
             }
         }
@@ -329,3 +352,41 @@ namespace TPSBR
         }
     }
 }
+
+#if UNITY_EDITOR
+namespace TPSBR.Editor
+{
+    using UnityEditor;
+
+    [CustomEditor(typeof(CinematicCameraHandler))]
+    public class CinematicCameraHandlerEditor : UnityEditor.Editor
+    {
+        public override void OnInspectorGUI()
+        {
+            base.OnInspectorGUI();
+
+            var handler = (CinematicCameraHandler)target;
+
+            EditorGUILayout.Space();
+
+            using (new EditorGUI.DisabledScope(handler.ManualWaypointPath == null))
+            {
+                if (handler.IsManualPathPlaying)
+                {
+                    if (GUILayout.Button("Stop Manual Path"))
+                    {
+                        handler.StopManualPath();
+                    }
+                }
+                else
+                {
+                    if (GUILayout.Button("Play Manual Path"))
+                    {
+                        handler.PlayManualPath();
+                    }
+                }
+            }
+        }
+    }
+}
+#endif
