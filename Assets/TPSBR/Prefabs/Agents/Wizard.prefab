@@ -1379,7 +1379,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _node:
-    Clip: {fileID: 8338263342487987538, guid: 674be5bd2e9a1174a8941d06dad5d2dc, type: 3}
+    Clip: {fileID: 8338263342487987538, guid: 379ddf056a5309c43b2e3615ddd4db15, type: 3}
     Speed: 1
     IsLooping: 1
   _mountDefinition: {fileID: 11400000, guid: 1bee5d2195867bb499df0bab3ab51a6d, type: 2}
@@ -3358,7 +3358,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _initialMounts:
   - {fileID: 11400000, guid: 1bee5d2195867bb499df0bab3ab51a6d, type: 2}
-  _equippedMount: {fileID: 0}
+  _equippedMount: {fileID: 11400000, guid: 1bee5d2195867bb499df0bab3ab51a6d, type: 2}
 --- !u!114 &4770731768641993252
 MonoBehaviour:
   m_ObjectHideFlags: 0
