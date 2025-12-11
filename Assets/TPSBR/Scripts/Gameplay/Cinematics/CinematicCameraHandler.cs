@@ -25,6 +25,7 @@ namespace TPSBR
                     return;
 
                 _isActive = value;
+                UpdateSceneUIVisibility();
 
                 if (_isActive == true)
                 {
@@ -33,6 +34,7 @@ namespace TPSBR
                     if (TryInitializeTraversal() == false)
                     {
                         _isActive = false;
+                        UpdateSceneUIVisibility();
                         return;
                     }
                 }
@@ -70,6 +72,8 @@ namespace TPSBR
         private bool _hasValidTransform;
         private Transform _sceneCameraTransform;
         private bool _syncHandlerTransform = true;
+        private bool _sceneUIWasEnabled;
+        private bool _isSceneUIHidden;
 
         private void Awake()
         {
@@ -83,6 +87,8 @@ namespace TPSBR
 
         private void OnDestroy()
         {
+            RestoreSceneUIVisibility();
+
             if (Instance == this)
             {
                 Instance = null;
@@ -349,6 +355,40 @@ namespace TPSBR
 
             cameraTransform.SetPositionAndRotation(position, rotation);
             return true;
+        }
+
+        private void UpdateSceneUIVisibility()
+        {
+            var canvas = Context?.UI?.Canvas;
+            if (canvas == null)
+                return;
+
+            if (_isActive == true)
+            {
+                if (_isSceneUIHidden == true)
+                    return;
+
+                _sceneUIWasEnabled = canvas.enabled;
+                canvas.enabled = false;
+                _isSceneUIHidden = true;
+                return;
+            }
+
+            RestoreSceneUIVisibility(canvas);
+        }
+
+        private void RestoreSceneUIVisibility(Canvas canvasOverride = null)
+        {
+            if (_isSceneUIHidden == false)
+                return;
+
+            var canvas = canvasOverride ?? Context?.UI?.Canvas;
+            if (canvas != null)
+            {
+                canvas.enabled = _sceneUIWasEnabled;
+            }
+
+            _isSceneUIHidden = false;
         }
     }
 }
