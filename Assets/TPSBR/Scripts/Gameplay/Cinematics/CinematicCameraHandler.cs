@@ -357,6 +357,7 @@ namespace TPSBR
 namespace TPSBR.Editor
 {
     using UnityEditor;
+    using UnityEngine;
 
     [CustomEditor(typeof(CinematicCameraHandler))]
     public class CinematicCameraHandlerEditor : UnityEditor.Editor
