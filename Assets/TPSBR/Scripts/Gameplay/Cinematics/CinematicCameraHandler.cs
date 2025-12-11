@@ -72,7 +72,7 @@ namespace TPSBR
         private bool _hasValidTransform;
         private Transform _sceneCameraTransform;
         private bool _syncHandlerTransform = true;
-        private bool _sceneUIWasEnabled;
+        private CanvasGroup _sceneUICanvasGroup;
         private bool _isSceneUIHidden;
 
         private void Awake()
@@ -359,8 +359,8 @@ namespace TPSBR
 
         private void UpdateSceneUIVisibility()
         {
-            var canvas = Context?.UI?.Canvas;
-            if (canvas == null)
+            var canvasGroup = GetSceneUICanvasGroup();
+            if (canvasGroup == null)
                 return;
 
             if (_isActive == true)
@@ -368,24 +368,40 @@ namespace TPSBR
                 if (_isSceneUIHidden == true)
                     return;
 
-                _sceneUIWasEnabled = canvas.enabled;
-                canvas.enabled = false;
+                canvasGroup.alpha = 0f;
                 _isSceneUIHidden = true;
                 return;
             }
 
-            RestoreSceneUIVisibility(canvas);
+            RestoreSceneUIVisibility(canvasGroup);
         }
 
-        private void RestoreSceneUIVisibility(Canvas canvasOverride = null)
+        private CanvasGroup GetSceneUICanvasGroup()
+        {
+            var canvas = Context?.UI?.Canvas;
+            if (canvas == null)
+            {
+                _sceneUICanvasGroup = null;
+                return null;
+            }
+
+            if (_sceneUICanvasGroup == null || _sceneUICanvasGroup.gameObject != canvas.gameObject)
+            {
+                _sceneUICanvasGroup = canvas.GetComponent<CanvasGroup>();
+            }
+
+            return _sceneUICanvasGroup;
+        }
+
+        private void RestoreSceneUIVisibility(CanvasGroup canvasGroupOverride = null)
         {
             if (_isSceneUIHidden == false)
                 return;
 
-            var canvas = canvasOverride ?? Context?.UI?.Canvas;
-            if (canvas != null)
+            var canvasGroup = canvasGroupOverride ?? GetSceneUICanvasGroup();
+            if (canvasGroup != null)
             {
-                canvas.enabled = _sceneUIWasEnabled;
+                canvasGroup.alpha = 1f;
             }
 
             _isSceneUIHidden = false;
