@@ -1828,6 +1828,8 @@ namespace TPSBR.UI
         {
             CacheDefaultMounts();
 
+            EnsureDefaultMountsRegistered(_boundMountCollection);
+
             HashSet<string> mountCodes = new HashSet<string>(StringComparer.Ordinal);
 
             _unlockedMounts.Clear();
@@ -2089,6 +2091,28 @@ namespace TPSBR.UI
             mountCollection?.SetActiveMount(GetMountCode(mountDefinition));
 
             _inventoryPresenter?.RefreshMountSlotView();
+        }
+
+        private void EnsureDefaultMountsRegistered(MountCollection mountCollection)
+        {
+            if (mountCollection == null || mountCollection.HasStateAuthority == false)
+                return;
+
+            if (_defaultUnlockedMounts == null)
+                return;
+
+            for (int i = 0; i < _defaultUnlockedMounts.Count; i++)
+            {
+                var definition = _defaultUnlockedMounts[i];
+                string mountCode = GetMountCode(definition);
+                if (string.IsNullOrWhiteSpace(mountCode) == true)
+                    continue;
+
+                if (mountCollection.HasMount(mountCode) == false)
+                {
+                    mountCollection.Unlock(mountCode);
+                }
+            }
         }
 
         private static void EnsureMountDefinitionLookup()
