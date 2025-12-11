@@ -26,16 +26,17 @@ namespace TPSBR
                 for (int i = 0; i < _initialMounts.Length; i++)
                 {
                     var definition = _initialMounts[i];
-                    if (definition == null || definition.Code.HasValue() == false)
+                    string mountCode = definition != null ? definition.Identifier : null;
+                    if (mountCode.HasValue() == false)
                         continue;
 
-                    Unlock(definition.Code, false);
+                    Unlock(mountCode, false);
                 }
             }
 
-            if (_equippedMount != null && _equippedMount.Code.HasValue() == true)
+            if (_equippedMount != null && _equippedMount.Identifier.HasValue() == true)
             {
-                SetActiveMount(_equippedMount.Code);
+                SetActiveMount(_equippedMount.Identifier);
             }
 
             Global.PlayerCloudSaveService?.RegisterMountCollectionAndRestore(this);

@@ -15,7 +15,7 @@ namespace TPSBR
 
         private MountController _rider;
 
-        public string MountCode => _definition != null ? _definition.Code : string.Empty;
+        public string MountCode => _definition != null ? _definition.Identifier : string.Empty;
         public Transform MountCamera => _cameraTransform;
         public Transform RiderAnchor => _riderAnchor;
         public MountDefinition Definition => _definition;

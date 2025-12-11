@@ -1828,6 +1828,8 @@ namespace TPSBR.UI
         {
             CacheDefaultMounts();
 
+            EnsureDefaultMountsRegistered(_boundMountCollection);
+
             HashSet<string> mountCodes = new HashSet<string>(StringComparer.Ordinal);
 
             _unlockedMounts.Clear();
@@ -1841,9 +1843,10 @@ namespace TPSBR.UI
 
                     _unlockedMounts.Add(definition);
 
-                    if (string.IsNullOrWhiteSpace(definition.Code) == false)
+                    string mountCode = GetMountCode(definition);
+                    if (string.IsNullOrWhiteSpace(mountCode) == false)
                     {
-                        mountCodes.Add(definition.Code);
+                        mountCodes.Add(mountCode);
                     }
                 }
             }
@@ -1857,10 +1860,13 @@ namespace TPSBR.UI
                 {
                     for (int i = 0; i < ownedMounts.Count; i++)
                     {
-                        if (TryResolveMountDefinition(ownedMounts[i], out var definition) == true &&
-                            (string.IsNullOrWhiteSpace(definition.Code) == true || mountCodes.Add(definition.Code) == true))
+                        if (TryResolveMountDefinition(ownedMounts[i], out var definition) == true)
                         {
-                            _unlockedMounts.Add(definition);
+                            string mountCode = GetMountCode(definition);
+                            if (string.IsNullOrWhiteSpace(mountCode) == true || mountCodes.Add(mountCode) == true)
+                            {
+                                _unlockedMounts.Add(definition);
+                            }
                         }
                     }
                 }
@@ -2082,9 +2088,31 @@ namespace TPSBR.UI
             _equippedMount = mountDefinition;
 
             inventory?.RequestEquipMount(mountDefinition);
-            mountCollection?.SetActiveMount(mountDefinition.Code);
+            mountCollection?.SetActiveMount(GetMountCode(mountDefinition));
 
             _inventoryPresenter?.RefreshMountSlotView();
+        }
+
+        private void EnsureDefaultMountsRegistered(MountCollection mountCollection)
+        {
+            if (mountCollection == null || mountCollection.HasStateAuthority == false)
+                return;
+
+            if (_defaultUnlockedMounts == null)
+                return;
+
+            for (int i = 0; i < _defaultUnlockedMounts.Count; i++)
+            {
+                var definition = _defaultUnlockedMounts[i];
+                string mountCode = GetMountCode(definition);
+                if (string.IsNullOrWhiteSpace(mountCode) == true)
+                    continue;
+
+                if (mountCollection.HasMount(mountCode) == false)
+                {
+                    mountCollection.Unlock(mountCode);
+                }
+            }
         }
 
         private static void EnsureMountDefinitionLookup()
@@ -2101,11 +2129,20 @@ namespace TPSBR.UI
                 if (definition == null)
                     continue;
 
-                if (string.IsNullOrWhiteSpace(definition.Code) == true)
+                string mountCode = GetMountCode(definition);
+                if (string.IsNullOrWhiteSpace(mountCode) == true)
                     continue;
 
-                _mountDefinitionLookup[definition.Code] = definition;
+                _mountDefinitionLookup[mountCode] = definition;
             }
+        }
+
+        private static string GetMountCode(MountDefinition definition)
+        {
+            if (definition == null)
+                return null;
+
+            return string.IsNullOrWhiteSpace(definition.Identifier) == true ? definition.name : definition.Identifier;
         }
 
         private void UpdateGoldLabel(int amount)
