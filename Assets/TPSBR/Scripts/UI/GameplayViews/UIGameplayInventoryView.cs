@@ -1841,9 +1841,10 @@ namespace TPSBR.UI
 
                     _unlockedMounts.Add(definition);
 
-                    if (string.IsNullOrWhiteSpace(definition.Code) == false)
+                    string mountCode = GetMountCode(definition);
+                    if (string.IsNullOrWhiteSpace(mountCode) == false)
                     {
-                        mountCodes.Add(definition.Code);
+                        mountCodes.Add(mountCode);
                     }
                 }
             }
@@ -1857,10 +1858,13 @@ namespace TPSBR.UI
                 {
                     for (int i = 0; i < ownedMounts.Count; i++)
                     {
-                        if (TryResolveMountDefinition(ownedMounts[i], out var definition) == true &&
-                            (string.IsNullOrWhiteSpace(definition.Code) == true || mountCodes.Add(definition.Code) == true))
+                        if (TryResolveMountDefinition(ownedMounts[i], out var definition) == true)
                         {
-                            _unlockedMounts.Add(definition);
+                            string mountCode = GetMountCode(definition);
+                            if (string.IsNullOrWhiteSpace(mountCode) == true || mountCodes.Add(mountCode) == true)
+                            {
+                                _unlockedMounts.Add(definition);
+                            }
                         }
                     }
                 }
@@ -2082,7 +2086,7 @@ namespace TPSBR.UI
             _equippedMount = mountDefinition;
 
             inventory?.RequestEquipMount(mountDefinition);
-            mountCollection?.SetActiveMount(mountDefinition.Code);
+            mountCollection?.SetActiveMount(GetMountCode(mountDefinition));
 
             _inventoryPresenter?.RefreshMountSlotView();
         }
@@ -2101,11 +2105,20 @@ namespace TPSBR.UI
                 if (definition == null)
                     continue;
 
-                if (string.IsNullOrWhiteSpace(definition.Code) == true)
+                string mountCode = GetMountCode(definition);
+                if (string.IsNullOrWhiteSpace(mountCode) == true)
                     continue;
 
-                _mountDefinitionLookup[definition.Code] = definition;
+                _mountDefinitionLookup[mountCode] = definition;
             }
+        }
+
+        private static string GetMountCode(MountDefinition definition)
+        {
+            if (definition == null)
+                return null;
+
+            return string.IsNullOrWhiteSpace(definition.Identifier) == true ? definition.name : definition.Identifier;
         }
 
         private void UpdateGoldLabel(int amount)

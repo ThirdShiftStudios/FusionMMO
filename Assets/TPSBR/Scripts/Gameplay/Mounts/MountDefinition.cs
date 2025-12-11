@@ -16,6 +16,7 @@ namespace TPSBR
 
         public MountBase MountBase => _mountBase;
         public string Code => _code;
+        public string Identifier => _code.HasValue() ? _code : name;
         public string DisplayName => _displayName.HasValue() ? _displayName : name;
         public string Description => _description;
         public float MoveSpeed => _moveSpeed;

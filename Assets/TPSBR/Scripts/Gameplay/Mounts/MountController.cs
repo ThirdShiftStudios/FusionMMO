@@ -228,8 +228,12 @@ namespace TPSBR
             if (mountDefinition == null)
                 return;
 
-            if (_mountCollection != null && mountDefinition.Code.HasValue() == true && _mountCollection.HasMount(mountDefinition.Code) == false)
-                return;
+            if (_mountCollection != null)
+            {
+                string mountCode = mountDefinition.Identifier;
+                if (mountCode.HasValue() == true && _mountCollection.HasMount(mountCode) == false)
+                    return;
+            }
 
             MountBase mountPrefab = mountDefinition.MountBase;
             if (mountPrefab == null)
