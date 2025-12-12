@@ -5901,6 +5901,13 @@ namespace TPSBR
             if (_fishingLifecycleState == FishingLifecycleState.Inactive)
                 return;
 
+            if (Runner == null)
+            {
+                UpdateHookSetSuccessZoneState(false);
+                SetFishingLifecycleState(FishingLifecycleState.Inactive);
+                return;
+            }
+
             var fishingPole = _fishingPole ?? _localFishingPole;
             if (fishingPole != null)
             {
