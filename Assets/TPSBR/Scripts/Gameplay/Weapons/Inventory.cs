@@ -1382,6 +1382,12 @@ namespace TPSBR
                 return;
 
             bool wasFishingPole = _currentWeaponSlot == HOTBAR_FISHING_POLE_SLOT;
+            bool isSwitchingAwayFromFishingPole = wasFishingPole == true && slot != HOTBAR_FISHING_POLE_SLOT;
+
+            if (isSwitchingAwayFromFishingPole == true)
+            {
+                CancelActiveFishingLoop();
+            }
 
             if (_currentWeaponSlot > 0)
             {
@@ -5888,6 +5894,32 @@ namespace TPSBR
 
             _fishingLifecycleState = state;
             FishingLifecycleStateChanged?.Invoke(state);
+        }
+
+        private void CancelActiveFishingLoop()
+        {
+            if (_fishingLifecycleState == FishingLifecycleState.Inactive)
+                return;
+
+            var fishingPole = _fishingPole ?? _localFishingPole;
+            if (fishingPole != null)
+            {
+                var useLayer = _character != null ? _character.AnimationController?.AttackLayer : null;
+                var fishingUseState = useLayer != null ? useLayer.FishingPoleUseState : null;
+
+                if (fishingUseState != null)
+                {
+                    bool cancelled = fishingUseState.TryCancelActiveCast(fishingPole);
+
+                    if (cancelled == false)
+                    {
+                        fishingUseState.TryInterruptWaitingForNewCast(fishingPole);
+                    }
+                }
+            }
+
+            UpdateHookSetSuccessZoneState(false);
+            SetFishingLifecycleState(FishingLifecycleState.Inactive);
         }
 
         private bool HasAnyPickaxe()
