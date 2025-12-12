@@ -150,14 +150,15 @@ MonoBehaviour:
   t1: {fileID: 2800000, guid: 8b1e80bf3d4169f49953ca0489e9c2b1, type: 3}
   t2: {fileID: 2800000, guid: aafe1920652ae304bbdfc44c0e46b50f, type: 3}
   audioSource: {fileID: 2517110422691315182}
-  machineSound: {fileID: 8300000, guid: c2864918b5b38a74d976ddd6a1d3f7ff, type: 3}
+  machineSound: {fileID: 8300000, guid: 33310b5f2407a0040970464b0d8fd579, type: 3}
   machineSoundLoop: {fileID: 0}
   jackpot: {fileID: 8300000, guid: 4ee9d6c4684d4b84ea1bcc978c4658dc, type: 3}
+  regularWinClip: {fileID: 8300000, guid: 1cd913a1a29562445b7999888c30cdea, type: 3}
   fail: {fileID: 8300000, guid: f590468b912e2cd45baae305ecaf8c1c, type: 3}
   jackpotEffect: {fileID: 259448748096714122}
   regularWinEffect: {fileID: 259448748096714122}
-  jackpotHideTime: 2
-  regularWinHideTime: 2
+  jackpotHideTime: 5
+  regularWinHideTime: 5
 --- !u!82 &2517110422691315182
 AudioSource:
   m_ObjectHideFlags: 0
