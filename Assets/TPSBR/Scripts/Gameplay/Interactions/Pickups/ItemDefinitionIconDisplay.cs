@@ -37,6 +37,12 @@ namespace TPSBR
                 return null;
             }
 
+            if (_icon == null)
+            {
+                return null;
+            }
+
+            _icon.gameObject.SetActive(true);
             _icon.sprite = sprite;
 
             _icon.transform.localPosition = _iconOffset + additionalOffset;
@@ -77,7 +83,19 @@ namespace TPSBR
             _hasIcon = false;
             if (_icon != null)
             {
+                _icon.gameObject.SetActive(true);
                 _icon.sprite = null;
+            }
+        }
+
+        public void HideIcon()
+        {
+            _hasIcon = false;
+
+            if (_icon != null)
+            {
+                _icon.sprite = null;
+                _icon.gameObject.SetActive(false);
             }
         }
     }
