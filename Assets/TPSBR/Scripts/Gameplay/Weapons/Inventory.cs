@@ -253,11 +253,31 @@ namespace TPSBR
         // PUBLIC METHODS
 
         public int InventorySize => _generalInventorySize;
-        public int HotbarSize => _hotbar.Length;
+        private bool IsNetworkStateReady => Object != null && Object.IsSpawned == true;
+
+        public int HotbarSize
+        {
+            get
+            {
+                if (IsNetworkStateReady == true)
+                {
+                    return _hotbar.Length;
+                }
+
+                if (_localWeapons != null)
+                {
+                    return _localWeapons.Length;
+                }
+
+                return HOTBAR_CAPACITY;
+            }
+        }
 
         public Weapon GetHotbarWeapon(int index)
         {
-            if (index < 0 || index >= _hotbar.Length)
+            int hotbarSize = HotbarSize;
+
+            if (index < 0 || index >= hotbarSize)
             {
                 return null;
             }
@@ -271,12 +291,24 @@ namespace TPSBR
                 }
             }
 
+            if (IsNetworkStateReady == false)
+            {
+                return null;
+            }
+
             return _hotbar[index];
         }
 
         public InventorySlot GetHotbarItemSlot(int index)
         {
-            if (index < 0 || index >= _hotbarItems.Length)
+            int hotbarSize = HotbarSize;
+
+            if (index < 0 || index >= hotbarSize)
+            {
+                return default;
+            }
+
+            if (IsNetworkStateReady == false)
             {
                 return default;
             }
