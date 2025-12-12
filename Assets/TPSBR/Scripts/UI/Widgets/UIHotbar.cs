@@ -371,7 +371,7 @@ namespace TPSBR.UI
 
             int selectedSlot = -1;
 
-            if (_inventory != null)
+            if (_inventory != null && _inventory.IsSpawned == true)
             {
                 int inventorySlot = _inventory.CurrentWeaponSlot;
                 if (inventorySlot > 0)
