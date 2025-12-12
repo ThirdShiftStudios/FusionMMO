@@ -1357,7 +1357,7 @@ namespace TPSBR.UI
 
                 InventorySlot mountSlot = default;
 
-                if (_inventory != null && _inventory.Object != null && _inventory.Object.IsSpawned == true)
+                if (_inventory != null && _inventory.Object != null && _inventory.Object.IsValid == true)
                 {
                     mountSlot = _inventory.GetItemSlot(Inventory.MOUNT_SLOT_INDEX);
                 }
