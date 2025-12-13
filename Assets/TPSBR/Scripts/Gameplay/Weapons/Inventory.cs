@@ -5901,7 +5901,9 @@ namespace TPSBR
             if (_fishingLifecycleState == FishingLifecycleState.Inactive)
                 return;
 
-            if (Runner == null)
+            var runner = Object != null ? Object.Runner : null;
+
+            if (runner == null)
             {
                 UpdateHookSetSuccessZoneState(false);
                 SetFishingLifecycleState(FishingLifecycleState.Inactive);
