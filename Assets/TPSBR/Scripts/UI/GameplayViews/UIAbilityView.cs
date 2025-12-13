@@ -1,3 +1,4 @@
+using Fusion;
 using TPSBR.Abilities;
 using TMPro;
 using UnityEngine;
@@ -27,10 +28,12 @@ namespace TPSBR.UI
         public void UpdateAbilities(Agent agent)
         {
             Inventory inventory = agent != null ? agent.Inventory : null;
-            StaffWeapon equipped = inventory != null ? inventory.CurrentWeapon as StaffWeapon : null;
-            int equippedSlot = equipped != null && inventory != null ? inventory.CurrentWeaponSlot : -1;
+            bool inventorySpawned = inventory != null && inventory.Runner != null && inventory.Object != null && inventory.Runner.Exists(inventory.Object) == true;
 
-            ResolveSecondaryWeapon(inventory, equippedSlot, out StaffWeapon secondary, out int secondarySlot);
+            StaffWeapon equipped = inventorySpawned == true ? inventory.CurrentWeapon as StaffWeapon : null;
+            int equippedSlot = equipped != null && inventorySpawned == true ? inventory.CurrentWeaponSlot : -1;
+
+            ResolveSecondaryWeapon(inventory, equippedSlot, inventorySpawned, out StaffWeapon secondary, out int secondarySlot);
 
             UpdatePanel(_equippedPanel, equipped, equippedSlot);
             UpdatePanel(_unequippedPanel, secondary, secondarySlot);
@@ -66,12 +69,12 @@ namespace TPSBR.UI
             panel.Display(weapon, slotIndex, Time.deltaTime, castingAbility, castingSlot, castProgress, _castOverlayColor, _overlayRotationSpeed);
         }
 
-        private void ResolveSecondaryWeapon(Inventory inventory, int equippedSlot, out StaffWeapon secondary, out int slotIndex)
+        private void ResolveSecondaryWeapon(Inventory inventory, int equippedSlot, bool inventorySpawned, out StaffWeapon secondary, out int slotIndex)
         {
             secondary = null;
             slotIndex = -1;
 
-            if (inventory == null)
+            if (inventory == null || inventorySpawned == false)
             {
                 return;
             }
