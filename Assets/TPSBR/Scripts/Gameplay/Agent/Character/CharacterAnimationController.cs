@@ -28,6 +28,8 @@ namespace TPSBR
         private LowerBodyLayer _lowerBody;
         private UpperBodyLayer _upperBody;
         private UseLayer _use;
+        private LookLayer _look;
+
         private InteractionsAnimationLayer _interactionsLayer;
         private MountAnimationLayer _mountLayer;
 
@@ -110,6 +112,7 @@ namespace TPSBR
                 }
 
                 _upperBody.DeactivateAllStates(0.2f, true);
+                _look.DeactivateAllStates(0.2f, true);
             }
             else
             {
@@ -474,6 +477,7 @@ namespace TPSBR
             _lowerBody = FindLayer<LowerBodyLayer>();
             _upperBody = FindLayer<UpperBodyLayer>();
             _use = FindLayer<UseLayer>();
+            _look = FindLayer<LookLayer>();
             _interactionsLayer = FindLayer<InteractionsAnimationLayer>();
             _mountLayer = FindLayer<MountAnimationLayer>();
 
