@@ -1355,7 +1355,12 @@ namespace TPSBR.UI
                 if (_slotLookup.ContainsKey(Inventory.MOUNT_SLOT_INDEX) == false)
                     return;
 
-                var mountSlot = _inventory != null ? _inventory.GetItemSlot(Inventory.MOUNT_SLOT_INDEX) : default;
+                InventorySlot mountSlot = default;
+
+                if (_inventory != null && _inventory.Object != null && _inventory.Object.IsValid == true)
+                {
+                    mountSlot = _inventory.GetItemSlot(Inventory.MOUNT_SLOT_INDEX);
+                }
 
                 UpdateSlot(Inventory.MOUNT_SLOT_INDEX, mountSlot);
             }
