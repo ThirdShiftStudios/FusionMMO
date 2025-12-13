@@ -28,8 +28,6 @@ namespace TPSBR
         private Vector3 _fightingFishOffset = new Vector3(0f, -1f, 0f);
         [SerializeField, Range(0f, 1f)]
         private float _bendFactor;
-        [SerializeField, Range(0f, 1f)]
-        private float _blendValue;
         [SerializeField]
         private float _blendResponse = 4f;
         [SerializeField]
@@ -999,7 +997,7 @@ namespace TPSBR
                 }
 
                 Vector3 euler = _poleBoneRotations[i].BaseEuler;
-                float bendAmount = Mathf.Clamp01(_bendFactor * _blendValue);
+                float bendAmount = Mathf.Clamp01(_bendFactor * 1);
                 euler.y = Mathf.Lerp(_poleBoneRotations[i].Min, _poleBoneRotations[i].Max, bendAmount);
                 transform.localRotation = Quaternion.Euler(euler);
             }
@@ -1010,12 +1008,12 @@ namespace TPSBR
             float response = Mathf.Max(0.01f, _blendResponse);
             float target = Mathf.Clamp01(targetBlend);
             float step = response * (deltaTime > 0f ? deltaTime : Time.deltaTime);
-            _blendValue = Mathf.MoveTowards(_blendValue, target, step);
+            _bendFactor = Mathf.MoveTowards(_bendFactor, target, step);
         }
 
         internal void ResetRodBlend()
         {
-            _blendValue = 0f;
+            _bendFactor = 0f;
         }
 
         private void CacheLureParent()
