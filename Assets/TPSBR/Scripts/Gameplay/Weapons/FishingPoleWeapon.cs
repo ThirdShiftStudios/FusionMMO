@@ -946,8 +946,8 @@ namespace TPSBR
         {
             _poleBoneRotations = new[]
             {
-                CreatePoleBoneRotation(_poleBone002, 0f, 2f),
-                CreatePoleBoneRotation(_poleBone003, 0f, 7f),
+                CreatePoleBoneRotation(_poleBone002, 0f, 10f),
+                CreatePoleBoneRotation(_poleBone003, 0f, 20f),
                 CreatePoleBoneRotation(_poleBone004, 0f, 15f),
                 CreatePoleBoneRotation(_poleBone005, 0f, 10f),
                 CreatePoleBoneRotation(_poleBone006, 0f, 30f),
