@@ -1,3 +1,4 @@
+using Fusion;
 using TPSBR.Abilities;
 using TMPro;
 using UnityEngine;
@@ -27,7 +28,7 @@ namespace TPSBR.UI
         public void UpdateAbilities(Agent agent)
         {
             Inventory inventory = agent != null ? agent.Inventory : null;
-            bool inventorySpawned = inventory != null && inventory.IsSpawned == true;
+            bool inventorySpawned = inventory != null && inventory.Runner != null && inventory.Object != null && inventory.Runner.Exists(inventory.Object) == true;
 
             StaffWeapon equipped = inventorySpawned == true ? inventory.CurrentWeapon as StaffWeapon : null;
             int equippedSlot = equipped != null && inventorySpawned == true ? inventory.CurrentWeaponSlot : -1;
