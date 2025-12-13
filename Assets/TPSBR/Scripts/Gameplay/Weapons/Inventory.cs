@@ -253,7 +253,7 @@ namespace TPSBR
         // PUBLIC METHODS
 
         public int InventorySize => _generalInventorySize;
-        private bool IsNetworkStateReady => Object != null && Object.IsSpawned == true;
+        private bool IsNetworkStateReady => Runner != null && Object != null && Object.IsValid == true;
 
         public int HotbarSize
         {
