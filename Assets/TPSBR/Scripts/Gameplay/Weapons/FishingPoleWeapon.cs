@@ -26,6 +26,18 @@ namespace TPSBR
         private FishDefinition[] _availableFishDefinitions;
         [SerializeField]
         private Vector3 _fightingFishOffset = new Vector3(0f, -1f, 0f);
+        [SerializeField, Range(0f, 1f)]
+        private float _bendFactor;
+        [SerializeField]
+        private Transform _poleBone002;
+        [SerializeField]
+        private Transform _poleBone003;
+        [SerializeField]
+        private Transform _poleBone004;
+        [SerializeField]
+        private Transform _poleBone005;
+        [SerializeField]
+        private Transform _poleBone006;
 
         [Networked]
         private FishingLureProjectile NetworkedActiveLure { get; set; }
@@ -52,6 +64,7 @@ namespace TPSBR
         private Quaternion _cachedLureLocalRotation;
         private bool _hasCachedLureParent;
         private static FishDefinition[] _cachedResourceFishDefinitions;
+        private PoleBoneRotation[] _poleBoneRotations;
 
         [Networked]
         private NetworkBool NetworkedHookSetSuccessZoneActive { get; set; }
@@ -76,6 +89,7 @@ namespace TPSBR
             HandleActiveFishChanged();
             ApplyHookSetSuccessZoneState(NetworkedHookSetSuccessZoneActive);
             UpdateWaitingLureBob();
+            ApplyPoleBend();
         }
 
         private void OnEnable()
@@ -102,6 +116,14 @@ namespace TPSBR
             ResolveRenderers();
             SetRenderersVisible(false);
             ResetWaitingBobVisuals();
+            CachePoleBoneRotations();
+            ApplyPoleBend();
+        }
+
+        private void OnValidate()
+        {
+            CachePoleBoneRotations();
+            ApplyPoleBend();
         }
 
         public override bool CanFire(bool keyDown)
@@ -920,6 +942,58 @@ namespace TPSBR
             }
         }
 
+        private void CachePoleBoneRotations()
+        {
+            _poleBoneRotations = new[]
+            {
+                CreatePoleBoneRotation(_poleBone002, 0f, 2f),
+                CreatePoleBoneRotation(_poleBone003, 0f, 7f),
+                CreatePoleBoneRotation(_poleBone004, 0f, 15f),
+                CreatePoleBoneRotation(_poleBone005, 0f, 10f),
+                CreatePoleBoneRotation(_poleBone006, 0f, 30f),
+            };
+        }
+
+        private PoleBoneRotation CreatePoleBoneRotation(Transform bone, float min, float max)
+        {
+            PoleBoneRotation rotation = new PoleBoneRotation
+            {
+                Transform = bone,
+                Min = min,
+                Max = max,
+                BaseEuler = bone != null ? bone.localEulerAngles : default
+            };
+
+            return rotation;
+        }
+
+        private void ApplyPoleBend()
+        {
+            if (_poleBoneRotations == null)
+            {
+                CachePoleBoneRotations();
+            }
+
+            if (_poleBoneRotations == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < _poleBoneRotations.Length; i++)
+            {
+                Transform transform = _poleBoneRotations[i].Transform;
+
+                if (transform == null)
+                {
+                    continue;
+                }
+
+                Vector3 euler = _poleBoneRotations[i].BaseEuler;
+                euler.y = Mathf.Lerp(_poleBoneRotations[i].Min, _poleBoneRotations[i].Max, _bendFactor);
+                transform.localRotation = Quaternion.Euler(euler);
+            }
+        }
+
         private void CacheLureParent()
         {
             if (_hasCachedLureParent == true)
@@ -1050,6 +1124,14 @@ namespace TPSBR
                 UpdateParabolaString();
                 ApplyCurrentFishAttachment();
             }
+        }
+
+        private struct PoleBoneRotation
+        {
+            public Transform Transform;
+            public float Min;
+            public float Max;
+            public Vector3 BaseEuler;
         }
     }
 }
