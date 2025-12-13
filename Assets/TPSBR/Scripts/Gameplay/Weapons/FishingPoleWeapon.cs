@@ -29,6 +29,8 @@ namespace TPSBR
         [SerializeField, Range(0f, 1f)]
         private float _bendFactor;
         [SerializeField]
+        private float _blendResponse = 4f;
+        [SerializeField]
         private Transform _poleBone002;
         [SerializeField]
         private Transform _poleBone003;
@@ -264,6 +266,7 @@ namespace TPSBR
             EndWaitingPhase();
             DespawnActiveFish();
             CleanupLure(false);
+            ResetRodBlend();
 
             RaiseLifecycleStateChanged(FishingLifecycleState.Casting);
         }
@@ -284,6 +287,7 @@ namespace TPSBR
             GrantCaughtFishToInventory();
             DespawnActiveFish();
             CleanupLure(true);
+            ResetRodBlend();
 
             RaiseLifecycleStateChanged(FishingLifecycleState.Ready);
         }
@@ -297,6 +301,7 @@ namespace TPSBR
             EndWaitingPhase();
             DespawnActiveFish();
             CleanupLure(true);
+            ResetRodBlend();
 
             RaiseLifecycleStateChanged(FishingLifecycleState.Ready);
         }
@@ -348,6 +353,7 @@ namespace TPSBR
 
             DespawnActiveFish();
             EndWaitingPhase();
+            ResetRodBlend();
             RaiseLifecycleStateChanged(FishingLifecycleState.Ready);
         }
 
@@ -362,6 +368,7 @@ namespace TPSBR
 
             DespawnActiveFish();
             EndWaitingPhase();
+            ResetRodBlend();
             RaiseLifecycleStateChanged(FishingLifecycleState.Ready);
         }
 
@@ -376,6 +383,7 @@ namespace TPSBR
 
             DespawnActiveFish();
             EndWaitingPhase();
+            ResetRodBlend();
             RaiseLifecycleStateChanged(FishingLifecycleState.Ready);
         }
 
@@ -989,9 +997,23 @@ namespace TPSBR
                 }
 
                 Vector3 euler = _poleBoneRotations[i].BaseEuler;
-                euler.y = Mathf.Lerp(_poleBoneRotations[i].Min, _poleBoneRotations[i].Max, _bendFactor);
+                float bendAmount = Mathf.Clamp01(_bendFactor * 1);
+                euler.y = Mathf.Lerp(_poleBoneRotations[i].Min, _poleBoneRotations[i].Max, bendAmount);
                 transform.localRotation = Quaternion.Euler(euler);
             }
+        }
+
+        internal void UpdateRodBlend(float targetBlend, float deltaTime)
+        {
+            float response = Mathf.Max(0.01f, _blendResponse);
+            float target = Mathf.Clamp01(targetBlend);
+            float step = response * (deltaTime > 0f ? deltaTime : Time.deltaTime);
+            _bendFactor = Mathf.MoveTowards(_bendFactor, target, step);
+        }
+
+        internal void ResetRodBlend()
+        {
+            _bendFactor = 0f;
         }
 
         private void CacheLureParent()

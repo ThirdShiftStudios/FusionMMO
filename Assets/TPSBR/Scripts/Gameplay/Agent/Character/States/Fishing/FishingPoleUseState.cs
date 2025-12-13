@@ -500,6 +500,7 @@ namespace TPSBR
             _isReelActive = false;
             _hasReelAnchorPosition = false;
             ResetFightingMotion();
+            _activeWeapon?.ResetRodBlend();
         }
 
         private void UpdateReelMovement(float deltaTime)
@@ -549,6 +550,17 @@ namespace TPSBR
             }
 
             _reelLure.SetVisualOffset(_reelCurrentOffset + fightingOffset);
+
+            float blendTarget = 0f;
+
+            if (_isFighting == true)
+            {
+                float pullStrength = Mathf.Clamp01((_reelCurrentOffset + fightingOffset).magnitude * 2.5f);
+                float tensionPulse = Mathf.Abs(Mathf.Sin(_fightingMotionTime * 2.5f)) * 0.2f;
+                blendTarget = Mathf.Clamp01(pullStrength + tensionPulse);
+            }
+
+            _activeWeapon?.UpdateRodBlend(blendTarget, deltaTime);
         }
 
         private void BeginFightingMotion()
@@ -780,6 +792,7 @@ namespace TPSBR
                 _catch.ClearActiveWeapon(_activeWeapon);
             }
 
+            _activeWeapon?.ResetRodBlend();
             _activeWeapon = null;
             _isWaiting = false;
             _awaitingLureImpact = false;
