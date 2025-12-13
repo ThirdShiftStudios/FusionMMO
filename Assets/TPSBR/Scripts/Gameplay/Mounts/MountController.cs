@@ -330,13 +330,14 @@ namespace TPSBR
 
             Transform activeMountTransform = _activeMount.transform;
             Vector3 dismountPosition = activeMountTransform.position;
+            Quaternion dismountRotation = activeMountTransform.rotation;
 
             if (_riderAnchor != null && _character.transform.parent == _riderAnchor)
             {
                 _character.transform.SetParent(null, true);
             }
 
-            _character.transform.SetPositionAndRotation(dismountPosition, activeMountTransform.rotation);
+            _character.transform.SetPositionAndRotation(dismountPosition, dismountRotation);
 
             HorseMount dismountedMount = _activeMount;
 
@@ -345,6 +346,7 @@ namespace TPSBR
 
             _character.CharacterController.enabled = _kccEnabled;
             _character.CharacterController.SetPosition(dismountPosition);
+            _character.CharacterController.SetLookRotation(dismountRotation);
             _interactions?.ClearInteractionCameraAuthority();
 
             _character.AnimationController?.SetMounted(false, null);
