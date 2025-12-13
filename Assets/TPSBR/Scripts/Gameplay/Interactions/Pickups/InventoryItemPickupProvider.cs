@@ -215,10 +215,17 @@ namespace TPSBR
                         if (graphic != null)
                         {
                                 var parent = InterpolationTarget;
+                                var graphicScale = graphic.transform.localScale;
+
                                 _visualInstance = Instantiate(graphic, parent);
                                 _visualInstance.transform.localPosition += _visualOffset;
                                 _visualInstance.transform.localRotation = Quaternion.identity;
-                                _visualInstance.transform.localScale = Vector3.one;
+                                _visualInstance.transform.localScale = graphicScale;
+
+                                if (_iconDisplay != null)
+                                {
+                                        _iconDisplay.HideIcon();
+                                }
 
                                 var rigidbody = _visualInstance.GetComponent<Rigidbody>();
                                 if (rigidbody != null)
